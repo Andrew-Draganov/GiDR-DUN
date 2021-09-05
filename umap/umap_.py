@@ -89,39 +89,6 @@ def breadth_first_search(adjmat, start, min_vertices):
     return np.array(explored)
 
 
-def raise_disconnected_warning(
-    edges_removed,
-    vertices_disconnected,
-    disconnection_distance,
-    total_rows,
-    threshold=0.1,
-    verbose=False,
-):
-    """A simple wrapper function to avoid large amounts of code repetition."""
-    if verbose & (vertices_disconnected == 0) & (edges_removed > 0):
-        print(
-            f"Disconnection_distance = {disconnection_distance} has removed {edges_removed} edges.  "
-            f"This is not a problem as no vertices were disconnected."
-        )
-    elif (vertices_disconnected > 0) & (
-        vertices_disconnected <= threshold * total_rows
-    ):
-        warn(
-            f"A few of your vertices were disconnected from the manifold.  This shouldn't cause problems.\n"
-            f"Disconnection_distance = {disconnection_distance} has removed {edges_removed} edges.\n"
-            f"It has only fully disconnected {vertices_disconnected} vertices.\n"
-            f"Use umap.utils.disconnected_vertices() to identify them.",
-        )
-    elif vertices_disconnected > threshold * total_rows:
-        warn(
-            f"A large number of your vertices were disconnected from the manifold.\n"
-            f"Disconnection_distance = {disconnection_distance} has removed {edges_removed} edges.\n"
-            f"It has fully disconnected {vertices_disconnected} vertices.\n"
-            f"You might consider using find_disconnected_points() to find and remove these points from your data.\n"
-            f"Use umap.utils.disconnected_vertices() to identify them.",
-        )
-
-
 @numba.njit(
     locals={
         "psum": numba.types.float32,
@@ -1046,8 +1013,6 @@ class UMAP(BaseEstimator):
         self.verbose = verbose
         self.unique = unique
 
-        self.disconnection_distance = disconnection_distance
-
         self.n_jobs = n_jobs
 
         self.a = a
@@ -1136,22 +1101,6 @@ class UMAP(BaseEstimator):
                     "inverse_transform will be unavailable".format(self.metric)
                 )
                 self._inverse_distance_func = None
-         # self.metric in pynn_named_distances:
-         #    if self._sparse_data:
-         #        if self.metric in pynn_sparse_named_distances:
-         #            self._input_distance_func = pynn_sparse_named_distances[self.metric]
-         #        else:
-         #            raise ValueError(
-         #                "Metric {} is not supported for sparse data".format(self.metric)
-         #            )
-         #    else:
-         #        self._input_distance_func = pynn_named_distances[self.metric]
-
-         #    warn(
-         #        "gradient function is not yet implemented for {} distance metric; "
-         #        "inverse_transform will be unavailable".format(self.metric)
-         #    )
-         #    self._inverse_distance_func = None
         else:
             raise ValueError("metric is neither callable nor a recognised string")
 
@@ -1178,16 +1127,6 @@ class UMAP(BaseEstimator):
         if self.n_jobs < -1 or self.n_jobs == 0:
             raise ValueError("n_jobs must be a postive integer, or -1 (for all cores)")
 
-        # This will be used to prune all edges of greater than a fixed value from our knn graph.
-        # Otherwise a user can pass in their own value.
-        if self.disconnection_distance is None:
-            self._disconnection_distance = np.inf
-        elif isinstance(self.disconnection_distance, int) or isinstance(
-            self.disconnection_distance, float
-        ):
-            self._disconnection_distance = self.disconnection_distance
-        else:
-            raise ValueError("disconnection_distance must either be None or a numeric.")
 
     def _populate_combined_params(self, *models):
         self.n_neighbors = flattened([m.n_neighbors for m in models])
@@ -1319,12 +1258,6 @@ class UMAP(BaseEstimator):
                 self._knn_indices[row_id] = row_indices[row_nn_data_indices]
                 self._knn_dists[row_id] = row_data[row_nn_data_indices]
 
-            # Disconnect any vertices farther apart than _disconnection_distance
-            disconnected_index = self._knn_dists >= self._disconnection_distance
-            self._knn_indices[disconnected_index] = -1
-            self._knn_dists[disconnected_index] = np.inf
-            edges_removed = disconnected_index.sum()
-
             (
                 self.graph_,
                 self._sigmas,
@@ -1346,13 +1279,6 @@ class UMAP(BaseEstimator):
             # This ensures that they were properly disconnected.
             vertices_disconnected = np.sum(
                 np.array(self.graph_.sum(axis=1)).flatten() == 0
-            )
-            raise_disconnected_warning(
-                edges_removed,
-                vertices_disconnected,
-                self._disconnection_distance,
-                self._raw_data.shape[0],
-                verbose=self.verbose,
             )
         # Handle small cases efficiently by computing all distances
         elif X[index].shape[0] < 4096 and not self.force_approximation_algorithm:
@@ -1385,7 +1311,6 @@ class UMAP(BaseEstimator):
                     )
             # set any values greater than disconnection_distance to be np.inf.
             # This will have no effect when _disconnection_distance is not set since it defaults to np.inf.
-            edges_removed = np.sum(dmat >= self._disconnection_distance)
             dmat[dmat >= self._disconnection_distance] = np.inf
 
             # ANDREW - if the input is too small, the metric is PRECOMPUTED
@@ -1412,13 +1337,6 @@ class UMAP(BaseEstimator):
             # This ensures that they were properly disconnected.
             vertices_disconnected = np.sum(
                 np.array(self.graph_.sum(axis=1)).flatten() == 0
-            )
-            raise_disconnected_warning(
-                edges_removed,
-                vertices_disconnected,
-                self._disconnection_distance,
-                self._raw_data.shape[0],
-                verbose=self.verbose,
             )
         else:
             # Standard case
@@ -1448,12 +1366,6 @@ class UMAP(BaseEstimator):
                 verbose=self.verbose,
             )
 
-            # Disconnect any vertices farther apart than _disconnection_distance
-            disconnected_index = self._knn_dists >= self._disconnection_distance
-            self._knn_indices[disconnected_index] = -1
-            self._knn_dists[disconnected_index] = np.inf
-            edges_removed = disconnected_index.sum()
-
             (
                 self.graph_,
                 self._sigmas,
@@ -1475,13 +1387,6 @@ class UMAP(BaseEstimator):
             # This ensures that they were properly disconnected.
             vertices_disconnected = np.sum(
                 np.array(self.graph_.sum(axis=1)).flatten() == 0
-            )
-            raise_disconnected_warning(
-                edges_removed,
-                vertices_disconnected,
-                self._disconnection_distance,
-                self._raw_data.shape[0],
-                verbose=self.verbose,
             )
         self._supervised = False
 
@@ -1599,7 +1504,6 @@ class UMAP(BaseEstimator):
                     )
                 )
 
-        # X = check_array(X, dtype=np.float32, order="C", accept_sparse="csr")
         random_state = check_random_state(self.transform_seed)
         rng_state = random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
 

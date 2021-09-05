@@ -1,0 +1,3 @@
+*.swp
+*/*.swp
+umap/__pycache__
