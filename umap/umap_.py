@@ -98,7 +98,14 @@ def breadth_first_search(adjmat, start, min_vertices):
     },
     fastmath=True,
 )  # benchmarking `parallel=True` shows it to *decrease* performance
-def smooth_knn_dist(distances, k, n_iter=64, local_connectivity=1.0, bandwidth=1.0):
+def smooth_knn_dist(
+        distances,
+        k,
+        n_iter=64,
+        local_connectivity=1.0,
+        bandwidth=1.0,
+        pseudo_distance=True
+    ):
     """Compute a continuous version of the distance to the kth nearest
     neighbor. That is, this is similar to knn-distance but allows continuous
     k values rather than requiring an integral k. In essence we are simply
@@ -171,7 +178,10 @@ def smooth_knn_dist(distances, k, n_iter=64, local_connectivity=1.0, bandwidth=1
             for j in range(1, distances.shape[1]):
                 # ANDREW - when adding option for turning UMAP pseudo distance on/off,
                 #   an equivalent change needs to occur here!!
-                d = distances[i, j] - rho[i]
+                if pseudo_distance:
+                    d = distances[i, j] - rho[i]
+                else:
+                    d = distances[i, j]
                 if d > 0:
                     psum += np.exp(-(d / mid))
                 else:
@@ -319,6 +329,7 @@ def compute_membership_strengths(
     rhos,
     return_dists=False,
     bipartite=False,
+    pseudo_distance=True
 ):
     """Construct the membership strength data for the 1-skeleton of each local
     fuzzy simplicial set -- this is formed as a sparse matrix where each row is
@@ -385,7 +396,10 @@ def compute_membership_strengths(
                 # ANDREW - this is where the rhos are subtracted for the UMAP
                 # pseudo distance metric
                 # The sigmas are equivalent to those found for tSNE
-                val = np.exp(-((knn_dists[i, j] - rhos[i]) / (sigmas[i])))
+                if pseudo_distance:
+                    val = np.exp(-((knn_dists[i, j] - rhos[i]) / (sigmas[i])))
+                else:
+                    val = np.exp(-((knn_dists[i, j]) / (sigmas[i])))
 
             rows[i * n_neighbors + j] = i
             cols[i * n_neighbors + j] = knn_indices[i, j]
@@ -408,6 +422,7 @@ def fuzzy_simplicial_set(
     apply_set_operations=True,
     verbose=False,
     return_dists=True,
+    pseudo_distance=True,
 ):
     """Given a set of data X, a neighborhood size, and a measure of distance
     compute the fuzzy simplicial set (here represented as a fuzzy graph in
@@ -494,10 +509,11 @@ def fuzzy_simplicial_set(
         knn_dists,
         float(n_neighbors),
         local_connectivity=float(local_connectivity),
+        pseudo_distance=pseudo_distance
     )
 
     rows, cols, vals, dists = compute_membership_strengths(
-        knn_indices, knn_dists, sigmas, rhos, return_dists
+        knn_indices, knn_dists, sigmas, rhos, return_dists, pseudo_distance
     )
 
     result = scipy.sparse.coo_matrix(
@@ -961,6 +977,7 @@ class UMAP(BaseEstimator):
         n_components=2,
         metric="euclidean",
         output_metric="euclidean",
+        pseudo_distance=True,
         n_epochs=None,
         learning_rate=1.0,
         init="spectral",
@@ -990,6 +1007,7 @@ class UMAP(BaseEstimator):
         self.metric = metric
         self.output_metric = output_metric
         self.target_metric = target_metric
+        self.pseudo_distance = pseudo_distance
         self.n_epochs = n_epochs
         self.init = init
         self.n_components = n_components
@@ -1274,6 +1292,7 @@ class UMAP(BaseEstimator):
                 self.local_connectivity,
                 True,
                 self.verbose,
+                pseudo_distance=self.pseudo_distance
             )
             # Report the number of vertices with degree 0 in our our umap.graph_
             # This ensures that they were properly disconnected.
@@ -1332,6 +1351,7 @@ class UMAP(BaseEstimator):
                 self.local_connectivity,
                 True,
                 self.verbose,
+                pseudo_distance=self.pseudo_distance
             )
             # Report the number of vertices with degree 0 in our our umap.graph_
             # This ensures that they were properly disconnected.
@@ -1382,6 +1402,7 @@ class UMAP(BaseEstimator):
                 self.local_connectivity,
                 True,
                 self.verbose,
+                pseudo_distance=self.pseudo_distance
             )
             # Report the number of vertices with degree 0 in our our umap.graph_
             # This ensures that they were properly disconnected.
@@ -1559,6 +1580,7 @@ class UMAP(BaseEstimator):
             dists,
             float(self._n_neighbors),
             local_connectivity=float(adjusted_local_connectivity),
+            pseudo_distance=self.pseudo_distance
         )
 
         rows, cols, vals, dists = compute_membership_strengths(
