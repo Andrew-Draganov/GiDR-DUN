@@ -14,6 +14,7 @@ init = 'spectral'
 if args.random_init:
     init = 'random'
 
+print('Loading MNIST data...')
 train, _ = tfk.datasets.mnist.load_data(path='mnist.npz')
 x_train, y_train = train
 x_train, y_train = x_train[::args.downsample_stride], y_train[::args.downsample_stride]

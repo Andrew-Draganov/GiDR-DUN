@@ -156,6 +156,7 @@ def smooth_knn_dist(
         mid = 1.0
 
         # TODO: This is very inefficient, but will do for now. FIXME
+        # ANDREW - Calculate rho values
         ith_distances = distances[i]
         non_zero_dists = ith_distances[ith_distances > 0.0]
         if non_zero_dists.shape[0] >= local_connectivity:
@@ -206,8 +207,10 @@ def smooth_knn_dist(
         if rho[i] > 0.0:
             mean_ith_distances = np.mean(ith_distances)
             if sigmas[i] < MIN_K_DIST_SCALE * mean_ith_distances:
+                # ANDREW - this never gets called on mnist
                 sigmas[i] = MIN_K_DIST_SCALE * mean_ith_distances
         else:
+            # ANDREW - this never gets called on mnist either
             if sigmas[i] < MIN_K_DIST_SCALE * mean_distances:
                 sigmas[i] = MIN_K_DIST_SCALE * mean_distances
 
@@ -687,6 +690,7 @@ def simplicial_set_embedding(
     graph.eliminate_zeros()
 
     if isinstance(init, str) and init == "random":
+        print('random init')
         embedding = random_state.uniform(
             low=-10.0, high=10.0, size=(graph.shape[0], n_components)
         ).astype(np.float32)
@@ -736,6 +740,7 @@ def simplicial_set_embedding(
         / (np.max(embedding, 0) - np.min(embedding, 0))
     ).astype(np.float32, order="C")
 
+    print('optimizing layout...')
     embedding = optimize_layout_euclidean(
         embedding,
         embedding,

@@ -76,12 +76,15 @@ def _optimize_layout_euclidean_single_epoch(
 ):
     for i in numba.prange(epochs_per_sample.shape[0]):
         if epoch_of_next_sample[i] <= n:
+            # Gets the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
             j = head[i]
             k = tail[i]
 
+            # ANDREW - pick random vertex from knn for calculating attractive force
+            # So the rhos are only used to identify the kNN??
+            # t-SNE sums over all knn's attractive forces
             current = head_embedding[j]
             other = tail_embedding[k]
-
             dist_squared = rdist(current, other)
 
             if dist_squared > 0.0:
@@ -90,6 +93,7 @@ def _optimize_layout_euclidean_single_epoch(
                 grad_coeff /= a * pow(dist_squared, b) + 1.0
             else:
                 grad_coeff = 0.0
+            # ANDREW - why isn't the rho used in the gradient coefficient here???
 
             for d in range(dim):
                 grad_d = clip(grad_coeff * (current[d] - other[d]))
@@ -105,12 +109,11 @@ def _optimize_layout_euclidean_single_epoch(
             )
 
             # ANDREW - UMAP performs multiple repulsive actions for each attractive one!
-            # t-SNE, however, performs one of each
+            # t-SNE, however, gathers the sum of repulsive forces and the sum of attractive forces
             for p in range(n_neg_samples):
+                # ANDREW - Picks random vertex from entire graph and calculates repulsive force
                 k = tau_rand_int(rng_state) % n_vertices
-
                 other = tail_embedding[k]
-
                 dist_squared = rdist(current, other)
 
                 if dist_squared > 0.0:
@@ -125,6 +128,7 @@ def _optimize_layout_euclidean_single_epoch(
                     grad_coeff = 0.0
 
                 for d in range(dim):
+                    # ANDREW - tSNE doesn't do gradient clipping to my knowledge
                     if grad_coeff > 0.0:
                         grad_d = clip(grad_coeff * (current[d] - other[d]))
                     else:
