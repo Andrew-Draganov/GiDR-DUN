@@ -179,10 +179,20 @@ def smooth_knn_dist(
             for j in range(1, distances.shape[1]):
                 # ANDREW - when adding option for turning UMAP pseudo distance on/off,
                 #   an equivalent change needs to occur here!!
-                if pseudo_distance:
-                    d = distances[i, j] - rho[i]
-                else:
-                    d = distances[i, j]
+                # how the hell is this changing the outputs???
+
+                # Put this if-statement in and it works
+                # if not pseudo_distance:
+                #     test_value = 1
+
+                # Leave this if-statement in and it breaks
+                if not pseudo_distance:
+                    print('what the eff')
+
+                # if pseudo_distance:
+                d = distances[i, j] - rho[i]
+                # else:
+                #     d = distances[i, j]
                 if d > 0:
                     psum += np.exp(-(d / mid))
                 else:
@@ -516,7 +526,7 @@ def fuzzy_simplicial_set(
     )
 
     rows, cols, vals, dists = compute_membership_strengths(
-        knn_indices, knn_dists, sigmas, rhos, return_dists, pseudo_distance
+        knn_indices, knn_dists, sigmas, rhos, return_dists, pseudo_distance=pseudo_distance
     )
 
     result = scipy.sparse.coo_matrix(
