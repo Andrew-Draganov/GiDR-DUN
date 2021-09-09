@@ -180,6 +180,8 @@ def smooth_knn_dist(
             for j in range(1, distances.shape[1]):
                 # ANDREW - when adding option for turning UMAP pseudo distance on/off,
                 #   an equivalent change needs to occur here!!
+                # FIXME FIXME FIXME -- does this just rotate everything 180 degrees??
+                # Images imply that it does
                 if pseudo_distance:
                     d = distances[i, j] - rho[i]
                 else:
@@ -424,10 +426,10 @@ def fuzzy_simplicial_set(
     knn_dists=None,
     angular=False,
     local_connectivity=1.0,
-    apply_set_operations=True,
     verbose=False,
     return_dists=True,
     pseudo_distance=True,
+    tsne_symmetrization=False
 ):
     """Given a set of data X, a neighborhood size, and a measure of distance
     compute the fuzzy simplicial set (here represented as a fuzzy graph in
@@ -530,10 +532,12 @@ def fuzzy_simplicial_set(
     # Symmetrized = A + A^T - pointwise_mul(A, A^T)
     # Add option to replace with t-SNE symmetrization
     # Symmetrized = (A + A^T) / 2
-    if apply_set_operations:
-        transpose = result.transpose()
+    transpose = result.transpose()
+    if not tsne_symmetrization:
         prod_matrix = result.multiply(transpose)
         result = result + transpose - prod_matrix
+    else:
+        result = (result + transpose) / 2
 
     result.eliminate_zeros()
 
@@ -1018,6 +1022,7 @@ class UMAP(BaseEstimator):
         self.pseudo_distance = pseudo_distance
         self.n_epochs = n_epochs
         self.init = init
+        self.tsne_symmetrization = tsne_symmetrization
         self.n_components = n_components
         self.repulsion_strength = repulsion_strength
         self.learning_rate = learning_rate
@@ -1298,9 +1303,9 @@ class UMAP(BaseEstimator):
                 self._knn_dists,
                 self.angular_rp_forest,
                 self.local_connectivity,
-                True,
                 self.verbose,
-                pseudo_distance=self.pseudo_distance
+                pseudo_distance=self.pseudo_distance,
+                tsne_symmetrization=self.tsne_symmetrization
             )
             # Report the number of vertices with degree 0 in our our umap.graph_
             # This ensures that they were properly disconnected.
@@ -1357,9 +1362,9 @@ class UMAP(BaseEstimator):
                 None,
                 self.angular_rp_forest,
                 self.local_connectivity,
-                True,
                 self.verbose,
-                pseudo_distance=self.pseudo_distance
+                pseudo_distance=self.pseudo_distance,
+                tsne_symmetrization=self.tsne_symmetrization
             )
             # Report the number of vertices with degree 0 in our our umap.graph_
             # This ensures that they were properly disconnected.
@@ -1408,9 +1413,9 @@ class UMAP(BaseEstimator):
                 self._knn_dists,
                 self.angular_rp_forest,
                 self.local_connectivity,
-                True,
                 self.verbose,
-                pseudo_distance=self.pseudo_distance
+                pseudo_distance=self.pseudo_distance,
+                tsne_symmetrization=self.tsne_symmetrization
             )
             # Report the number of vertices with degree 0 in our our umap.graph_
             # This ensures that they were properly disconnected.
