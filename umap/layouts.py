@@ -93,7 +93,9 @@ def _optimize_layout_euclidean_single_epoch(
                 grad_coeff /= a * pow(dist_squared, b) + 1.0
             else:
                 grad_coeff = 0.0
-            # ANDREW - why isn't the rho used in the gradient coefficient here???
+            # ANDREW - rho isn't used in grad coefficient here due to "cheat"
+            # Author said in email that we perform epochs in proportion to
+            # the w(x, y) value
 
             for d in range(dim):
                 grad_d = clip(grad_coeff * (current[d] - other[d]))
@@ -104,6 +106,8 @@ def _optimize_layout_euclidean_single_epoch(
 
             epoch_of_next_sample[i] += epochs_per_sample[i]
 
+            # ANDREW - This accounts for the (1 - w(x, y)) in the repulsive grad coefficient
+            # It's the same trick as the proportional sampling for the attractive force
             n_neg_samples = int(
                 (n - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
             )
@@ -111,7 +115,7 @@ def _optimize_layout_euclidean_single_epoch(
             # ANDREW - UMAP performs multiple repulsive actions for each attractive one!
             # t-SNE, however, gathers the sum of repulsive forces and the sum of attractive forces
             for p in range(n_neg_samples):
-                # ANDREW - Picks random vertex from entire graph and calculates repulsive force
+                # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
                 k = tau_rand_int(rng_state) % n_vertices
                 other = tail_embedding[k]
                 dist_squared = rdist(current, other)

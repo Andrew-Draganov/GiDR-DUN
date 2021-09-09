@@ -173,6 +173,7 @@ def smooth_knn_dist(
         elif non_zero_dists.shape[0] > 0:
             rho[i] = np.max(non_zero_dists)
 
+        # ANDREW - Calculating sigma values
         for n in range(n_iter):
 
             psum = 0.0
@@ -987,6 +988,7 @@ class UMAP(BaseEstimator):
         n_epochs=None,
         learning_rate=1.0,
         init="spectral",
+        tsne_symmetrization=False,
         min_dist=0.1,
         spread=1.0,
         low_memory=True,

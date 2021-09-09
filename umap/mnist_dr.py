@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--random-init', action='store_true', help='whether to initialize randomly')
+parser.add_argument('--tsne-symmetrization', action='store_true', help='whether to symmetrize akin to tSNE method')
 parser.add_argument('--ignore-umap-metric', action='store_true', help='If true, do NOT subtract rho\'s in the umap pseudo-distance metric')
 parser.add_argument('--downsample_stride', type=int, default=10)
 args = parser.parse_args()
@@ -21,7 +22,12 @@ x_train, y_train = x_train[::args.downsample_stride], y_train[::args.downsample_
 num_samples = int(x_train.shape[0])
 x_train = np.reshape(x_train, [num_samples, -1])
 
-dr = UMAP(random_state=12345, init=init, pseudo_distance=(not args.ignore_umap_metric))
+dr = UMAP(
+        random_state=12345,
+        init=init,
+        pseudo_distance=(not args.ignore_umap_metric),
+        tsne_symmetrization=args.tsne_symmetrization
+    )
 print('fitting...')
 dr.fit(x_train)
 projection = dr.transform(x_train)
