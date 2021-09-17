@@ -72,16 +72,18 @@ def _optimize_layout_euclidean_single_epoch(
     epochs_per_negative_sample,
     epoch_of_next_negative_sample,
     epoch_of_next_sample,
-    n,
+    i_epoch,
 ):
+    # ANDREW - If we optimize an edge, then the next epoch we optimize it is
+    #          the current epoch + epochs_per_sample[i] for that edge
+    #        - Basically, for each edge, optimize it every epochs_per_sample steps
     for i in numba.prange(epochs_per_sample.shape[0]):
-        if epoch_of_next_sample[i] <= n:
+        if epoch_of_next_sample[i] <= i_epoch:
             # Gets the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
             j = head[i]
             k = tail[i]
 
             # ANDREW - pick random vertex from knn for calculating attractive force
-            # So the rhos are only used to identify the kNN??
             # t-SNE sums over all knn's attractive forces
             current = head_embedding[j]
             other = tail_embedding[k]
@@ -109,7 +111,7 @@ def _optimize_layout_euclidean_single_epoch(
             # ANDREW - This accounts for the (1 - w(x, y)) in the repulsive grad coefficient
             # It's the same trick as the proportional sampling for the attractive force
             n_neg_samples = int(
-                (n - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
+                (i_epoch - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
             )
 
             # ANDREW - UMAP performs multiple repulsive actions for each attractive one!
@@ -214,7 +216,10 @@ def optimize_layout_euclidean(
     move_other = head_embedding.shape[0] == tail_embedding.shape[0]
     alpha = initial_alpha
 
+    # ANDREW - perform negative samples x times more often
+    #          by making the number of epochs between samples smaller
     epochs_per_negative_sample = epochs_per_sample / negative_sample_rate
+
     epoch_of_next_negative_sample = epochs_per_negative_sample.copy()
     epoch_of_next_sample = epochs_per_sample.copy()
 
@@ -222,7 +227,7 @@ def optimize_layout_euclidean(
         _optimize_layout_euclidean_single_epoch, fastmath=True, parallel=parallel
     )
 
-    for n in range(n_epochs):
+    for i_epoch in range(n_epochs):
         optimize_fn(
             head_embedding,
             tail_embedding,
@@ -240,11 +245,11 @@ def optimize_layout_euclidean(
             epochs_per_negative_sample,
             epoch_of_next_negative_sample,
             epoch_of_next_sample,
-            n,
+            i_epoch,
         )
-        alpha = initial_alpha * (1.0 - (float(n) / float(n_epochs)))
+        alpha = initial_alpha * (1.0 - (float(i_epoch) / float(n_epochs)))
 
-        if verbose and n % int(n_epochs / 10) == 0:
+        if verbose and i_epoch % int(n_epochs / 10) == 0:
             print("\tcompleted ", n, " / ", n_epochs, "epochs")
 
     return head_embedding

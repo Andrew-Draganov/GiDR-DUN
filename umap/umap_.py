@@ -34,8 +34,8 @@ from umap.utils import (
     csr_unique,
     fast_knn_indices,
 )
-from umap.spectral import spectral_layout
-from umap.layouts import optimize_layout_euclidean
+from spectral import spectral_layout
+from layouts import optimize_layout_euclidean
 
 from pynndescent import NNDescent
 from pynndescent.distances import named_distances as pynn_named_distances
@@ -155,7 +155,6 @@ def smooth_knn_dist(
         hi = NPY_INFINITY
         mid = 1.0
 
-        # TODO: This is very inefficient, but will do for now. FIXME
         # ANDREW - Calculate rho values
         ith_distances = distances[i]
         non_zero_dists = ith_distances[ith_distances > 0.0]
@@ -277,7 +276,6 @@ def nearest_neighbors(
         # Note that this does not support sparse distance matrices yet ...
         # Compute indices of n nearest neighbors
         knn_indices = fast_knn_indices(X, n_neighbors)
-        # knn_indices = np.argsort(X)[:, :n_neighbors]
         # Compute the nearest neighbor distances
         #   (equivalent to np.sort(X)[:,:n_neighbors])
         knn_dists = X[np.arange(X.shape[0])[:, None], knn_indices].copy()
@@ -292,7 +290,7 @@ def nearest_neighbors(
         n_iters = max(5, int(round(np.log2(X.shape[0]))))
 
         # ANDREW - t-SNE does NOT use this to find nearest neighbors
-        # Instead, t-SNE with tree-based acceleration instead uses the Barnes-Hut
+        # Instead, t-SNE with tree-based acceleration uses the Barnes-Hut
         # algorithm to approximate the repulsive/attractive forces of distant
         # points by conglomerating them together
         #
@@ -498,6 +496,11 @@ def fuzzy_simplicial_set(
         j) entry of the matrix represents the membership strength of the
         1-simplex between the ith and jth sample points.
     """
+    # To replace UMAP code with tSNE, we want to
+    #   - Make nearest neighbors instead do Barnes-Hut approximations
+    #   - Calculate distances to all nearest neighbors w/ Barnes-Hut
+    #   - compute_membership_strengths should use the tSNE normalizations
+    #       - row-wise and matrix-wise
     if knn_indices is None or knn_dists is None:
         knn_indices, knn_dists, _ = nearest_neighbors(
             X,
@@ -718,6 +721,7 @@ def simplicial_set_embedding(
             np.float32
         )
     else:
+        # ANDREW - this isn't a true random initialization...
         init_data = np.array(init)
         if len(init_data.shape) == 2:
             if np.unique(init_data, axis=0).shape[0] < init_data.shape[0]:
@@ -730,16 +734,23 @@ def simplicial_set_embedding(
             else:
                 embedding = init_data
 
-    epochs_per_sample = make_epochs_per_sample(graph.data, n_epochs)
 
+    # ANDREW - head and tail here represent the indices of nodes that have edges in high-dim
+    #        - So for each edge e_{ij}, head is low-dim embedding of point i and tail
+    #          is low-dim embedding of point j
     head = graph.row
     tail = graph.col
+    # ANDREW - weight is the weight along each of these EDGES
     weight = graph.data
+
+    # ANDREW - get number of epochs that we will optimize this EDGE for
+    epochs_per_sample = make_epochs_per_sample(weight, n_epochs)
 
     rng_state = random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
 
     aux_data = {}
 
+    # ANDREW - renormalize initial embedding to be in range [0, 10]
     embedding = (
         10.0
         * (embedding - np.min(embedding, 0))
