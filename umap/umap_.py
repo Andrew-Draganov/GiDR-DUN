@@ -35,7 +35,6 @@ from utils import (
     fast_knn_indices,
 )
 from spectral import spectral_layout
-from modular_layouts import Optimizer
 from layouts import optimize_layout_euclidean
 
 from pynndescent import NNDescent
@@ -583,6 +582,7 @@ def make_epochs_per_sample(weights, n_epochs):
 
 
 def simplicial_set_embedding(
+    optimize_method,
     data,
     graph,
     n_components,
@@ -750,40 +750,24 @@ def simplicial_set_embedding(
 
     rng_state = random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
     print('optimizing layout...')
-    optimizer = Optimizer(
-        head_embedding=embedding,
-        tail_embedding=embedding,
-        weights=graph.data,
-        head=head,
-        tail=tail,
-        n_epochs=n_epochs,
-        n_vertices=n_vertices,
-        epochs_per_sample=epochs_per_sample,
-        a=a,
-        b=b,
-        rng_state=rng_state,
-        learning_rate=initial_alpha,
-        negative_sample_rate=negative_sample_rate,
+    embedding = optimize_layout_euclidean(
+        optimize_method,
+        embedding,
+        embedding,
+        head,
+        tail,
+        graph.data,
+        n_epochs,
+        n_vertices,
+        epochs_per_sample,
+        a,
+        b,
+        rng_state,
+        initial_alpha,
+        negative_sample_rate,
         parallel=parallel,
         verbose=verbose,
     )
-    embedding = optimizer.optimize_layout_euclidean()
-    # embedding = optimize_layout_euclidean(
-    #     embedding,
-    #     embedding,
-    #     head,
-    #     tail,
-    #     n_epochs,
-    #     n_vertices,
-    #     epochs_per_sample,
-    #     a,
-    #     b,
-    #     rng_state,
-    #     initial_alpha,
-    #     negative_sample_rate,
-    #     parallel=parallel,
-    #     verbose=verbose,
-    # )
 
     return embedding, {}
 
@@ -997,11 +981,12 @@ class UMAP(BaseEstimator):
         n_components=2,
         metric="euclidean",
         output_metric="euclidean",
-        pseudo_distance=True,
         n_epochs=None,
         learning_rate=1.0,
         init="spectral",
+        pseudo_distance=True,
         tsne_symmetrization=False,
+        optimize_method='umap_sampling',
         min_dist=0.1,
         spread=1.0,
         low_memory=True,
@@ -1034,6 +1019,7 @@ class UMAP(BaseEstimator):
         # ANDREW - options for flipping between tSNE and UMAP
         self.tsne_symmetrization = tsne_symmetrization
         self.pseudo_distance = pseudo_distance
+        self.optimize_method = optimize_method
 
         self.spread = spread
         self.min_dist = min_dist
@@ -1461,6 +1447,7 @@ class UMAP(BaseEstimator):
         replaced by subclasses.
         """
         return simplicial_set_embedding(
+            self.optimize_method,
             X,
             self.graph_,
             self.n_components,

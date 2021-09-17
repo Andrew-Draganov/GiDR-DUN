@@ -55,11 +55,13 @@ def rdist(x, y):
     return result
 
 
-def _optimize_layout_euclidean_single_epoch(
+def optimize_through_sampling(
     head_embedding,
     tail_embedding,
     head,
     tail,
+    weights,
+    nonzero_inds,
     n_vertices,
     epochs_per_sample,
     a,
@@ -68,6 +70,7 @@ def _optimize_layout_euclidean_single_epoch(
     dim,
     move_other,
     alpha,
+    negative_sample_rate,
     epochs_per_negative_sample,
     epoch_of_next_negative_sample,
     epoch_of_next_sample,
@@ -76,8 +79,7 @@ def _optimize_layout_euclidean_single_epoch(
     # ANDREW - If we optimize an edge, then the next epoch we optimize it is
     #          the current epoch + epochs_per_sample[i] for that edge
     #        - Basically, for each edge, optimize it every epochs_per_sample steps
-    # for i in numba.prange(epochs_per_sample.shape[0]):
-    for i in range(epochs_per_sample.shape[0]):
+    for i in numba.prange(epochs_per_sample.shape[0]):
         if epoch_of_next_sample[i] <= i_epoch:
             # Gets the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
             j = head[i]
@@ -144,11 +146,97 @@ def _optimize_layout_euclidean_single_epoch(
             )
 
 
-def optimize_layout_euclidean(
+def optimize_uniformly(
     head_embedding,
     tail_embedding,
     head,
     tail,
+    weights,
+    nonzero_inds,
+    n_vertices,
+    epochs_per_sample,
+    a,
+    b,
+    rng_state,
+    dim,
+    move_other,
+    alpha,
+    negative_sample_rate,
+    epochs_per_negative_sample,
+    epoch_of_next_negative_sample,
+    epoch_of_next_sample,
+    i_epoch,
+):
+    # all_grads is where we store summed gradients
+    all_grads = np.zeros_like(head_embedding)
+
+    n_edges = n_vertices * (n_vertices - 1)
+    average_weight = np.sum(weights) / float(n_edges)
+    for i in numba.prange(epochs_per_sample.shape[0]):
+        # Gets the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
+        j = head[i]
+        k = tail[i]
+
+        # ANDREW - pick random vertex from knn for calculating attractive force
+        # t-SNE sums over all knn's attractive forces
+        current = head_embedding[j]
+        other = tail_embedding[k]
+        dist_squared = rdist(current, other)
+
+        if dist_squared > 0.0:
+            # ANDREW - this is the actual attractive force for UMAP
+            grad_coeff = -2.0 * a * b * pow(dist_squared, b - 1.0)
+            grad_coeff /= a * pow(dist_squared, b) + 1.0
+        else:
+            grad_coeff = 0.0
+
+        grad_coeff *= weights[i]
+        for d in range(dim):
+            # ANDREW - tsne doesn't do grad clipping here
+            grad_d = clip(grad_coeff * (current[d] - other[d]))
+            all_grads[j, d] += grad_d
+
+        # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
+        # ANDREW - If we are summing the effects of the forces and multiplying them
+        #   by the weights appropriately, we only need to alternate symmetrically
+        #   between positive and negative forces
+        k = tau_rand_int(rng_state) % n_vertices
+        other = tail_embedding[k]
+        dist_squared = rdist(current, other)
+
+        if dist_squared > 0.0:
+            # ANDREW - this is the actual repulsive force for umap
+            grad_coeff = 2.0 * b
+            grad_coeff /= (0.001 + dist_squared) * (
+                a * pow(dist_squared, b) + 1
+            )
+        else:
+            continue
+
+        # ANDREW - this is an approximation
+        #        - Realistically, we should use the actual weight on
+        #          the edge e_{ik}, but the coo_matrix is not
+        #          indexable. So we assume that they cancel out over
+        #          enough iterations
+        grad_coeff *= (1 - average_weight)
+        for d in range(dim):
+            if grad_coeff > 0.0:
+                grad_d = clip(grad_coeff * (current[d] - other[d]))
+            else:
+                grad_d = 4.0
+            all_grads[j, d] += grad_d
+
+    head_embedding += all_grads * alpha
+
+
+
+def optimize_layout_euclidean(
+    optimize_method,
+    head_embedding,
+    tail_embedding,
+    head,
+    tail,
+    weights,
     n_epochs,
     n_vertices,
     epochs_per_sample,
@@ -210,25 +298,33 @@ def optimize_layout_euclidean(
     dim = head_embedding.shape[1]
     move_other = head_embedding.shape[0] == tail_embedding.shape[0]
     alpha = initial_alpha
+    nonzero_inds = np.stack(weights.nonzero()).T
 
     # ANDREW - perform negative samples x times more often
     #          by making the number of epochs between samples smaller
     epochs_per_negative_sample = epochs_per_sample / negative_sample_rate
-
     epoch_of_next_negative_sample = epochs_per_negative_sample.copy()
     epoch_of_next_sample = epochs_per_sample.copy()
 
-    # optimize_fn = numba.jit(
-    #     _optimize_layout_euclidean_single_epoch,
-    #     fastmath=True,
-    #     parallel=parallel
-    # )
+    single_step_functions = {
+        'umap_sampling': optimize_through_sampling,
+        'umap_uniform': optimize_uniformly
+    }
+    single_step = single_step_functions[optimize_method]
+
+    optimize_fn = numba.njit(
+        single_step,
+        fastmath=True,
+        parallel=parallel
+    )
     for i_epoch in range(n_epochs):
-        _optimize_layout_euclidean_single_epoch(
+        optimize_fn(
             head_embedding,
             tail_embedding,
             head,
             tail,
+            weights,
+            nonzero_inds,
             n_vertices,
             epochs_per_sample,
             a,
@@ -237,6 +333,7 @@ def optimize_layout_euclidean(
             dim,
             move_other,
             alpha,
+            negative_sample_rate,
             epochs_per_negative_sample,
             epoch_of_next_negative_sample,
             epoch_of_next_sample,
@@ -248,3 +345,4 @@ def optimize_layout_euclidean(
             print("\tcompleted ", n, " / ", n_epochs, "epochs")
 
     return head_embedding
+
