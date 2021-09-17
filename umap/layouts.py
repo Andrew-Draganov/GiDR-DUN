@@ -1,7 +1,7 @@
 import numpy as np
 import numba
-import umap.distances as dist
-from umap.utils import tau_rand_int
+import distances as dist
+from utils import tau_rand_int
 
 @numba.njit()
 def clip(val):
@@ -65,7 +65,6 @@ def _optimize_layout_euclidean_single_epoch(
     a,
     b,
     rng_state,
-    gamma,
     dim,
     move_other,
     alpha,
@@ -77,7 +76,8 @@ def _optimize_layout_euclidean_single_epoch(
     # ANDREW - If we optimize an edge, then the next epoch we optimize it is
     #          the current epoch + epochs_per_sample[i] for that edge
     #        - Basically, for each edge, optimize it every epochs_per_sample steps
-    for i in numba.prange(epochs_per_sample.shape[0]):
+    # for i in numba.prange(epochs_per_sample.shape[0]):
+    for i in range(epochs_per_sample.shape[0]):
         if epoch_of_next_sample[i] <= i_epoch:
             # Gets the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
             j = head[i]
@@ -100,11 +100,9 @@ def _optimize_layout_euclidean_single_epoch(
             # the w(x, y) value
 
             for d in range(dim):
+                # ANDREW - tsne doesn't do grad clipping here
                 grad_d = clip(grad_coeff * (current[d] - other[d]))
-
                 current[d] += grad_d * alpha
-                if move_other:
-                    other[d] += -grad_d * alpha
 
             epoch_of_next_sample[i] += epochs_per_sample[i]
 
@@ -124,7 +122,7 @@ def _optimize_layout_euclidean_single_epoch(
 
                 if dist_squared > 0.0:
                     # ANDREW - this is the actual repulsive force for umap
-                    grad_coeff = 2.0 * gamma * b
+                    grad_coeff = 2.0 * b
                     grad_coeff /= (0.001 + dist_squared) * (
                         a * pow(dist_squared, b) + 1
                     )
@@ -157,7 +155,6 @@ def optimize_layout_euclidean(
     a,
     b,
     rng_state,
-    gamma=1.0,
     initial_alpha=1.0,
     negative_sample_rate=5.0,
     parallel=False,
@@ -194,8 +191,6 @@ def optimize_layout_euclidean(
         Parameter of differentiable approximation of right adjoint functor
     rng_state: array of int64, shape (3,)
         The internal state of the rng
-    gamma: float (optional, default 1.0)
-        Weight to apply to negative samples.
     initial_alpha: float (optional, default 1.0)
         Initial learning rate for the SGD.
     negative_sample_rate: int (optional, default 5)
@@ -223,12 +218,13 @@ def optimize_layout_euclidean(
     epoch_of_next_negative_sample = epochs_per_negative_sample.copy()
     epoch_of_next_sample = epochs_per_sample.copy()
 
-    optimize_fn = numba.njit(
-        _optimize_layout_euclidean_single_epoch, fastmath=True, parallel=parallel
-    )
-
+    # optimize_fn = numba.jit(
+    #     _optimize_layout_euclidean_single_epoch,
+    #     fastmath=True,
+    #     parallel=parallel
+    # )
     for i_epoch in range(n_epochs):
-        optimize_fn(
+        _optimize_layout_euclidean_single_epoch(
             head_embedding,
             tail_embedding,
             head,
@@ -238,7 +234,6 @@ def optimize_layout_euclidean(
             a,
             b,
             rng_state,
-            gamma,
             dim,
             move_other,
             alpha,

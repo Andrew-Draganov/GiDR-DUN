@@ -26,15 +26,16 @@ from scipy.sparse import tril as sparse_tril, triu as sparse_triu
 import scipy.sparse.csgraph
 import numba
 
-import umap.distances as dist
+import distances as dist
 
-from umap.utils import (
+from utils import (
     submatrix,
     ts,
     csr_unique,
     fast_knn_indices,
 )
 from spectral import spectral_layout
+from modular_layouts import Optimizer
 from layouts import optimize_layout_euclidean
 
 from pynndescent import NNDescent
@@ -588,7 +589,6 @@ def simplicial_set_embedding(
     initial_alpha,
     a,
     b,
-    gamma,
     negative_sample_rate,
     n_epochs,
     init,
@@ -625,9 +625,6 @@ def simplicial_set_embedding(
 
     b: float
         Parameter of differentiable approximation of right adjoint functor
-
-    gamma: float
-        Weight to apply to negative samples.
 
     negative_sample_rate: int (optional, default 5)
         The number of negative samples to select per positive sample
@@ -740,15 +737,9 @@ def simplicial_set_embedding(
     #          is low-dim embedding of point j
     head = graph.row
     tail = graph.col
-    # ANDREW - weight is the weight along each of these EDGES
-    weight = graph.data
 
     # ANDREW - get number of epochs that we will optimize this EDGE for
-    epochs_per_sample = make_epochs_per_sample(weight, n_epochs)
-
-    rng_state = random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
-
-    aux_data = {}
+    epochs_per_sample = make_epochs_per_sample(graph.data, n_epochs)
 
     # ANDREW - renormalize initial embedding to be in range [0, 10]
     embedding = (
@@ -757,26 +748,44 @@ def simplicial_set_embedding(
         / (np.max(embedding, 0) - np.min(embedding, 0))
     ).astype(np.float32, order="C")
 
+    rng_state = random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
     print('optimizing layout...')
-    embedding = optimize_layout_euclidean(
-        embedding,
-        embedding,
-        head,
-        tail,
-        n_epochs,
-        n_vertices,
-        epochs_per_sample,
-        a,
-        b,
-        rng_state,
-        gamma,
-        initial_alpha,
-        negative_sample_rate,
+    optimizer = Optimizer(
+        head_embedding=embedding,
+        tail_embedding=embedding,
+        weights=graph.data,
+        head=head,
+        tail=tail,
+        n_epochs=n_epochs,
+        n_vertices=n_vertices,
+        epochs_per_sample=epochs_per_sample,
+        a=a,
+        b=b,
+        rng_state=rng_state,
+        learning_rate=initial_alpha,
+        negative_sample_rate=negative_sample_rate,
         parallel=parallel,
         verbose=verbose,
     )
+    embedding = optimizer.optimize_layout_euclidean()
+    # embedding = optimize_layout_euclidean(
+    #     embedding,
+    #     embedding,
+    #     head,
+    #     tail,
+    #     n_epochs,
+    #     n_vertices,
+    #     epochs_per_sample,
+    #     a,
+    #     b,
+    #     rng_state,
+    #     initial_alpha,
+    #     negative_sample_rate,
+    #     parallel=parallel,
+    #     verbose=verbose,
+    # )
 
-    return embedding, aux_data
+    return embedding, {}
 
 
 @numba.njit()
@@ -913,11 +922,6 @@ class UMAP(BaseEstimator):
         locally. In practice this should be not more than the local intrinsic
         dimension of the manifold.
 
-    repulsion_strength: float (optional, default 1.0)
-        Weighting applied to negative samples in low dimensional embedding
-        optimization. Values higher than one will result in greater weight
-        being given to negative samples.
-
     negative_sample_rate: int (optional, default 5)
         The number of negative samples to select per positive sample
         in the optimization process. Increasing this value will result
@@ -985,12 +989,6 @@ class UMAP(BaseEstimator):
         For to map from internal structures back to your data use the variable
         _unique_inverse_.
 
-    disconnection_distance: float (optional, default np.inf or maximal value for bounded distances)
-        Disconnect any vertices of distance greater than or equal to disconnection_distance when approximating the
-        manifold via our k-nn graph. This is particularly useful in the case that you have a bounded metric.  The
-        UMAP assumption that we have a connected manifold can be problematic when you have points that are maximally
-        different from all the rest of your data.  The connected manifold assumption will make such points have perfect
-        similarity to a random set of other points.  Too many such points will artificially connect your space.
     """
 
     def __init__(
@@ -1009,7 +1007,6 @@ class UMAP(BaseEstimator):
         low_memory=True,
         n_jobs=-1,
         local_connectivity=1.0,
-        repulsion_strength=1.0,
         negative_sample_rate=5,
         transform_queue_size=4.0,
         a=None,
@@ -1024,19 +1021,19 @@ class UMAP(BaseEstimator):
         force_approximation_algorithm=False,
         verbose=False,
         unique=False,
-        disconnection_distance=None,
     ):
         self.n_neighbors = n_neighbors
         self.metric = metric
         self.output_metric = output_metric
         self.target_metric = target_metric
-        self.pseudo_distance = pseudo_distance
         self.n_epochs = n_epochs
         self.init = init
-        self.tsne_symmetrization = tsne_symmetrization
         self.n_components = n_components
-        self.repulsion_strength = repulsion_strength
         self.learning_rate = learning_rate
+
+        # ANDREW - options for flipping between tSNE and UMAP
+        self.tsne_symmetrization = tsne_symmetrization
+        self.pseudo_distance = pseudo_distance
 
         self.spread = spread
         self.min_dist = min_dist
@@ -1061,8 +1058,6 @@ class UMAP(BaseEstimator):
         self.b = b
 
     def _validate_parameters(self):
-        if self.repulsion_strength < 0.0:
-            raise ValueError("repulsion_strength cannot be negative")
         if self.min_dist > self.spread:
             raise ValueError("min_dist must be less than or equal to spread")
         if self.min_dist < 0.0:
@@ -1183,7 +1178,6 @@ class UMAP(BaseEstimator):
 
         self.init = flattened([m.init for m in models])
         self.n_components = flattened([m.n_components for m in models])
-        self.repulsion_strength = flattened([m.repulsion_strength for m in models])
         self.learning_rate = flattened([m.learning_rate for m in models])
 
         self.spread = flattened([m.spread for m in models])
@@ -1352,9 +1346,6 @@ class UMAP(BaseEstimator):
                         X[index],
                         metric=self._input_distance_func,
                     )
-            # set any values greater than disconnection_distance to be np.inf.
-            # This will have no effect when _disconnection_distance is not set since it defaults to np.inf.
-            dmat[dmat >= self._disconnection_distance] = np.inf
 
             # ANDREW - if the input is too small, the metric is PRECOMPUTED
             # This means we will NOT do nearest neighbor descent
@@ -1476,7 +1467,6 @@ class UMAP(BaseEstimator):
             self._initial_alpha,
             self._a,
             self._b,
-            self.repulsion_strength,
             self.negative_sample_rate,
             n_epochs,
             init,
@@ -1597,8 +1587,6 @@ class UMAP(BaseEstimator):
             )
 
         dists = dists.astype(np.float32, order="C")
-        # Remove any nearest neighbours who's distances are greater than our disconnection_distance
-        indices[dists >= self._disconnection_distance] = -1
         adjusted_local_connectivity = max(0.0, self.local_connectivity - 1.0)
         sigmas, rhos = smooth_knn_dist(
             dists,
