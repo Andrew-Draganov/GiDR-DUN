@@ -31,6 +31,12 @@ parser.add_argument(
     '--downsample-stride',
     type=int,
     default=15
+    default=10
+)
+parser.add_argument(
+    '--tsne-weights',
+    action='store_true',
+    help='If present, set a and b to tSNE values'
 )
 parser.add_argument(
     '--dr-algorithm',
@@ -51,6 +57,11 @@ x_train, y_train = x_train[::args.downsample_stride], y_train[::args.downsample_
 num_samples = int(x_train.shape[0])
 x_train = np.reshape(x_train, [num_samples, -1])
 
+if args.tsne_weights:
+    a, b = 1, 1
+else:
+    a, b = None, None
+
 if args.dr_algorithm == 'umap':
     dr = UMAP(
             random_state=12345,
@@ -58,6 +69,8 @@ if args.dr_algorithm == 'umap':
             pseudo_distance=(not args.ignore_umap_metric),
             tsne_symmetrization=args.tsne_symmetrization,
             optimize_method=args.optimize_method,
+            a=a,
+            b=b,
         )
 else:
     dr = TSNE(random_state=12345)
