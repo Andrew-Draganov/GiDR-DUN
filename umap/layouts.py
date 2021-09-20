@@ -1,6 +1,7 @@
 import numpy as np
 import numba
 import distances as dist
+from sklearn.neighbors._quad_tree import _QuadTree
 from utils import tau_rand_int
 
 @numba.njit()
@@ -110,6 +111,7 @@ def optimize_through_sampling(
 
             # ANDREW - This accounts for the (1 - w(x, y)) in the repulsive grad coefficient
             # It's the same trick as the proportional sampling for the attractive force
+            # ...I don't fully understand how this code performs that function
             n_neg_samples = int(
                 (i_epoch - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
             )
@@ -145,6 +147,86 @@ def optimize_through_sampling(
                 n_neg_samples * epochs_per_negative_sample[i]
             )
 
+def optimize_barnes_hut(
+    head_embedding,
+    tail_embedding,
+    head,
+    tail,
+    weights,
+    nonzero_inds,
+    n_vertices,
+    epochs_per_sample,
+    a,
+    b,
+    rng_state,
+    dim,
+    move_other,
+    alpha,
+    negative_sample_rate,
+    epochs_per_negative_sample,
+    epoch_of_next_negative_sample,
+    epoch_of_next_sample,
+    i_epoch,
+):
+    pos_grads = np.zeros_like(head_embedding)
+    neg_grads = np.zeros_like(head_embedding)
+
+    qt = _QuadTree(dim, 1)
+    # FIXME - do I need copy?
+    tree_embedding = head_embedding.copy()
+    qt.build_tree(tree_embedding)
+    offset = dim + 2
+    deg_freedom = 1
+    summary = np.zeros([n_vertices * offset])
+    sum_Q = 0
+
+    n_edges = n_vertices * (n_vertices - 1)
+    average_weight = np.sum(weights) / float(n_edges)
+    for i in range(epochs_per_sample.shape[0]):
+        # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
+        j = head[i]
+        k = tail[i]
+
+        # ANDREW - pick random vertex from knn for calculating attractive force
+        # t-SNE sums over all knn's attractive forces
+        current = head_embedding[j]
+        other = tail_embedding[k]
+        dist_squared = rdist(current, other)
+
+        if dist_squared > 0.0:
+            # ANDREW - this is the actual attractive force for UMAP
+            grad_coeff = -2.0 * a * b * pow(dist_squared, b - 1.0)
+            grad_coeff /= a * pow(dist_squared, b) + 1.0
+        else:
+            grad_coeff = 0.0
+
+        grad_coeff *= weights[i]
+        for d in range(dim):
+            pos_grad = clip(grad_coeff * (current[d] - other[d]))
+            pos_grads[j, d] += pos_grad
+
+        # Get necessary data regarding current point and the quadtree cells
+        idj = qt.summarize(current, summary, 0.25) # 0.25 = theta^2
+
+        # For each cell that pertains to the current point
+        for l in range(idj // offset):
+            cell_dist = summary[l * offset + dim]
+            cell_size = summary[l * offset + dim + 1]
+            qijZ = deg_freedom / (deg_freedom + cell_dist)
+
+            if deg_freedom != 1:
+                qijZ = qijZ ** ((deg_freedom + 1) / 2)
+
+            sum_Q += size * qijZ
+            mult = size * qijZ * qijZ
+            for d in range(dim):
+                neg_grad = mult * summary[j * offset: j * offset + dim]
+                neg_grads[i, d] += neg_grad
+
+    all_grads = pos_grads + neg_grads / sum_Q
+    head_embedding += all_grads * alpha
+
+
 
 def optimize_uniformly(
     head_embedding,
@@ -173,7 +255,7 @@ def optimize_uniformly(
     n_edges = n_vertices * (n_vertices - 1)
     average_weight = np.sum(weights) / float(n_edges)
     for i in numba.prange(epochs_per_sample.shape[0]):
-        # Gets the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
+        # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
         j = head[i]
         k = tail[i]
 
@@ -192,7 +274,6 @@ def optimize_uniformly(
 
         grad_coeff *= weights[i]
         for d in range(dim):
-            # ANDREW - tsne doesn't do grad clipping here
             grad_d = clip(grad_coeff * (current[d] - other[d]))
             all_grads[j, d] += grad_d
 
@@ -306,17 +387,21 @@ def optimize_layout_euclidean(
     epoch_of_next_negative_sample = epochs_per_negative_sample.copy()
     epoch_of_next_sample = epochs_per_sample.copy()
 
-    single_step_functions = {
-        'umap_sampling': optimize_through_sampling,
-        'umap_uniform': optimize_uniformly
-    }
-    single_step = single_step_functions[optimize_method]
 
-    optimize_fn = numba.njit(
-        single_step,
-        fastmath=True,
-        parallel=parallel
-    )
+    if optimize_method != 'barnes_hut':
+        single_step_functions = {
+            'umap_sampling': optimize_through_sampling,
+            'umap_uniform': optimize_uniformly,
+        }
+        single_step = single_step_functions[optimize_method]
+        optimize_fn = numba.njit(
+            single_step,
+            fastmath=True,
+            parallel=parallel
+        )
+    else:
+        optimize_fn = optimize_barnes_hut
+
     for i_epoch in range(n_epochs):
         optimize_fn(
             head_embedding,

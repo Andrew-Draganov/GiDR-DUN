@@ -6,12 +6,38 @@ from sklearn.manifold import TSNE
 from matplotlib import pyplot as plt
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--random-init', action='store_true', help='whether to initialize randomly')
-parser.add_argument('--tsne-symmetrization', action='store_true', help='whether to symmetrize akin to tSNE method')
-parser.add_argument('--ignore-umap-metric', action='store_true', help='If true, do NOT subtract rho\'s in the umap pseudo-distance metric')
-parser.add_argument('--optimize-method', choices=['umap_sampling', 'umap_uniform'], default='umap_sampling', help='Which optimization algorithm to use')
-parser.add_argument('--downsample-stride', type=int, default=10)
-parser.add_argument('--dr-algorithm', choices=['umap', 'tsne'], default='umap', help='Which algorithm to use to save images')
+parser.add_argument(
+    '--random-init',
+    action='store_true',
+    help='whether to initialize randomly'
+)
+parser.add_argument(
+    '--tsne-symmetrization',
+    action='store_true',
+    help='whether to symmetrize akin to tSNE method'
+)
+parser.add_argument(
+    '--ignore-umap-metric',
+    action='store_true',
+    help='If true, do NOT subtract rho\'s in the umap pseudo-distance metric'
+)
+parser.add_argument(
+    '--optimize-method',
+    choices=['umap_sampling', 'umap_uniform', 'barnes_hut'],
+    default='umap_sampling',
+    help='Which optimization algorithm to use'
+)
+parser.add_argument(
+    '--downsample-stride',
+    type=int,
+    default=10
+)
+parser.add_argument(
+    '--dr-algorithm',
+    choices=['umap', 'tsne'],
+    default='umap',
+    help='Which algorithm to use to save images'
+)
 args = parser.parse_args()
 
 init = 'spectral'

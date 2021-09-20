@@ -179,8 +179,8 @@ def smooth_knn_dist(
             for j in range(1, distances.shape[1]):
                 # ANDREW - when adding option for turning UMAP pseudo distance on/off,
                 #   an equivalent change needs to occur here!!
-                # FIXME FIXME FIXME -- does this just rotate everything 180 degrees??
-                # Images imply that it does
+                # FIXME - this if-statement broke the nndescent_umap_test
+                #       - it appears that it simply rotates the images around?
                 if pseudo_distance:
                     d = distances[i, j] - rho[i]
                 else:
