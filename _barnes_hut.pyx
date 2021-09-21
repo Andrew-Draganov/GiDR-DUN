@@ -73,7 +73,7 @@ cdef calculate_barnes_hut_umap(
         long offset = dim + 2
 
     # Allocte memory for data structures
-    summary = <float*> malloc(sizeof(float) * n_vertices * offset)
+    cell_summaries = <float*> malloc(sizeof(float) * n_vertices * offset)
     current = <float*> malloc(sizeof(float) * dim)
     other = <float*> malloc(sizeof(float) * dim)
     cdef np.ndarray[double, mode="c", ndim=2] pos_grads = np.zeros([n_vertices, dim])
@@ -110,12 +110,12 @@ cdef calculate_barnes_hut_umap(
         # Get necessary data regarding current point and the quadtree cells
         for d in range(dim):
             current[d] = head_embedding[j, d]
-        idj = qt.summarize(current, summary, 0.25) # 0.25 = theta^2
+        idj = qt.summarize(current, cell_summaries, 0.25) # 0.25 = theta^2
 
         # For each quadtree cell with respect to the current point
         for j in range(idj // offset):
-            cell_dist = summary[j * offset + dim]
-            cell_size = summary[j * offset + dim + 1]
+            cell_dist = cell_summaries[j * offset + dim]
+            cell_size = cell_summaries[j * offset + dim + 1]
 
             if cell_dist > 0.0:
                 grad_scalar = 2.0 * b
@@ -126,12 +126,12 @@ cdef calculate_barnes_hut_umap(
 
             grad_scalar *= (1 - average_weight) * cell_size
             for d in range(dim):
-                neg_grads[j][d] += grad_scalar * summary[j * offset + d]
+                neg_grads[j][d] += grad_scalar * cell_summaries[j * offset + d]
 
     for i in range(n_vertices):
         for j in range(dim):
             grads[i][j] = pos_grads[i][j] - neg_grads[i][j] / sum_Q
-            head_embedding[i][j] += grads[i][j] * alpha
+            head_embedding[i][j] -= grads[i][j] * alpha
 
     return grads
 
@@ -152,12 +152,12 @@ cdef calculate_barnes_hut_tsne(
 ):
     cdef:
         double qijZ, sum_Q = 0
-        int i, j, iy_1, iy_2
+        int v, i_cell, d, idj, edge, node_1_index, node_2_index
         float cell_size, cell_dist, grad_scalar
         long offset = dim + 2
 
     # Allocate memory for data structures
-    summary = <float*> malloc(sizeof(float) * n_vertices * offset)
+    cell_summaries = <float*> malloc(sizeof(float) * n_vertices * offset)
     node_1 = <float*> malloc(sizeof(float) * dim)
     node_2 = <float*> malloc(sizeof(float) * dim)
     cdef np.ndarray[double, mode="c", ndim=2] pos_grads = np.zeros([n_vertices, dim])
@@ -168,21 +168,19 @@ cdef calculate_barnes_hut_tsne(
         # Get necessary data regarding current point and the quadtree cells
         for d in range(dim):
             node_1[d] = head_embedding[v, d]
-        idj = qt.summarize(node_1, summary, 0.25) # 0.25 = theta^2
+        idj = qt.summarize(node_1, cell_summaries, 0.25) # 0.25 = theta^2
 
         # For each cell that pertains to the current point:
         for i_cell in range(idj // offset):
-            cell_dist = summary[i_cell * offset + dim]
-            cell_size = summary[i_cell * offset + dim + 1]
+            cell_dist = cell_summaries[i_cell * offset + dim]
+            cell_size = cell_summaries[i_cell * offset + dim + 1]
 
             # tsne weight calculation:
             qijZ = 1 / (1 + cell_dist)
             sum_Q += cell_size * qijZ
             grad_scalar = cell_size * qijZ * qijZ
             for d in range(dim):
-                neg_grads[v][d] += grad_scalar * summary[i_cell * offset + d]
-
-    neg_grads /= sum_Q
+                neg_grads[v][d] += grad_scalar * cell_summaries[i_cell * offset + d]
 
     # Get positive force gradients
     for edge in range(epochs_per_sample.shape[0]):
@@ -198,11 +196,13 @@ cdef calculate_barnes_hut_tsne(
         for d in range(dim):
             pos_grads[node_1_index][d] += grad_scalar * (node_1[d] - node_2[d])
 
+    neg_grads *= 4 / sum_Q
+    pos_grads *= 4
+
     for v in range(n_vertices):
         for d in range(dim):
-            # Perform tSNE normalizations here
             grads[v][d] = (pos_grads[v][d] - neg_grads[v][d]) + 0.9 * grads[v][d]
-            head_embedding[v][d] += grads[v][d] * alpha
+            head_embedding[v][d] -= grads[v][d] * alpha
 
     return grads
 

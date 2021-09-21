@@ -48,6 +48,16 @@ parser.add_argument(
     default='umap',
     help='Which algorithm to use to save images'
 )
+parser.add_argument(
+    '--n-neighbors',
+    type=int,
+    default=15
+)
+parser.add_argument(
+    '--n-epochs',
+    type=int,
+    default=500
+)
 args = parser.parse_args()
 
 init = 'spectral'
@@ -68,6 +78,8 @@ else:
 
 if args.dr_algorithm == 'umap':
     dr = UMAP(
+            n_neighbors=args.n_neighbors,
+            n_epochs=args.n_epochs,
             random_state=12345,
             init=init,
             pseudo_distance=(not args.ignore_umap_metric),

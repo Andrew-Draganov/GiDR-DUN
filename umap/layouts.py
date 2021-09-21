@@ -347,7 +347,6 @@ def optimize_layout_euclidean(
 
     dim = head_embedding.shape[1]
     move_other = head_embedding.shape[0] == tail_embedding.shape[0]
-    alpha = initial_alpha
     nonzero_inds = np.stack(weights.nonzero()).T
     weights = weights.astype(np.float32)
     grads = np.zeros([n_vertices, dim], dtype=np.float64)
@@ -378,12 +377,14 @@ def optimize_layout_euclidean(
             # tSNE paper states that they normalize by ROW
             # HOWEVER - they normalize by the entire matrix!
             weights /= np.sum(weights)
+
+            # Set learning rate to tSNE default
             initial_alpha = 200
-            alpha = 200
             umap_flag = 0
 
         optimize_fn = barnes_hut_opt
 
+    alpha = initial_alpha
     for i_epoch in range(n_epochs):
         print(i_epoch)
         grads = optimize_fn(

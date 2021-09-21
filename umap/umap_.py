@@ -174,7 +174,6 @@ def smooth_knn_dist(
 
         # ANDREW - Calculating sigma values
         for n in range(n_iter):
-
             psum = 0.0
             for j in range(1, distances.shape[1]):
                 # ANDREW - when adding option for turning UMAP pseudo distance on/off,
@@ -203,7 +202,6 @@ def smooth_knn_dist(
                     mid *= 2
                 else:
                     mid = (lo + hi) / 2.0
-
         sigmas[i] = mid
 
         # TODO: This is very inefficient, but will do for now. FIXME
@@ -290,14 +288,6 @@ def nearest_neighbors(
         n_iters = max(5, int(round(np.log2(X.shape[0]))))
 
         # ANDREW - t-SNE does NOT use this to find nearest neighbors
-        # Instead, t-SNE with tree-based acceleration uses the Barnes-Hut
-        # algorithm to approximate the repulsive/attractive forces of distant
-        # points by conglomerating them together
-        #
-        # Thus, t-SNE still tries to use all the points via heuristic estimates
-        # while UMAP only operates on nearest neighbors and finds them with NNDescent
-        #
-        # In practice, can we replace the fast_knn_indices with the Barnes-Hut approximation?
         knn_search_index = NNDescent(
             X,
             n_neighbors=n_neighbors,
