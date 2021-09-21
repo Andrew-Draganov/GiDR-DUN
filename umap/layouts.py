@@ -79,6 +79,7 @@ def optimize_through_sampling(
     epoch_of_next_negative_sample,
     epoch_of_next_sample,
     i_epoch,
+    umap_flag
 ):
     # ANDREW - If we optimize an edge, then the next epoch we optimize it is
     #          the current epoch + epochs_per_sample[i] for that edge
@@ -150,7 +151,7 @@ def optimize_through_sampling(
                 n_neg_samples * epochs_per_negative_sample[i]
             )
 
-def optimize_barnes_hut(
+def barnes_hut_opt(
     head_embedding,
     tail_embedding,
     head,
@@ -170,8 +171,9 @@ def optimize_barnes_hut(
     epoch_of_next_negative_sample,
     epoch_of_next_sample,
     i_epoch,
+    umap_flag    
 ):
-    barnes_hut.calc_barnes_hut_wrapper(
+    barnes_hut.bh_wrapper(
         head_embedding,
         tail_embedding,
         head,
@@ -183,9 +185,8 @@ def optimize_barnes_hut(
         dim,
         n_vertices,
         alpha,
-        umap=0
+        umap_flag
     )
-
 
 
 def optimize_uniformly(
@@ -208,6 +209,7 @@ def optimize_uniformly(
     epoch_of_next_negative_sample,
     epoch_of_next_sample,
     i_epoch,
+    umap_flag
 ):
     # all_grads is where we store summed gradients
     all_grads = np.zeros_like(head_embedding)
@@ -340,6 +342,7 @@ def optimize_layout_euclidean(
     move_other = head_embedding.shape[0] == tail_embedding.shape[0]
     alpha = initial_alpha
     nonzero_inds = np.stack(weights.nonzero()).T
+    weights = weights.astype(np.float32)
 
     # ANDREW - perform negative samples x times more often
     #          by making the number of epochs between samples smaller
@@ -348,7 +351,8 @@ def optimize_layout_euclidean(
     epoch_of_next_sample = epochs_per_sample.copy()
 
 
-    if optimize_method != 'barnes_hut':
+    umap_flag = 1
+    if 'barnes_hut' not in optimize_method:
         single_step_functions = {
             'umap_sampling': optimize_through_sampling,
             'umap_uniform': optimize_uniformly,
@@ -360,7 +364,16 @@ def optimize_layout_euclidean(
             parallel=parallel
         )
     else:
-        optimize_fn = optimize_barnes_hut
+        # Need to normalize high dimensional relationships by row
+        if optimize_method == 'barnes_hut_tsne':
+            # Perform tsne high-dimensional normalization
+            # tSNE paper states that they normalize by ROW
+            # HOWEVER - they normalize by the entire matrix!
+            weights /= np.sum(weights)
+            alpha = 200
+            umap_flag = 0
+
+        optimize_fn = barnes_hut_opt
 
     for i_epoch in range(n_epochs):
         print(i_epoch)
@@ -384,6 +397,7 @@ def optimize_layout_euclidean(
             epoch_of_next_negative_sample,
             epoch_of_next_sample,
             i_epoch,
+            umap_flag
         )
         alpha = initial_alpha * (1.0 - (float(i_epoch) / float(n_epochs)))
 

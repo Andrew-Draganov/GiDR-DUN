@@ -23,7 +23,12 @@ parser.add_argument(
 )
 parser.add_argument(
     '--optimize-method',
-    choices=['umap_sampling', 'umap_uniform', 'barnes_hut'],
+    choices=[
+        'umap_sampling',
+        'umap_uniform',
+        'barnes_hut_tsne',
+        'barnes_hut_umap'
+    ],
     default='umap_sampling',
     help='Which optimization algorithm to use'
 )
@@ -31,7 +36,6 @@ parser.add_argument(
     '--downsample-stride',
     type=int,
     default=15
-    default=10
 )
 parser.add_argument(
     '--tsne-weights',
