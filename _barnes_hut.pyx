@@ -57,6 +57,7 @@ cdef calculate_barnes_hut_umap(
         np.int32_t[:] head,
         np.int32_t[:] tail,
         np.float32_t[:] weights,
+        np.float64_t[:, :] grads,
         np.float64_t[:] epochs_per_sample,
         _QuadTree qt,
         float a,
@@ -129,8 +130,10 @@ cdef calculate_barnes_hut_umap(
 
     for i in range(n_vertices):
         for j in range(dim):
-            all_grads[i][j] = pos_grads[i][j] - neg_grads[i][j] / sum_Q
-            head_embedding[i][j] += all_grads[i][j] * alpha
+            grads[i][j] = pos_grads[i][j] - neg_grads[i][j] / sum_Q
+            head_embedding[i][j] += grads[i][j] * alpha
+
+    return grads
 
 cdef calculate_barnes_hut_tsne(
         np.float32_t[:, :] head_embedding,
@@ -138,6 +141,7 @@ cdef calculate_barnes_hut_tsne(
         np.int32_t[:] head,
         np.int32_t[:] tail,
         np.float32_t[:] weights,
+        np.float64_t[:, :] grads,
         np.float64_t[:] epochs_per_sample,
         _QuadTree qt,
         float a,
@@ -152,13 +156,12 @@ cdef calculate_barnes_hut_tsne(
         float cell_size, cell_dist, grad_scalar
         long offset = dim + 2
 
-    # Allocte memory for data structures
+    # Allocate memory for data structures
     summary = <float*> malloc(sizeof(float) * n_vertices * offset)
     node_1 = <float*> malloc(sizeof(float) * dim)
     node_2 = <float*> malloc(sizeof(float) * dim)
     cdef np.ndarray[double, mode="c", ndim=2] pos_grads = np.zeros([n_vertices, dim])
     cdef np.ndarray[double, mode="c", ndim=2] neg_grads = np.zeros([n_vertices, dim])
-    cdef np.ndarray[double, mode="c", ndim=2] all_grads = np.zeros([n_vertices, dim])
 
     # Get negative force gradients
     for v in range(n_vertices):
@@ -198,8 +201,10 @@ cdef calculate_barnes_hut_tsne(
     for v in range(n_vertices):
         for d in range(dim):
             # Perform tSNE normalizations here
-            all_grads[v][d] = pos_grads[v][d] - neg_grads[v][d]
-            head_embedding[v][d] += all_grads[v][d] * alpha
+            grads[v][d] = (pos_grads[v][d] - neg_grads[v][d]) + 0.9 * grads[v][d]
+            head_embedding[v][d] += grads[v][d] * alpha
+
+    return grads
 
 def bh_wrapper(
         np.float32_t[:, :] head_embedding,
@@ -207,6 +212,7 @@ def bh_wrapper(
         np.int32_t[:] head,
         np.int32_t[:] tail,
         np.float32_t[:] weights,
+        np.float64_t[:, :] grads,
         np.float64_t[:] epochs_per_sample,
         float a,
         float b,
@@ -218,12 +224,13 @@ def bh_wrapper(
     cdef _QuadTree qt = _QuadTree(dim, 1)
     qt.build_tree(head_embedding)
     if umap_flag == 0:
-        calculate_barnes_hut_tsne(
+        return calculate_barnes_hut_tsne(
             head_embedding,
             tail_embedding,
             head,
             tail,
             weights,
+            grads,
             epochs_per_sample,
             qt,
             a,
@@ -233,12 +240,13 @@ def bh_wrapper(
             alpha
         )
     else:
-        calculate_barnes_hut_umap(
+        return calculate_barnes_hut_umap(
             head_embedding,
             tail_embedding,
             head,
             tail,
             weights,
+            grads,
             epochs_per_sample,
             qt,
             a,

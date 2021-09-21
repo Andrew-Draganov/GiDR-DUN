@@ -65,6 +65,7 @@ def optimize_through_sampling(
     head,
     tail,
     weights,
+    grads,
     nonzero_inds,
     n_vertices,
     epochs_per_sample,
@@ -151,12 +152,15 @@ def optimize_through_sampling(
                 n_neg_samples * epochs_per_negative_sample[i]
             )
 
+    return grads
+
 def barnes_hut_opt(
     head_embedding,
     tail_embedding,
     head,
     tail,
     weights,
+    grads,
     nonzero_inds,
     n_vertices,
     epochs_per_sample,
@@ -173,12 +177,13 @@ def barnes_hut_opt(
     i_epoch,
     umap_flag    
 ):
-    barnes_hut.bh_wrapper(
+    return barnes_hut.bh_wrapper(
         head_embedding,
         tail_embedding,
         head,
         tail,
         weights,
+        grads,
         epochs_per_sample,
         a,
         b,
@@ -195,6 +200,7 @@ def optimize_uniformly(
     head,
     tail,
     weights,
+    grads,
     nonzero_inds,
     n_vertices,
     epochs_per_sample,
@@ -270,6 +276,7 @@ def optimize_uniformly(
             all_grads[j, d] += grad_d
 
     head_embedding += all_grads * alpha
+    return grads
 
 
 
@@ -343,6 +350,7 @@ def optimize_layout_euclidean(
     alpha = initial_alpha
     nonzero_inds = np.stack(weights.nonzero()).T
     weights = weights.astype(np.float32)
+    grads = np.zeros([n_vertices, dim], dtype=np.float64)
 
     # ANDREW - perform negative samples x times more often
     #          by making the number of epochs between samples smaller
@@ -370,6 +378,7 @@ def optimize_layout_euclidean(
             # tSNE paper states that they normalize by ROW
             # HOWEVER - they normalize by the entire matrix!
             weights /= np.sum(weights)
+            initial_alpha = 200
             alpha = 200
             umap_flag = 0
 
@@ -377,12 +386,13 @@ def optimize_layout_euclidean(
 
     for i_epoch in range(n_epochs):
         print(i_epoch)
-        optimize_fn(
+        grads = optimize_fn(
             head_embedding,
             tail_embedding,
             head,
             tail,
             weights,
+            grads,
             nonzero_inds,
             n_vertices,
             epochs_per_sample,

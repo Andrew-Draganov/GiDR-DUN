@@ -1,3 +1,8 @@
 *.swp
 */*.swp
 umap/__pycache__
+umap/.DS_Store
+umap/Images
+build/
+.DS_Store
+*.so
