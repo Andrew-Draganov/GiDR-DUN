@@ -3,6 +3,9 @@ import numba
 import distances as dist
 from sklearn.neighbors._quad_tree import _QuadTree
 from utils import tau_rand_int
+import pyximport
+pyximport.install(setup_args={"script_args" : ["--verbose"]})
+import barnes_hut
 
 @numba.njit()
 def clip(val):
@@ -168,63 +171,20 @@ def optimize_barnes_hut(
     epoch_of_next_sample,
     i_epoch,
 ):
-    pos_grads = np.zeros_like(head_embedding)
-    neg_grads = np.zeros_like(head_embedding)
-
-    qt = _QuadTree(dim, 1)
-    # FIXME - do I need copy?
-    tree_embedding = head_embedding.copy()
-    qt.build_tree(tree_embedding)
-    offset = dim + 2
-    deg_freedom = 1
-    summary = np.zeros([n_vertices * offset])
-    sum_Q = 0
-
-    n_edges = n_vertices * (n_vertices - 1)
-    average_weight = np.sum(weights) / float(n_edges)
-    for i in range(epochs_per_sample.shape[0]):
-        # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
-        j = head[i]
-        k = tail[i]
-
-        # ANDREW - pick random vertex from knn for calculating attractive force
-        # t-SNE sums over all knn's attractive forces
-        current = head_embedding[j]
-        other = tail_embedding[k]
-        dist_squared = rdist(current, other)
-
-        if dist_squared > 0.0:
-            # ANDREW - this is the actual attractive force for UMAP
-            grad_coeff = -2.0 * a * b * pow(dist_squared, b - 1.0)
-            grad_coeff /= a * pow(dist_squared, b) + 1.0
-        else:
-            grad_coeff = 0.0
-
-        grad_coeff *= weights[i]
-        for d in range(dim):
-            pos_grad = clip(grad_coeff * (current[d] - other[d]))
-            pos_grads[j, d] += pos_grad
-
-        # Get necessary data regarding current point and the quadtree cells
-        idj = qt.summarize(current, summary, 0.25) # 0.25 = theta^2
-
-        # For each cell that pertains to the current point
-        for l in range(idj // offset):
-            cell_dist = summary[l * offset + dim]
-            cell_size = summary[l * offset + dim + 1]
-            qijZ = deg_freedom / (deg_freedom + cell_dist)
-
-            if deg_freedom != 1:
-                qijZ = qijZ ** ((deg_freedom + 1) / 2)
-
-            sum_Q += size * qijZ
-            mult = size * qijZ * qijZ
-            for d in range(dim):
-                neg_grad = mult * summary[j * offset: j * offset + dim]
-                neg_grads[i, d] += neg_grad
-
-    all_grads = pos_grads + neg_grads / sum_Q
-    head_embedding += all_grads * alpha
+    barnes_hut.calc_barnes_hut_wrapper(
+        head_embedding,
+        tail_embedding,
+        head,
+        tail,
+        weights,
+        epochs_per_sample,
+        a,
+        b,
+        dim,
+        n_vertices,
+        alpha,
+        umap=0
+    )
 
 
 
@@ -403,6 +363,7 @@ def optimize_layout_euclidean(
         optimize_fn = optimize_barnes_hut
 
     for i_epoch in range(n_epochs):
+        print(i_epoch)
         optimize_fn(
             head_embedding,
             tail_embedding,

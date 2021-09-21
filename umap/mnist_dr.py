@@ -30,7 +30,7 @@ parser.add_argument(
 parser.add_argument(
     '--downsample-stride',
     type=int,
-    default=10
+    default=15
 )
 parser.add_argument(
     '--dr-algorithm',
