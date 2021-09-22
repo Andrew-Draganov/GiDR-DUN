@@ -282,6 +282,7 @@ def optimize_uniformly(
 
 def optimize_layout_euclidean(
     optimize_method,
+    weight_scaling,
     head_embedding,
     tail_embedding,
     head,
@@ -372,15 +373,16 @@ def optimize_layout_euclidean(
         )
     else:
         # Need to normalize high dimensional relationships by row
-        if optimize_method == 'barnes_hut_tsne':
+        if 'barnes_hut' in optimize_method:
             # Perform tsne high-dimensional normalization
             # tSNE paper states that they normalize by ROW
             # HOWEVER - they normalize by the entire matrix!
-            weights /= np.sum(weights)
+            if weight_scaling == 'tsne':
+                weights /= np.sum(weights)
 
             # Set learning rate to tSNE default
             initial_alpha = 200
-            umap_flag = 0
+            umap_flag = 'umap' in optimize_method
 
         optimize_fn = barnes_hut_opt
 
@@ -388,6 +390,7 @@ def optimize_layout_euclidean(
     for i_epoch in range(n_epochs):
         print(i_epoch)
         grads = optimize_fn(
+            weight_scaling,
             head_embedding,
             tail_embedding,
             head,

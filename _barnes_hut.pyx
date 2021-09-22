@@ -51,6 +51,16 @@ cdef rdist(float* x, float* y, int dim):
     return result
 
 
+cdef umap_low_dim_kernel(float dist_squared, float a, float b):
+    cdef float grad_scalar
+    grad_scalar = -2.0 * a * b * pow(dist_squared, b - 1.0)
+    grad_scalar /= a * pow(dist_squared, b) + 1.0
+    return grad_scalar
+
+cdef tsne_low_dim_kernel(float dist_squared):
+    return 1 / (1 + dist_squared)
+
+
 cdef calculate_barnes_hut_umap(
         np.float32_t[:, :] head_embedding,
         np.float32_t[:, :] tail_embedding,
@@ -76,6 +86,7 @@ cdef calculate_barnes_hut_umap(
     cell_summaries = <float*> malloc(sizeof(float) * n_vertices * offset)
     current = <float*> malloc(sizeof(float) * dim)
     other = <float*> malloc(sizeof(float) * dim)
+    # FIXME - what type should these be for optimal performance?
     cdef np.ndarray[double, mode="c", ndim=2] pos_grads = np.zeros([n_vertices, dim])
     cdef np.ndarray[double, mode="c", ndim=2] neg_grads = np.zeros([n_vertices, dim])
     cdef np.ndarray[double, mode="c", ndim=2] all_grads = np.zeros([n_vertices, dim])
@@ -94,18 +105,21 @@ cdef calculate_barnes_hut_umap(
             other[d] = tail_embedding[k, d]
         dist_squared = rdist(current, other, dim)
 
-        if dist_squared > 0.0:
-            # ANDREW - this is the actual attractive force for UMAP
-            grad_scalar = -2.0 * a * b * pow(dist_squared, b - 1.0)
-            grad_scalar /= a * pow(dist_squared, b) + 1.0
+        if weight_scaling == 'umap':
+            grad_scalar = umap_low_dim_kernel(dist_squared, a, b)
         else:
-            grad_scalar = 0.0
-
+            grad_scalar = tsne_low_dim_kernel(dist_squared)
         grad_scalar *= weights[i]
+
         for d in range(dim):
             pos_grad = clip(grad_scalar * (current[d] - other[d]))
             pos_grads[j][d] += pos_grad
 
+    if weight_scaling == 'umap':
+        # umap doesn't normalize across matrix, so normalization factor is 1
+        sum_Q = 1
+    else:
+        sum_Q = 0
     for i in range(n_vertices):
         # Get necessary data regarding current point and the quadtree cells
         for d in range(dim):
@@ -117,20 +131,29 @@ cdef calculate_barnes_hut_umap(
             cell_dist = cell_summaries[j * offset + dim]
             cell_size = cell_summaries[j * offset + dim + 1]
 
-            if cell_dist > 0.0:
-                grad_scalar = 2.0 * b
-                grad_scalar /= (0.001 + cell_dist) * (a * pow(cell_dist, b) + 1)
-            else:
-                continue
-            sum_Q += grad_scalar
+            # This is the repulsive force for umap
+            phi_ijZ = 2.0 * b
+            phi_ijZ /= (0.001 + cell_dist) * (a * pow(cell_dist, b) + 1)
 
-            grad_scalar *= (1 - average_weight) * cell_size
+            if weight_scaling == 'umap':
+                grad_scalar = phi_ijZ * (1 - average_weight) * cell_size
+            else:
+                assert weight_scaling == 'tsne'
+
+                # Collect the q_ij's contributions into Z
+                sum_Q += cell_size * phi_ijZ
+                grad_scalar = cell_size * phi_ijZ * phi_ijZ
+
             for d in range(dim):
                 neg_grads[j][d] += grad_scalar * cell_summaries[j * offset + d]
 
+    if weight_scaling == 'tsne':
+        neg_grads *= 4 / sum_Q
+        pos_grads *= 4
+
     for i in range(n_vertices):
         for j in range(dim):
-            grads[i][j] = pos_grads[i][j] - neg_grads[i][j] / sum_Q
+            grads[i][j] = pos_grads[i][j] - neg_grads[i][j]
             head_embedding[i][j] -= grads[i][j] * alpha
 
     return grads
@@ -163,6 +186,30 @@ cdef calculate_barnes_hut_tsne(
     cdef np.ndarray[double, mode="c", ndim=2] pos_grads = np.zeros([n_vertices, dim])
     cdef np.ndarray[double, mode="c", ndim=2] neg_grads = np.zeros([n_vertices, dim])
 
+    cdef int num_edges = int(epochs_per_sample.shape[0])
+    cdef float average_weight = np.sum(weights) / num_edges
+
+    # Get positive force gradients
+    for edge in range(epochs_per_sample.shape[0]):
+        node_1_index = head[edge]
+        node_2_index = tail[edge]
+        for d in range(dim):
+            node_1[d] = head_embedding[node_1_index, d]
+            node_2[d] = tail_embedding[node_2_index, d]
+        dist_squared = rdist(node_1, node_2, dim)
+
+        if weight_scaling == 'umap':
+            grad_scalar = umap_low_dim_kernel(dist_squared, a, b)
+        else:
+            grad_scalar = tsne_low_dim_kernel(dist_squared)
+        grad_scalar *= weights[node_1_index]
+
+        for d in range(dim):
+            pos_grads[node_1_index][d] += grad_scalar * (node_1[d] - node_2[d])
+
+    if weight_scaling == 'tsne':
+        # tsne normalizes weights across matrix, so instantiate normalization factor at 0
+        sum_Q = 0
     # Get negative force gradients
     for v in range(n_vertices):
         # Get necessary data regarding current point and the quadtree cells
@@ -177,27 +224,23 @@ cdef calculate_barnes_hut_tsne(
 
             # tsne weight calculation:
             qijZ = 1 / (1 + cell_dist)
-            sum_Q += cell_size * qijZ
-            grad_scalar = cell_size * qijZ * qijZ
+            if weight_scaling == 'umap':
+                grad_scalar = qijZ * (1 - average_weight) * cell_size
+            else:
+                assert weight_scaling == 'tsne'
+
+                # Collect the q_ij's contributions into Z
+                sum_Q += cell_size * qijZ
+                grad_scalar = cell_size * qijZ * qijZ
+
+            for d in range(dim):
+                neg_grads[j][d] += grad_scalar * cell_summaries[j * offset + d]
             for d in range(dim):
                 neg_grads[v][d] += grad_scalar * cell_summaries[i_cell * offset + d]
 
-    # Get positive force gradients
-    for edge in range(epochs_per_sample.shape[0]):
-        node_1_index = head[edge]
-        node_2_index = tail[edge]
-        for d in range(dim):
-            node_1[d] = head_embedding[node_1_index, d]
-            node_2[d] = tail_embedding[node_2_index, d]
-
-        dist_squared = rdist(node_1, node_2, dim)
-        qijZ = 1 / (1 + dist_squared)
-        grad_scalar = qijZ * weights[edge]
-        for d in range(dim):
-            pos_grads[node_1_index][d] += grad_scalar * (node_1[d] - node_2[d])
-
-    neg_grads *= 4 / sum_Q
-    pos_grads *= 4
+    if weight_scaling == 'tsne':
+        neg_grads *= 4 / sum_Q
+        pos_grads *= 4
 
     for v in range(n_vertices):
         for d in range(dim):

@@ -573,6 +573,7 @@ def make_epochs_per_sample(weights, n_epochs):
 
 def simplicial_set_embedding(
     optimize_method,
+    weight_scaling,
     data,
     graph,
     n_components,
@@ -742,6 +743,7 @@ def simplicial_set_embedding(
     print('optimizing layout...')
     embedding = optimize_layout_euclidean(
         optimize_method,
+        weight_scaling,
         embedding,
         embedding,
         head,
@@ -977,6 +979,7 @@ class UMAP(BaseEstimator):
         pseudo_distance=True,
         tsne_symmetrization=False,
         optimize_method='umap_sampling',
+        weight_scaling='umap',
         min_dist=0.1,
         spread=1.0,
         low_memory=True,
@@ -1010,6 +1013,7 @@ class UMAP(BaseEstimator):
         self.tsne_symmetrization = tsne_symmetrization
         self.pseudo_distance = pseudo_distance
         self.optimize_method = optimize_method
+        self.weight_scaling = weight_scaling
 
         self.spread = spread
         self.min_dist = min_dist
@@ -1438,6 +1442,7 @@ class UMAP(BaseEstimator):
         """
         return simplicial_set_embedding(
             self.optimize_method,
+            self.weight_scaling,
             X,
             self.graph_,
             self.n_components,
