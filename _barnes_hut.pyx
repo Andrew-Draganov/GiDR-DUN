@@ -51,15 +51,21 @@ cdef rdist(float* x, float* y, int dim):
     return result
 
 
-cdef umap_low_dim_kernel(float dist_squared, float a, float b):
+cdef umap_pos_force_kernel(float dist_squared, float a, float b):
     cdef float grad_scalar
     grad_scalar = -2.0 * a * b * pow(dist_squared, b - 1.0)
     grad_scalar /= a * pow(dist_squared, b) + 1.0
     return grad_scalar
 
-cdef tsne_low_dim_kernel(float dist_squared):
+cdef tsne_force_kernel(float dist_squared):
     return 1 / (1 + dist_squared)
 
+cdef umap_neg_force_kernel(float dist_squared, float a, float b):
+    # This is the repulsive force for umap
+    cdef float phi_ijZ
+    phi_ijZ = 2.0 * b
+    phi_ijZ /= (0.001 + cell_dist) * (a * pow(cell_dist, b) + 1)
+    return phi_ijZ
 
 cdef calculate_barnes_hut_umap(
         np.float32_t[:, :] head_embedding,
@@ -94,8 +100,9 @@ cdef calculate_barnes_hut_umap(
     cdef int num_edges = int(epochs_per_sample.shape[0])
     cdef float average_weight = np.sum(weights) / num_edges
 
+    # FIXME - rename epochs_per_sample
     for i in range(epochs_per_sample.shape[0]):
-        # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
+        # Get one of the knn edges
         j = head[i]
         k = tail[i]
 
@@ -106,9 +113,9 @@ cdef calculate_barnes_hut_umap(
         dist_squared = rdist(current, other, dim)
 
         if weight_scaling == 'umap':
-            grad_scalar = umap_low_dim_kernel(dist_squared, a, b)
+            grad_scalar = umap_pos_force_kernel(dist_squared, a, b)
         else:
-            grad_scalar = tsne_low_dim_kernel(dist_squared)
+            grad_scalar = tsne_force_kernel(dist_squared)
         grad_scalar *= weights[i]
 
         for d in range(dim):
@@ -131,23 +138,20 @@ cdef calculate_barnes_hut_umap(
             cell_dist = cell_summaries[j * offset + dim]
             cell_size = cell_summaries[j * offset + dim + 1]
 
-            # This is the repulsive force for umap
-            phi_ijZ = 2.0 * b
-            phi_ijZ /= (0.001 + cell_dist) * (a * pow(cell_dist, b) + 1)
-
             if weight_scaling == 'umap':
-                grad_scalar = phi_ijZ * (1 - average_weight) * cell_size
+                kernel = umap_neg_force_kernel(cell_dist, a, b)
+                kernel *= (1 - average_weight)
             else:
                 assert weight_scaling == 'tsne'
-
-                # Collect the q_ij's contributions into Z
-                sum_Q += cell_size * phi_ijZ
-                grad_scalar = cell_size * phi_ijZ * phi_ijZ
+                kernel = tsne_force_kernel(cell_dist)
+                sum_Q += cell_size * kernel # Collect the q_ij's contributions into Z
+            grad_scalar = cell_size * kernel
 
             for d in range(dim):
                 neg_grads[j][d] += grad_scalar * cell_summaries[j * offset + d]
 
     if weight_scaling == 'tsne':
+        # normalize low-dim weight matrix by matrix sum
         neg_grads *= 4 / sum_Q
         pos_grads *= 4
 
@@ -175,14 +179,14 @@ cdef calculate_barnes_hut_tsne(
 ):
     cdef:
         double qijZ, sum_Q = 0
-        int v, i_cell, d, idj, edge, node_1_index, node_2_index
+        int v, i_cell, d, idj, edge, j, k
         float cell_size, cell_dist, grad_scalar
         long offset = dim + 2
 
     # Allocate memory for data structures
     cell_summaries = <float*> malloc(sizeof(float) * n_vertices * offset)
-    node_1 = <float*> malloc(sizeof(float) * dim)
-    node_2 = <float*> malloc(sizeof(float) * dim)
+    y1 = <float*> malloc(sizeof(float) * dim)
+    y2 = <float*> malloc(sizeof(float) * dim)
     cdef np.ndarray[double, mode="c", ndim=2] pos_grads = np.zeros([n_vertices, dim])
     cdef np.ndarray[double, mode="c", ndim=2] neg_grads = np.zeros([n_vertices, dim])
 
@@ -191,50 +195,49 @@ cdef calculate_barnes_hut_tsne(
 
     # Get positive force gradients
     for edge in range(epochs_per_sample.shape[0]):
-        node_1_index = head[edge]
-        node_2_index = tail[edge]
+        j = head[edge]
+        k = tail[edge]
         for d in range(dim):
-            node_1[d] = head_embedding[node_1_index, d]
-            node_2[d] = tail_embedding[node_2_index, d]
-        dist_squared = rdist(node_1, node_2, dim)
+            y1[d] = head_embedding[j, d]
+            y2[d] = tail_embedding[k, d]
+        dist_squared = rdist(y1, y2, dim)
 
         if weight_scaling == 'umap':
-            grad_scalar = umap_low_dim_kernel(dist_squared, a, b)
+            grad_scalar = umap_pos_force_kernel(dist_squared, a, b)
         else:
-            grad_scalar = tsne_low_dim_kernel(dist_squared)
-        grad_scalar *= weights[node_1_index]
+            grad_scalar = tsne_force_kernel(dist_squared)
+        grad_scalar *= weights[j]
 
         for d in range(dim):
-            pos_grads[node_1_index][d] += grad_scalar * (node_1[d] - node_2[d])
+            pos_grads[j][d] += grad_scalar * (y1[d] - y2[d])
 
     if weight_scaling == 'tsne':
         # tsne normalizes weights across matrix, so instantiate normalization factor at 0
         sum_Q = 0
     # Get negative force gradients
     for v in range(n_vertices):
-        # Get necessary data regarding current point and the quadtree cells
         for d in range(dim):
-            node_1[d] = head_embedding[v, d]
-        idj = qt.summarize(node_1, cell_summaries, 0.25) # 0.25 = theta^2
+            y1[d] = head_embedding[v, d]
+        # Get necessary data regarding current point and the quadtree cells
+        # - cell_summaries gets filled in-place with
+        #   [y1_x - i_cell_x, y1_y - i_cell_y, dist(y1, i_cell), size(i_cell), ...]
+        idj = qt.summarize(y1, cell_summaries, 0.25) # 0.25 = theta^2
 
-        # For each cell that pertains to the current point:
+        # For each cell that got summarized relative to the current point:
         for i_cell in range(idj // offset):
             cell_dist = cell_summaries[i_cell * offset + dim]
             cell_size = cell_summaries[i_cell * offset + dim + 1]
 
-            # tsne weight calculation:
-            qijZ = 1 / (1 + cell_dist)
             if weight_scaling == 'umap':
-                grad_scalar = qijZ * (1 - average_weight) * cell_size
+                kernel = umap_neg_force_kernel(cell_dist, a, b)
+                grad_scalar = kernel * (1 - average_weight)
             else:
+                kernel = tsne_force_kernel(cell_dist)
                 assert weight_scaling == 'tsne'
-
                 # Collect the q_ij's contributions into Z
-                sum_Q += cell_size * qijZ
-                grad_scalar = cell_size * qijZ * qijZ
+                sum_Q += cell_size * kernel
+            grad_scalar = cell_size * kernel * kernel
 
-            for d in range(dim):
-                neg_grads[j][d] += grad_scalar * cell_summaries[j * offset + d]
             for d in range(dim):
                 neg_grads[v][d] += grad_scalar * cell_summaries[i_cell * offset + d]
 
