@@ -80,7 +80,6 @@ def optimize_through_sampling(
     epoch_of_next_negative_sample,
     epoch_of_next_sample,
     i_epoch,
-    umap_flag
 ):
     # ANDREW - If we optimize an edge, then the next epoch we optimize it is
     #          the current epoch + epochs_per_sample[i] for that edge
@@ -155,6 +154,8 @@ def optimize_through_sampling(
     return grads
 
 def barnes_hut_opt(
+    weight_scaling,
+    kernel_choice,
     head_embedding,
     tail_embedding,
     head,
@@ -175,9 +176,10 @@ def barnes_hut_opt(
     epoch_of_next_negative_sample,
     epoch_of_next_sample,
     i_epoch,
-    umap_flag    
 ):
     return barnes_hut.bh_wrapper(
+        weight_scaling,
+        kernel_choice,
         head_embedding,
         tail_embedding,
         head,
@@ -190,11 +192,12 @@ def barnes_hut_opt(
         dim,
         n_vertices,
         alpha,
-        umap_flag
     )
 
 
 def optimize_uniformly(
+    weight_scaling,
+    kernel_choice,
     head_embedding,
     tail_embedding,
     head,
@@ -215,7 +218,6 @@ def optimize_uniformly(
     epoch_of_next_negative_sample,
     epoch_of_next_sample,
     i_epoch,
-    umap_flag
 ):
     # all_grads is where we store summed gradients
     all_grads = np.zeros_like(head_embedding)
@@ -283,6 +285,7 @@ def optimize_uniformly(
 def optimize_layout_euclidean(
     optimize_method,
     weight_scaling,
+    kernel_choice,
     head_embedding,
     tail_embedding,
     head,
@@ -358,8 +361,6 @@ def optimize_layout_euclidean(
     epoch_of_next_negative_sample = epochs_per_negative_sample.copy()
     epoch_of_next_sample = epochs_per_sample.copy()
 
-
-    umap_flag = 1
     if 'barnes_hut' not in optimize_method:
         single_step_functions = {
             'umap_sampling': optimize_through_sampling,
@@ -372,7 +373,8 @@ def optimize_layout_euclidean(
             parallel=parallel
         )
     else:
-        # Need to normalize high dimensional relationships by row
+        # barnes_hut optimization uses the cython quadtree class, so can't
+        #   pass to numba
         if 'barnes_hut' in optimize_method:
             # Perform tsne high-dimensional normalization
             # tSNE paper states that they normalize by ROW
@@ -382,7 +384,6 @@ def optimize_layout_euclidean(
 
             # Set learning rate to tSNE default
             initial_alpha = 200
-            umap_flag = 'umap' in optimize_method
 
         optimize_fn = barnes_hut_opt
 
@@ -391,6 +392,7 @@ def optimize_layout_euclidean(
         print(i_epoch)
         grads = optimize_fn(
             weight_scaling,
+            kernel_choice,
             head_embedding,
             tail_embedding,
             head,
@@ -411,7 +413,6 @@ def optimize_layout_euclidean(
             epoch_of_next_negative_sample,
             epoch_of_next_sample,
             i_epoch,
-            umap_flag
         )
         alpha = initial_alpha * (1.0 - (float(i_epoch) / float(n_epochs)))
 
