@@ -97,6 +97,7 @@ if args.dr_algorithm == 'umap':
             tsne_symmetrization=args.tsne_symmetrization,
             optimize_method=args.optimize_method,
             weight_scaling=args.weight_scaling,
+            kernel_choice=args.kernel_choice,
             a=a,
             b=b,
         )
