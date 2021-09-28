@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import numba
 import distances as dist
@@ -100,12 +101,7 @@ def optimize_through_sampling(
             current = head_embedding[j]
             other = tail_embedding[k]
             dist_squared = rdist(current, other)
-            pos_force = comparison_utils.pos_force_kernel(
-                kernel_choice,
-                dist_squared,
-                a,
-                b
-            )
+            pos_force = comparison_utils.pos_force_kernel(kernel_choice, dist_squared, a, b)
 
             for d in range(dim):
                 # ANDREW - tsne doesn't do grad clipping
@@ -129,10 +125,9 @@ def optimize_through_sampling(
             # t-SNE, however, gathers the sum of repulsive forces and the sum of attractive forces
             for p in range(n_neg_samples):
                 # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
-                # k = j
-                # assert n_vertices > 1 # must have option for k != j
-                # while k != j:
                 k = tau_rand_int(rng_state) % n_vertices
+                if j == k:
+                    continue
                 other = tail_embedding[k]
                 dist_squared = rdist(current, other)
                 neg_force = comparison_utils.neg_force_kernel(kernel_choice, dist_squared, a, b)
@@ -298,15 +293,15 @@ def optimize_layout_euclidean(
     epoch_of_next_negative_sample = epochs_per_negative_sample.copy()
     epoch_of_next_sample = epochs_per_sample.copy()
 
-    n_edges = n_vertices * (n_vertices - 1)
-    average_weight = np.sum(weights) / float(n_edges)
-
     # Perform weight scaling on high-dimensional relationships
     weights, initial_alpha = barnes_hut.pos_weight_scaling(
         weight_scaling_choice,
         weights,
         initial_alpha
     )
+
+    n_edges = n_vertices * (n_vertices - 1)
+    average_weight = np.sum(weights) / float(n_edges)
 
     if 'barnes_hut' not in optimize_method:
         assert weight_scaling_choice == 'umap'
@@ -325,9 +320,9 @@ def optimize_layout_euclidean(
         # so we can't use numba to compile it
         optimize_fn = barnes_hut_opt
 
+    start = time.time()
     alpha = initial_alpha
     for i_epoch in range(n_epochs):
-        print(i_epoch)
         # FIXME - clean this up!!
         grads = optimize_fn(
             weight_scaling_choice,
@@ -357,6 +352,8 @@ def optimize_layout_euclidean(
 
         if verbose and i_epoch % int(n_epochs / 10) == 0:
             print("\tcompleted ", i_epoch, " / ", n_epochs, "epochs")
+    end = time.time()
+    print('Total time took {:.3f} seconds'.format(end - start))
 
     return head_embedding
 
