@@ -1,6 +1,7 @@
 import numpy as np
 from tensorflow import keras as tfk
 from umap_ import UMAP
+# from umap import UMAP
 import argparse
 from sklearn.manifold import TSNE
 from matplotlib import pyplot as plt
@@ -106,6 +107,7 @@ if args.dr_algorithm == 'umap':
             kernel_choice=args.kernel_choice,
             a=a,
             b=b,
+            verbose=True
         )
 else:
     dr = TSNE(random_state=12345)

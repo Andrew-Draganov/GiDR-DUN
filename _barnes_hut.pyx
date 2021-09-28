@@ -274,6 +274,11 @@ def bh_wrapper(
         int n_vertices,
         float alpha,
 ):
+    """
+    Wrapper to call barnes_hut optimization
+    Require a regular def function to call from python file
+    But this standard function in a .pyx file can call the cdef function
+    """
     # Can only define cython quadtree in a cython function
     cdef _QuadTree qt = _QuadTree(dim, 1)
     qt.build_tree(head_embedding)

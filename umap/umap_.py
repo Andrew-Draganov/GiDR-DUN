@@ -36,10 +36,8 @@ from utils import (
 )
 from spectral import spectral_layout
 from layouts import optimize_layout_euclidean
-
 from pynndescent import NNDescent
-from pynndescent.distances import named_distances as pynn_named_distances
-from pynndescent.sparse import sparse_named_distances as pynn_sparse_named_distances
+# from adaptive_knn import AdaptiveKNN
 
 locale.setlocale(locale.LC_NUMERIC, "C")
 
@@ -294,7 +292,7 @@ def nearest_neighbors(
             random_state=random_state,
             n_trees=n_trees,
             n_iters=n_iters,
-            max_candidates=60,
+            max_candidates=20,
             low_memory=low_memory,
             n_jobs=n_jobs,
             verbose=verbose,
@@ -1290,7 +1288,6 @@ class UMAP(BaseEstimator):
 
             # ANDREW - if the input is too small, the metric is PRECOMPUTED
             # This means we will NOT do nearest neighbor descent
-            # For a full ablation, we want to try t-SNE with NN descent
             (
                 self.graph_,
                 self._sigmas,
@@ -1318,7 +1315,7 @@ class UMAP(BaseEstimator):
             self._small_data = False
             # Standard case
 
-            # ANDREW - THIS WILL CALL UMAP WITH NNDESCENT USING THE EUCLIDEAN METRIC
+            # ANDREW - this calls NN-descent on the input dataset X
             (
                 self._knn_indices,
                 self._knn_dists,

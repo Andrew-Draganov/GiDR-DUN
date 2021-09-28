@@ -6,6 +6,7 @@ from utils import tau_rand_int
 import pyximport
 pyximport.install(setup_args={"script_args" : ["--verbose"]})
 import barnes_hut
+import comparison_utils
 
 
 @numba.njit()
@@ -71,12 +72,12 @@ def optimize_through_sampling(
     grads,
     nonzero_inds,
     n_vertices,
+    average_weight,
     epochs_per_sample,
     a,
     b,
     rng_state,
     dim,
-    move_other,
     alpha,
     negative_sample_rate,
     epochs_per_negative_sample,
@@ -84,10 +85,10 @@ def optimize_through_sampling(
     epoch_of_next_sample,
     i_epoch,
 ):
+
     # ANDREW - If we optimize an edge, then the next epoch we optimize it is
     #          the current epoch + epochs_per_sample[i] for that edge
-    #        - Basically, for each edge, optimize it every epochs_per_sample steps
-    pos_force_kernel, neg_force_kernel = get_kernels(kernel_choice)
+    #        - Basically, optimize edge i every epochs_per_sample[i] steps
     for i in numba.prange(epochs_per_sample.shape[0]):
         if epoch_of_next_sample[i] <= i_epoch:
             # Gets the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
@@ -99,7 +100,12 @@ def optimize_through_sampling(
             current = head_embedding[j]
             other = tail_embedding[k]
             dist_squared = rdist(current, other)
-            pos_force = pos_force_kernel(dist_squared, a, b)
+            pos_force = comparison_utils.pos_force_kernel(
+                kernel_choice,
+                dist_squared,
+                a,
+                b
+            )
 
             for d in range(dim):
                 # ANDREW - tsne doesn't do grad clipping
@@ -123,17 +129,17 @@ def optimize_through_sampling(
             # t-SNE, however, gathers the sum of repulsive forces and the sum of attractive forces
             for p in range(n_neg_samples):
                 # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
-                k = j
-                assert n_vertices > 1 # must have option for k != j
-                while k != j:
-                    k = tau_rand_int(rng_state) % n_vertices
+                # k = j
+                # assert n_vertices > 1 # must have option for k != j
+                # while k != j:
+                k = tau_rand_int(rng_state) % n_vertices
                 other = tail_embedding[k]
                 dist_squared = rdist(current, other)
-                neg_force = neg_force_kernel(dist_squared, a, b)
+                neg_force = comparison_utils.neg_force_kernel(kernel_choice, dist_squared, a, b)
 
                 for d in range(dim):
                     # ANDREW - tSNE doesn't do gradient clipping
-                    if grad_coeff > 0.0:
+                    if neg_force > 0.0:
                         grad_d = clip(neg_force * (current[d] - other[d]))
                     else:
                         grad_d = 4.0
@@ -157,12 +163,12 @@ def optimize_uniformly(
     grads,
     nonzero_inds,
     n_vertices,
+    average_weight,
     epochs_per_sample,
     a,
     b,
     rng_state,
     dim,
-    move_other,
     alpha,
     negative_sample_rate,
     epochs_per_negative_sample,
@@ -173,9 +179,6 @@ def optimize_uniformly(
     # all_grads is where we store summed gradients
     all_grads = np.zeros_like(head_embedding)
 
-    n_edges = n_vertices * (n_vertices - 1)
-    average_weight = np.sum(weights) / float(n_edges)
-    pos_force_kernel, neg_force_kernel = get_kernels(kernel_choice)
     for i in numba.prange(epochs_per_sample.shape[0]):
         # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
         j = head[i]
@@ -185,7 +188,7 @@ def optimize_uniformly(
         current = head_embedding[j]
         other = tail_embedding[k]
         dist_squared = rdist(current, other)
-        pos_force = pos_force_kernel(dist_squared, a, b)
+        pos_force = comparison_utils.pos_force_kernel(kernel_choice, dist_squared, a, b)
         pos_force *= weights[i]
         for d in range(dim):
             grad_d = clip(pos_force * (current[d] - other[d]))
@@ -196,24 +199,23 @@ def optimize_uniformly(
         #   by the weights appropriately, we only need to alternate symmetrically
         #   between positive and negative forces rather than doing 1 positive
         #   calculation to n negative ones
-        for _ in range(negative_sample_rate):
-            k = tau_rand_int(rng_state) % n_vertices
-            other = tail_embedding[k]
-            dist_squared = rdist(current, other)
-            neg_force = neg_force_kernel(dist_squared, a, b)
+        k = tau_rand_int(rng_state) % n_vertices
+        other = tail_embedding[k]
+        dist_squared = rdist(current, other)
+        neg_force = comparison_utils.neg_force_kernel(kernel_choice, dist_squared, a, b)
 
-            # ANDREW - this is a lame approximation
-            #        - Realistically, we should use the actual weight on
-            #          the edge e_{ik}, but the coo_matrix is not
-            #          indexable. So we assume the differences cancel out over
-            #          enough iterations
-            neg_force *= (1 - average_weight)
-            for d in range(dim):
-                if grad_coeff > 0.0:
-                    grad_d = clip(neg_force * (current[d] - other[d]))
-                else:
-                    grad_d = 4.0
-                all_grads[j, d] += grad_d
+        # ANDREW - this is a lame approximation
+        #        - Realistically, we should use the actual weight on
+        #          the edge e_{ik}, but the coo_matrix is not
+        #          indexable. So we assume the differences cancel out over
+        #          enough iterations
+        neg_force *= (1 - average_weight)
+        for d in range(dim):
+            if neg_force > 0.0:
+                grad_d = clip(neg_force * (current[d] - other[d]))
+            else:
+                grad_d = 4.0
+            all_grads[j, d] += grad_d
 
     head_embedding += all_grads * alpha
     return grads
@@ -230,12 +232,12 @@ def barnes_hut_opt(
     grads,
     nonzero_inds,
     n_vertices,
+    average_weight,
     epochs_per_sample,
     a,
     b,
     rng_state,
     dim,
-    move_other,
     alpha,
     negative_sample_rate,
     epochs_per_negative_sample,
@@ -286,7 +288,6 @@ def optimize_layout_euclidean(
     """
 
     dim = head_embedding.shape[1]
-    move_other = head_embedding.shape[0] == tail_embedding.shape[0]
     nonzero_inds = np.stack(weights.nonzero()).T
     weights = weights.astype(np.float32)
     grads = np.zeros([n_vertices, dim], dtype=np.float64)
@@ -296,6 +297,9 @@ def optimize_layout_euclidean(
     epochs_per_negative_sample = epochs_per_sample / negative_sample_rate
     epoch_of_next_negative_sample = epochs_per_negative_sample.copy()
     epoch_of_next_sample = epochs_per_sample.copy()
+
+    n_edges = n_vertices * (n_vertices - 1)
+    average_weight = np.sum(weights) / float(n_edges)
 
     # Perform weight scaling on high-dimensional relationships
     weights, initial_alpha = barnes_hut.pos_weight_scaling(
@@ -336,12 +340,12 @@ def optimize_layout_euclidean(
             grads,
             nonzero_inds,
             n_vertices,
+            average_weight,
             epochs_per_sample,
             a,
             b,
             rng_state,
             dim,
-            move_other,
             alpha,
             negative_sample_rate,
             epochs_per_negative_sample,
@@ -352,7 +356,7 @@ def optimize_layout_euclidean(
         alpha = initial_alpha * (1.0 - (float(i_epoch) / float(n_epochs)))
 
         if verbose and i_epoch % int(n_epochs / 10) == 0:
-            print("\tcompleted ", n, " / ", n_epochs, "epochs")
+            print("\tcompleted ", i_epoch, " / ", n_epochs, "epochs")
 
     return head_embedding
 
