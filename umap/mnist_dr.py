@@ -70,6 +70,7 @@ if args.dr_algorithm == 'umap':
             optimize_method=args.optimize_method,
             a=a,
             b=b,
+            verbose=True
         )
 else:
     dr = TSNE(random_state=12345)

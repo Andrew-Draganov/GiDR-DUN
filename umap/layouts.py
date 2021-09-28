@@ -342,7 +342,7 @@ def optimize_layout_euclidean(
         alpha = initial_alpha * (1.0 - (float(i_epoch) / float(n_epochs)))
 
         if verbose and i_epoch % int(n_epochs / 10) == 0:
-            print("\tcompleted ", n, " / ", n_epochs, "epochs")
+            print("\tcompleted ", i_epoch, " / ", n_epochs, "epochs")
 
     return head_embedding
 
