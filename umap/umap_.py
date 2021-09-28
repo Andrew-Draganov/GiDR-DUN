@@ -1283,11 +1283,10 @@ class UMAP(BaseEstimator):
             except (ValueError, TypeError) as e:
                 # metric is numba.jit'd or not supported by sklearn,
                 # fallback to pairwise special
-                else:
-                    dmat = dist.pairwise_special_metric(
-                        X[index],
-                        metric=self._input_distance_func,
-                    )
+                dmat = dist.pairwise_special_metric(
+                    X[index],
+                    metric=self._input_distance_func,
+                )
 
             # ANDREW - if the input is too small, the metric is PRECOMPUTED
             # This means we will NOT do nearest neighbor descent
