@@ -32,7 +32,7 @@ parser.add_argument(
     help='Which optimization algorithm to use'
 )
 parser.add_argument(
-    '--weight-scaling',
+    '--weight-scaling-choice',
     choices=['tsne', 'umap'],
     default='umap',
     help='Which optimization algorithm to use'
@@ -61,6 +61,11 @@ parser.add_argument(
 )
 parser.add_argument(
     '--n-neighbors',
+    type=int,
+    default=15
+)
+parser.add_argument(
+    '--neg-sample-rate',
     type=int,
     default=15
 )
@@ -96,7 +101,8 @@ if args.dr_algorithm == 'umap':
             pseudo_distance=(not args.ignore_umap_metric),
             tsne_symmetrization=args.tsne_symmetrization,
             optimize_method=args.optimize_method,
-            weight_scaling=args.weight_scaling,
+            negative_sample_rate=args.neg_sample_rate,
+            weight_scaling_choice=args.weight_scaling_choice,
             kernel_choice=args.kernel_choice,
             a=a,
             b=b,

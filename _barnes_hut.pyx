@@ -97,17 +97,18 @@ cdef tsne_pos_weight_scaling(
         np.float32_t[:] weights,
         initial_alpha
     ):
+    # FIXME - early exaggeration!!
     return weights / np.sum(weights), initial_alpha * 200
 
 def pos_weight_scaling(
-        str weight_scaling,
+        str weight_scaling_choice,
         np.float32_t[:] weights,
         initial_alpha
     ):
-    if weight_scaling == 'umap':
+    if weight_scaling_choice == 'umap':
         # umap doesn't scale P_ij weights
         return umap_pos_weight_scaling(weights, initial_alpha)
-    assert weight_scaling == 'tsne'
+    assert weight_scaling_choice == 'tsne'
     return tsne_pos_weight_scaling(weights, initial_alpha)
 
 
@@ -122,70 +123,49 @@ cdef umap_neg_weight_scaling(
 cdef tsne_neg_weight_scaling(
         float kernel,
         int cell_size,
-        float sum_Q
+        float weight_scalar
     ):
-    sum_Q += cell_size * kernel # Collect the q_ij's contributions into Z
+    weight_scalar += cell_size * kernel # Collect the q_ij's contributions into Z
     neg_force = cell_size * kernel * kernel
-    return neg_force, sum_Q
+    return neg_force, weight_scalar
 
 def neg_weight_scaling(
-        str weight_scaling,
+        str weight_scaling_choice,
         float kernel,
         int cell_size,
         float average_weight,
-        float sum_Q
+        float weight_scalar
     ):
-    if weight_scaling == 'umap':
+    if weight_scaling_choice == 'umap':
         return umap_neg_weight_scaling(kernel, cell_size, average_weight)
-    assert weight_scaling == 'tsne'
-    return tsne_neg_weight_scaling(kernel, cell_size, sum_Q)
+    assert weight_scaling_choice == 'tsne'
+    return tsne_neg_weight_scaling(kernel, cell_size, weight_scalar)
 
 
-cdef umap_total_weight_scaling(
-        pos_grads,
-        neg_grads,
-        int n_edges,
-        int n_vertices
-    ):
-    neg_grads *= n_edges / n_vertices
+cdef umap_total_weight_scaling(pos_grads, neg_grads):
     return pos_grads, neg_grads
 
-cdef tsne_total_weight_scaling(
-        pos_grads,
-        neg_grads,
-        float sum_Q,
-    ):
-    neg_grads *= 4 / sum_Q
+cdef tsne_total_weight_scaling(pos_grads, neg_grads, float weight_scalar):
+    neg_grads *= 4 / weight_scalar
     pos_grads *= 4
     return pos_grads, neg_grads
 
 def total_weight_scaling(
-        str weight_scaling,
+        str weight_scaling_choice,
         pos_grads,
         neg_grads,
-        float sum_Q,
-        int n_edges,
-        int n_vertices
+        float weight_scalar,
     ):
-    if weight_scaling == 'umap':
-        return umap_total_weight_scaling(
-            pos_grads,
-            neg_grads,
-            n_edges,
-            n_vertices
-        )
-    assert weight_scaling == 'tsne'
-    return tsne_total_weight_scaling(
-        pos_grads,
-        neg_grads,
-        sum_Q
-    )
+    if weight_scaling_choice == 'umap':
+        return umap_total_weight_scaling(pos_grads, neg_grads)
+    assert weight_scaling_choice == 'tsne'
+    return tsne_total_weight_scaling(pos_grads, neg_grads, weight_scalar)
 
 
 ##### BARNES-HUT CODE #####
 
 cdef calculate_barnes_hut(
-        str weight_scaling,
+        str weight_scaling_choice,
         str kernel_choice,
         np.float32_t[:, :] head_embedding,
         np.float32_t[:, :] tail_embedding,
@@ -202,7 +182,7 @@ cdef calculate_barnes_hut(
         float alpha,
 ):
     cdef:
-        double sum_Q = 0.0
+        double weight_scalar = 0.0
         int i, j, k, l, num_cells
         float cell_size, cell_dist, grad_scalar
         long offset = dim + 2
@@ -230,10 +210,10 @@ cdef calculate_barnes_hut(
             y1[d] = head_embedding[j, d]
             y2[d] = tail_embedding[k, d]
         dist_squared = rdist(y1, y2, dim)
-        pos_kernel = pos_force_kernel(weight_scaling, dist_squared, a, b)
+        pos_kernel = pos_force_kernel(weight_scaling_choice, dist_squared, a, b)
         pos_force = pos_kernel * weights[edge]
         for d in range(dim):
-            pos_grad = clip(pos_kernel * (y1[d] - y2[d]))
+            pos_grads[j, d] += clip(pos_force * (y1[d] - y2[d]))
 
     for v in range(n_vertices):
         # Get necessary data regarding current point and the quadtree cells
@@ -241,30 +221,34 @@ cdef calculate_barnes_hut(
             y1[d] = head_embedding[v, d]
         cell_metadata = qt.summarize(y1, cell_summaries, 0.25) # 0.25 = theta^2
         num_cells = cell_metadata // offset
+        cell_sizes = [cell_summaries[i * offset + dim + 1] for i in range(num_cells)]
 
         # For each quadtree cell with respect to the current point
         for i_cell in range(num_cells):
             cell_dist = cell_summaries[i_cell * offset + dim]
             cell_size = cell_summaries[i_cell * offset + dim + 1]
-            neg_kernel = neg_force_kernel(weight_scaling, cell_dist, a, b)
-            neg_force, sum_Q = neg_weight_scaling(
-                weight_scaling,
+            # FIXME - think more about this cell_size bounding
+            # Gives clusters that REALLY preserve local relationships while 
+            #   generally maintaining global ones
+            if cell_size < 1:
+                continue
+            neg_kernel = neg_force_kernel(weight_scaling_choice, cell_dist, a, b)
+            neg_force, weight_scalar = neg_weight_scaling(
+                weight_scaling_choice,
                 neg_kernel,
                 cell_size,
                 average_weight,
-                sum_Q
+                weight_scalar
             )
             for d in range(dim):
                 dim_index = i_cell * offset + d
                 neg_grads[v][d] += neg_force * cell_summaries[dim_index]
 
     pos_grads, neg_grads = total_weight_scaling(
-        weight_scaling,
+        weight_scaling_choice,
         pos_grads,
         neg_grads,
-        sum_Q,
-        n_edges,
-        n_vertices
+        weight_scalar,
     )
 
     for v in range(n_vertices):
@@ -275,7 +259,7 @@ cdef calculate_barnes_hut(
     return grads
 
 def bh_wrapper(
-        str weight_scaling,
+        str weight_scaling_choice,
         str kernel_choice,
         np.float32_t[:, :] head_embedding,
         np.float32_t[:, :] tail_embedding,
@@ -294,7 +278,7 @@ def bh_wrapper(
     cdef _QuadTree qt = _QuadTree(dim, 1)
     qt.build_tree(head_embedding)
     return calculate_barnes_hut(
-        weight_scaling,
+        weight_scaling_choice,
         kernel_choice,
         head_embedding,
         tail_embedding,

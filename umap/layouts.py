@@ -61,7 +61,7 @@ def rdist(x, y):
 
 
 def optimize_through_sampling(
-    weight_scaling,
+    weight_scaling_choice,
     kernel_choice,
     head_embedding,
     tail_embedding,
@@ -111,6 +111,10 @@ def optimize_through_sampling(
             # ANDREW - This accounts for the (1 - w(x, y)) in the repulsive grad coefficient
             # It's the same trick as the proportional sampling for the attractive force
             # ...I don't fully understand how this code performs that function
+            # FIXME - is this actually changing the sample rate based on 
+            #         the (1 - w(current, other)), where 'other' is the randomly
+            #         chosen tail embedding?
+            #       - It seems to be doing it based on an arbitrary averaging effect
             n_neg_samples = int(
                 (i_epoch - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
             )
@@ -143,7 +147,7 @@ def optimize_through_sampling(
 
 
 def optimize_uniformly(
-    weight_scaling,
+    weight_scaling_choice,
     kernel_choice,
     head_embedding,
     tail_embedding,
@@ -192,30 +196,31 @@ def optimize_uniformly(
         #   by the weights appropriately, we only need to alternate symmetrically
         #   between positive and negative forces rather than doing 1 positive
         #   calculation to n negative ones
-        k = tau_rand_int(rng_state) % n_vertices
-        other = tail_embedding[k]
-        dist_squared = rdist(current, other)
-        neg_force = neg_force_kernel(dist_squared, a, b)
+        for _ in range(negative_sample_rate):
+            k = tau_rand_int(rng_state) % n_vertices
+            other = tail_embedding[k]
+            dist_squared = rdist(current, other)
+            neg_force = neg_force_kernel(dist_squared, a, b)
 
-        # ANDREW - this is a lame approximation
-        #        - Realistically, we should use the actual weight on
-        #          the edge e_{ik}, but the coo_matrix is not
-        #          indexable. So we assume the differences cancel out over
-        #          enough iterations
-        neg_force *= (1 - average_weight)
-        for d in range(dim):
-            if grad_coeff > 0.0:
-                grad_d = clip(neg_force * (current[d] - other[d]))
-            else:
-                grad_d = 4.0
-            all_grads[j, d] += grad_d
+            # ANDREW - this is a lame approximation
+            #        - Realistically, we should use the actual weight on
+            #          the edge e_{ik}, but the coo_matrix is not
+            #          indexable. So we assume the differences cancel out over
+            #          enough iterations
+            neg_force *= (1 - average_weight)
+            for d in range(dim):
+                if grad_coeff > 0.0:
+                    grad_d = clip(neg_force * (current[d] - other[d]))
+                else:
+                    grad_d = 4.0
+                all_grads[j, d] += grad_d
 
     head_embedding += all_grads * alpha
     return grads
 
 
 def barnes_hut_opt(
-    weight_scaling,
+    weight_scaling_choice,
     kernel_choice,
     head_embedding,
     tail_embedding,
@@ -239,7 +244,7 @@ def barnes_hut_opt(
     i_epoch,
 ):
     return barnes_hut.bh_wrapper(
-        weight_scaling,
+        weight_scaling_choice,
         kernel_choice,
         head_embedding,
         tail_embedding,
@@ -258,7 +263,7 @@ def barnes_hut_opt(
 
 def optimize_layout_euclidean(
     optimize_method,
-    weight_scaling,
+    weight_scaling_choice,
     kernel_choice,
     head_embedding,
     tail_embedding,
@@ -276,51 +281,8 @@ def optimize_layout_euclidean(
     parallel=False,
     verbose=False,
 ):
-    """Improve an embedding using stochastic gradient descent to minimize the
-    fuzzy set cross entropy between the 1-skeletons of the high dimensional
-    and low dimensional fuzzy simplicial sets. In practice this is done by
-    sampling edges based on their membership strength (with the (1-p) terms
-    coming from negative sampling similar to word2vec).
-    Parameters
-    ----------
-    head_embedding: array of shape (n_samples, n_components)
-        The initial embedding to be improved by SGD.
-    tail_embedding: array of shape (source_samples, n_components)
-        The reference embedding of embedded points. If not embedding new
-        previously unseen points with respect to an existing embedding this
-        is simply the head_embedding (again); otherwise it provides the
-        existing embedding to embed with respect to.
-    head: array of shape (n_1_simplices)
-        The indices of the heads of 1-simplices with non-zero membership.
-    tail: array of shape (n_1_simplices)
-        The indices of the tails of 1-simplices with non-zero membership.
-    n_epochs: int
-        The number of training epochs to use in optimization.
-    n_vertices: int
-        The number of vertices (0-simplices) in the dataset.
-    epochs_per_samples: array of shape (n_1_simplices)
-        A float value of the number of epochs per 1-simplex. 1-simplices with
-        weaker membership strength will have more epochs between being sampled.
-    a: float
-        Parameter of differentiable approximation of right adjoint functor
-    b: float
-        Parameter of differentiable approximation of right adjoint functor
-    rng_state: array of int64, shape (3,)
-        The internal state of the rng
-    initial_alpha: float (optional, default 1.0)
-        Initial learning rate for the SGD.
-    negative_sample_rate: int (optional, default 5)
-        Number of negative samples to use per positive sample.
-    parallel: bool (optional, default False)
-        Whether to run the computation using numba parallel.
-        Running in parallel is non-deterministic, and is not used
-        if a random seed has been set, to ensure reproducibility.
-    verbose: bool (optional, default False)
-        Whether to report information on the current progress of the algorithm.
-    Returns
-    -------
-    embedding: array of shape (n_samples, n_components)
-        The optimized embedding.
+    """
+    FIXME FIXME FIXME
     """
 
     dim = head_embedding.shape[1]
@@ -336,10 +298,14 @@ def optimize_layout_euclidean(
     epoch_of_next_sample = epochs_per_sample.copy()
 
     # Perform weight scaling on high-dimensional relationships
-    weights, initial_alpha = barnes_hut.pos_weight_scaling(weight_scaling, weights, initial_alpha)
+    weights, initial_alpha = barnes_hut.pos_weight_scaling(
+        weight_scaling_choice,
+        weights,
+        initial_alpha
+    )
 
     if 'barnes_hut' not in optimize_method:
-        assert weight_scaling == 'umap'
+        assert weight_scaling_choice == 'umap'
         single_step_functions = {
             'umap_sampling': optimize_through_sampling,
             'umap_uniform': optimize_uniformly,
@@ -360,7 +326,7 @@ def optimize_layout_euclidean(
         print(i_epoch)
         # FIXME - clean this up!!
         grads = optimize_fn(
-            weight_scaling,
+            weight_scaling_choice,
             kernel_choice,
             head_embedding,
             tail_embedding,
