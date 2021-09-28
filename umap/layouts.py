@@ -107,6 +107,7 @@ def optimize_through_sampling(
                 # ANDREW - tsne doesn't do grad clipping
                 grad_d = clip(pos_force * (current[d] - other[d]))
                 current[d] += grad_d * alpha
+                other[d] -= grad_d * alpha
 
             epoch_of_next_sample[i] += epochs_per_sample[i]
 
