@@ -32,8 +32,9 @@ parser.add_argument(
     default='umap_sampling',
     help='Which optimization algorithm to use'
 )
+# FIXME - rename to "normalize_P"
 parser.add_argument(
-    '--weight-scaling-choice',
+    '--normalization',
     choices=['tsne', 'umap'],
     default='umap',
     help='Which optimization algorithm to use'
@@ -48,11 +49,6 @@ parser.add_argument(
     '--downsample-stride',
     type=int,
     default=15
-)
-parser.add_argument(
-    '--tsne-weights',
-    action='store_true',
-    help='If present, set a and b to tSNE values'
 )
 parser.add_argument(
     '--dr-algorithm',
@@ -88,22 +84,23 @@ x_train, y_train = x_train[::args.downsample_stride], y_train[::args.downsample_
 num_samples = int(x_train.shape[0])
 x_train = np.reshape(x_train, [num_samples, -1])
 
-if args.tsne_weights:
+if args.kernel_choice == 'tsne':
     a, b = 1, 1
 else:
+    assert args.kernel_choice == 'umap'
     a, b = None, None
 
 if args.dr_algorithm == 'umap':
     dr = UMAP(
             n_neighbors=args.n_neighbors,
             n_epochs=args.n_epochs,
-            random_state=12345,
+            random_state=12345, # Comment this out to turn on parallelization
             init=init,
             pseudo_distance=(not args.ignore_umap_metric),
             tsne_symmetrization=args.tsne_symmetrization,
             optimize_method=args.optimize_method,
             negative_sample_rate=args.neg_sample_rate,
-            weight_scaling_choice=args.weight_scaling_choice,
+            normalization=args.normalization,
             kernel_choice=args.kernel_choice,
             a=a,
             b=b,

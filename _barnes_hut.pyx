@@ -54,118 +54,155 @@ cdef rdist(float* x, float* y, int dim):
 ##### KERNELS #####
 ###################
 
-cdef umap_pos_force_kernel(float dist_squared, float a, float b):
-    cdef float grad_scalar = 0.0
+cdef umap_attraction_grad(float dist_squared, float a, float b):
+    float grad_scalar = 0.0
     if dist_squared > 0.0:
         grad_scalar = -2.0 * a * b * pow(dist_squared, b - 1.0)
         grad_scalar /= a * pow(dist_squared, b) + 1.0
     return grad_scalar
 
-cdef umap_neg_force_kernel(float dist_squared, float a, float b):
-    cdef float phi_ijZ = 0.0
+cdef umap_repulsion_grad(float dist_squared, float a, float b):
+    float phi_ijZ = 0.0
     if dist_squared > 0.0:
         phi_ijZ = 2.0 * b
         phi_ijZ /= (0.001 + dist_squared) * (a * pow(dist_squared, b) + 1)
     return phi_ijZ
 
-cdef tsne_kernel(float dist_squared):
-    return 1 / (1 + dist_squared)
-
-def pos_force_kernel(str kernel_choice, float dist_squared, float a, float b):
-    if kernel_choice == 'umap':
-        return umap_pos_force_kernel(dist_squared, a, b)
-    assert kernel_choice == 'tsne'
-    return tsne_kernel(dist_squared)
-
-def neg_force_kernel(str kernel_choice, float dist_squared, float a, float b):
-    if kernel_choice == 'umap':
-        return umap_neg_force_kernel(dist_squared, a, b)
-    assert kernel_choice == 'tsne'
-    return tsne_kernel(dist_squared)
+cdef kernel_function(float dist_squared, float a, float b):
+    return 1 / (1 + a * pow(dist_squared, b))
 
 ###################
 ##### WEIGHTS #####
 ###################
 
-cdef umap_pos_weight_scaling(
+cdef umap_p_scaling(
         np.float32_t[:] weights,
-        initial_alpha
+        float initial_alpha
     ):
     return weights, initial_alpha
 
-cdef tsne_pos_weight_scaling(
+cdef tsne_p_scaling(
         np.float32_t[:] weights,
-        initial_alpha
+        float initial_alpha
     ):
-    # FIXME - early exaggeration!!
+    # FIXME - add early exaggeration!!
     return weights / np.sum(weights), initial_alpha * 200
 
-def pos_weight_scaling(
-        str weight_scaling_choice,
+cdef p_scaling(
+        str normalization,
         np.float32_t[:] weights,
-        initial_alpha
+        float initial_alpha
     ):
-    if weight_scaling_choice == 'umap':
+    if normalization == 'umap':
         # umap doesn't scale P_ij weights
-        return umap_pos_weight_scaling(weights, initial_alpha)
-    assert weight_scaling_choice == 'tsne'
-    return tsne_pos_weight_scaling(weights, initial_alpha)
+        return umap_p_scaling(weights, initial_alpha)
+    assert normalization == 'tsne'
+    return tsne_p_scaling(weights, initial_alpha)
 
 
-cdef umap_neg_weight_scaling(
-        float kernel,
+cdef umap_repulsive_force(
+        float dist_squared,
+        float a,
+        float b,
         int cell_size,
         float average_weight,
     ):
-    neg_force = kernel * (1 - average_weight) * cell_size
-    return neg_force, 0.0
+    kernel = umap_repulsion_grad(dist_squared, a, b)
+    # ANDREW - Using average_weight is a lame approximation
+    #        - Realistically, we should use the actual weight on
+    #          the edge e_{ik}, but the coo_matrix is not
+    #          indexable. So we assume the differences cancel out over
+    #          enough iterations
+    float repulsive_force = cell_size * kernel * (1 - average_weight)
+    return repulsive_force, 0.0
 
-cdef tsne_neg_weight_scaling(
-        float kernel,
+cdef tsne_repulsive_force(
+        float dist_squared,
+        float a,
+        float b,
         int cell_size,
-        float weight_scalar
+        float Z
     ):
-    weight_scalar += cell_size * kernel # Collect the q_ij's contributions into Z
-    neg_force = cell_size * kernel * kernel
-    return neg_force, weight_scalar
+    float kernel = kernel_function(dist_squared, a, b)
+    Z += cell_size * kernel # Collect the q_ij's contributions into Z
+    float repulsive_force = cell_size * kernel * kernel
+    return repulsive_force, Z
 
-def neg_weight_scaling(
-        str weight_scaling_choice,
-        float kernel,
+cdef attractive_force_func(
+        str normalization,
+        float dist_squared,
+        float a,
+        float b,
+        float edge_weight
+    ):
+    if normalization == 'umap':
+        edge_force = umap_attraction_grad(dist_squared, a, b)
+    else:
+        assert normalization == 'tsne'
+        edge_force = kernel_function(dist_squared, a, b)
+
+    # FIXME FIXME FIXME
+    # This does NOT work with parallel=True
+    return edge_force * edge_weight
+
+cdef repulsive_force_func(
+        str normalization,
+        float dist_squared,
+        float a,
+        float b,
         int cell_size,
         float average_weight,
-        float weight_scalar
+        float Z
     ):
-    if weight_scaling_choice == 'umap':
-        return umap_neg_weight_scaling(kernel, cell_size, average_weight)
-    assert weight_scaling_choice == 'tsne'
-    return tsne_neg_weight_scaling(kernel, cell_size, weight_scalar)
+    if normalization == 'umap':
+        return umap_repulsive_force(
+            dist_squared,
+            a,
+            b,
+            cell_size,
+            average_weight
+        )
+    assert normalization == 'tsne'
+    return tsne_repulsive_force(
+        dist_squared,
+        a,
+        b,
+        cell_size,
+        Z
+    )
 
-
-cdef umap_total_weight_scaling(pos_grads, neg_grads):
-    return pos_grads, neg_grads
-
-cdef tsne_total_weight_scaling(pos_grads, neg_grads, float weight_scalar):
-    neg_grads *= 4 / weight_scalar
-    pos_grads *= 4
-    return pos_grads, neg_grads
-
-def total_weight_scaling(
-        str weight_scaling_choice,
-        pos_grads,
-        neg_grads,
-        float weight_scalar,
+cdef umap_grad_scaling(
+        np.float32_t[:] attraction,
+        np.float32_t[:] repulsion
     ):
-    if weight_scaling_choice == 'umap':
-        return umap_total_weight_scaling(pos_grads, neg_grads)
-    assert weight_scaling_choice == 'tsne'
-    return tsne_total_weight_scaling(pos_grads, neg_grads, weight_scalar)
+    return attraction, repulsion
+
+cdef tsne_grad_scaling(
+        np.float32_t[:] attraction,
+        np.float32_t[:] repulsion,
+        float Z
+    ):
+    repulsion *= - 4 / Z
+    attraction *= 4
+    return attraction, repulsion
+
+cdef grad_scaling(
+        str normalization,
+        np.float32_t[:, :] attraction,
+        np.float32_t[:, :] repulsion,
+        float Z,
+    ):
+    if normalization == 'umap':
+        return umap_grad_scaling(attraction, repulsion)
+    assert normalization == 'tsne'
+    return tsne_grad_scaling(attraction, repulsion, Z)
+
 
 
 ##### BARNES-HUT CODE #####
 
 cdef calculate_barnes_hut(
-        str weight_scaling_choice,
+        str normalization,
         str kernel_choice,
         np.float32_t[:, :] head_embedding,
         np.float32_t[:, :] tail_embedding,
@@ -182,7 +219,7 @@ cdef calculate_barnes_hut(
         float alpha,
 ):
     cdef:
-        double weight_scalar = 0.0
+        double Z = 0.0
         int i, j, k, l, num_cells
         float cell_size, cell_dist, grad_scalar
         long offset = dim + 2
@@ -193,9 +230,9 @@ cdef calculate_barnes_hut(
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
     # FIXME - what type should these be for optimal performance?
-    cdef np.ndarray[double, mode="c", ndim=2] pos_grads = np.zeros([n_vertices, dim])
-    cdef np.ndarray[double, mode="c", ndim=2] neg_grads = np.zeros([n_vertices, dim])
-    cdef np.ndarray[double, mode="c", ndim=2] all_grads = np.zeros([n_vertices, dim])
+    cdef np.ndarray[double, mode="c", ndim=2] attractive_forces = np.zeros([n_vertices, dim])
+    cdef np.ndarray[double, mode="c", ndim=2] repulsive_forces = np.zeros([n_vertices, dim])
+    cdef np.ndarray[double, mode="c", ndim=2] forces = np.zeros([n_vertices, dim])
 
     cdef int n_edges = int(epochs_per_sample.shape[0])
     cdef float average_weight = np.sum(weights) / n_edges
@@ -210,10 +247,15 @@ cdef calculate_barnes_hut(
             y1[d] = head_embedding[j, d]
             y2[d] = tail_embedding[k, d]
         dist_squared = rdist(y1, y2, dim)
-        pos_kernel = pos_force_kernel(weight_scaling_choice, dist_squared, a, b)
-        pos_force = pos_kernel * weights[edge]
+        attractive_force = attractive_force_func(
+            normalization,
+            dist_squared,
+            a,
+            b,
+            weights[edge]
+        )
         for d in range(dim):
-            pos_grads[j, d] += clip(pos_force * (y1[d] - y2[d]))
+            attractive_forces[j, d] += clip(attractive_force * (y1[d] - y2[d]))
 
     for v in range(n_vertices):
         # Get necessary data regarding current point and the quadtree cells
@@ -228,38 +270,39 @@ cdef calculate_barnes_hut(
             cell_dist = cell_summaries[i_cell * offset + dim]
             cell_size = cell_summaries[i_cell * offset + dim + 1]
             # FIXME - think more about this cell_size bounding
-            # Gives clusters that REALLY preserve local relationships while 
-            #   generally maintaining global ones
+            # Ignoring small cells gives clusters that REALLY preserve 
+            #      local relationships while generally maintaining global ones
             if cell_size < 1:
                 continue
-            neg_kernel = neg_force_kernel(weight_scaling_choice, cell_dist, a, b)
-            neg_force, weight_scalar = neg_weight_scaling(
-                weight_scaling_choice,
-                neg_kernel,
+            repulsive_force, Z = repulsive_force_func(
+                normalization,
+                dist_squared,
+                a,
+                b,
                 cell_size,
                 average_weight,
-                weight_scalar
+                Z
             )
             for d in range(dim):
                 dim_index = i_cell * offset + d
-                neg_grads[v][d] += neg_force * cell_summaries[dim_index]
+                repulsive_forces[v][d] += repulsive_force * cell_summaries[dim_index]
 
-    pos_grads, neg_grads = total_weight_scaling(
-        weight_scaling_choice,
-        pos_grads,
-        neg_grads,
-        weight_scalar,
+    attractive_forces, repulsive_forces = grad_scaling(
+        normalization,
+        attractive_forces,
+        repulsive_forces,
+        Z,
     )
 
     for v in range(n_vertices):
         for d in range(dim):
-            grads[v][d] = (pos_grads[v][d] - neg_grads[v][d]) + 0.9 * grads[v][d]
-            head_embedding[v][d] -= grads[v][d] * alpha
+            forces[v][d] = (attractive_forces[v][d] + repulsive_forces[v][d]) + 0.9 * forces[v][d]
+            head_embedding[v][d] -= forces[v][d] * alpha
 
     return grads
 
 def bh_wrapper(
-        str weight_scaling_choice,
+        str normalization,
         str kernel_choice,
         np.float32_t[:, :] head_embedding,
         np.float32_t[:, :] tail_embedding,
@@ -283,7 +326,7 @@ def bh_wrapper(
     cdef _QuadTree qt = _QuadTree(dim, 1)
     qt.build_tree(head_embedding)
     return calculate_barnes_hut(
-        weight_scaling_choice,
+        normalization,
         kernel_choice,
         head_embedding,
         tail_embedding,

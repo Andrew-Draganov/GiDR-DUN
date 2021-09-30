@@ -63,7 +63,7 @@ def rdist(x, y):
 
 
 def optimize_through_sampling(
-    weight_scaling_choice,
+    normalization,
     kernel_choice,
     head_embedding,
     tail_embedding,
@@ -71,9 +71,9 @@ def optimize_through_sampling(
     tail,
     weights,
     grads,
-    nonzero_inds,
     n_vertices,
     average_weight,
+    average_pos_weight,
     epochs_per_sample,
     a,
     b,
@@ -86,7 +86,6 @@ def optimize_through_sampling(
     epoch_of_next_sample,
     i_epoch,
 ):
-
     # ANDREW - If we optimize an edge, then the next epoch we optimize it is
     #          the current epoch + epochs_per_sample[i] for that edge
     #        - Basically, optimize edge i every epochs_per_sample[i] steps
@@ -101,13 +100,19 @@ def optimize_through_sampling(
             current = head_embedding[j]
             other = tail_embedding[k]
             dist_squared = rdist(current, other)
-            pos_force = comparison_utils.pos_force_kernel(kernel_choice, dist_squared, a, b)
+            attractive_force = comparison_utils.attractive_force(
+                normalization,
+                dist_squared,
+                a,
+                b,
+                edge_weight=1 # Don't scale by weight since we sample according to weight distribution
+            )
 
             for d in range(dim):
                 # ANDREW - tsne doesn't do grad clipping
-                grad_d = clip(pos_force * (current[d] - other[d]))
-                current[d] += grad_d * alpha
-                other[d] -= grad_d * alpha
+                attraction_d = clip(attractive_force * (current[d] - other[d]))
+                current[d] += attraction_d * alpha
+                other[d] -= attraction_d * alpha
 
             epoch_of_next_sample[i] += epochs_per_sample[i]
 
@@ -131,15 +136,23 @@ def optimize_through_sampling(
                     continue
                 other = tail_embedding[k]
                 dist_squared = rdist(current, other)
-                neg_force = comparison_utils.neg_force_kernel(kernel_choice, dist_squared, a, b)
+                repulsive_force, _ = comparison_utils.repulsive_force(
+                    normalization,
+                    dist_squared,
+                    a,
+                    b,
+                    cell_size=1,
+                    average_weight=0, # Don't scale by weight since we sample according to weight distribution
+                    Z=0 # don't collect
+                )
 
                 for d in range(dim):
                     # ANDREW - tSNE doesn't do gradient clipping
-                    if neg_force > 0.0:
-                        grad_d = clip(neg_force * (current[d] - other[d]))
+                    if repulsive_force > 0.0:
+                        repulsion_d = clip(repulsive_force * (current[d] - other[d]))
                     else:
-                        grad_d = 4.0
-                    current[d] += grad_d * alpha
+                        repulsion_d = 4.0
+                    current[d] += repulsion_d * alpha
 
             epoch_of_next_negative_sample[i] += (
                 n_neg_samples * epochs_per_negative_sample[i]
@@ -149,7 +162,7 @@ def optimize_through_sampling(
 
 
 def optimize_uniformly(
-    weight_scaling_choice,
+    normalization,
     kernel_choice,
     head_embedding,
     tail_embedding,
@@ -157,9 +170,9 @@ def optimize_uniformly(
     tail,
     weights,
     grads,
-    nonzero_inds,
     n_vertices,
     average_weight,
+    average_pos_weight,
     epochs_per_sample,
     a,
     b,
@@ -172,8 +185,9 @@ def optimize_uniformly(
     epoch_of_next_sample,
     i_epoch,
 ):
-    # all_grads is where we store summed gradients
-    all_grads = np.zeros_like(head_embedding)
+    attraction = np.zeros_like(head_embedding)
+    repulsion = np.zeros_like(head_embedding)
+    Z = 0.0
 
     for i in numba.prange(epochs_per_sample.shape[0]):
         # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
@@ -184,11 +198,18 @@ def optimize_uniformly(
         current = head_embedding[j]
         other = tail_embedding[k]
         dist_squared = rdist(current, other)
-        pos_force = comparison_utils.pos_force_kernel(kernel_choice, dist_squared, a, b)
-        pos_force *= weights[i]
+        attractive_force = comparison_utils.attractive_force(
+            normalization,
+            dist_squared,
+            a,
+            b,
+            weights[i]
+        )
+
         for d in range(dim):
-            grad_d = clip(pos_force * (current[d] - other[d]))
-            all_grads[j, d] += grad_d
+            grad_d = clip(attractive_force * (current[d] - other[d]))
+            attraction[j, d] += grad_d
+            attraction[k, d] -= grad_d
 
         # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
         # ANDREW - If we are summing the effects of the forces and multiplying them
@@ -198,27 +219,36 @@ def optimize_uniformly(
         k = tau_rand_int(rng_state) % n_vertices
         other = tail_embedding[k]
         dist_squared = rdist(current, other)
-        neg_force = comparison_utils.neg_force_kernel(kernel_choice, dist_squared, a, b)
+        repulsive_force, Z = comparison_utils.repulsive_force(
+            normalization,
+            dist_squared,
+            a,
+            b,
+            cell_size=1,
+            average_weight=average_weight,
+            Z=Z
+        )
 
-        # ANDREW - this is a lame approximation
-        #        - Realistically, we should use the actual weight on
-        #          the edge e_{ik}, but the coo_matrix is not
-        #          indexable. So we assume the differences cancel out over
-        #          enough iterations
-        neg_force *= (1 - average_weight)
         for d in range(dim):
-            if neg_force > 0.0:
-                grad_d = clip(neg_force * (current[d] - other[d]))
+            if repulsive_force > 0.0:
+                grad_d = clip(repulsive_force * (current[d] - other[d]))
             else:
                 grad_d = 4.0
-            all_grads[j, d] += grad_d
+            repulsion[j, d] += grad_d
 
-    head_embedding += all_grads * alpha
+    attraction, repulsion = comparison_utils.grad_scaling(
+        normalization,
+        attraction,
+        repulsion,
+        Z
+    )
+
+    head_embedding += (attraction + repulsion) * alpha
     return grads
 
 
 def barnes_hut_opt(
-    weight_scaling_choice,
+    normalization,
     kernel_choice,
     head_embedding,
     tail_embedding,
@@ -226,9 +256,9 @@ def barnes_hut_opt(
     tail,
     weights,
     grads,
-    nonzero_inds,
     n_vertices,
     average_weight,
+    average_pos_weight,
     epochs_per_sample,
     a,
     b,
@@ -242,7 +272,7 @@ def barnes_hut_opt(
     i_epoch,
 ):
     return barnes_hut.bh_wrapper(
-        weight_scaling_choice,
+        normalization,
         kernel_choice,
         head_embedding,
         tail_embedding,
@@ -261,7 +291,7 @@ def barnes_hut_opt(
 
 def optimize_layout_euclidean(
     optimize_method,
-    weight_scaling_choice,
+    normalization,
     kernel_choice,
     head_embedding,
     tail_embedding,
@@ -284,7 +314,6 @@ def optimize_layout_euclidean(
     """
 
     dim = head_embedding.shape[1]
-    nonzero_inds = np.stack(weights.nonzero()).T
     weights = weights.astype(np.float32)
     grads = np.zeros([n_vertices, dim], dtype=np.float64)
 
@@ -295,17 +324,17 @@ def optimize_layout_euclidean(
     epoch_of_next_sample = epochs_per_sample.copy()
 
     # Perform weight scaling on high-dimensional relationships
-    weights, initial_alpha = barnes_hut.pos_weight_scaling(
-        weight_scaling_choice,
+    weights, initial_alpha = comparison_utils.p_scaling(
+        normalization,
         weights,
         initial_alpha
     )
 
     n_edges = n_vertices * (n_vertices - 1)
     average_weight = np.sum(weights) / float(n_edges)
+    average_pos_weight = np.sum(weights) / float(weights.shape[0])
 
     if 'barnes_hut' not in optimize_method:
-        assert weight_scaling_choice == 'umap'
         single_step_functions = {
             'umap_sampling': optimize_through_sampling,
             'umap_uniform': optimize_uniformly,
@@ -326,7 +355,7 @@ def optimize_layout_euclidean(
     for i_epoch in range(n_epochs):
         # FIXME - clean this up!!
         grads = optimize_fn(
-            weight_scaling_choice,
+            normalization,
             kernel_choice,
             head_embedding,
             tail_embedding,
@@ -334,9 +363,9 @@ def optimize_layout_euclidean(
             tail,
             weights,
             grads,
-            nonzero_inds,
             n_vertices,
             average_weight,
+            average_pos_weight,
             epochs_per_sample,
             a,
             b,

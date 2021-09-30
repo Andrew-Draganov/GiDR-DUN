@@ -6,7 +6,7 @@ import numpy as np
 ###################
 
 @numba.njit()
-def umap_pos_force_kernel(dist_squared, a, b):
+def umap_attraction_grad(dist_squared, a, b):
     grad_scalar = 0.0
     if dist_squared > 0.0:
         grad_scalar = -2.0 * a * b * pow(dist_squared, b - 1.0)
@@ -14,7 +14,7 @@ def umap_pos_force_kernel(dist_squared, a, b):
     return grad_scalar
 
 @numba.njit()
-def umap_neg_force_kernel(dist_squared, a, b):
+def umap_repulsion_grad(dist_squared, a, b):
     phi_ijZ = 0.0
     if dist_squared > 0.0:
         phi_ijZ = 2.0 * b
@@ -22,108 +22,136 @@ def umap_neg_force_kernel(dist_squared, a, b):
     return phi_ijZ
 
 @numba.njit()
-def tsne_kernel(dist_squared):
-    return 1 / (1 + dist_squared)
-
-@numba.njit()
-def pos_force_kernel(kernel_choice, dist_squared, a, b):
-    if kernel_choice == 'umap':
-        return umap_pos_force_kernel(dist_squared, a, b)
-    assert kernel_choice == 'tsne'
-    return tsne_kernel(dist_squared)
-
-@numba.njit()
-def neg_force_kernel(kernel_choice, dist_squared, a, b):
-    if kernel_choice == 'umap':
-        return umap_neg_force_kernel(dist_squared, a, b)
-    assert kernel_choice == 'tsne'
-    return tsne_kernel(dist_squared)
+def kernel_function(dist_squared, a, b):
+    return 1 / (1 + a * pow(dist_squared, b))
 
 ###################
 ##### WEIGHTS #####
 ###################
 
 @numba.njit()
-def umap_pos_weight_scaling(
+def umap_p_scaling(
         weights,
         initial_alpha
     ):
     return weights, initial_alpha
 
 @numba.njit()
-def tsne_pos_weight_scaling(
+def tsne_p_scaling(
         weights,
         initial_alpha
     ):
-    # FIXME - early exaggeration!!
+    # FIXME - add early exaggeration!!
     return weights / np.sum(weights), initial_alpha * 200
 
 @numba.njit()
-def pos_weight_scaling(
-        weight_scaling_choice,
+def p_scaling(
+        normalization,
         weights,
         initial_alpha
     ):
-    if weight_scaling_choice == 'umap':
+    if normalization == 'umap':
         # umap doesn't scale P_ij weights
-        return umap_pos_weight_scaling(weights, initial_alpha)
-    assert weight_scaling_choice == 'tsne'
-    return tsne_pos_weight_scaling(weights, initial_alpha)
+        return umap_p_scaling(weights, initial_alpha)
+    assert normalization == 'tsne'
+    return tsne_p_scaling(weights, initial_alpha)
 
 
 @numba.njit()
-def umap_neg_weight_scaling(
-        kernel,
+def umap_repulsive_force(
+        dist_squared,
+        a,
+        b,
         cell_size,
         average_weight,
     ):
-    neg_force = kernel * (1 - average_weight) * cell_size
-    return neg_force, 0.0
+    kernel = umap_repulsion_grad(dist_squared, a, b)
+    # ANDREW - Using average_weight is a lame approximation
+    #        - Realistically, we should use the actual weight on
+    #          the edge e_{ik}, but the coo_matrix is not
+    #          indexable. So we assume the differences cancel out over
+    #          enough iterations
+    repulsive_force = cell_size * kernel * (1 - average_weight)
+    return repulsive_force, 0.0
 
 @numba.njit()
-def tsne_neg_weight_scaling(
-        kernel,
+def tsne_repulsive_force(
+        dist_squared,
+        a,
+        b,
         cell_size,
-        weight_scalar
+        Z
     ):
-    weight_scalar += cell_size * kernel # Collect the q_ij's contributions into Z
-    neg_force = cell_size * kernel * kernel
-    return neg_force, weight_scalar
+    kernel = kernel_function(dist_squared, a, b)
+    Z += cell_size * kernel # Collect the q_ij's contributions into Z
+    repulsive_force = cell_size * kernel * kernel
+    return repulsive_force, Z
 
 @numba.njit()
-def neg_weight_scaling(
-        weight_scaling_choice,
-        kernel,
+def attractive_force(
+        normalization,
+        dist_squared,
+        a,
+        b,
+        edge_weight
+    ):
+    if normalization == 'umap':
+        edge_force = umap_attraction_grad(dist_squared, a, b)
+    else:
+        assert normalization == 'tsne'
+        edge_force = kernel_function(dist_squared, a, b)
+
+    # FIXME FIXME FIXME
+    # This does NOT work with parallel=True
+    return edge_force * edge_weight
+
+@numba.njit()
+def repulsive_force(
+        normalization,
+        dist_squared,
+        a,
+        b,
         cell_size,
         average_weight,
-        weight_scalar
+        Z
     ):
-    if weight_scaling_choice == 'umap':
-        return umap_neg_weight_scaling(kernel, cell_size, average_weight)
-    assert weight_scaling_choice == 'tsne'
-    return tsne_neg_weight_scaling(kernel, cell_size, weight_scalar)
-
+    if normalization == 'umap':
+        return umap_repulsive_force(
+            dist_squared,
+            a,
+            b,
+            cell_size,
+            average_weight
+        )
+    assert normalization == 'tsne'
+    return tsne_repulsive_force(
+        dist_squared,
+        a,
+        b,
+        cell_size,
+        Z
+    )
 
 @numba.njit()
-def umap_total_weight_scaling(pos_grads, neg_grads):
-    return pos_grads, neg_grads
+def umap_grad_scaling(attraction, repulsion):
+    return attraction, repulsion
 
 @numba.njit()
-def tsne_total_weight_scaling(pos_grads, neg_grads, weight_scalar):
-    neg_grads *= 4 / weight_scalar
-    pos_grads *= 4
-    return pos_grads, neg_grads
+def tsne_grad_scaling(attraction, repulsion, Z):
+    repulsion *= - 4 / Z
+    attraction *= 4
+    return attraction, repulsion
 
 @numba.njit()
-def total_weight_scaling(
-        weight_scaling_choice,
-        pos_grads,
-        neg_grads,
-        weight_scalar,
+def grad_scaling(
+        normalization,
+        attraction,
+        repulsion,
+        Z,
     ):
-    if weight_scaling_choice == 'umap':
-        return umap_total_weight_scaling(pos_grads, neg_grads)
-    assert weight_scaling_choice == 'tsne'
-    return tsne_total_weight_scaling(pos_grads, neg_grads, weight_scalar)
+    if normalization == 'umap':
+        return umap_grad_scaling(attraction, repulsion)
+    assert normalization == 'tsne'
+    return tsne_grad_scaling(attraction, repulsion, Z)
 
 
