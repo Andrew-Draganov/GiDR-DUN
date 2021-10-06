@@ -1,6 +1,7 @@
 import numpy as np
 from tensorflow import keras as tfk
 from umap_ import UMAP
+# from umap import UMAP
 import argparse
 from sklearn.manifold import TSNE
 from matplotlib import pyplot as plt
@@ -23,25 +24,52 @@ parser.add_argument(
 )
 parser.add_argument(
     '--optimize-method',
-    choices=['umap_sampling', 'umap_uniform', 'barnes_hut'],
+    choices=[
+        'umap_sampling',
+        'umap_uniform',
+        'barnes_hut'
+    ],
     default='umap_sampling',
     help='Which optimization algorithm to use'
+)
+# FIXME - rename to "normalize_P"
+parser.add_argument(
+    '--normalization',
+    choices=['tsne', 'umap'],
+    default='umap',
+    help='Which optimization algorithm to use'
+)
+parser.add_argument(
+    '--kernel-choice',
+    choices=['tsne', 'umap'],
+    default='umap',
+    help='Which weight normalization and scaling to use'
 )
 parser.add_argument(
     '--downsample-stride',
     type=int,
-    default=10
-)
-parser.add_argument(
-    '--tsne-weights',
-    action='store_true',
-    help='If present, set a and b to tSNE values'
+    default=15
 )
 parser.add_argument(
     '--dr-algorithm',
     choices=['umap', 'tsne'],
     default='umap',
     help='Which algorithm to use to save images'
+)
+parser.add_argument(
+    '--n-neighbors',
+    type=int,
+    default=15
+)
+parser.add_argument(
+    '--neg-sample-rate',
+    type=int,
+    default=15
+)
+parser.add_argument(
+    '--n-epochs',
+    type=int,
+    default=500
 )
 args = parser.parse_args()
 
@@ -56,18 +84,24 @@ x_train, y_train = x_train[::args.downsample_stride], y_train[::args.downsample_
 num_samples = int(x_train.shape[0])
 x_train = np.reshape(x_train, [num_samples, -1])
 
-if args.tsne_weights:
+if args.kernel_choice == 'tsne':
     a, b = 1, 1
 else:
+    assert args.kernel_choice == 'umap'
     a, b = None, None
 
 if args.dr_algorithm == 'umap':
     dr = UMAP(
-            random_state=12345,
+            n_neighbors=args.n_neighbors,
+            n_epochs=args.n_epochs,
+            random_state=12345, # Comment this out to turn on parallelization
             init=init,
             pseudo_distance=(not args.ignore_umap_metric),
             tsne_symmetrization=args.tsne_symmetrization,
             optimize_method=args.optimize_method,
+            negative_sample_rate=args.neg_sample_rate,
+            normalization=args.normalization,
+            kernel_choice=args.kernel_choice,
             a=a,
             b=b,
             verbose=True

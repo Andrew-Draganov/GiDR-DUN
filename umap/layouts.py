@@ -1,7 +1,14 @@
+import time
 import numpy as np
 import numba
 import distances as dist
+from sklearn.neighbors._quad_tree import _QuadTree
 from utils import tau_rand_int
+import pyximport
+pyximport.install(setup_args={"script_args" : ["--verbose"]})
+import barnes_hut
+import comparison_utils
+
 
 @numba.njit()
 def clip(val):
@@ -56,21 +63,23 @@ def rdist(x, y):
 
 
 def optimize_through_sampling(
+    normalization,
+    kernel_choice,
     head_embedding,
     tail_embedding,
     head,
     tail,
     weights,
-    nonzero_inds,
+    grads,
     n_vertices,
+    average_weight,
+    average_pos_weight,
     epochs_per_sample,
     a,
     b,
     rng_state,
     dim,
-    move_other,
     alpha,
-    negative_sample_rate,
     epochs_per_negative_sample,
     epoch_of_next_negative_sample,
     epoch_of_next_sample,
@@ -78,7 +87,7 @@ def optimize_through_sampling(
 ):
     # ANDREW - If we optimize an edge, then the next epoch we optimize it is
     #          the current epoch + epochs_per_sample[i] for that edge
-    #        - Basically, for each edge, optimize it every epochs_per_sample steps
+    #        - Basically, optimize edge i every epochs_per_sample[i] steps
     for i in numba.prange(epochs_per_sample.shape[0]):
         if epoch_of_next_sample[i] <= i_epoch:
             # Gets the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
@@ -90,26 +99,29 @@ def optimize_through_sampling(
             current = head_embedding[j]
             other = tail_embedding[k]
             dist_squared = rdist(current, other)
-
-            if dist_squared > 0.0:
-                # ANDREW - this is the actual attractive force for UMAP
-                grad_coeff = -2.0 * a * b * pow(dist_squared, b - 1.0)
-                grad_coeff /= a * pow(dist_squared, b) + 1.0
-            else:
-                grad_coeff = 0.0
-            # ANDREW - rho isn't used in grad coefficient here due to "cheat"
-            # Author said in email that we perform epochs in proportion to
-            # the w(x, y) value
+            attractive_force = comparison_utils.attractive_force(
+                normalization,
+                dist_squared,
+                a,
+                b,
+                edge_weight=1 # Don't scale by weight since we sample according to weight distribution
+            )
 
             for d in range(dim):
-                # ANDREW - tsne doesn't do grad clipping here
-                grad_d = clip(grad_coeff * (current[d] - other[d]))
-                current[d] += grad_d * alpha
+                # ANDREW - tsne doesn't do grad clipping
+                attraction_d = clip(attractive_force * (current[d] - other[d]))
+                current[d] += attraction_d * alpha
+                other[d] -= attraction_d * alpha
 
             epoch_of_next_sample[i] += epochs_per_sample[i]
 
             # ANDREW - This accounts for the (1 - w(x, y)) in the repulsive grad coefficient
             # It's the same trick as the proportional sampling for the attractive force
+            # ...I don't fully understand how this code performs that function
+            # FIXME - is this actually changing the sample rate based on 
+            #         the (1 - w(current, other)), where 'other' is the randomly
+            #         chosen tail embedding?
+            #       - It seems to be doing it based on an arbitrary averaging effect
             n_neg_samples = int(
                 (i_epoch - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
             )
@@ -119,119 +131,165 @@ def optimize_through_sampling(
             for p in range(n_neg_samples):
                 # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
                 k = tau_rand_int(rng_state) % n_vertices
+                if j == k:
+                    continue
                 other = tail_embedding[k]
                 dist_squared = rdist(current, other)
-
-                if dist_squared > 0.0:
-                    # ANDREW - this is the actual repulsive force for umap
-                    grad_coeff = 2.0 * b
-                    grad_coeff /= (0.001 + dist_squared) * (
-                        a * pow(dist_squared, b) + 1
-                    )
-                elif j == k:
-                    continue
-                else:
-                    grad_coeff = 0.0
+                repulsive_force, _ = comparison_utils.repulsive_force(
+                    normalization,
+                    dist_squared,
+                    a,
+                    b,
+                    cell_size=1,
+                    average_weight=0, # Don't scale by weight since we sample according to weight distribution
+                    Z=0 # don't collect
+                )
 
                 for d in range(dim):
-                    # ANDREW - tSNE doesn't do gradient clipping to my knowledge
-                    if grad_coeff > 0.0:
-                        grad_d = clip(grad_coeff * (current[d] - other[d]))
+                    # ANDREW - tSNE doesn't do gradient clipping
+                    if repulsive_force > 0.0:
+                        repulsion_d = clip(repulsive_force * (current[d] - other[d]))
                     else:
-                        grad_d = 4.0
-                    current[d] += grad_d * alpha
+                        repulsion_d = 4.0
+                    current[d] += repulsion_d * alpha
 
             epoch_of_next_negative_sample[i] += (
                 n_neg_samples * epochs_per_negative_sample[i]
             )
 
+    return grads
+
 
 def optimize_uniformly(
+    normalization,
+    kernel_choice,
     head_embedding,
     tail_embedding,
     head,
     tail,
     weights,
-    nonzero_inds,
+    grads,
     n_vertices,
+    average_weight,
+    average_pos_weight,
     epochs_per_sample,
     a,
     b,
     rng_state,
     dim,
-    move_other,
     alpha,
-    negative_sample_rate,
     epochs_per_negative_sample,
     epoch_of_next_negative_sample,
     epoch_of_next_sample,
     i_epoch,
 ):
-    # all_grads is where we store summed gradients
-    all_grads = np.zeros_like(head_embedding)
+    attraction = np.zeros_like(head_embedding)
+    repulsion = np.zeros_like(head_embedding)
+    Z = 0.0
 
-    n_edges = n_vertices * (n_vertices - 1)
-    average_weight = np.sum(weights) / float(n_edges)
     for i in numba.prange(epochs_per_sample.shape[0]):
-        # Gets the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
+        # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
         j = head[i]
         k = tail[i]
 
-        # ANDREW - pick random vertex from knn for calculating attractive force
-        # t-SNE sums over all knn's attractive forces
+        # ANDREW - optimize positive force for each edge
         current = head_embedding[j]
         other = tail_embedding[k]
         dist_squared = rdist(current, other)
+        attractive_force = comparison_utils.attractive_force(
+            normalization,
+            dist_squared,
+            a,
+            b,
+            weights[i]
+        )
 
-        if dist_squared > 0.0:
-            # ANDREW - this is the actual attractive force for UMAP
-            grad_coeff = -2.0 * a * b * pow(dist_squared, b - 1.0)
-            grad_coeff /= a * pow(dist_squared, b) + 1.0
-        else:
-            grad_coeff = 0.0
-
-        grad_coeff *= weights[i]
         for d in range(dim):
-            # ANDREW - tsne doesn't do grad clipping here
-            grad_d = clip(grad_coeff * (current[d] - other[d]))
-            all_grads[j, d] += grad_d
+            grad_d = clip(attractive_force * (current[d] - other[d]))
+            attraction[j, d] += grad_d
+            attraction[k, d] -= grad_d
 
         # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
         # ANDREW - If we are summing the effects of the forces and multiplying them
         #   by the weights appropriately, we only need to alternate symmetrically
-        #   between positive and negative forces
+        #   between positive and negative forces rather than doing 1 positive
+        #   calculation to n negative ones
         k = tau_rand_int(rng_state) % n_vertices
         other = tail_embedding[k]
         dist_squared = rdist(current, other)
+        repulsive_force, Z = comparison_utils.repulsive_force(
+            normalization,
+            dist_squared,
+            a,
+            b,
+            cell_size=1,
+            average_weight=average_weight,
+            Z=Z
+        )
 
-        if dist_squared > 0.0:
-            # ANDREW - this is the actual repulsive force for umap
-            grad_coeff = 2.0 * b
-            grad_coeff /= (0.001 + dist_squared) * (
-                a * pow(dist_squared, b) + 1
-            )
-        else:
-            continue
-
-        # ANDREW - this is an approximation
-        #        - Realistically, we should use the actual weight on
-        #          the edge e_{ik}, but the coo_matrix is not
-        #          indexable. So we assume that they cancel out over
-        #          enough iterations
-        grad_coeff *= (1 - average_weight)
         for d in range(dim):
-            if grad_coeff > 0.0:
-                grad_d = clip(grad_coeff * (current[d] - other[d]))
+            if repulsive_force > 0.0:
+                grad_d = clip(repulsive_force * (current[d] - other[d]))
             else:
                 grad_d = 4.0
-            all_grads[j, d] += grad_d
+            repulsion[j, d] += grad_d
 
-    head_embedding += all_grads * alpha
+    attraction, repulsion = comparison_utils.grad_scaling(
+        normalization,
+        attraction,
+        repulsion,
+        Z
+    )
 
+    head_embedding += (attraction + repulsion) * alpha
+    return grads
+
+
+def barnes_hut_opt(
+    normalization,
+    kernel_choice,
+    head_embedding,
+    tail_embedding,
+    head,
+    tail,
+    weights,
+    grads,
+    n_vertices,
+    average_weight,
+    average_pos_weight,
+    epochs_per_sample,
+    a,
+    b,
+    rng_state,
+    dim,
+    alpha,
+    epochs_per_negative_sample,
+    epoch_of_next_negative_sample,
+    epoch_of_next_sample,
+    i_epoch,
+):
+    return barnes_hut.bh_wrapper(
+        normalization,
+        kernel_choice,
+        head_embedding,
+        tail_embedding,
+        head,
+        tail,
+        weights,
+        grads,
+        epochs_per_sample,
+        a,
+        b,
+        dim,
+        n_vertices,
+        alpha,
+    )
 
 
 def optimize_layout_euclidean(
     optimize_method,
+    normalization,
+    kernel_choice,
     head_embedding,
     tail_embedding,
     head,
@@ -248,57 +306,13 @@ def optimize_layout_euclidean(
     parallel=False,
     verbose=False,
 ):
-    """Improve an embedding using stochastic gradient descent to minimize the
-    fuzzy set cross entropy between the 1-skeletons of the high dimensional
-    and low dimensional fuzzy simplicial sets. In practice this is done by
-    sampling edges based on their membership strength (with the (1-p) terms
-    coming from negative sampling similar to word2vec).
-    Parameters
-    ----------
-    head_embedding: array of shape (n_samples, n_components)
-        The initial embedding to be improved by SGD.
-    tail_embedding: array of shape (source_samples, n_components)
-        The reference embedding of embedded points. If not embedding new
-        previously unseen points with respect to an existing embedding this
-        is simply the head_embedding (again); otherwise it provides the
-        existing embedding to embed with respect to.
-    head: array of shape (n_1_simplices)
-        The indices of the heads of 1-simplices with non-zero membership.
-    tail: array of shape (n_1_simplices)
-        The indices of the tails of 1-simplices with non-zero membership.
-    n_epochs: int
-        The number of training epochs to use in optimization.
-    n_vertices: int
-        The number of vertices (0-simplices) in the dataset.
-    epochs_per_samples: array of shape (n_1_simplices)
-        A float value of the number of epochs per 1-simplex. 1-simplices with
-        weaker membership strength will have more epochs between being sampled.
-    a: float
-        Parameter of differentiable approximation of right adjoint functor
-    b: float
-        Parameter of differentiable approximation of right adjoint functor
-    rng_state: array of int64, shape (3,)
-        The internal state of the rng
-    initial_alpha: float (optional, default 1.0)
-        Initial learning rate for the SGD.
-    negative_sample_rate: int (optional, default 5)
-        Number of negative samples to use per positive sample.
-    parallel: bool (optional, default False)
-        Whether to run the computation using numba parallel.
-        Running in parallel is non-deterministic, and is not used
-        if a random seed has been set, to ensure reproducibility.
-    verbose: bool (optional, default False)
-        Whether to report information on the current progress of the algorithm.
-    Returns
-    -------
-    embedding: array of shape (n_samples, n_components)
-        The optimized embedding.
+    """
+    FIXME FIXME FIXME
     """
 
     dim = head_embedding.shape[1]
-    move_other = head_embedding.shape[0] == tail_embedding.shape[0]
-    alpha = initial_alpha
-    nonzero_inds = np.stack(weights.nonzero()).T
+    weights = weights.astype(np.float32)
+    grads = np.zeros([n_vertices, dim], dtype=np.float64)
 
     # ANDREW - perform negative samples x times more often
     #          by making the number of epochs between samples smaller
@@ -306,34 +320,55 @@ def optimize_layout_euclidean(
     epoch_of_next_negative_sample = epochs_per_negative_sample.copy()
     epoch_of_next_sample = epochs_per_sample.copy()
 
-    single_step_functions = {
-        'umap_sampling': optimize_through_sampling,
-        'umap_uniform': optimize_uniformly
-    }
-    single_step = single_step_functions[optimize_method]
-
-    optimize_fn = numba.njit(
-        single_step,
-        fastmath=True,
-        parallel=parallel
+    # Perform weight scaling on high-dimensional relationships
+    weights, initial_alpha = comparison_utils.p_scaling(
+        normalization,
+        weights,
+        initial_alpha
     )
+
+    n_edges = n_vertices * (n_vertices - 1)
+    average_weight = np.sum(weights) / float(n_edges)
+    average_pos_weight = np.sum(weights) / float(weights.shape[0])
+
+    if 'barnes_hut' not in optimize_method:
+        single_step_functions = {
+            'umap_sampling': optimize_through_sampling,
+            'umap_uniform': optimize_uniformly,
+        }
+        single_step = single_step_functions[optimize_method]
+        optimize_fn = numba.njit(
+            single_step,
+            fastmath=True,
+            parallel=parallel
+        )
+    else:
+        # barnes_hut optimization uses the cython quadtree class,
+        # so we can't use numba to compile it
+        optimize_fn = barnes_hut_opt
+
+    start = time.time()
+    alpha = initial_alpha
     for i_epoch in range(n_epochs):
-        optimize_fn(
+        # FIXME - clean this up!!
+        grads = optimize_fn(
+            normalization,
+            kernel_choice,
             head_embedding,
             tail_embedding,
             head,
             tail,
             weights,
-            nonzero_inds,
+            grads,
             n_vertices,
+            average_weight,
+            average_pos_weight,
             epochs_per_sample,
             a,
             b,
             rng_state,
             dim,
-            move_other,
             alpha,
-            negative_sample_rate,
             epochs_per_negative_sample,
             epoch_of_next_negative_sample,
             epoch_of_next_sample,
@@ -343,6 +378,8 @@ def optimize_layout_euclidean(
 
         if verbose and i_epoch % int(n_epochs / 10) == 0:
             print("\tcompleted ", i_epoch, " / ", n_epochs, "epochs")
+    end = time.time()
+    print('Total time took {:.3f} seconds'.format(end - start))
 
     return head_embedding
 

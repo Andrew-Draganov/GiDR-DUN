@@ -36,10 +36,8 @@ from utils import (
 )
 from spectral import spectral_layout
 from layouts import optimize_layout_euclidean
-
 from pynndescent import NNDescent
-from pynndescent.distances import named_distances as pynn_named_distances
-from pynndescent.sparse import sparse_named_distances as pynn_sparse_named_distances
+# from adaptive_knn import AdaptiveKNN
 
 locale.setlocale(locale.LC_NUMERIC, "C")
 
@@ -174,13 +172,12 @@ def smooth_knn_dist(
 
         # ANDREW - Calculating sigma values
         for n in range(n_iter):
-
             psum = 0.0
             for j in range(1, distances.shape[1]):
                 # ANDREW - when adding option for turning UMAP pseudo distance on/off,
                 #   an equivalent change needs to occur here!!
-                # FIXME FIXME FIXME -- does this just rotate everything 180 degrees??
-                # Images imply that it does
+                # FIXME - this if-statement broke the nndescent_umap_test
+                #       - it appears that it simply rotates the images around?
                 if pseudo_distance:
                     d = distances[i, j] - rho[i]
                 else:
@@ -203,7 +200,6 @@ def smooth_knn_dist(
                     mid *= 2
                 else:
                     mid = (lo + hi) / 2.0
-
         sigmas[i] = mid
 
         # TODO: This is very inefficient, but will do for now. FIXME
@@ -273,7 +269,6 @@ def nearest_neighbors(
         print(ts(), "Finding Nearest Neighbors")
 
     if metric == "precomputed":
-        # Note that this does not support sparse distance matrices yet ...
         # Compute indices of n nearest neighbors
         knn_indices = fast_knn_indices(X, n_neighbors)
         # Compute the nearest neighbor distances
@@ -290,14 +285,6 @@ def nearest_neighbors(
         n_iters = max(5, int(round(np.log2(X.shape[0]))))
 
         # ANDREW - t-SNE does NOT use this to find nearest neighbors
-        # Instead, t-SNE with tree-based acceleration uses the Barnes-Hut
-        # algorithm to approximate the repulsive/attractive forces of distant
-        # points by conglomerating them together
-        #
-        # Thus, t-SNE still tries to use all the points via heuristic estimates
-        # while UMAP only operates on nearest neighbors and finds them with NNDescent
-        #
-        # In practice, can we replace the fast_knn_indices with the Barnes-Hut approximation?
         knn_search_index = NNDescent(
             X,
             n_neighbors=n_neighbors,
@@ -305,7 +292,7 @@ def nearest_neighbors(
             random_state=random_state,
             n_trees=n_trees,
             n_iters=n_iters,
-            max_candidates=60,
+            max_candidates=20,
             low_memory=low_memory,
             n_jobs=n_jobs,
             verbose=verbose,
@@ -583,6 +570,8 @@ def make_epochs_per_sample(weights, n_epochs):
 
 def simplicial_set_embedding(
     optimize_method,
+    normalization,
+    kernel_choice,
     data,
     graph,
     n_components,
@@ -752,6 +741,8 @@ def simplicial_set_embedding(
     print('optimizing layout...')
     embedding = optimize_layout_euclidean(
         optimize_method,
+        normalization,
+        kernel_choice,
         embedding,
         embedding,
         head,
@@ -933,13 +924,6 @@ class UMAP(BaseEstimator):
         If None, the random number generator is the RandomState instance used
         by `np.random`.
 
-    angular_rp_forest: bool (optional, default False)
-        Whether to use an angular random projection forest to initialise
-        the approximate nearest neighbor search. This can be faster, but is
-        mostly on useful for metric that use an angular style distance such
-        as cosine, correlation etc. In the case of those metrics angular forests
-        will be chosen automatically.
-
     target_n_neighbors: int (optional, default -1)
         The number of nearest neighbors to use to construct the target simplcial
         set. If set to -1 use the ``n_neighbors`` value.
@@ -987,6 +971,8 @@ class UMAP(BaseEstimator):
         pseudo_distance=True,
         tsne_symmetrization=False,
         optimize_method='umap_sampling',
+        normalization='umap',
+        kernel_choice='umap',
         min_dist=0.1,
         spread=1.0,
         low_memory=True,
@@ -997,7 +983,6 @@ class UMAP(BaseEstimator):
         a=None,
         b=None,
         random_state=None,
-        angular_rp_forest=False,
         target_n_neighbors=-1,
         target_metric="categorical",
         target_weight=0.5,
@@ -1020,6 +1005,8 @@ class UMAP(BaseEstimator):
         self.tsne_symmetrization = tsne_symmetrization
         self.pseudo_distance = pseudo_distance
         self.optimize_method = optimize_method
+        self.normalization = normalization
+        self.kernel_choice = kernel_choice
 
         self.spread = spread
         self.min_dist = min_dist
@@ -1027,7 +1014,6 @@ class UMAP(BaseEstimator):
         self.local_connectivity = local_connectivity
         self.negative_sample_rate = negative_sample_rate
         self.random_state = random_state
-        self.angular_rp_forest = angular_rp_forest
         self.transform_queue_size = transform_queue_size
         self.target_n_neighbors = target_n_neighbors
         self.target_metric = target_metric
@@ -1089,10 +1075,6 @@ class UMAP(BaseEstimator):
             raise ValueError("n_epochs must be a nonnegative integer")
         # check sparsity of data upfront to set proper _input_distance_func &
         # save repeated checks later on
-        if scipy.sparse.isspmatrix_csr(self._raw_data):
-            self._sparse_data = True
-        else:
-            self._sparse_data = False
         # set input distance metric & inverse_transform distance metric
         if self.metric == "precomputed":
             if self.unique:
@@ -1104,18 +1086,7 @@ class UMAP(BaseEstimator):
             self._inverse_distance_func = None
         elif self.metric in dist.named_distances:
             # ANDREW - Euclidean metric leads us into this branch of the if statements
-            if self._sparse_data:
-                if self.metric in sparse.sparse_named_distances:
-                    self._input_distance_func = sparse.sparse_named_distances[
-                        self.metric
-                    ]
-                else:
-                    raise ValueError(
-                        "Metric {} is not supported for sparse data".format(self.metric)
-                    )
-            else:
-                # ANDREW - this gets called
-                self._input_distance_func = dist.named_distances[self.metric]
+            self._input_distance_func = dist.named_distances[self.metric]
             try:
                 self._inverse_distance_func = dist.named_distances_with_gradients[self.metric]
             except KeyError:
@@ -1172,7 +1143,6 @@ class UMAP(BaseEstimator):
         self.local_connectivity = flattened([m.local_connectivity for m in models])
         self.negative_sample_rate = flattened([m.negative_sample_rate for m in models])
         self.random_state = flattened([m.random_state for m in models])
-        self.angular_rp_forest = flattened([m.angular_rp_forest for m in models])
         self.transform_queue_size = flattened([m.transform_queue_size for m in models])
         self.target_n_neighbors = flattened([m.target_n_neighbors for m in models])
         self.target_metric = flattened([m.target_metric for m in models])
@@ -1254,7 +1224,7 @@ class UMAP(BaseEstimator):
         if self.verbose:
             print("Construct fuzzy simplicial set")
 
-        if self.metric == "precomputed" and self._sparse_data:
+        if self.metric == "precomputed":
             # For sparse precomputed distance matrices, we just argsort the rows to find
             # nearest neighbors. To make this easier, we expect matrices that are
             # symmetrical (so we can find neighbors by looking at rows in isolation,
@@ -1292,7 +1262,6 @@ class UMAP(BaseEstimator):
                 "precomputed",
                 self._knn_indices,
                 self._knn_dists,
-                self.angular_rp_forest,
                 self.local_connectivity,
                 self.verbose,
                 pseudo_distance=self.pseudo_distance,
@@ -1308,34 +1277,17 @@ class UMAP(BaseEstimator):
             self._small_data = True
             try:
                 # sklearn pairwise_distances fails for callable metric on sparse data
-                _m = self.metric if self._sparse_data else self._input_distance_func
-                dmat = pairwise_distances(X[index], metric=_m)
+                dmat = pairwise_distances(X[index], metric=self.metric)
             except (ValueError, TypeError) as e:
                 # metric is numba.jit'd or not supported by sklearn,
                 # fallback to pairwise special
-
-                if self._sparse_data:
-                    # Get a fresh metric since we are casting to dense
-                    if not callable(self.metric):
-                        _m = dist.named_distances[self.metric]
-                        dmat = dist.pairwise_special_metric(
-                            X[index].toarray(),
-                            metric=_m,
-                        )
-                    else:
-                        dmat = dist.pairwise_special_metric(
-                            X[index],
-                            metric=self._input_distance_func,
-                        )
-                else:
-                    dmat = dist.pairwise_special_metric(
-                        X[index],
-                        metric=self._input_distance_func,
-                    )
+                dmat = dist.pairwise_special_metric(
+                    X[index],
+                    metric=self._input_distance_func,
+                )
 
             # ANDREW - if the input is too small, the metric is PRECOMPUTED
             # This means we will NOT do nearest neighbor descent
-            # For a full ablation, we want to try t-SNE with NN descent
             (
                 self.graph_,
                 self._sigmas,
@@ -1348,7 +1300,6 @@ class UMAP(BaseEstimator):
                 "precomputed",
                 None,
                 None,
-                self.angular_rp_forest,
                 self.local_connectivity,
                 self.verbose,
                 pseudo_distance=self.pseudo_distance,
@@ -1363,14 +1314,8 @@ class UMAP(BaseEstimator):
             # Standard case
             self._small_data = False
             # Standard case
-            if self._sparse_data and self.metric in pynn_sparse_named_distances:
-                nn_metric = self.metric
-            elif not self._sparse_data and self.metric in pynn_named_distances:
-                nn_metric = self.metric
-            else:
-                nn_metric = self._input_distance_func
 
-            # ANDREW - THIS WILL CALL UMAP WITH NNDESCENT USING THE EUCLIDEAN METRIC
+            # ANDREW - this calls NN-descent on the input dataset X
             (
                 self._knn_indices,
                 self._knn_dists,
@@ -1378,8 +1323,7 @@ class UMAP(BaseEstimator):
             ) = nearest_neighbors(
                 X[index],
                 self._n_neighbors,
-                nn_metric,
-                self.angular_rp_forest,
+                self.metric,
                 random_state,
                 self.low_memory,
                 use_pynndescent=True,
@@ -1396,10 +1340,9 @@ class UMAP(BaseEstimator):
                 X[index],
                 self.n_neighbors,
                 random_state,
-                nn_metric,
+                self.metric,
                 self._knn_indices,
                 self._knn_dists,
-                self.angular_rp_forest,
                 self.local_connectivity,
                 self.verbose,
                 pseudo_distance=self.pseudo_distance,
@@ -1448,6 +1391,8 @@ class UMAP(BaseEstimator):
         """
         return simplicial_set_embedding(
             self.optimize_method,
+            self.normalization,
+            self.kernel_choice,
             X,
             self.graph_,
             self.n_components,
@@ -1552,10 +1497,7 @@ class UMAP(BaseEstimator):
         elif self._small_data:
             try:
                 # sklearn pairwise_distances fails for callable metric on sparse data
-                _m = self.metric if self._sparse_data else self._input_distance_func
-                dmat = pairwise_distances(
-                    X, self._raw_data, metric=_m
-                )
+                dmat = pairwise_distances(X, self._raw_data, metric=self.metric)
             except (TypeError, ValueError):
                 dmat = dist.pairwise_special_metric(
                     X,
