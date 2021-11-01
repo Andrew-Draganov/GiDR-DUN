@@ -10,6 +10,19 @@ import numba
 from sklearn.utils.validation import check_is_fitted
 import scipy.sparse
 
+def make_dist_histogram(x_train, projection, y_train):
+    orig_dists = np.expand_dims(x_train, 0) - np.expand_dims(x_train, 1)
+    orig_dists = np.sum(np.square(orig_dists), -1)
+    orig_dists = np.reshape(orig_dists, -1)
+    new_dists = np.expand_dims(projection, 0) - np.expand_dims(projection, 1)
+    new_dists = np.sum(np.square(new_dists), -1)
+    new_dists = np.reshape(new_dists, -1)
+
+    indices = np.argsort(orig_dists)
+    new_dists = new_dists[indices]
+
+    plt.scatter(np.arange(int(new_dists.shape[0])), new_dists, s=0.01)
+
 
 @numba.njit(parallel=True)
 def fast_knn_indices(X, n_neighbors):

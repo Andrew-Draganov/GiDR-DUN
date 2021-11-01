@@ -350,6 +350,11 @@ def optimize_layout_euclidean(
     start = time.time()
     alpha = initial_alpha
     for i_epoch in range(n_epochs):
+        # head_embedding /= np.linalg.norm(head_embedding, axis=0)
+        # tail_embedding /= np.linalg.norm(tail_embedding, axis=0)
+        # head_vars = np.var(head_embedding, axis=0)
+        # print(head_vars)
+
         # FIXME - clean this up!!
         grads = optimize_fn(
             normalization,
