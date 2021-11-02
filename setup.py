@@ -1,8 +1,6 @@
 from distutils.core import setup as CySetup
 from distutils.core import Extension
 from setuptools import setup
-from Cython.Build import cythonize
-import numpy
 
 PySetup(
     name='Dimensionality Reduction Analysis',
@@ -21,6 +19,9 @@ PySetup(
     ],
     install_requires=['cython']
 )
+
+from Cython.Build import cythonize
+import numpy
 
 package = Extension(
     'barnes_hut',

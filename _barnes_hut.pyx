@@ -55,14 +55,14 @@ cdef rdist(float* x, float* y, int dim):
 ###################
 
 cdef umap_attraction_grad(float dist_squared, float a, float b):
-    float grad_scalar = 0.0
+    cdef float grad_scalar = 0.0
     if dist_squared > 0.0:
         grad_scalar = -2.0 * a * b * pow(dist_squared, b - 1.0)
         grad_scalar /= a * pow(dist_squared, b) + 1.0
     return grad_scalar
 
 cdef umap_repulsion_grad(float dist_squared, float a, float b):
-    float phi_ijZ = 0.0
+    cdef float phi_ijZ = 0.0
     if dist_squared > 0.0:
         phi_ijZ = 2.0 * b
         phi_ijZ /= (0.001 + dist_squared) * (a * pow(dist_squared, b) + 1)
@@ -113,7 +113,7 @@ cdef umap_repulsive_force(
     #          the edge e_{ik}, but the coo_matrix is not
     #          indexable. So we assume the differences cancel out over
     #          enough iterations
-    float repulsive_force = cell_size * kernel * (1 - average_weight)
+    cdef float repulsive_force = cell_size * kernel * (1 - average_weight)
     return repulsive_force, 0.0
 
 cdef tsne_repulsive_force(
@@ -123,9 +123,9 @@ cdef tsne_repulsive_force(
         int cell_size,
         float Z
     ):
-    float kernel = kernel_function(dist_squared, a, b)
+    cdef float kernel = kernel_function(dist_squared, a, b)
     Z += cell_size * kernel # Collect the q_ij's contributions into Z
-    float repulsive_force = cell_size * kernel * kernel
+    cdef float repulsive_force = cell_size * kernel * kernel
     return repulsive_force, Z
 
 cdef attractive_force_func(

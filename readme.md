@@ -8,6 +8,7 @@ I run it with Python 3.9.7. You can set up the environment by:
     brew install python
     # Go to the directory you want this file to be
     git clone git@github.com:Andrew-Draganov/probabilistic_dim_reduction.git
+    cd probabilistic_dim_reduction
     # Make a virtual environment for python
     python3 -m venv dim_reduc_env
     # Enter the python virtual environment
@@ -17,5 +18,5 @@ I run it with Python 3.9.7. You can set up the environment by:
     # The below command should place you in a shell with Python 3.X
     python
 
-    # pip3 install .
-
+    pip3 install cython numpy
+    pip3 install .
