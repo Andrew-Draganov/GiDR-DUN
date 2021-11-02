@@ -90,28 +90,6 @@ x_train = np.reshape(x_train, [num_samples, -1])
 ### Expected value of distances
 x_train = np.array(x_train) / 255.0
 
-# cov = np.zeros([784, 784])
-# np.fill_diagonal(cov, np.var(x_train, axis=0))
-# print('sampling...')
-# x_train = np.random.multivariate_normal(
-#     0 * np.mean(x_train, axis=0), 
-#     cov,
-#     num_samples
-# )
-# all_dists = np.expand_dims(x_train, 0) - np.expand_dims(x_train, 1)
-# all_dists = np.sum(np.square(all_dists), -1)
-# print(all_dists.shape)
-# mean_dist = np.mean(all_dists)
-# V = np.var(x_train, axis=0)
-# expected_dist = 2 * np.sum(V)
-# print(mean_dist)
-# print(expected_dist)
-# dist_var = np.var(all_dists)
-# expected_var = np.sum(4 * V ** 4 + 4 * V ** 2)
-# print(dist_var)
-# print(expected_var)
-# quit()
-
 if args.kernel_choice == 'tsne':
     a, b = 1, 1
 else:

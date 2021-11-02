@@ -1,6 +1,7 @@
 # Author: Leland McInnes <leland.mcinnes@gmail.com>
 #
 # License: BSD 3 clause
+import os
 import numba
 import math
 import numpy as np
@@ -15,6 +16,7 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     """
     Make plots of distance relationships before and after projection
     """
+    os.makedirs('images', exist_ok=True)
     orig_dists = remove_diag(np.expand_dims(x_train, 0) - np.expand_dims(x_train, 1))
     orig_dists = np.sum(np.square(orig_dists), -1)
     orig_reshaped = np.reshape(orig_dists, -1)
