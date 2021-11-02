@@ -92,7 +92,7 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     ax.set_ylim([lower_thresh, upper_thresh])
 
     plt.title('Ratio or distances in high- and low-dim space for %s' % alg_str)
-    plt.savefig('images/distance_ratio_%s.png' % alg_str)
+    plt.savefig('images/relative_error_%s.png' % alg_str)
 
     # High-dim distance on x-axis
     # Absolute change in sort index on y-axis
