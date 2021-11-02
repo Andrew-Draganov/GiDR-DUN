@@ -16,6 +16,9 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     """
     Make plots of distance relationships before and after projection
     """
+    if len(x_train) > 1000:
+        raise ValueError("Making plots requires too much memory. Increase the downsample-stride parameter")
+
     image_dir = os.path.join('images', alg_str)
     os.makedirs(image_dir, exist_ok=True)
     orig_dists = remove_diag(np.expand_dims(x_train, 0) - np.expand_dims(x_train, 1))

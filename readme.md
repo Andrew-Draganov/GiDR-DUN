@@ -18,5 +18,6 @@ I run it with Python 3.9.7. You can set up the environment by:
     # The below command should place you in a shell with Python 3.X
     python
 
-    pip3 install cython numpy
     pip3 install .
+    python setup_cython.py install
+    python umap/mnist_dr.py

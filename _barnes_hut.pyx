@@ -172,18 +172,18 @@ cdef repulsive_force_func(
     )
 
 cdef umap_grad_scaling(
-        np.float32_t[:] attraction,
-        np.float32_t[:] repulsion
+        np.float32_t[:, :] attraction,
+        np.float32_t[:, :] repulsion
     ):
     return attraction, repulsion
 
 cdef tsne_grad_scaling(
-        np.float32_t[:] attraction,
-        np.float32_t[:] repulsion,
+        np.float32_t[:, :] attraction,
+        np.float32_t[:, :] repulsion,
         float Z
     ):
-    repulsion *= - 4 / Z
-    attraction *= 4
+    repulsion = np.asarray(repulsion) * (- 4 / Z)
+    attraction = np.asarray(attraction) * 4
     return attraction, repulsion
 
 cdef grad_scaling(
@@ -279,7 +279,7 @@ cdef calculate_barnes_hut(
                 dist_squared,
                 a,
                 b,
-                cell_size,
+                int(cell_size),
                 average_weight,
                 Z
             )

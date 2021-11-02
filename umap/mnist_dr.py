@@ -10,15 +10,23 @@ from matplotlib import pyplot as plt
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    '--random-init',
-    action='store_true',
-    help='whether to initialize randomly'
+    '--initialization',
+    choices=['spectral', 'random'],
+    default='spectral',
+    help='Controls the method for initializing the low-dim representation'
 )
 parser.add_argument(
     '--tsne-symmetrization',
     action='store_true',
-    help='whether to symmetrize akin to tSNE method'
+    help='When present, symmetrize using the tSNE method'
 )
+parser.add_argument(
+    '--make-plots',
+    action='store_true',
+    help='When present, make plots regarding distance relationships. ' \
+         'Requires a high downsample_stride to not run out of memory'
+)
+          
 parser.add_argument(
     '--ignore-umap-metric',
     action='store_true',
@@ -39,24 +47,25 @@ parser.add_argument(
     '--normalization',
     choices=['tsne', 'umap'],
     default='umap',
-    help='Which optimization algorithm to use'
+    help='Whether to use UMAP or tSNE normalization'
 )
 parser.add_argument(
     '--kernel-choice',
     choices=['tsne', 'umap'],
     default='umap',
-    help='Which weight normalization and scaling to use'
+    help='Which high- and low-dimensional kernels to use'
 )
 parser.add_argument(
     '--downsample-stride',
     type=int,
-    default=15
+    default=15,
+    help='Take every n-th sample from the dataset. Higher value -> smaller dataset')
 )
 parser.add_argument(
     '--dr-algorithm',
     choices=['umap', 'tsne', 'pca'],
     default='umap',
-    help='Which algorithm to use to save images'
+    help='Which algorithm to use for performing dim reduction'
 )
 parser.add_argument(
     '--n-neighbors',
@@ -66,12 +75,14 @@ parser.add_argument(
 parser.add_argument(
     '--neg-sample-rate',
     type=int,
-    default=15
+    default=15,
+    help='How many negative samples to use for each positive sample (in UMAP)'
 )
 parser.add_argument(
     '--n-epochs',
     type=int,
-    default=500
+    default=500,
+    help='Number of times to cycle through the dataset'
 )
 args = parser.parse_args()
 
