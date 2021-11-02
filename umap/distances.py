@@ -120,7 +120,7 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     new_nn = np.argsort(new_dists, axis=1)
     overlap_ratio = []
     k = 10
-    for p in range(k/2, int(num_points - k/2)):
+    for p in range(int(k/2), int(num_points - k/2)):
         low = int(p - k/2)
         high = min(num_points, int(p + k/2))
         k_orig_nn = orig_nn[:, low:high]
@@ -136,8 +136,8 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
 
     plt.scatter(np.arange(k/2, int(num_points - k/2)), overlap_ratio, c='blue')
     plt.title('Percent of constant nearest neighbor overlap for %s' % alg_str)
-    plt.xlabel('The [i - %d, i + %d] nearest neighbors being compared' % (int(k/2), int(k/2))
-    plt.ylabel('Percent overlap on [i - %d, i + %d] nearest neighbors' % (int(k/2), int(k/2))
+    plt.xlabel('The [i - %d, i + %d] nearest neighbors being compared' % (int(k/2), int(k/2)))
+    plt.ylabel('Percent overlap on [i - %d, i + %d] nearest neighbors' % (int(k/2), int(k/2)))
     ax = plt.gca()
     ax.set_ylim([0, 1])
     plt.savefig('images/constant_overlap_percent_%s.png' % alg_str)
