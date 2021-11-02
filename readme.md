@@ -20,4 +20,9 @@ I run it with Python 3.9.7. You can set up the environment by:
 
     pip3 install .
     python setup_cython.py install
-    python umap/mnist_dr.py
+
+    # Run the dimensionality reduction on MNIST
+    python umap/mnist_dr.py --downsample-stride 100 --make-plots
+
+The above command should run the base UMAP algorithm and save plots of the
+distance relationships.

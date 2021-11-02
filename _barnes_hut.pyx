@@ -230,9 +230,9 @@ cdef calculate_barnes_hut(
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
     # FIXME - what type should these be for optimal performance?
-    cdef np.ndarray[double, mode="c", ndim=2] attractive_forces = np.zeros([n_vertices, dim])
-    cdef np.ndarray[double, mode="c", ndim=2] repulsive_forces = np.zeros([n_vertices, dim])
-    cdef np.ndarray[double, mode="c", ndim=2] forces = np.zeros([n_vertices, dim])
+    cdef attractive_forces = np.zeros([n_vertices, dim], dtype=np.float32)
+    cdef repulsive_forces = np.zeros([n_vertices, dim], dtype=np.float32)
+    cdef forces = np.zeros([n_vertices, dim], dtype=np.float32)
 
     cdef int n_edges = int(epochs_per_sample.shape[0])
     cdef float average_weight = np.sum(weights) / n_edges

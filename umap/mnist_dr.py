@@ -59,7 +59,7 @@ parser.add_argument(
     '--downsample-stride',
     type=int,
     default=15,
-    help='Take every n-th sample from the dataset. Higher value -> smaller dataset')
+    help='Take every n-th sample from the dataset. Higher value -> smaller dataset'
 )
 parser.add_argument(
     '--dr-algorithm',
@@ -86,10 +86,6 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-init = 'spectral'
-if args.random_init:
-    init = 'random'
-
 print('Loading MNIST data...')
 train, _ = tfk.datasets.mnist.load_data(path='mnist.npz')
 # train, _ = tfk.datasets.cifar10.load_data()
@@ -112,7 +108,7 @@ if args.dr_algorithm == 'umap':
             n_neighbors=args.n_neighbors,
             n_epochs=args.n_epochs,
             random_state=12345, # Comment this out to turn on parallelization
-            init=init,
+            init=args.initialization,
             pseudo_distance=(not args.ignore_umap_metric),
             tsne_symmetrization=args.tsne_symmetrization,
             optimize_method=args.optimize_method,
@@ -130,7 +126,8 @@ else:
 
 print('fitting...')
 projection = dr.fit_transform(x_train)
-make_dist_plots(x_train, projection, y_train, args.dr_algorithm)
+if args.make_plots:
+    make_dist_plots(x_train, projection, y_train, args.dr_algorithm)
 
 plt.scatter(projection[:, 0], projection[:, 1], c=y_train, s=1)
 plt.show()
