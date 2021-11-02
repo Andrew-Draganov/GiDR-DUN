@@ -121,5 +121,5 @@ print('fitting...')
 projection = dr.fit_transform(x_train)
 make_dist_plots(x_train, projection, y_train, args.dr_algorithm)
 
-# plt.scatter(projection[:, 0], projection[:, 1], c=y_train, s=1)
-# plt.show()
+plt.scatter(projection[:, 0], projection[:, 1], c=y_train, s=1)
+plt.show()

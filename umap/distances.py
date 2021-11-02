@@ -16,7 +16,8 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     """
     Make plots of distance relationships before and after projection
     """
-    os.makedirs('images', exist_ok=True)
+    image_dir = os.path.join('images', alg_str)
+    os.makedirs(image_dir, exist_ok=True)
     orig_dists = remove_diag(np.expand_dims(x_train, 0) - np.expand_dims(x_train, 1))
     orig_dists = np.sum(np.square(orig_dists), -1)
     orig_reshaped = np.reshape(orig_dists, -1)
@@ -41,7 +42,8 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     bluepatch = mpatches.Patch(color='blue', label='Single points')
     plt.legend(handles=[redpatch, bluepatch])
     plt.title('Low-dim distance vs. high-dim distance for %s' % alg_str)
-    plt.savefig('images/distance_vs_distance_%s.png' % alg_str)
+    img_path = os.path.join(image_dir, 'distance_vs_distance_%s.png' % alg_str)
+    plt.savefig(img_path)
 
     # Nat numbers on x axis
     # Low dim distances on y axis (sorted by high-dim distances low -> high)
@@ -55,7 +57,8 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     bluepatch = mpatches.Patch(color='blue', label='Single points')
     plt.legend(handles=[redpatch, bluepatch])
     plt.title('Distances in %s projected space, sorted by high-dim distances' % alg_str)
-    plt.savefig('images/sorted_distances_%s.png' % alg_str)
+    img_path = os.path.join(image_dir, 'sorted_distances_%s.png' % alg_str)
+    plt.savefig(img_path)
 
     # Nat numbers on x axis
     # Relative error in distance on y axis
@@ -92,7 +95,8 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     ax.set_ylim([lower_thresh, upper_thresh])
 
     plt.title('Ratio or distances in high- and low-dim space for %s' % alg_str)
-    plt.savefig('images/relative_error_%s.png' % alg_str)
+    img_path = os.path.join(image_dir, 'relative_error_%s.png' % alg_str)
+    plt.savefig(img_path)
 
     # High-dim distance on x-axis
     # Absolute change in sort index on y-axis
@@ -109,7 +113,8 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     bluepatch = mpatches.Patch(color='blue', label='Single points')
     plt.legend(handles=[redpatch, bluepatch])
     plt.title('Effect of high-dim distance on low-dim distance sort position')
-    plt.savefig('images/change_in_sort_index_%s.png' % alg_str)
+    img_path = os.path.join(image_dir, 'change_in_sort_index_%s.png' % alg_str)
+    plt.savefig(img_path)
 
     # Center of nearest neighbor index limits
     # Percent of nearest neighbor overlap between high- and low-dimensions on y-axis
@@ -142,7 +147,8 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     plt.ylabel('Percent overlap on [i - %d, i + %d] nearest neighbors' % (int(k/2), int(k/2)))
     ax = plt.gca()
     ax.set_ylim([0, 1])
-    plt.savefig('images/nn_overlap_%s.png' % alg_str)
+    img_path = os.path.join(image_dir, 'nn_overlap_%s.png' % alg_str)
+    plt.savefig(img_path)
     plt.clf()
 
 
