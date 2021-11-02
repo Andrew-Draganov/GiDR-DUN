@@ -7,20 +7,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 
+def remove_diag(A):
+    removed = A[~np.eye(A.shape[0],dtype=bool)].reshape(A.shape[0],int(A.shape[0])-1, -1)
+    return np.squeeze(removed)
 
 def make_dist_plots(x_train, projection, y_train, alg_str):
     """
-    Make histogram of distance relationships before and after projection
+    Make plots of distance relationships before and after projection
     """
-    orig_dists = np.expand_dims(x_train, 0) - np.expand_dims(x_train, 1)
+    orig_dists = remove_diag(np.expand_dims(x_train, 0) - np.expand_dims(x_train, 1))
     orig_dists = np.sum(np.square(orig_dists), -1)
     orig_reshaped = np.reshape(orig_dists, -1)
-    new_dists = np.expand_dims(projection, 0) - np.expand_dims(projection, 1)
+    new_dists = remove_diag(np.expand_dims(projection, 0) - np.expand_dims(projection, 1))
     new_dists = np.sum(np.square(new_dists), -1)
     new_reshaped = np.reshape(new_dists, -1)
-
-    orig_nn = np.argsort(orig_dists, axis=1)
-    new_nn = np.argsort(new_dists, axis=1)
 
     indices = np.argsort(orig_reshaped)
     new_reshaped = new_reshaped[indices]
@@ -29,17 +29,8 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     conv_size = 1000
     means = np.convolve(new_reshaped, np.ones(conv_size)/conv_size, mode='valid')
 
-    plt.scatter(np.arange(N), new_reshaped, c='blue', s=0.01)
-    plt.scatter(np.arange(int(means.shape[0])), means, c='red', s=0.1)
-    plt.xlabel('Index after sorting by high-dim distance')
-    plt.ylabel('Distance')
-    redpatch = mpatches.Patch(color='red', label='Running average of size %d' % conv_size)
-    bluepatch = mpatches.Patch(color='blue', label='Single points')
-    plt.legend(handles=[redpatch, bluepatch])
-    plt.title('Distances in %s projected space, sorted by high-dim distances' % alg_str)
-    plt.savefig('images/sorted_distances_%s.png' % alg_str)
-    
-    plt.clf()
+    # High-dim distances on x axis (sorted by high-dim distances low -> high) 
+    # Low dim distances on y axis
     plt.scatter(orig_reshaped[indices], new_reshaped, c='blue', s=0.01)
     plt.scatter(orig_reshaped[indices][:len(means)], means, c='red')
     plt.xlabel('High-dimensional distances')
@@ -50,43 +41,100 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     plt.title('Low-dim distance vs. high-dim distance for %s' % alg_str)
     plt.savefig('images/distance_vs_distance_%s.png' % alg_str)
 
-    # plt.clf()
-    # overlap_ratio = []
-    # for p in range(1, int(math.log2(num_points))):
-    #     k = pow(2, p) - pow(2, p-1)
-    #     k_orig_nn = orig_nn[:, int(pow(2, p-1)) : min(int(pow(2, p)), len(orig_nn[0]))]
-    #     k_new_nn = new_nn[:, int(pow(2, p-1)) : min(int(pow(2, p)), len(new_nn[0]))]
-    #     nn_overlap = np.zeros(k)
-    #     for i in range(num_points):
-    #         for j in range(k):
-    #             if k_orig_nn[i, j] in k_new_nn[i]:
-    #                 nn_overlap[j] += 1
-    #     overlap = sum(nn_overlap) / (num_points * k)
-    #     overlap_ratio.append(overlap)
-
-    # plt.scatter(np.power(2, np.arange(len(overlap_ratio))), overlap_ratio, c='blue')
-    # plt.title('Percent of exponential nearest neighbor overlap for %s' % alg_str)
-    # plt.xlabel('Number of nearest neighbors being compared')
-    # plt.ylabel('Percent overlap')
-    # ax = plt.gca()
-    # ax.set_ylim([0, 1])
-    # plt.savefig('images/exponential_overlap_percent_%s.png' % alg_str)
-
+    # Nat numbers on x axis
+    # Low dim distances on y axis (sorted by high-dim distances low -> high)
+    # This is just the y-values of the previous plot
     plt.clf()
+    plt.scatter(np.arange(N), new_reshaped, c='blue', s=0.01)
+    plt.scatter(np.arange(int(means.shape[0])), means, c='red', s=0.1)
+    plt.xlabel('Index after sorting by high-dim distance')
+    plt.ylabel('Distance')
+    redpatch = mpatches.Patch(color='red', label='Running average of size %d' % conv_size)
+    bluepatch = mpatches.Patch(color='blue', label='Single points')
+    plt.legend(handles=[redpatch, bluepatch])
+    plt.title('Distances in %s projected space, sorted by high-dim distances' % alg_str)
+    plt.savefig('images/sorted_distances_%s.png' % alg_str)
+
+    # Nat numbers on x axis
+    # Relative error in distance on y axis
+    #   - the y axis is (high_dim_distance - low_dim_distance) / high_dim_distance
+    #   - both distance arrays are scaled to [0, 1] (since abs vals are relative)
+    #   - avoid division by zero by substituting 1's in for the zeros
+    plt.clf()
+    scaled_orig = orig_reshaped / np.max(orig_reshaped)
+    scaled_new = new_reshaped / np.max(new_reshaped)
+
+    # Avoid division by zero
+    orig_no_zeros = np.copy(scaled_orig)
+    orig_no_zeros[orig_no_zeros == 0] = 1
+
+    relative_error = (scaled_orig - scaled_new) / orig_no_zeros
+    rel_err_means = np.convolve(
+        relative_error,
+        np.ones(conv_size)/conv_size,
+        mode='valid'
+    )
+
+    plt.scatter(np.arange(N), relative_error, c='blue', s=0.01)
+    plt.scatter(np.arange(int(rel_err_means.shape[0])), rel_err_means, c='red', s=0.1)
+    plt.xlabel('Index after sorting by high-dim distance')
+    plt.ylabel('(D_h - D_l) / D_h')
+    redpatch = mpatches.Patch(color='red', label='Running average of size %d' % conv_size)
+    bluepatch = mpatches.Patch(color='blue', label='Single points')
+    plt.legend(handles=[redpatch, bluepatch])
+
+    # Set y axis limits to ignore outliers
+    lower_thresh = np.sort(rel_err_means)[int(len(rel_err_means) * 0.01)]
+    upper_thresh = np.sort(rel_err_means)[int(len(rel_err_means) * 0.99)]
+    ax = plt.gca()
+    ax.set_ylim([lower_thresh, upper_thresh])
+
+    plt.title('Ratio or distances in high- and low-dim space for %s' % alg_str)
+    plt.savefig('images/distance_ratio_%s.png' % alg_str)
+
+    # High-dim distance on x-axis
+    # Absolute change in sort index on y-axis
+    # We're basically looking at "Do relatively small distances stay relatively small?"
+    plt.clf()
+    new_indices = np.argsort(new_reshaped)
+    index_diff = np.abs(indices - new_indices)
+    means = np.convolve(index_diff, np.ones(conv_size)/conv_size, mode='valid')
+    plt.scatter(orig_reshaped[indices], index_diff, c='blue', s=0.01)
+    plt.scatter(orig_reshaped[indices][:len(means)], means, c='red', s=0.1)
+    plt.xlabel('Change in index as a function of high-dim distance')
+    plt.ylabel('Absolute change in index')
+    redpatch = mpatches.Patch(color='red', label='Running average of size %d' % conv_size)
+    bluepatch = mpatches.Patch(color='blue', label='Single points')
+    plt.legend(handles=[redpatch, bluepatch])
+    plt.title('Effect of high-dim distance on low-dim distance sort position')
+    plt.savefig('images/change_in_sort_index_%s.png' % alg_str)
+
+    # Center of nearest neighbor index limits
+    # Percent of nearest neighbor overlap between high- and low-dimensions on y-axis
+    # This can be interpreted as:
+    #     For each point, the what percent of the [i - k/2, i + k/2]
+    #     nearest neighbors in the high-dim space are also in the
+    #     [i - k/2, i + k/2] nearest neighbors in the low-dim space
+    plt.clf()
+    orig_nn = np.argsort(orig_dists, axis=1)
+    new_nn = np.argsort(new_dists, axis=1)
     overlap_ratio = []
     k = 10
-    for p in range(1, int(num_points/k)):
-        k_orig_nn = orig_nn[:, int(k*(p-1)) : min(int(k*p), len(orig_nn[0]))]
-        k_new_nn = new_nn[:, int(k*(p-1)) : min(int(k*p), len(new_nn[0]))]
+    for p in range(k/2, int(num_points - k/2)):
+        low = int(p - k/2)
+        high = min(num_points, int(p + k/2))
+        k_orig_nn = orig_nn[:, low:high]
+        k_new_nn = new_nn[:, low:high]
         nn_overlap = np.zeros(k)
         for i in range(num_points):
             for j in range(k):
                 if k_orig_nn[i, j] in k_new_nn[i]:
                     nn_overlap[j] += 1
-        overlap = sum(nn_overlap) / (num_points * k)
-        overlap_ratio.append(overlap)
+        # maximum amount of overlap is num_points * k
+        ratio = sum(nn_overlap) / (num_points * k)
+        overlap_ratio.append(ratio)
 
-    plt.scatter(np.arange(len(overlap_ratio)) * k, overlap_ratio, c='blue')
+    plt.scatter(np.arange(k/2, int(num_points - k/2)), overlap_ratio, c='blue')
     plt.title('Percent of constant nearest neighbor overlap for %s' % alg_str)
     plt.xlabel('The [i, i + %d] nearest neighbors being compared' % k)
     plt.ylabel('Percent overlap on [i, i + %d] nearest neighbors' % k)

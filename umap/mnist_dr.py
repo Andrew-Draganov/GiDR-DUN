@@ -1,7 +1,7 @@
 import numpy as np
 from tensorflow import keras as tfk
 from umap_ import UMAP
-from distances import make_dist_plots
+from distances import make_dist_plots, remove_diag
 # from umap import UMAP
 import argparse
 from sklearn.manifold import TSNE
@@ -78,9 +78,6 @@ args = parser.parse_args()
 init = 'spectral'
 if args.random_init:
     init = 'random'
-
-def remove_diag(A):
-    return A[~np.eye(A.shape[0],dtype=bool)].reshape(A.shape[0],-1)
 
 print('Loading MNIST data...')
 train, _ = tfk.datasets.mnist.load_data(path='mnist.npz')
