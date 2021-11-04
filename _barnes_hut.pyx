@@ -75,29 +75,46 @@ cdef kernel_function(float dist_squared, float a, float b):
 ##### WEIGHTS #####
 ###################
 
-cdef umap_p_scaling(
-        np.float32_t[:] weights,
-        float initial_alpha
-    ):
-    return weights, initial_alpha
+# cdef umap_p_scaling(
+#         np.float32_t[:] weights,
+#         float initial_alpha
+#     ):
+#     return weights, initial_alpha
+# 
+# cdef tsne_p_scaling(
+#         np.float32_t[:] weights,
+#         float initial_alpha
+#     ):
+#     # FIXME - add early exaggeration!!
+#     return weights / np.sum(weights), initial_alpha * 200
+# 
+# cdef p_scaling(
+#         str normalization,
+#         np.float32_t[:] weights,
+#         float initial_alpha
+#     ):
+#     if normalization == 'umap':
+#         # umap doesn't scale P_ij weights
+#         return umap_p_scaling(weights, initial_alpha)
+#     assert normalization == 'tsne'
+#     return tsne_p_scaling(weights, initial_alpha)
 
-cdef tsne_p_scaling(
-        np.float32_t[:] weights,
-        float initial_alpha
-    ):
-    # FIXME - add early exaggeration!!
-    return weights / np.sum(weights), initial_alpha * 200
-
-cdef p_scaling(
+cdef attractive_force_func(
         str normalization,
-        np.float32_t[:] weights,
-        float initial_alpha
+        float dist_squared,
+        float a,
+        float b,
+        float edge_weight
     ):
     if normalization == 'umap':
-        # umap doesn't scale P_ij weights
-        return umap_p_scaling(weights, initial_alpha)
-    assert normalization == 'tsne'
-    return tsne_p_scaling(weights, initial_alpha)
+        edge_force = umap_attraction_grad(dist_squared, a, b)
+    else:
+        assert normalization == 'tsne'
+        edge_force = kernel_function(dist_squared, a, b)
+
+    # FIXME FIXME FIXME
+    # This does NOT work with parallel=True
+    return edge_force * edge_weight
 
 
 cdef umap_repulsive_force(
@@ -128,23 +145,6 @@ cdef tsne_repulsive_force(
     cdef float repulsive_force = cell_size * kernel * kernel
     return repulsive_force, Z
 
-cdef attractive_force_func(
-        str normalization,
-        float dist_squared,
-        float a,
-        float b,
-        float edge_weight
-    ):
-    if normalization == 'umap':
-        edge_force = umap_attraction_grad(dist_squared, a, b)
-    else:
-        assert normalization == 'tsne'
-        edge_force = kernel_function(dist_squared, a, b)
-
-    # FIXME FIXME FIXME
-    # This does NOT work with parallel=True
-    return edge_force * edge_weight
-
 cdef repulsive_force_func(
         str normalization,
         float dist_squared,
@@ -172,24 +172,24 @@ cdef repulsive_force_func(
     )
 
 cdef umap_grad_scaling(
-        np.float32_t[:, :] attraction,
-        np.float32_t[:, :] repulsion
+        np.ndarray attraction,
+        np.ndarray repulsion
     ):
     return attraction, repulsion
 
 cdef tsne_grad_scaling(
-        np.float32_t[:, :] attraction,
-        np.float32_t[:, :] repulsion,
+        np.ndarray attraction,
+        np.ndarray repulsion,
         float Z
     ):
-    repulsion = np.asarray(repulsion) * (- 4 / Z)
-    attraction = np.asarray(attraction) * 4
+    repulsion = repulsion * (- 4 / Z)
+    attraction = attraction * 4
     return attraction, repulsion
 
 cdef grad_scaling(
         str normalization,
-        np.float32_t[:, :] attraction,
-        np.float32_t[:, :] repulsion,
+        np.ndarray attraction,
+        np.ndarray repulsion,
         float Z,
     ):
     if normalization == 'umap':
@@ -230,9 +230,9 @@ cdef calculate_barnes_hut(
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
     # FIXME - what type should these be for optimal performance?
-    cdef attractive_forces = np.zeros([n_vertices, dim], dtype=np.float32)
-    cdef repulsive_forces = np.zeros([n_vertices, dim], dtype=np.float32)
-    cdef forces = np.zeros([n_vertices, dim], dtype=np.float32)
+    cdef np.ndarray attractive_forces = np.zeros([n_vertices, dim], dtype=np.float32)
+    cdef np.ndarray repulsive_forces = np.zeros([n_vertices, dim], dtype=np.float32)
+    cdef np.ndarray forces = np.zeros([n_vertices, dim], dtype=np.float32)
 
     cdef int n_edges = int(epochs_per_sample.shape[0])
     cdef float average_weight = np.sum(weights) / n_edges
@@ -263,23 +263,23 @@ cdef calculate_barnes_hut(
             y1[d] = head_embedding[v, d]
         cell_metadata = qt.summarize(y1, cell_summaries, 0.25) # 0.25 = theta^2
         num_cells = cell_metadata // offset
+        cell_dists = [cell_summaries[i * offset + dim] for i in range(num_cells)]
         cell_sizes = [cell_summaries[i * offset + dim + 1] for i in range(num_cells)]
 
         # For each quadtree cell with respect to the current point
         for i_cell in range(num_cells):
             cell_dist = cell_summaries[i_cell * offset + dim]
-            cell_size = cell_summaries[i_cell * offset + dim + 1]
             # FIXME - think more about this cell_size bounding
             # Ignoring small cells gives clusters that REALLY preserve 
             #      local relationships while generally maintaining global ones
-            if cell_size < 1:
-                continue
+            # if cell_size < 1:
+            #     continue
             repulsive_force, Z = repulsive_force_func(
                 normalization,
-                dist_squared,
+                cell_dists[i],
                 a,
                 b,
-                int(cell_size),
+                int(cell_sizes[i]),
                 average_weight,
                 Z
             )
@@ -296,7 +296,7 @@ cdef calculate_barnes_hut(
 
     for v in range(n_vertices):
         for d in range(dim):
-            forces[v][d] = (attractive_forces[v][d] + repulsive_forces[v][d]) + 0.9 * forces[v][d]
+            forces[v][d] = (attractive_forces[v][d] + repulsive_forces[v][d])
             head_embedding[v][d] -= forces[v][d] * alpha
 
     return grads

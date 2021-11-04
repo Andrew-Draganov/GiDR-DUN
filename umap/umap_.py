@@ -685,7 +685,6 @@ def simplicial_set_embedding(
     graph.eliminate_zeros()
 
     if isinstance(init, str) and init == "random":
-        print('random init')
         embedding = random_state.uniform(
             low=-10.0, high=10.0, size=(graph.shape[0], n_components)
         ).astype(np.float32)
