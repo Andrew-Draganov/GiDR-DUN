@@ -182,7 +182,7 @@ cdef tsne_grad_scaling(
         np.ndarray repulsion,
         float Z
     ):
-    repulsion = repulsion * (- 4 / Z)
+    repulsion = repulsion * 4 / Z
     attraction = attraction * 4
     return attraction, repulsion
 
@@ -232,7 +232,6 @@ cdef calculate_barnes_hut(
     # FIXME - what type should these be for optimal performance?
     cdef np.ndarray attractive_forces = np.zeros([n_vertices, dim], dtype=np.float32)
     cdef np.ndarray repulsive_forces = np.zeros([n_vertices, dim], dtype=np.float32)
-    cdef np.ndarray forces = np.zeros([n_vertices, dim], dtype=np.float32)
 
     cdef int n_edges = int(epochs_per_sample.shape[0])
     cdef float average_weight = np.sum(weights) / n_edges
@@ -268,24 +267,24 @@ cdef calculate_barnes_hut(
 
         # For each quadtree cell with respect to the current point
         for i_cell in range(num_cells):
-            cell_dist = cell_summaries[i_cell * offset + dim]
             # FIXME - think more about this cell_size bounding
             # Ignoring small cells gives clusters that REALLY preserve 
             #      local relationships while generally maintaining global ones
             # if cell_size < 1:
             #     continue
+
             repulsive_force, Z = repulsive_force_func(
                 normalization,
-                cell_dists[i],
+                cell_dists[i_cell],
                 a,
                 b,
-                int(cell_sizes[i]),
+                int(cell_sizes[i_cell]),
                 average_weight,
                 Z
             )
             for d in range(dim):
                 dim_index = i_cell * offset + d
-                repulsive_forces[v][d] += repulsive_force * cell_summaries[dim_index]
+                repulsive_forces[v][d] += clip(repulsive_force * cell_summaries[dim_index])
 
     attractive_forces, repulsive_forces = grad_scaling(
         normalization,
@@ -296,8 +295,9 @@ cdef calculate_barnes_hut(
 
     for v in range(n_vertices):
         for d in range(dim):
-            forces[v][d] = (attractive_forces[v][d] + repulsive_forces[v][d])
-            head_embedding[v][d] -= forces[v][d] * alpha
+            grads[v][d] = 0.9 * grads[v][d] - \
+                          (attractive_forces[v][d] - repulsive_forces[v][d]) * alpha
+            head_embedding[v][d] += grads[v][d]
 
     return grads
 
