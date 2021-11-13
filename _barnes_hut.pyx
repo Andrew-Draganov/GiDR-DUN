@@ -4,6 +4,7 @@ cimport cython
 from libcpp cimport bool
 from libc.stdio cimport printf
 from libc.stdlib cimport rand
+from libc.math cimport pow
 from libc.math cimport sqrt, log
 from libc.stdlib cimport malloc, free
 from cython.parallel cimport prange, parallel
@@ -16,8 +17,9 @@ ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.float64_t DTYPE_FLOAT64
 ctypedef np.int32_t DTYPE_INT
 
+STUFF = 'hiii'
 
-cdef clip(float val):
+cdef float clip(float val):
     """Standard clamping of a value into a fixed range (in this case -4.0 to
     4.0)
 
@@ -38,7 +40,7 @@ cdef clip(float val):
         return val
 
 
-cdef rdist(float* x, float* y, int dim):
+cdef float rdist(float* x, float* y, int dim):
     """Reduced Euclidean distance.
 
     Parameters
@@ -51,6 +53,7 @@ cdef rdist(float* x, float* y, int dim):
     The squared euclidean distance between x and y
     """
     cdef float result = 0.0
+    cdef float diff = 0
     for i in range(dim):
         diff = x[i] - y[i]
         result += diff * diff
@@ -61,21 +64,24 @@ cdef rdist(float* x, float* y, int dim):
 ##### KERNELS #####
 ###################
 
-cdef umap_attraction_grad(float dist_squared, float a, float b):
+@cython.cdivision(True)
+cdef float umap_attraction_grad(float dist_squared, float a, float b):
     cdef float grad_scalar = 0.0
     if dist_squared > 0.0:
         grad_scalar = -2.0 * a * b * pow(dist_squared, b - 1.0)
         grad_scalar /= a * pow(dist_squared, b) + 1.0
     return grad_scalar
 
-cdef umap_repulsion_grad(float dist_squared, float a, float b):
+@cython.cdivision(True)
+cdef float umap_repulsion_grad(float dist_squared, float a, float b):
     cdef float phi_ijZ = 0.0
     if dist_squared > 0.0:
         phi_ijZ = 2.0 * b
         phi_ijZ /= (0.001 + dist_squared) * (a * pow(dist_squared, b) + 1)
     return phi_ijZ
 
-cdef kernel_function(float dist_squared, float a, float b):
+@cython.cdivision(True)
+cdef float kernel_function(float dist_squared, float a, float b):
     return 1 / (1 + a * pow(dist_squared, b))
 
 ###################
@@ -112,23 +118,29 @@ cdef p_scaling(
     return tsne_p_scaling(weights, initial_alpha)
 
 
-cdef umap_repulsive_force(
+cdef float* umap_repulsive_force(
         float dist_squared,
         float a,
         float b,
         int cell_size,
         float average_weight,
     ):
+    cdef:
+        float repulsive_force
+    # FIXME - the below line breaks everything???
+    # FIXME - my GUESS is that this line prevents things from turning into
+    #         python objects, so then we accidentally mishandle memory somewhere
+    # cdef float kernel = umap_repulsion_grad(dist_squared, a, b)
     kernel = umap_repulsion_grad(dist_squared, a, b)
     # ANDREW - Using average_weight is a lame approximation
     #        - Realistically, we should use the actual weight on
     #          the edge e_{ik}, but the coo_matrix is not
     #          indexable. So we assume the differences cancel out over
     #          enough iterations
-    cdef float repulsive_force = cell_size * kernel * (1 - average_weight)
-    return repulsive_force, 0.0
+    repulsive_force = cell_size * kernel * (1 - average_weight)
+    return [repulsive_force, 0.0]
 
-cdef tsne_repulsive_force(
+cdef float* tsne_repulsive_force(
         float dist_squared,
         float a,
         float b,
@@ -138,9 +150,9 @@ cdef tsne_repulsive_force(
     cdef float kernel = kernel_function(dist_squared, a, b)
     Z += cell_size * kernel # Collect the q_ij's contributions into Z
     cdef float repulsive_force = cell_size * kernel * kernel
-    return repulsive_force, Z
+    return [repulsive_force, Z]
 
-cdef attractive_force_func(
+cdef float attractive_force_func(
         str normalization,
         float dist_squared,
         float a,
@@ -157,7 +169,7 @@ cdef attractive_force_func(
     # This does NOT work with parallel=True
     return edge_force * edge_weight
 
-cdef repulsive_force_func(
+cdef float* repulsive_force_func(
         str normalization,
         float dist_squared,
         float a,
@@ -209,10 +221,9 @@ cdef grad_scaling(
     assert normalization == 'tsne'
     return tsne_grad_scaling(attraction, repulsion, Z)
 
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def cy_umap_sampling(
+# @cython.boundscheck(False)
+# @cython.wraparound(False)
+cdef void _cy_umap_sampling(
     str normalization,
     str kernel_choice,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
@@ -244,6 +255,7 @@ def cy_umap_sampling(
     repulsion = py_np.empty([n_vertices, dim], dtype=py_np.float32)
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
+    repulsive_output = <float*> malloc(sizeof(float) * 2)
     cdef float grad_d = 0.0
     cdef int n_edges = int(epochs_per_sample.shape[0])
     cdef float average_weight = 0.0
@@ -294,7 +306,7 @@ def cy_umap_sampling(
                 for d in range(dim):
                     y2[d] = tail_embedding[k, d]
                 dist_squared = rdist(y1, y2, dim)
-                repulsive_force, _ = repulsive_force_func(
+                repulsive_output = repulsive_force_func(
                     normalization,
                     dist_squared,
                     a,
@@ -303,6 +315,7 @@ def cy_umap_sampling(
                     average_weight=average_weight,
                     Z=Z
                 )
+                repulsive_force = repulsive_output[0]
 
                 for d in range(dim):
                     if repulsive_force > 0.0:
@@ -315,8 +328,46 @@ def cy_umap_sampling(
                 n_neg_samples * epochs_per_negative_sample[i]
             )
 
-    return grads
-
+def cy_umap_sampling(
+    str normalization,
+    str kernel_choice,
+    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
+    np.ndarray[DTYPE_INT, ndim=1] head,
+    np.ndarray[DTYPE_INT, ndim=1] tail,
+    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
+    np.ndarray[DTYPE_FLOAT64, ndim=2] grads,
+    np.ndarray[DTYPE_FLOAT64, ndim=1] epochs_per_sample,
+    float a,
+    float b,
+    int dim,
+    int n_vertices,
+    float alpha,
+    np.ndarray[DTYPE_FLOAT64, ndim=1] epochs_per_negative_sample,
+    np.ndarray[DTYPE_FLOAT64, ndim=1] epoch_of_next_negative_sample,
+    np.ndarray[DTYPE_FLOAT64, ndim=1] epoch_of_next_sample,
+    int i_epoch
+):
+    _cy_umap_sampling(
+        normalization,
+        kernel_choice,
+        head_embedding,
+        tail_embedding,
+        head,
+        tail,
+        weights,
+        grads,
+        epochs_per_sample,
+        a,
+        b,
+        dim,
+        n_vertices,
+        alpha,
+        epochs_per_negative_sample,
+        epoch_of_next_negative_sample,
+        epoch_of_next_sample,
+        i_epoch
+    )
 
 
 # def cy_umap_uniformly(
