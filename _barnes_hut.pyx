@@ -1,5 +1,6 @@
-import numpy as np
+import numpy as py_np
 cimport numpy as np
+cimport cython
 from libcpp cimport bool
 from libc.stdio cimport printf
 from libc.stdlib cimport rand
@@ -10,6 +11,11 @@ from cython.parallel cimport prange, parallel
 from sklearn.neighbors._quad_tree cimport _QuadTree
 
 np.import_array()
+
+ctypedef np.float32_t DTYPE_FLOAT
+ctypedef np.float64_t DTYPE_FLOAT64
+ctypedef np.int32_t DTYPE_INT
+
 
 cdef clip(float val):
     """Standard clamping of a value into a fixed range (in this case -4.0 to
@@ -83,15 +89,20 @@ cdef umap_p_scaling(
     return weights, initial_alpha
 
 cdef tsne_p_scaling(
-        np.float32_t[:] weights,
+        np.ndarray[DTYPE_FLOAT, ndim=1] weights,
         float initial_alpha
     ):
     # FIXME - add early exaggeration!!
-    return weights / np.sum(weights), initial_alpha * 200
+    cdef float weight_sum = 0.0
+    for i in range(weights.shape[0]):
+        weight_sum = weight_sum + weights[i]
+    for i in range(weights.shape[0]):
+        weights[i] = weights[i] / weight_sum
+    return weights, initial_alpha * 200
 
 cdef p_scaling(
         str normalization,
-        np.float32_t[:] weights,
+        np.ndarray[DTYPE_FLOAT, ndim=1] weights,
         float initial_alpha
     ):
     if normalization == 'umap':
@@ -173,24 +184,24 @@ cdef repulsive_force_func(
     )
 
 cdef umap_grad_scaling(
-        np.float32_t[:, :] attraction,
-        np.float32_t[:, :] repulsion
+        np.ndarray[DTYPE_FLOAT, ndim=2] attraction,
+        np.ndarray[DTYPE_FLOAT, ndim=2] repulsion
     ):
     return attraction, repulsion
 
 cdef tsne_grad_scaling(
-        np.float32_t[:, :] attraction,
-        np.float32_t[:, :] repulsion,
+        np.ndarray[DTYPE_FLOAT, ndim=2] attraction,
+        np.ndarray[DTYPE_FLOAT, ndim=2] repulsion,
         float Z
     ):
-    repulsion = np.asarray(repulsion) * (- 4 / Z)
-    attraction = np.asarray(attraction) * 4
+    repulsion = repulsion * (- 4 / Z)
+    attraction = attraction * 4
     return attraction, repulsion
 
 cdef grad_scaling(
         str normalization,
-        np.float32_t[:, :] attraction,
-        np.float32_t[:, :] repulsion,
+        np.ndarray[DTYPE_FLOAT, ndim=2] attraction,
+        np.ndarray[DTYPE_FLOAT, ndim=2] repulsion,
         float Z,
     ):
     if normalization == 'umap':
@@ -199,38 +210,46 @@ cdef grad_scaling(
     return tsne_grad_scaling(attraction, repulsion, Z)
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def cy_umap_sampling(
     str normalization,
     str kernel_choice,
-    np.float32_t[:, :] head_embedding,
-    np.float32_t[:, :] tail_embedding,
-    np.int32_t[:] head,
-    np.int32_t[:] tail,
-    np.float32_t[:] weights,
-    np.float64_t[:, :] grads,
-    np.float64_t[:] epochs_per_sample,
+    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
+    np.ndarray[DTYPE_INT, ndim=1] head,
+    np.ndarray[DTYPE_INT, ndim=1] tail,
+    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
+    np.ndarray[DTYPE_FLOAT64, ndim=2] grads,
+    np.ndarray[DTYPE_FLOAT64, ndim=1] epochs_per_sample,
     float a,
     float b,
     int dim,
     int n_vertices,
     float alpha,
-    np.float64_t[:] epochs_per_negative_sample,
-    np.float64_t[:] epoch_of_next_negative_sample,
-    np.float64_t[:] epoch_of_next_sample,
+    np.ndarray[DTYPE_FLOAT64, ndim=1] epochs_per_negative_sample,
+    np.ndarray[DTYPE_FLOAT64, ndim=1] epoch_of_next_negative_sample,
+    np.ndarray[DTYPE_FLOAT64, ndim=1] epoch_of_next_sample,
     int i_epoch
 ):
     cdef:
         int i, j, k, d, n_neg_samples
-        attraction = np.zeros_like(head_embedding, dtype=np.float32)
-        repulsion = np.zeros_like(head_embedding, dtype=np.float32)
+        float [:, :] attraction
+        float [:, :] repulsion
         float Z = 0.0
         float attractive_force, repulsive_force
         float dist_squared
+
+    attraction = py_np.empty([n_vertices, dim], dtype=py_np.float32)
+    repulsion = py_np.empty([n_vertices, dim], dtype=py_np.float32)
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
-    cdef grad_d = np.zeros([3])
+    cdef float grad_d = 0.0
     cdef int n_edges = int(epochs_per_sample.shape[0])
-    cdef float average_weight = np.sum(weights) / n_edges
+    cdef float average_weight = 0.0
+    for i in range(weights.shape[0]):
+        average_weight = average_weight + weights[i]
+    average_weight = average_weight / n_edges
 
     for i in range(epochs_per_sample.shape[0]):
         if epoch_of_next_sample[i] <= i_epoch:
@@ -300,241 +319,247 @@ def cy_umap_sampling(
 
 
 
-def cy_umap_uniformly(
-    str normalization,
-    str kernel_choice,
-    np.float32_t[:, :] head_embedding,
-    np.float32_t[:, :] tail_embedding,
-    np.int32_t[:] head,
-    np.int32_t[:] tail,
-    np.float32_t[:] weights,
-    np.float64_t[:, :] grads,
-    np.float64_t[:] epochs_per_sample,
-    float a,
-    float b,
-    int dim,
-    int n_vertices,
-    float alpha,
-):
-    cdef:
-        int i, j, k, d
-        attraction = np.zeros_like(head_embedding, dtype=np.float32)
-        repulsion = np.zeros_like(head_embedding, dtype=np.float32)
-        float Z = 0.0
-        float attractive_force, repulsive_force
-        float dist_squared
-    y1 = <float*> malloc(sizeof(float) * dim)
-    y2 = <float*> malloc(sizeof(float) * dim)
-    cdef grad_d = np.zeros([3])
-    cdef int n_edges = int(epochs_per_sample.shape[0])
-    cdef float average_weight = np.sum(weights) / n_edges
-
-    for i in range(epochs_per_sample.shape[0]):
-        # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
-        j = head[i]
-        k = tail[i]
-
-        for d in range(dim):
-            # FIXME - index should be typed for more efficient access
-            y1[d] = head_embedding[j, d]
-            y2[d] = tail_embedding[k, d]
-        # ANDREW - optimize positive force for each edge
-        dist_squared = rdist(y1, y2, dim)
-        attractive_force = attractive_force_func(
-            normalization,
-            dist_squared,
-            a,
-            b,
-            weights[i]
-        )
-
-        for d in range(dim):
-            grad_d = clip(attractive_force * (y1[d] - y2[d]))
-            attraction[j, d] += grad_d
-            attraction[k, d] -= grad_d
-
-        # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
-        # ANDREW - If we are summing the effects of the forces and multiplying them
-        #   by the weights appropriately, we only need to alternate symmetrically
-        #   between positive and negative forces rather than doing 1 positive
-        #   calculation to n negative ones
-        # FIXME - add random seed option
-        k = rand() % n_vertices
-        for d in range(dim):
-            y2[d] = tail_embedding[k, d]
-        dist_squared = rdist(y1, y2, dim)
-        repulsive_force, Z = repulsive_force_func(
-            normalization,
-            dist_squared,
-            a,
-            b,
-            cell_size=1,
-            average_weight=average_weight,
-            Z=Z
-        )
-
-        for d in range(dim):
-            if repulsive_force > 0.0:
-                grad_d = clip(repulsive_force * (y1[d] - y2[d]))
-            else:
-                grad_d = 4.0
-            repulsion[j, d] += grad_d
-
-    attraction, repulsion = grad_scaling(
-        normalization,
-        attraction,
-        repulsion,
-        Z
-    )
-
-    for v in range(n_vertices):
-        for d in range(dim):
-            head_embedding[v][d] += (attraction[v][d] + repulsion[v][d]) * alpha
-    return grads
-
-
-
-##### BARNES-HUT CODE #####
-
-cdef calculate_barnes_hut(
-        str normalization,
-        str kernel_choice,
-        np.float32_t[:, :] head_embedding,
-        np.float32_t[:, :] tail_embedding,
-        np.int32_t[:] head,
-        np.int32_t[:] tail,
-        np.float32_t[:] weights,
-        np.float64_t[:, :] grads,
-        np.float64_t[:] epochs_per_sample,
-        _QuadTree qt,
-        float a,
-        float b,
-        int dim,
-        int n_vertices,
-        float alpha,
-):
-    cdef:
-        double Z = 0.0
-        int i, j, k, l, num_cells, d
-        float cell_size, cell_dist, grad_scalar, dist_squared
-        long offset = dim + 2
-        long dim_index
-
-    # Allocte memory for data structures
-    cell_summaries = <float*> malloc(sizeof(float) * n_vertices * offset)
-    y1 = <float*> malloc(sizeof(float) * dim)
-    y2 = <float*> malloc(sizeof(float) * dim)
-    # FIXME - what type should these be for optimal performance?
-    cdef attractive_forces = np.zeros([n_vertices, dim], dtype=np.float32)
-    cdef repulsive_forces = np.zeros([n_vertices, dim], dtype=np.float32)
-    cdef forces = np.zeros([n_vertices, dim], dtype=np.float32)
-
-    cdef int n_edges = int(epochs_per_sample.shape[0])
-    cdef float average_weight = np.sum(weights) / n_edges
-
-    for edge in range(n_edges):
-        # Get vertices on either side of the edge
-        j = head[edge] # head is the incoming data being transformed
-        k = tail[edge] # tail is what we fit to
-
-        for d in range(dim):
-            # FIXME - index should be typed for more efficient access
-            y1[d] = head_embedding[j, d]
-            y2[d] = tail_embedding[k, d]
-        dist_squared = rdist(y1, y2, dim)
-        attractive_force = attractive_force_func(
-            normalization,
-            dist_squared,
-            a,
-            b,
-            weights[edge]
-        )
-        for d in range(dim):
-            attractive_forces[j, d] += clip(attractive_force * (y1[d] - y2[d]))
-
-    for v in range(n_vertices):
-        # Get necessary data regarding current point and the quadtree cells
-        for d in range(dim):
-            y1[d] = head_embedding[v, d]
-        cell_metadata = qt.summarize(y1, cell_summaries, 0.25) # 0.25 = theta^2
-        num_cells = cell_metadata // offset
-        cell_sizes = [cell_summaries[i * offset + dim + 1] for i in range(num_cells)]
-
-        # For each quadtree cell with respect to the current point
-        for i_cell in range(num_cells):
-            cell_dist = cell_summaries[i_cell * offset + dim]
-            cell_size = cell_summaries[i_cell * offset + dim + 1]
-            # FIXME - think more about this cell_size bounding
-            # Ignoring small cells gives clusters that REALLY preserve 
-            #      local relationships while generally maintaining global ones
-            if cell_size < 1:
-                continue
-            repulsive_force, Z = repulsive_force_func(
-                normalization,
-                dist_squared,
-                a,
-                b,
-                int(cell_size),
-                average_weight,
-                Z
-            )
-            for d in range(dim):
-                dim_index = i_cell * offset + d
-                repulsive_forces[v][d] += repulsive_force * cell_summaries[dim_index]
-
-    attractive_forces, repulsive_forces = grad_scaling(
-        normalization,
-        attractive_forces,
-        repulsive_forces,
-        Z,
-    )
-
-    for v in range(n_vertices):
-        for d in range(dim):
-            forces[v][d] = (attractive_forces[v][d] + repulsive_forces[v][d]) + 0.9 * forces[v][d]
-            head_embedding[v][d] -= forces[v][d] * alpha
-
-    return grads
-
-def bh_wrapper(
-        str opt_method,
-        str normalization,
-        str kernel_choice,
-        np.float32_t[:, :] head_embedding,
-        np.float32_t[:, :] tail_embedding,
-        np.int32_t[:] head,
-        np.int32_t[:] tail,
-        np.float32_t[:] weights,
-        np.float64_t[:, :] grads,
-        np.float64_t[:] epochs_per_sample,
-        float a,
-        float b,
-        int dim,
-        int n_vertices,
-        float alpha,
-):
-    """
-    Wrapper to call barnes_hut optimization
-    Require a regular def function to call from python file
-    But this standard function in a .pyx file can call the cdef function
-    """
-    # Can only define cython quadtree in a cython function
-    cdef _QuadTree qt = _QuadTree(dim, 1)
-    qt.build_tree(head_embedding)
-    return calculate_barnes_hut(
-        normalization,
-        kernel_choice,
-        head_embedding,
-        tail_embedding,
-        head,
-        tail,
-        weights,
-        grads,
-        epochs_per_sample,
-        qt,
-        a,
-        b,
-        dim,
-        n_vertices,
-        alpha
-    )
+# def cy_umap_uniformly(
+#     str normalization,
+#     str kernel_choice,
+#     np.float32_t[:, :] head_embedding,
+#     np.float32_t[:, :] tail_embedding,
+#     np.int32_t[:] head,
+#     np.int32_t[:] tail,
+#     np.float32_t[:] weights,
+#     np.float64_t[:, :] grads,
+#     np.float64_t[:] epochs_per_sample,
+#     float a,
+#     float b,
+#     int dim,
+#     int n_vertices,
+#     float alpha,
+# ):
+#     cdef:
+#         int i, j, k, d
+#         attraction = np.zeros_like(head_embedding, dtype=np.float32)
+#         repulsion = np.zeros_like(head_embedding, dtype=np.float32)
+#         float Z = 0.0
+#         float attractive_force, repulsive_force
+#         float dist_squared
+#     y1 = <float*> malloc(sizeof(float) * dim)
+#     y2 = <float*> malloc(sizeof(float) * dim)
+#     cdef grad_d = np.zeros([3])
+#     cdef int n_edges = int(epochs_per_sample.shape[0])
+#     cdef float average_weight = 0.0
+#     for i in range(weights.shape[0]):
+#         average_weight += weights[i]
+#     average_weight /= n_edges
+# 
+#     for i in range(epochs_per_sample.shape[0]):
+#         # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
+#         j = head[i]
+#         k = tail[i]
+# 
+#         for d in range(dim):
+#             # FIXME - index should be typed for more efficient access
+#             y1[d] = head_embedding[j, d]
+#             y2[d] = tail_embedding[k, d]
+#         # ANDREW - optimize positive force for each edge
+#         dist_squared = rdist(y1, y2, dim)
+#         attractive_force = attractive_force_func(
+#             normalization,
+#             dist_squared,
+#             a,
+#             b,
+#             weights[i]
+#         )
+# 
+#         for d in range(dim):
+#             grad_d = clip(attractive_force * (y1[d] - y2[d]))
+#             attraction[j, d] += grad_d
+#             attraction[k, d] -= grad_d
+# 
+#         # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
+#         # ANDREW - If we are summing the effects of the forces and multiplying them
+#         #   by the weights appropriately, we only need to alternate symmetrically
+#         #   between positive and negative forces rather than doing 1 positive
+#         #   calculation to n negative ones
+#         # FIXME - add random seed option
+#         k = rand() % n_vertices
+#         for d in range(dim):
+#             y2[d] = tail_embedding[k, d]
+#         dist_squared = rdist(y1, y2, dim)
+#         repulsive_force, Z = repulsive_force_func(
+#             normalization,
+#             dist_squared,
+#             a,
+#             b,
+#             cell_size=1,
+#             average_weight=average_weight,
+#             Z=Z
+#         )
+# 
+#         for d in range(dim):
+#             if repulsive_force > 0.0:
+#                 grad_d = clip(repulsive_force * (y1[d] - y2[d]))
+#             else:
+#                 grad_d = 4.0
+#             repulsion[j, d] += grad_d
+# 
+#     attraction, repulsion = grad_scaling(
+#         normalization,
+#         attraction,
+#         repulsion,
+#         Z
+#     )
+# 
+#     for v in range(n_vertices):
+#         for d in range(dim):
+#             head_embedding[v][d] += (attraction[v][d] + repulsion[v][d]) * alpha
+#     return grads
+# 
+# 
+# 
+# ##### BARNES-HUT CODE #####
+# 
+# cdef calculate_barnes_hut(
+#         str normalization,
+#         str kernel_choice,
+#         np.float32_t[:, :] head_embedding,
+#         np.float32_t[:, :] tail_embedding,
+#         np.int32_t[:] head,
+#         np.int32_t[:] tail,
+#         np.float32_t[:] weights,
+#         np.float64_t[:, :] grads,
+#         np.float64_t[:] epochs_per_sample,
+#         _QuadTree qt,
+#         float a,
+#         float b,
+#         int dim,
+#         int n_vertices,
+#         float alpha,
+# ):
+#     cdef:
+#         double Z = 0.0
+#         int i, j, k, l, num_cells, d
+#         float cell_size, cell_dist, grad_scalar, dist_squared
+#         long offset = dim + 2
+#         long dim_index
+# 
+#     # Allocte memory for data structures
+#     cell_summaries = <float*> malloc(sizeof(float) * n_vertices * offset)
+#     y1 = <float*> malloc(sizeof(float) * dim)
+#     y2 = <float*> malloc(sizeof(float) * dim)
+#     # FIXME - what type should these be for optimal performance?
+#     cdef attractive_forces = np.zeros([n_vertices, dim], dtype=np.float32)
+#     cdef repulsive_forces = np.zeros([n_vertices, dim], dtype=np.float32)
+#     cdef forces = np.zeros([n_vertices, dim], dtype=np.float32)
+# 
+#     cdef int n_edges = int(epochs_per_sample.shape[0])
+#     cdef float average_weight = 0.0
+#     for i in range(weights.shape[0]):
+#         average_weight += weights[i]
+#     average_weight /= n_edges
+# 
+#     for edge in range(n_edges):
+#         # Get vertices on either side of the edge
+#         j = head[edge] # head is the incoming data being transformed
+#         k = tail[edge] # tail is what we fit to
+# 
+#         for d in range(dim):
+#             # FIXME - index should be typed for more efficient access
+#             y1[d] = head_embedding[j, d]
+#             y2[d] = tail_embedding[k, d]
+#         dist_squared = rdist(y1, y2, dim)
+#         attractive_force = attractive_force_func(
+#             normalization,
+#             dist_squared,
+#             a,
+#             b,
+#             weights[edge]
+#         )
+#         for d in range(dim):
+#             attractive_forces[j, d] += clip(attractive_force * (y1[d] - y2[d]))
+# 
+#     for v in range(n_vertices):
+#         # Get necessary data regarding current point and the quadtree cells
+#         for d in range(dim):
+#             y1[d] = head_embedding[v, d]
+#         cell_metadata = qt.summarize(y1, cell_summaries, 0.25) # 0.25 = theta^2
+#         num_cells = cell_metadata // offset
+#         cell_sizes = [cell_summaries[i * offset + dim + 1] for i in range(num_cells)]
+# 
+#         # For each quadtree cell with respect to the current point
+#         for i_cell in range(num_cells):
+#             cell_dist = cell_summaries[i_cell * offset + dim]
+#             cell_size = cell_summaries[i_cell * offset + dim + 1]
+#             # FIXME - think more about this cell_size bounding
+#             # Ignoring small cells gives clusters that REALLY preserve 
+#             #      local relationships while generally maintaining global ones
+#             if cell_size < 1:
+#                 continue
+#             repulsive_force, Z = repulsive_force_func(
+#                 normalization,
+#                 dist_squared,
+#                 a,
+#                 b,
+#                 int(cell_size),
+#                 average_weight,
+#                 Z
+#             )
+#             for d in range(dim):
+#                 dim_index = i_cell * offset + d
+#                 repulsive_forces[v][d] += repulsive_force * cell_summaries[dim_index]
+# 
+#     attractive_forces, repulsive_forces = grad_scaling(
+#         normalization,
+#         attractive_forces,
+#         repulsive_forces,
+#         Z,
+#     )
+# 
+#     for v in range(n_vertices):
+#         for d in range(dim):
+#             forces[v][d] = (attractive_forces[v][d] + repulsive_forces[v][d]) + 0.9 * forces[v][d]
+#             head_embedding[v][d] -= forces[v][d] * alpha
+# 
+#     return grads
+# 
+# def bh_wrapper(
+#         str opt_method,
+#         str normalization,
+#         str kernel_choice,
+#         np.float32_t[:, :] head_embedding,
+#         np.float32_t[:, :] tail_embedding,
+#         np.int32_t[:] head,
+#         np.int32_t[:] tail,
+#         np.float32_t[:] weights,
+#         np.float64_t[:, :] grads,
+#         np.float64_t[:] epochs_per_sample,
+#         float a,
+#         float b,
+#         int dim,
+#         int n_vertices,
+#         float alpha,
+# ):
+#     """
+#     Wrapper to call barnes_hut optimization
+#     Require a regular def function to call from python file
+#     But this standard function in a .pyx file can call the cdef function
+#     """
+#     # Can only define cython quadtree in a cython function
+#     cdef _QuadTree qt = _QuadTree(dim, 1)
+#     qt.build_tree(head_embedding)
+#     return calculate_barnes_hut(
+#         normalization,
+#         kernel_choice,
+#         head_embedding,
+#         tail_embedding,
+#         head,
+#         tail,
+#         weights,
+#         grads,
+#         epochs_per_sample,
+#         qt,
+#         a,
+#         b,
+#         dim,
+#         n_vertices,
+#         alpha
+#     )
