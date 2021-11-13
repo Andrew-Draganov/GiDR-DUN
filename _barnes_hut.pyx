@@ -118,7 +118,7 @@ cdef p_scaling(
     return tsne_p_scaling(weights, initial_alpha)
 
 
-cdef float* umap_repulsive_force(
+cdef float umap_repulsive_force(
         float dist_squared,
         float a,
         float b,
@@ -130,17 +130,16 @@ cdef float* umap_repulsive_force(
     # FIXME - the below line breaks everything???
     # FIXME - my GUESS is that this line prevents things from turning into
     #         python objects, so then we accidentally mishandle memory somewhere
-    # cdef float kernel = umap_repulsion_grad(dist_squared, a, b)
-    kernel = umap_repulsion_grad(dist_squared, a, b)
+    cdef float kernel = umap_repulsion_grad(dist_squared, a, b)
     # ANDREW - Using average_weight is a lame approximation
     #        - Realistically, we should use the actual weight on
     #          the edge e_{ik}, but the coo_matrix is not
     #          indexable. So we assume the differences cancel out over
     #          enough iterations
     repulsive_force = cell_size * kernel * (1 - average_weight)
-    return [repulsive_force, 0.0]
+    return repulsive_force
 
-cdef float* tsne_repulsive_force(
+cdef float tsne_repulsive_force(
         float dist_squared,
         float a,
         float b,
@@ -150,7 +149,7 @@ cdef float* tsne_repulsive_force(
     cdef float kernel = kernel_function(dist_squared, a, b)
     Z += cell_size * kernel # Collect the q_ij's contributions into Z
     cdef float repulsive_force = cell_size * kernel * kernel
-    return [repulsive_force, Z]
+    return repulsive_force
 
 cdef float attractive_force_func(
         str normalization,
@@ -169,7 +168,7 @@ cdef float attractive_force_func(
     # This does NOT work with parallel=True
     return edge_force * edge_weight
 
-cdef float* repulsive_force_func(
+cdef float repulsive_force_func(
         str normalization,
         float dist_squared,
         float a,
@@ -255,7 +254,6 @@ cdef void _cy_umap_sampling(
     repulsion = py_np.empty([n_vertices, dim], dtype=py_np.float32)
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
-    repulsive_output = <float*> malloc(sizeof(float) * 2)
     cdef float grad_d = 0.0
     cdef int n_edges = int(epochs_per_sample.shape[0])
     cdef float average_weight = 0.0
@@ -306,7 +304,7 @@ cdef void _cy_umap_sampling(
                 for d in range(dim):
                     y2[d] = tail_embedding[k, d]
                 dist_squared = rdist(y1, y2, dim)
-                repulsive_output = repulsive_force_func(
+                repulsive_force = repulsive_force_func(
                     normalization,
                     dist_squared,
                     a,
@@ -315,7 +313,6 @@ cdef void _cy_umap_sampling(
                     average_weight=average_weight,
                     Z=Z
                 )
-                repulsive_force = repulsive_output[0]
 
                 for d in range(dim):
                     if repulsive_force > 0.0:
