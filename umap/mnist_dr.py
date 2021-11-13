@@ -37,7 +37,9 @@ parser.add_argument(
     choices=[
         'umap_sampling',
         'umap_uniform',
-        'barnes_hut'
+        'cy_barnes_hut'
+        'cy_umap_uniform',
+        'cy_umap_sampling',
     ],
     default='umap_sampling',
     help='Which optimization algorithm to use'

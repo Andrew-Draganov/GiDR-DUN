@@ -73,7 +73,6 @@ def optimize_through_sampling(
     grads,
     n_vertices,
     average_weight,
-    average_pos_weight,
     epochs_per_sample,
     a,
     b,
@@ -85,6 +84,9 @@ def optimize_through_sampling(
     epoch_of_next_sample,
     i_epoch,
 ):
+    """
+    This is the original UMAP optimization function
+    """
     # ANDREW - If we optimize an edge, then the next epoch we optimize it is
     #          the current epoch + epochs_per_sample[i] for that edge
     #        - Basically, optimize edge i every epochs_per_sample[i] steps
@@ -160,6 +162,7 @@ def optimize_through_sampling(
     return grads
 
 
+
 def optimize_uniformly(
     normalization,
     kernel_choice,
@@ -171,7 +174,6 @@ def optimize_uniformly(
     grads,
     n_vertices,
     average_weight,
-    average_pos_weight,
     epochs_per_sample,
     a,
     b,
@@ -244,6 +246,89 @@ def optimize_uniformly(
     head_embedding += (attraction + repulsion) * alpha
     return grads
 
+def cy_umap_sampling(
+    normalization,
+    kernel_choice,
+    head_embedding,
+    tail_embedding,
+    head,
+    tail,
+    weights,
+    grads,
+    n_vertices,
+    average_weight,
+    epochs_per_sample,
+    a,
+    b,
+    rng_state,
+    dim,
+    alpha,
+    epochs_per_negative_sample,
+    epoch_of_next_negative_sample,
+    epoch_of_next_sample,
+    i_epoch,
+):
+    barnes_hut.cy_umap_sampling(
+        normalization,
+        kernel_choice,
+        head_embedding,
+        tail_embedding,
+        head,
+        tail,
+        weights,
+        grads,
+        epochs_per_sample,
+        a,
+        b,
+        dim,
+        n_vertices,
+        alpha,
+        epochs_per_negative_sample,
+        epoch_of_next_negative_sample,
+        epoch_of_next_sample,
+        i_epoch,
+    )
+
+
+
+def cy_umap_uniformly(
+    normalization,
+    kernel_choice,
+    head_embedding,
+    tail_embedding,
+    head,
+    tail,
+    weights,
+    grads,
+    n_vertices,
+    average_weight,
+    epochs_per_sample,
+    a,
+    b,
+    rng_state,
+    dim,
+    alpha,
+    epochs_per_negative_sample,
+    epoch_of_next_negative_sample,
+    epoch_of_next_sample,
+    i_epoch,
+):
+    barnes_hut.cy_optimize_uniformly(
+        normalization,
+        kernel_choice,
+        head_embedding,
+        tail_embedding,
+        head,
+        tail,
+        weights,
+        grads,
+        epochs_per_sample,
+        a,
+        b,
+        dim,
+        n_vertices,
+        alpha,
+    )
 
 def barnes_hut_opt(
     normalization,
@@ -256,7 +341,6 @@ def barnes_hut_opt(
     grads,
     n_vertices,
     average_weight,
-    average_pos_weight,
     epochs_per_sample,
     a,
     b,
@@ -269,6 +353,7 @@ def barnes_hut_opt(
     i_epoch,
 ):
     return barnes_hut.bh_wrapper(
+        'barnes_hut',
         normalization,
         kernel_choice,
         head_embedding,
@@ -329,12 +414,11 @@ def optimize_layout_euclidean(
 
     n_edges = n_vertices * (n_vertices - 1)
     average_weight = np.sum(weights) / float(n_edges)
-    average_pos_weight = np.sum(weights) / float(weights.shape[0])
 
-    if 'barnes_hut' not in optimize_method:
+    if 'cy' not in optimize_method:
         single_step_functions = {
-            'umap_sampling': optimize_through_sampling,
             'umap_uniform': optimize_uniformly,
+            'umap_sampling': optimize_through_sampling
         }
         single_step = single_step_functions[optimize_method]
         optimize_fn = numba.njit(
@@ -345,7 +429,12 @@ def optimize_layout_euclidean(
     else:
         # barnes_hut optimization uses the cython quadtree class,
         # so we can't use numba to compile it
-        optimize_fn = barnes_hut_opt
+        single_step_functions = {
+            'cy_umap_uniform': cy_umap_uniformly,
+            'cy_umap_sampling': cy_umap_sampling,
+            'cy_barnes_hut': barnes_hut_opt
+        }
+        optimize_fn = single_step_functions[optimize_method]
 
     start = time.time()
     alpha = initial_alpha
@@ -367,7 +456,6 @@ def optimize_layout_euclidean(
             grads,
             n_vertices,
             average_weight,
-            average_pos_weight,
             epochs_per_sample,
             a,
             b,

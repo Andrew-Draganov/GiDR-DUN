@@ -2,6 +2,7 @@ import numpy as np
 cimport numpy as np
 from libcpp cimport bool
 from libc.stdio cimport printf
+from libc.stdlib cimport rand
 from libc.math cimport sqrt, log
 from libc.stdlib cimport malloc, free
 from cython.parallel cimport prange, parallel
@@ -198,6 +199,200 @@ cdef grad_scaling(
     return tsne_grad_scaling(attraction, repulsion, Z)
 
 
+def cy_umap_sampling(
+    str normalization,
+    str kernel_choice,
+    np.float32_t[:, :] head_embedding,
+    np.float32_t[:, :] tail_embedding,
+    np.int32_t[:] head,
+    np.int32_t[:] tail,
+    np.float32_t[:] weights,
+    np.float64_t[:, :] grads,
+    np.float64_t[:] epochs_per_sample,
+    float a,
+    float b,
+    int dim,
+    int n_vertices,
+    float alpha,
+    np.float64_t[:] epochs_per_negative_sample,
+    np.float64_t[:] epoch_of_next_negative_sample,
+    np.float64_t[:] epoch_of_next_sample,
+    int i_epoch
+):
+    cdef:
+        int i, j, k, d, n_neg_samples
+        attraction = np.zeros_like(head_embedding, dtype=np.float32)
+        repulsion = np.zeros_like(head_embedding, dtype=np.float32)
+        float Z = 0.0
+        float attractive_force, repulsive_force
+        float dist_squared
+    y1 = <float*> malloc(sizeof(float) * dim)
+    y2 = <float*> malloc(sizeof(float) * dim)
+    cdef grad_d = np.zeros([3])
+    cdef int n_edges = int(epochs_per_sample.shape[0])
+    cdef float average_weight = np.sum(weights) / n_edges
+
+    for i in range(epochs_per_sample.shape[0]):
+        if epoch_of_next_sample[i] <= i_epoch:
+            # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
+            j = head[i]
+            k = tail[i]
+
+            for d in range(dim):
+                # FIXME - index should be typed for more efficient access
+                y1[d] = head_embedding[j, d]
+                y2[d] = tail_embedding[k, d]
+            # ANDREW - optimize positive force for each edge
+            dist_squared = rdist(y1, y2, dim)
+            attractive_force = attractive_force_func(
+                normalization,
+                dist_squared,
+                a,
+                b,
+                weights[i]
+            )
+
+            for d in range(dim):
+                grad_d = clip(attractive_force * (y1[d] - y2[d]))
+                head_embedding[j, d] += grad_d * alpha
+                head_embedding[k, d] -= grad_d * alpha
+
+            epoch_of_next_sample[i] += epochs_per_sample[i]
+
+            # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
+            # ANDREW - If we are summing the effects of the forces and multiplying them
+            #   by the weights appropriately, we only need to alternate symmetrically
+            #   between positive and negative forces rather than doing 1 positive
+            #   calculation to n negative ones
+            # FIXME - add random seed option
+            n_neg_samples = int(
+                (i_epoch - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
+            )
+            for p in range(n_neg_samples):
+                k = rand() % n_vertices
+                if j == k:
+                    continue
+                for d in range(dim):
+                    y2[d] = tail_embedding[k, d]
+                dist_squared = rdist(y1, y2, dim)
+                repulsive_force, _ = repulsive_force_func(
+                    normalization,
+                    dist_squared,
+                    a,
+                    b,
+                    cell_size=1,
+                    average_weight=average_weight,
+                    Z=Z
+                )
+
+                for d in range(dim):
+                    if repulsive_force > 0.0:
+                        grad_d = clip(repulsive_force * (y1[d] - y2[d]))
+                    else:
+                        grad_d = 4.0
+                    head_embedding[j, d] += grad_d * alpha
+
+            epoch_of_next_negative_sample[i] += (
+                n_neg_samples * epochs_per_negative_sample[i]
+            )
+
+    return grads
+
+
+
+def cy_umap_uniformly(
+    str normalization,
+    str kernel_choice,
+    np.float32_t[:, :] head_embedding,
+    np.float32_t[:, :] tail_embedding,
+    np.int32_t[:] head,
+    np.int32_t[:] tail,
+    np.float32_t[:] weights,
+    np.float64_t[:, :] grads,
+    np.float64_t[:] epochs_per_sample,
+    float a,
+    float b,
+    int dim,
+    int n_vertices,
+    float alpha,
+):
+    cdef:
+        int i, j, k, d
+        attraction = np.zeros_like(head_embedding, dtype=np.float32)
+        repulsion = np.zeros_like(head_embedding, dtype=np.float32)
+        float Z = 0.0
+        float attractive_force, repulsive_force
+        float dist_squared
+    y1 = <float*> malloc(sizeof(float) * dim)
+    y2 = <float*> malloc(sizeof(float) * dim)
+    cdef grad_d = np.zeros([3])
+    cdef int n_edges = int(epochs_per_sample.shape[0])
+    cdef float average_weight = np.sum(weights) / n_edges
+
+    for i in range(epochs_per_sample.shape[0]):
+        # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
+        j = head[i]
+        k = tail[i]
+
+        for d in range(dim):
+            # FIXME - index should be typed for more efficient access
+            y1[d] = head_embedding[j, d]
+            y2[d] = tail_embedding[k, d]
+        # ANDREW - optimize positive force for each edge
+        dist_squared = rdist(y1, y2, dim)
+        attractive_force = attractive_force_func(
+            normalization,
+            dist_squared,
+            a,
+            b,
+            weights[i]
+        )
+
+        for d in range(dim):
+            grad_d = clip(attractive_force * (y1[d] - y2[d]))
+            attraction[j, d] += grad_d
+            attraction[k, d] -= grad_d
+
+        # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
+        # ANDREW - If we are summing the effects of the forces and multiplying them
+        #   by the weights appropriately, we only need to alternate symmetrically
+        #   between positive and negative forces rather than doing 1 positive
+        #   calculation to n negative ones
+        # FIXME - add random seed option
+        k = rand() % n_vertices
+        for d in range(dim):
+            y2[d] = tail_embedding[k, d]
+        dist_squared = rdist(y1, y2, dim)
+        repulsive_force, Z = repulsive_force_func(
+            normalization,
+            dist_squared,
+            a,
+            b,
+            cell_size=1,
+            average_weight=average_weight,
+            Z=Z
+        )
+
+        for d in range(dim):
+            if repulsive_force > 0.0:
+                grad_d = clip(repulsive_force * (y1[d] - y2[d]))
+            else:
+                grad_d = 4.0
+            repulsion[j, d] += grad_d
+
+    attraction, repulsion = grad_scaling(
+        normalization,
+        attraction,
+        repulsion,
+        Z
+    )
+
+    for v in range(n_vertices):
+        for d in range(dim):
+            head_embedding[v][d] += (attraction[v][d] + repulsion[v][d]) * alpha
+    return grads
+
+
 
 ##### BARNES-HUT CODE #####
 
@@ -220,8 +415,8 @@ cdef calculate_barnes_hut(
 ):
     cdef:
         double Z = 0.0
-        int i, j, k, l, num_cells
-        float cell_size, cell_dist, grad_scalar
+        int i, j, k, l, num_cells, d
+        float cell_size, cell_dist, grad_scalar, dist_squared
         long offset = dim + 2
         long dim_index
 
@@ -302,6 +497,7 @@ cdef calculate_barnes_hut(
     return grads
 
 def bh_wrapper(
+        str opt_method,
         str normalization,
         str kernel_choice,
         np.float32_t[:, :] head_embedding,
