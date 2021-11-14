@@ -64,7 +64,6 @@ def rdist(x, y):
 
 def optimize_through_sampling(
     normalization,
-    kernel_choice,
     head_embedding,
     tail_embedding,
     head,
@@ -165,7 +164,6 @@ def optimize_through_sampling(
 
 def optimize_uniformly(
     normalization,
-    kernel_choice,
     head_embedding,
     tail_embedding,
     head,
@@ -248,7 +246,6 @@ def optimize_uniformly(
 
 def cy_umap_sampling(
     normalization,
-    kernel_choice,
     head_embedding,
     tail_embedding,
     head,
@@ -270,7 +267,6 @@ def cy_umap_sampling(
 ):
     barnes_hut.cy_umap_sampling(
         normalization,
-        kernel_choice,
         head_embedding,
         tail_embedding,
         head,
@@ -293,7 +289,6 @@ def cy_umap_sampling(
 
 def cy_umap_uniformly(
     normalization,
-    kernel_choice,
     head_embedding,
     tail_embedding,
     head,
@@ -315,7 +310,6 @@ def cy_umap_uniformly(
 ):
     barnes_hut.cy_umap_uniformly(
         normalization,
-        kernel_choice,
         head_embedding,
         tail_embedding,
         head,
@@ -332,7 +326,6 @@ def cy_umap_uniformly(
 
 def barnes_hut_opt(
     normalization,
-    kernel_choice,
     head_embedding,
     tail_embedding,
     head,
@@ -355,7 +348,6 @@ def barnes_hut_opt(
     return barnes_hut.bh_wrapper(
         'barnes_hut',
         normalization,
-        kernel_choice,
         head_embedding,
         tail_embedding,
         head,
@@ -374,7 +366,6 @@ def barnes_hut_opt(
 def optimize_layout_euclidean(
     optimize_method,
     normalization,
-    kernel_choice,
     head_embedding,
     tail_embedding,
     head,
@@ -447,7 +438,6 @@ def optimize_layout_euclidean(
         # FIXME - clean this up!!
         grads = optimize_fn(
             normalization,
-            kernel_choice,
             head_embedding,
             tail_embedding,
             head,

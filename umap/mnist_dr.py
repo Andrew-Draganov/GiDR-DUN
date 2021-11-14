@@ -116,7 +116,6 @@ if args.dr_algorithm == 'umap':
             optimize_method=args.optimize_method,
             negative_sample_rate=args.neg_sample_rate,
             normalization=args.normalization,
-            kernel_choice=args.kernel_choice,
             a=a,
             b=b,
             verbose=True

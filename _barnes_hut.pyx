@@ -67,17 +67,15 @@ cdef float rdist(float* x, float* y, int dim):
 @cython.cdivision(True)
 cdef float umap_attraction_grad(float dist_squared, float a, float b):
     cdef float grad_scalar = 0.0
-    if dist_squared > 0.0:
-        grad_scalar = -2.0 * a * b * pow(dist_squared, b - 1.0)
-        grad_scalar /= a * pow(dist_squared, b) + 1.0
+    grad_scalar = -2.0 * a * b * pow(dist_squared, b - 1.0)
+    grad_scalar /= a * pow(dist_squared, b) + 1.0
     return grad_scalar
 
 @cython.cdivision(True)
 cdef float umap_repulsion_grad(float dist_squared, float a, float b):
     cdef float phi_ijZ = 0.0
-    if dist_squared > 0.0:
-        phi_ijZ = 2.0 * b
-        phi_ijZ /= (0.001 + dist_squared) * (a * pow(dist_squared, b) + 1)
+    phi_ijZ = 2.0 * b
+    phi_ijZ /= (0.001 + dist_squared) * (a * pow(dist_squared, b) + 1)
     return phi_ijZ
 
 @cython.cdivision(True)
@@ -196,7 +194,6 @@ cdef (float, float) repulsive_force_func(
 @cython.wraparound(False)
 cdef void _cy_umap_sampling(
     str normalization,
-    str kernel_choice,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
     np.ndarray[DTYPE_INT, ndim=1] head,
@@ -236,6 +233,8 @@ cdef void _cy_umap_sampling(
             j = head[i]
             k = tail[i]
 
+            if j == k:
+                continue
             for d in range(dim):
                 # FIXME - index should be typed for more efficient access
                 y1[d] = head_embedding[j, d]
@@ -298,7 +297,6 @@ cdef void _cy_umap_sampling(
 
 def cy_umap_sampling(
     str normalization,
-    str kernel_choice,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
     np.ndarray[DTYPE_INT, ndim=1] head,
@@ -318,7 +316,6 @@ def cy_umap_sampling(
 ):
     _cy_umap_sampling(
         normalization,
-        kernel_choice,
         head_embedding,
         tail_embedding,
         head,
@@ -343,7 +340,6 @@ def cy_umap_sampling(
 @cython.cdivision(True)
 cdef void _cy_umap_uniformly(
     str normalization,
-    str kernel_choice,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
     np.ndarray[DTYPE_INT, ndim=1] head,
@@ -365,8 +361,8 @@ cdef void _cy_umap_uniformly(
         float attractive_force, repulsive_force
         float dist_squared
 
-    attraction = py_np.empty([n_vertices, dim], dtype=py_np.float32)
-    repulsion = py_np.empty([n_vertices, dim], dtype=py_np.float32)
+    attraction = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
+    repulsion = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
     cdef float grad_d = 0.0
@@ -381,6 +377,8 @@ cdef void _cy_umap_uniformly(
         # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
         j = head[i]
         k = tail[i]
+        if j == k:
+            continue
 
         for d in range(dim):
             # FIXME - index should be typed for more efficient access
@@ -432,18 +430,20 @@ cdef void _cy_umap_uniformly(
                 grad_d = 4.0
             repulsion[j, d] += grad_d
 
-    cdef float rep_scalar = -4 / Z
+    cdef float rep_scalar = -4
+    if normalization == 'tsne':
+        rep_scalar = rep_scalar / Z
     cdef float att_scalar = 4
     for v in range(n_vertices):
         for d in range(dim):
             if normalization == 'tsne':
                 repulsion[v, d] = repulsion[v, d] * rep_scalar
                 attraction[v, d] = attraction[v, d] * att_scalar
+
             head_embedding[v, d] += (attraction[v, d] + repulsion[v, d]) * alpha
 
 def cy_umap_uniformly(
     str normalization,
-    str kernel_choice,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
     np.ndarray[DTYPE_INT, ndim=1] head,
@@ -459,7 +459,6 @@ def cy_umap_uniformly(
 ):
     _cy_umap_uniformly(
         normalization,
-        kernel_choice,
         head_embedding,
         tail_embedding,
         head,
@@ -481,7 +480,6 @@ def cy_umap_uniformly(
 # 
 # cdef calculate_barnes_hut(
 #         str normalization,
-#         str kernel_choice,
 #         np.float32_t[:, :] head_embedding,
 #         np.float32_t[:, :] tail_embedding,
 #         np.int32_t[:] head,
@@ -586,7 +584,6 @@ def cy_umap_uniformly(
 # def bh_wrapper(
 #         str opt_method,
 #         str normalization,
-#         str kernel_choice,
 #         np.float32_t[:, :] head_embedding,
 #         np.float32_t[:, :] tail_embedding,
 #         np.int32_t[:] head,
@@ -610,7 +607,6 @@ def cy_umap_uniformly(
 #     qt.build_tree(head_embedding)
 #     return calculate_barnes_hut(
 #         normalization,
-#         kernel_choice,
 #         head_embedding,
 #         tail_embedding,
 #         head,
