@@ -118,7 +118,7 @@ cdef p_scaling(
     return tsne_p_scaling(weights, initial_alpha)
 
 
-cdef float umap_repulsive_force(
+cdef (float, float) umap_repulsive_force(
         float dist_squared,
         float a,
         float b,
@@ -127,19 +127,16 @@ cdef float umap_repulsive_force(
     ):
     cdef:
         float repulsive_force
-    # FIXME - the below line breaks everything???
-    # FIXME - my GUESS is that this line prevents things from turning into
-    #         python objects, so then we accidentally mishandle memory somewhere
-    cdef float kernel = umap_repulsion_grad(dist_squared, a, b)
     # ANDREW - Using average_weight is a lame approximation
     #        - Realistically, we should use the actual weight on
     #          the edge e_{ik}, but the coo_matrix is not
     #          indexable. So we assume the differences cancel out over
     #          enough iterations
+    cdef float kernel = umap_repulsion_grad(dist_squared, a, b)
     repulsive_force = cell_size * kernel * (1 - average_weight)
-    return repulsive_force
+    return (repulsive_force, 0)
 
-cdef float tsne_repulsive_force(
+cdef (float, float) tsne_repulsive_force(
         float dist_squared,
         float a,
         float b,
@@ -149,7 +146,7 @@ cdef float tsne_repulsive_force(
     cdef float kernel = kernel_function(dist_squared, a, b)
     Z += cell_size * kernel # Collect the q_ij's contributions into Z
     cdef float repulsive_force = cell_size * kernel * kernel
-    return repulsive_force
+    return (repulsive_force, Z)
 
 cdef float attractive_force_func(
         str normalization,
@@ -168,7 +165,7 @@ cdef float attractive_force_func(
     # This does NOT work with parallel=True
     return edge_force * edge_weight
 
-cdef float repulsive_force_func(
+cdef (float, float) repulsive_force_func(
         str normalization,
         float dist_squared,
         float a,
@@ -194,34 +191,9 @@ cdef float repulsive_force_func(
         Z
     )
 
-cdef umap_grad_scaling(
-        np.ndarray[DTYPE_FLOAT, ndim=2] attraction,
-        np.ndarray[DTYPE_FLOAT, ndim=2] repulsion
-    ):
-    return attraction, repulsion
 
-cdef tsne_grad_scaling(
-        np.ndarray[DTYPE_FLOAT, ndim=2] attraction,
-        np.ndarray[DTYPE_FLOAT, ndim=2] repulsion,
-        float Z
-    ):
-    repulsion = repulsion * (- 4 / Z)
-    attraction = attraction * 4
-    return attraction, repulsion
-
-cdef grad_scaling(
-        str normalization,
-        np.ndarray[DTYPE_FLOAT, ndim=2] attraction,
-        np.ndarray[DTYPE_FLOAT, ndim=2] repulsion,
-        float Z,
-    ):
-    if normalization == 'umap':
-        return umap_grad_scaling(attraction, repulsion)
-    assert normalization == 'tsne'
-    return tsne_grad_scaling(attraction, repulsion, Z)
-
-# @cython.boundscheck(False)
-# @cython.wraparound(False)
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef void _cy_umap_sampling(
     str normalization,
     str kernel_choice,
@@ -244,17 +216,14 @@ cdef void _cy_umap_sampling(
 ):
     cdef:
         int i, j, k, d, n_neg_samples
-        float [:, :] attraction
-        float [:, :] repulsion
-        float Z = 0.0
         float attractive_force, repulsive_force
         float dist_squared
+        float Z = 0.0
 
-    attraction = py_np.empty([n_vertices, dim], dtype=py_np.float32)
-    repulsion = py_np.empty([n_vertices, dim], dtype=py_np.float32)
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
     cdef float grad_d = 0.0
+    cdef (float, float) rep_outputs
     cdef int n_edges = int(epochs_per_sample.shape[0])
     cdef float average_weight = 0.0
     for i in range(weights.shape[0]):
@@ -304,7 +273,7 @@ cdef void _cy_umap_sampling(
                 for d in range(dim):
                     y2[d] = tail_embedding[k, d]
                 dist_squared = rdist(y1, y2, dim)
-                repulsive_force = repulsive_force_func(
+                rep_outputs = repulsive_force_func(
                     normalization,
                     dist_squared,
                     a,
@@ -313,6 +282,8 @@ cdef void _cy_umap_sampling(
                     average_weight=average_weight,
                     Z=Z
                 )
+                repulsive_force = rep_outputs[0]
+                Z = rep_outputs[1]
 
                 for d in range(dim):
                     if repulsive_force > 0.0:
@@ -367,100 +338,142 @@ def cy_umap_sampling(
     )
 
 
-# def cy_umap_uniformly(
-#     str normalization,
-#     str kernel_choice,
-#     np.float32_t[:, :] head_embedding,
-#     np.float32_t[:, :] tail_embedding,
-#     np.int32_t[:] head,
-#     np.int32_t[:] tail,
-#     np.float32_t[:] weights,
-#     np.float64_t[:, :] grads,
-#     np.float64_t[:] epochs_per_sample,
-#     float a,
-#     float b,
-#     int dim,
-#     int n_vertices,
-#     float alpha,
-# ):
-#     cdef:
-#         int i, j, k, d
-#         attraction = np.zeros_like(head_embedding, dtype=np.float32)
-#         repulsion = np.zeros_like(head_embedding, dtype=np.float32)
-#         float Z = 0.0
-#         float attractive_force, repulsive_force
-#         float dist_squared
-#     y1 = <float*> malloc(sizeof(float) * dim)
-#     y2 = <float*> malloc(sizeof(float) * dim)
-#     cdef grad_d = np.zeros([3])
-#     cdef int n_edges = int(epochs_per_sample.shape[0])
-#     cdef float average_weight = 0.0
-#     for i in range(weights.shape[0]):
-#         average_weight += weights[i]
-#     average_weight /= n_edges
-# 
-#     for i in range(epochs_per_sample.shape[0]):
-#         # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
-#         j = head[i]
-#         k = tail[i]
-# 
-#         for d in range(dim):
-#             # FIXME - index should be typed for more efficient access
-#             y1[d] = head_embedding[j, d]
-#             y2[d] = tail_embedding[k, d]
-#         # ANDREW - optimize positive force for each edge
-#         dist_squared = rdist(y1, y2, dim)
-#         attractive_force = attractive_force_func(
-#             normalization,
-#             dist_squared,
-#             a,
-#             b,
-#             weights[i]
-#         )
-# 
-#         for d in range(dim):
-#             grad_d = clip(attractive_force * (y1[d] - y2[d]))
-#             attraction[j, d] += grad_d
-#             attraction[k, d] -= grad_d
-# 
-#         # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
-#         # ANDREW - If we are summing the effects of the forces and multiplying them
-#         #   by the weights appropriately, we only need to alternate symmetrically
-#         #   between positive and negative forces rather than doing 1 positive
-#         #   calculation to n negative ones
-#         # FIXME - add random seed option
-#         k = rand() % n_vertices
-#         for d in range(dim):
-#             y2[d] = tail_embedding[k, d]
-#         dist_squared = rdist(y1, y2, dim)
-#         repulsive_force, Z = repulsive_force_func(
-#             normalization,
-#             dist_squared,
-#             a,
-#             b,
-#             cell_size=1,
-#             average_weight=average_weight,
-#             Z=Z
-#         )
-# 
-#         for d in range(dim):
-#             if repulsive_force > 0.0:
-#                 grad_d = clip(repulsive_force * (y1[d] - y2[d]))
-#             else:
-#                 grad_d = 4.0
-#             repulsion[j, d] += grad_d
-# 
-#     attraction, repulsion = grad_scaling(
-#         normalization,
-#         attraction,
-#         repulsion,
-#         Z
-#     )
-# 
-#     for v in range(n_vertices):
-#         for d in range(dim):
-#             head_embedding[v][d] += (attraction[v][d] + repulsion[v][d]) * alpha
-#     return grads
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+cdef void _cy_umap_uniformly(
+    str normalization,
+    str kernel_choice,
+    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
+    np.ndarray[DTYPE_INT, ndim=1] head,
+    np.ndarray[DTYPE_INT, ndim=1] tail,
+    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
+    np.ndarray[DTYPE_FLOAT64, ndim=2] grads,
+    np.ndarray[DTYPE_FLOAT64, ndim=1] epochs_per_sample,
+    float a,
+    float b,
+    int dim,
+    int n_vertices,
+    float alpha,
+):
+    cdef:
+        int i, j, k, d
+        np.ndarray[DTYPE_FLOAT, ndim=2] attraction
+        np.ndarray[DTYPE_FLOAT, ndim=2] repulsion
+        float Z = 0.0
+        float attractive_force, repulsive_force
+        float dist_squared
+
+    attraction = py_np.empty([n_vertices, dim], dtype=py_np.float32)
+    repulsion = py_np.empty([n_vertices, dim], dtype=py_np.float32)
+    y1 = <float*> malloc(sizeof(float) * dim)
+    y2 = <float*> malloc(sizeof(float) * dim)
+    cdef float grad_d = 0.0
+    cdef (float, float) rep_outputs
+    cdef int n_edges = int(epochs_per_sample.shape[0])
+    cdef float average_weight = 0.0
+    for i in range(weights.shape[0]):
+        average_weight += weights[i]
+    average_weight /= n_edges
+
+    for i in range(epochs_per_sample.shape[0]):
+        # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
+        j = head[i]
+        k = tail[i]
+
+        for d in range(dim):
+            # FIXME - index should be typed for more efficient access
+            y1[d] = head_embedding[j, d]
+            y2[d] = tail_embedding[k, d]
+        # ANDREW - optimize positive force for each edge
+        dist_squared = rdist(y1, y2, dim)
+        attractive_force = attractive_force_func(
+            normalization,
+            dist_squared,
+            a,
+            b,
+            weights[i]
+        )
+
+        for d in range(dim):
+            grad_d = clip(attractive_force * (y1[d] - y2[d]))
+            attraction[j, d] += grad_d
+            attraction[k, d] -= grad_d
+
+        # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
+        # ANDREW - If we are summing the effects of the forces and multiplying them
+        #   by the weights appropriately, we only need to alternate symmetrically
+        #   between positive and negative forces rather than doing 1 positive
+        #   calculation to n negative ones
+        # FIXME - add random seed option
+        k = rand() % n_vertices
+        if j == k:
+            continue
+        for d in range(dim):
+            y2[d] = tail_embedding[k, d]
+        dist_squared = rdist(y1, y2, dim)
+        rep_outputs = repulsive_force_func(
+            normalization,
+            dist_squared,
+            a,
+            b,
+            cell_size=1,
+            average_weight=average_weight,
+            Z=Z
+        )
+        repulsive_force = rep_outputs[0]
+        Z = rep_outputs[1]
+
+        for d in range(dim):
+            if repulsive_force > 0.0:
+                grad_d = clip(repulsive_force * (y1[d] - y2[d]))
+            else:
+                grad_d = 4.0
+            repulsion[j, d] += grad_d
+
+    cdef float rep_scalar = -4 / Z
+    cdef float att_scalar = 4
+    for v in range(n_vertices):
+        for d in range(dim):
+            if normalization == 'tsne':
+                repulsion[v, d] = repulsion[v, d] * rep_scalar
+                attraction[v, d] = attraction[v, d] * att_scalar
+            head_embedding[v, d] += (attraction[v, d] + repulsion[v, d]) * alpha
+
+def cy_umap_uniformly(
+    str normalization,
+    str kernel_choice,
+    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
+    np.ndarray[DTYPE_INT, ndim=1] head,
+    np.ndarray[DTYPE_INT, ndim=1] tail,
+    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
+    np.ndarray[DTYPE_FLOAT64, ndim=2] grads,
+    np.ndarray[DTYPE_FLOAT64, ndim=1] epochs_per_sample,
+    float a,
+    float b,
+    int dim,
+    int n_vertices,
+    float alpha,
+):
+    _cy_umap_uniformly(
+        normalization,
+        kernel_choice,
+        head_embedding,
+        tail_embedding,
+        head,
+        tail,
+        weights,
+        grads,
+        epochs_per_sample,
+        a,
+        b,
+        dim,
+        n_vertices,
+        alpha,
+    )
+
 # 
 # 
 # 
@@ -555,12 +568,13 @@ def cy_umap_sampling(
 #                 dim_index = i_cell * offset + d
 #                 repulsive_forces[v][d] += repulsive_force * cell_summaries[dim_index]
 # 
-#     attractive_forces, repulsive_forces = grad_scaling(
-#         normalization,
-#         attractive_forces,
-#         repulsive_forces,
-#         Z,
-#     )
+#     if normalization == 'tsne':
+#         cdef float rep_scalar = -4 / Z
+#         cdef float att_scalar = 4
+#         for i in range(repulsion.shape[0]):
+#             for j in range(repulsion.shape[1]):
+#                 repulsion[i, j] = repulsion[i, j] * rep_scalar
+#                 attraction[i, j] = attraction[i, j] * att_scalar
 # 
 #     for v in range(n_vertices):
 #         for d in range(dim):

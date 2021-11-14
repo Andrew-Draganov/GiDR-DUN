@@ -313,7 +313,7 @@ def cy_umap_uniformly(
     epoch_of_next_sample,
     i_epoch,
 ):
-    barnes_hut.cy_optimize_uniformly(
+    barnes_hut.cy_umap_uniformly(
         normalization,
         kernel_choice,
         head_embedding,

@@ -37,7 +37,7 @@ parser.add_argument(
     choices=[
         'umap_sampling',
         'umap_uniform',
-        'cy_barnes_hut'
+        'cy_barnes_hut',
         'cy_umap_uniform',
         'cy_umap_sampling',
     ],
