@@ -205,7 +205,6 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_sampling(
             if j == k:
                 continue
             for d in range(dim):
-                # FIXME - index should be typed for more efficient access
                 y1[d] = head_embedding[j, d]
                 y2[d] = tail_embedding[k, d]
             # ANDREW - optimize positive force for each edge
@@ -650,12 +649,8 @@ def cy_optimize_layout(
         for i in range(weights.shape[0]):
             weights[i] = weights[i] / weight_sum
         initial_alpha = alpha * 200
-
-    n_edges = n_vertices * (n_vertices - 1)
-    cdef float average_weight = 0.0
-    for i in range(weights.shape[0]):
-        average_weight = average_weight + weights[i]
-    average_weight = average_weight / n_edges
+    else:
+        initial_alpha = alpha
 
     single_step_functions = {
         'cy_umap_uniform': cy_umap_uniformly,
@@ -665,7 +660,8 @@ def cy_optimize_layout(
     single_step = single_step_functions[optimize_method]
 
     for i_epoch in range(n_epochs):
-        single_step(
+        print(alpha)
+        forces = single_step(
             normalization,
             head_embedding,
             tail_embedding,
@@ -685,7 +681,7 @@ def cy_optimize_layout(
             i_epoch
         )
         if verbose and i_epoch % int(n_epochs / 10) == 0:
-            print("\tcompleted ", i_epoch, " / ", n_epochs, "epochs")
+            print("Completed ", i_epoch, " / ", n_epochs, "epochs")
 
         alpha = initial_alpha * (1.0 - (float(i_epoch) / float(n_epochs)))
     return head_embedding
