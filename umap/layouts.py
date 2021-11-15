@@ -6,7 +6,6 @@ from sklearn.neighbors._quad_tree import _QuadTree
 from utils import tau_rand_int
 import pyximport
 pyximport.install(setup_args={"script_args" : ["--verbose"]})
-import barnes_hut
 import comparison_utils
 
 

@@ -16,8 +16,6 @@ np.import_array()
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
 
-STUFF = 'hiii'
-
 cdef float clip(float val):
     """Standard clamping of a value into a fixed range (in this case -4.0 to
     4.0)

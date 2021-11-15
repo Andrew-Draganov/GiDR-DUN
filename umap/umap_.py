@@ -784,8 +784,8 @@ def _optimize_layout_euclidean(
     weights = weights.astype(np.float32)
     start = time.time()
     if 'cy' in optimize_method:
-        import barnes_hut
-        embedding = barnes_hut.cy_optimize_layout(
+        import optimize
+        embedding = optimize.cy_optimize_layout(
             optimize_method,
             normalization,
             head_embedding,
