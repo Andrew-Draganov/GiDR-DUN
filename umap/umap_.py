@@ -562,7 +562,7 @@ def make_epochs_per_sample(weights, n_epochs):
     -------
     An array of number of epochs per sample, one for each 1-simplex.
     """
-    result = -1.0 * np.ones(weights.shape[0], dtype=np.float64)
+    result = -1.0 * np.ones(weights.shape[0], dtype=np.float32)
     n_samples = n_epochs * (weights / weights.max())
     result[n_samples > 0] = float(n_epochs) / n_samples[n_samples > 0]
     return result
@@ -667,6 +667,7 @@ def simplicial_set_embedding(
     graph.sum_duplicates()
     n_vertices = graph.shape[1]
 
+    start = time.time()
     # For smaller datasets we can use more epochs
     if graph.shape[0] <= 10000:
         default_epochs = 500
@@ -737,8 +738,9 @@ def simplicial_set_embedding(
     ).astype(np.float32, order="C")
 
     rng_state = random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
+
     print('optimizing layout...')
-    embedding = optimize_layout_euclidean(
+    embedding = _optimize_layout_euclidean(
         optimize_method,
         normalization,
         embedding,
@@ -759,6 +761,71 @@ def simplicial_set_embedding(
     )
 
     return embedding, {}
+
+
+def _optimize_layout_euclidean(
+        optimize_method,
+        normalization,
+        head_embedding,
+        tail_embedding,
+        head,
+        tail,
+        weights,
+        n_epochs,
+        n_vertices,
+        epochs_per_sample,
+        a,
+        b,
+        rng_state,
+        initial_alpha,
+        negative_sample_rate,
+        parallel=False,
+        verbose=False,
+    ):
+    weights = weights.astype(np.float32)
+    start = time.time()
+    if 'cy' in optimize_method:
+        import barnes_hut
+        embedding = barnes_hut.cy_optimize_layout(
+            optimize_method,
+            normalization,
+            head_embedding,
+            tail_embedding,
+            head,
+            tail,
+            weights,
+            n_epochs,
+            n_vertices,
+            epochs_per_sample,
+            a,
+            b,
+            initial_alpha,
+            negative_sample_rate,
+            verbose=verbose
+        )
+    else:
+        embedding = optimize_layout_euclidean(
+            optimize_method,
+            normalization,
+            head_embedding,
+            tail_embedding,
+            head,
+            tail,
+            weights,
+            n_epochs,
+            n_vertices,
+            epochs_per_sample,
+            a,
+            b,
+            rng_state,
+            initial_alpha,
+            negative_sample_rate,
+            parallel=parallel,
+            verbose=verbose,
+        )
+    end = time.time()
+    print('Optimization took {:.3f} seconds'.format(end - start))
+    return embedding
 
 
 @numba.njit()
@@ -1220,6 +1287,7 @@ class UMAP(BaseEstimator):
         if self.verbose:
             print("Construct fuzzy simplicial set")
 
+        start = time.time()
         if self.metric == "precomputed":
             # For sparse precomputed distance matrices, we just argsort the rows to find
             # nearest neighbors. To make this easier, we expect matrices that are
@@ -1350,6 +1418,8 @@ class UMAP(BaseEstimator):
                 np.array(self.graph_.sum(axis=1)).flatten() == 0
             )
         self._supervised = False
+        end = time.time()
+        print('Calculating high dim similarities took {:.3f} seconds'.format(end - start))
 
         if self.verbose:
             print(ts(), "Construct embedding")

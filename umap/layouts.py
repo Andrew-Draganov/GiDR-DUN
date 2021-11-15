@@ -244,124 +244,6 @@ def optimize_uniformly(
     head_embedding += (attraction + repulsion) * alpha
     return grads
 
-def cy_umap_sampling(
-    normalization,
-    head_embedding,
-    tail_embedding,
-    head,
-    tail,
-    weights,
-    grads,
-    n_vertices,
-    average_weight,
-    epochs_per_sample,
-    a,
-    b,
-    rng_state,
-    dim,
-    alpha,
-    epochs_per_negative_sample,
-    epoch_of_next_negative_sample,
-    epoch_of_next_sample,
-    i_epoch,
-):
-    barnes_hut.cy_umap_sampling(
-        normalization,
-        head_embedding,
-        tail_embedding,
-        head,
-        tail,
-        weights,
-        grads,
-        epochs_per_sample,
-        a,
-        b,
-        dim,
-        n_vertices,
-        alpha,
-        epochs_per_negative_sample,
-        epoch_of_next_negative_sample,
-        epoch_of_next_sample,
-        i_epoch,
-    )
-
-
-
-def cy_umap_uniformly(
-    normalization,
-    head_embedding,
-    tail_embedding,
-    head,
-    tail,
-    weights,
-    grads,
-    n_vertices,
-    average_weight,
-    epochs_per_sample,
-    a,
-    b,
-    rng_state,
-    dim,
-    alpha,
-    epochs_per_negative_sample,
-    epoch_of_next_negative_sample,
-    epoch_of_next_sample,
-    i_epoch,
-):
-    barnes_hut.cy_umap_uniformly(
-        normalization,
-        head_embedding,
-        tail_embedding,
-        head,
-        tail,
-        weights,
-        grads,
-        epochs_per_sample,
-        a,
-        b,
-        dim,
-        n_vertices,
-        alpha,
-    )
-
-def barnes_hut_opt(
-    normalization,
-    head_embedding,
-    tail_embedding,
-    head,
-    tail,
-    weights,
-    grads,
-    n_vertices,
-    average_weight,
-    epochs_per_sample,
-    a,
-    b,
-    rng_state,
-    dim,
-    alpha,
-    epochs_per_negative_sample,
-    epoch_of_next_negative_sample,
-    epoch_of_next_sample,
-    i_epoch,
-):
-    return barnes_hut.bh_wrapper(
-        'barnes_hut',
-        normalization,
-        head_embedding,
-        tail_embedding,
-        head,
-        tail,
-        weights,
-        grads,
-        epochs_per_sample,
-        a,
-        b,
-        dim,
-        n_vertices,
-        alpha,
-    )
-
 
 def optimize_layout_euclidean(
     optimize_method,
@@ -385,10 +267,8 @@ def optimize_layout_euclidean(
     """
     FIXME FIXME FIXME
     """
-
     dim = head_embedding.shape[1]
-    weights = weights.astype(np.float32)
-    grads = np.zeros([n_vertices, dim], dtype=np.float64)
+    grads = np.zeros([n_vertices, dim], dtype=np.float32)
 
     # ANDREW - perform negative samples x times more often
     #          by making the number of epochs between samples smaller
@@ -406,35 +286,19 @@ def optimize_layout_euclidean(
     n_edges = n_vertices * (n_vertices - 1)
     average_weight = np.sum(weights) / float(n_edges)
 
-    if 'cy' not in optimize_method:
-        single_step_functions = {
-            'umap_uniform': optimize_uniformly,
-            'umap_sampling': optimize_through_sampling
-        }
-        single_step = single_step_functions[optimize_method]
-        optimize_fn = numba.njit(
-            single_step,
-            fastmath=True,
-            parallel=parallel
-        )
-    else:
-        # barnes_hut optimization uses the cython quadtree class,
-        # so we can't use numba to compile it
-        single_step_functions = {
-            'cy_umap_uniform': cy_umap_uniformly,
-            'cy_umap_sampling': cy_umap_sampling,
-            'cy_barnes_hut': barnes_hut_opt
-        }
-        optimize_fn = single_step_functions[optimize_method]
+    single_step_functions = {
+        'umap_uniform': optimize_uniformly,
+        'umap_sampling': optimize_through_sampling
+    }
+    single_step = single_step_functions[optimize_method]
+    optimize_fn = numba.njit(
+        single_step,
+        fastmath=True,
+        parallel=parallel
+    )
 
-    start = time.time()
     alpha = initial_alpha
     for i_epoch in range(n_epochs):
-        # head_embedding /= np.linalg.norm(head_embedding, axis=0)
-        # tail_embedding /= np.linalg.norm(tail_embedding, axis=0)
-        # head_vars = np.var(head_embedding, axis=0)
-        # print(head_vars)
-
         # FIXME - clean this up!!
         grads = optimize_fn(
             normalization,
@@ -461,8 +325,6 @@ def optimize_layout_euclidean(
 
         if verbose and i_epoch % int(n_epochs / 10) == 0:
             print("\tcompleted ", i_epoch, " / ", n_epochs, "epochs")
-    end = time.time()
-    print('Total time took {:.3f} seconds'.format(end - start))
 
     return head_embedding
 
