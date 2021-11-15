@@ -660,7 +660,6 @@ def cy_optimize_layout(
     single_step = single_step_functions[optimize_method]
 
     for i_epoch in range(n_epochs):
-        print(alpha)
         forces = single_step(
             normalization,
             head_embedding,

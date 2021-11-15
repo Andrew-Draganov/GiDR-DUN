@@ -134,7 +134,7 @@ elif args.dr_algorithm == 'original_umap':
             verbose=True
         )
 elif args.dr_algorithm == 'tsne':
-    dr = TSNE(random_state=12345)
+    dr = TSNE(random_state=12345, verbose=3)
 else:
     dr = PCA()
 
