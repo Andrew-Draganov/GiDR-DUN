@@ -64,7 +64,6 @@ def rdist(x, y):
 
 def optimize_through_sampling(
     normalization,
-    kernel_choice,
     head_embedding,
     tail_embedding,
     head,
@@ -73,7 +72,6 @@ def optimize_through_sampling(
     grads,
     n_vertices,
     average_weight,
-    average_pos_weight,
     epochs_per_sample,
     a,
     b,
@@ -85,6 +83,9 @@ def optimize_through_sampling(
     epoch_of_next_sample,
     i_epoch,
 ):
+    """
+    This is the original UMAP optimization function
+    """
     # ANDREW - If we optimize an edge, then the next epoch we optimize it is
     #          the current epoch + epochs_per_sample[i] for that edge
     #        - Basically, optimize edge i every epochs_per_sample[i] steps
@@ -160,9 +161,9 @@ def optimize_through_sampling(
     return grads
 
 
+
 def optimize_uniformly(
     normalization,
-    kernel_choice,
     head_embedding,
     tail_embedding,
     head,
@@ -171,7 +172,6 @@ def optimize_uniformly(
     grads,
     n_vertices,
     average_weight,
-    average_pos_weight,
     epochs_per_sample,
     a,
     b,
@@ -245,51 +245,9 @@ def optimize_uniformly(
     return grads
 
 
-def barnes_hut_opt(
-    normalization,
-    kernel_choice,
-    head_embedding,
-    tail_embedding,
-    head,
-    tail,
-    weights,
-    grads,
-    n_vertices,
-    average_weight,
-    average_pos_weight,
-    epochs_per_sample,
-    a,
-    b,
-    rng_state,
-    dim,
-    alpha,
-    epochs_per_negative_sample,
-    epoch_of_next_negative_sample,
-    epoch_of_next_sample,
-    i_epoch,
-):
-    return barnes_hut.bh_wrapper(
-        normalization,
-        kernel_choice,
-        head_embedding,
-        tail_embedding,
-        head,
-        tail,
-        weights,
-        grads,
-        epochs_per_sample,
-        a,
-        b,
-        dim,
-        n_vertices,
-        alpha,
-    )
-
-
 def optimize_layout_euclidean(
     optimize_method,
     normalization,
-    kernel_choice,
     head_embedding,
     tail_embedding,
     head,
@@ -309,10 +267,8 @@ def optimize_layout_euclidean(
     """
     FIXME FIXME FIXME
     """
-
     dim = head_embedding.shape[1]
-    weights = weights.astype(np.float32)
-    grads = np.zeros([n_vertices, dim], dtype=np.float64)
+    grads = np.zeros([n_vertices, dim], dtype=np.float32)
 
     # ANDREW - perform negative samples x times more often
     #          by making the number of epochs between samples smaller
@@ -329,36 +285,23 @@ def optimize_layout_euclidean(
 
     n_edges = n_vertices * (n_vertices - 1)
     average_weight = np.sum(weights) / float(n_edges)
-    average_pos_weight = np.sum(weights) / float(weights.shape[0])
 
-    if 'barnes_hut' not in optimize_method:
-        single_step_functions = {
-            'umap_sampling': optimize_through_sampling,
-            'umap_uniform': optimize_uniformly,
-        }
-        single_step = single_step_functions[optimize_method]
-        optimize_fn = numba.njit(
-            single_step,
-            fastmath=True,
-            parallel=parallel
-        )
-    else:
-        # barnes_hut optimization uses the cython quadtree class,
-        # so we can't use numba to compile it
-        optimize_fn = barnes_hut_opt
+    single_step_functions = {
+        'umap_uniform': optimize_uniformly,
+        'umap_sampling': optimize_through_sampling
+    }
+    single_step = single_step_functions[optimize_method]
+    optimize_fn = numba.njit(
+        single_step,
+        fastmath=True,
+        parallel=parallel
+    )
 
-    start = time.time()
     alpha = initial_alpha
     for i_epoch in range(n_epochs):
-        # head_embedding /= np.linalg.norm(head_embedding, axis=0)
-        # tail_embedding /= np.linalg.norm(tail_embedding, axis=0)
-        # head_vars = np.var(head_embedding, axis=0)
-        # print(head_vars)
-
         # FIXME - clean this up!!
         grads = optimize_fn(
             normalization,
-            kernel_choice,
             head_embedding,
             tail_embedding,
             head,
@@ -367,7 +310,6 @@ def optimize_layout_euclidean(
             grads,
             n_vertices,
             average_weight,
-            average_pos_weight,
             epochs_per_sample,
             a,
             b,
@@ -383,8 +325,6 @@ def optimize_layout_euclidean(
 
         if verbose and i_epoch % int(n_epochs / 10) == 0:
             print("\tcompleted ", i_epoch, " / ", n_epochs, "epochs")
-    end = time.time()
-    print('Total time took {:.3f} seconds'.format(end - start))
 
     return head_embedding
 

@@ -1,3 +1,4 @@
+import time
 import numpy as np
 from tensorflow import keras as tfk
 from umap_ import UMAP
@@ -37,7 +38,9 @@ parser.add_argument(
     choices=[
         'umap_sampling',
         'umap_uniform',
-        'barnes_hut'
+        'cy_barnes_hut',
+        'cy_umap_uniform',
+        'cy_umap_sampling',
     ],
     default='umap_sampling',
     help='Which optimization algorithm to use'
@@ -63,7 +66,7 @@ parser.add_argument(
 )
 parser.add_argument(
     '--dr-algorithm',
-    choices=['umap', 'tsne', 'pca'],
+    choices=['umap', 'original_umap', 'tsne', 'pca'],
     default='umap',
     help='Which algorithm to use for performing dim reduction'
 )
@@ -114,18 +117,32 @@ if args.dr_algorithm == 'umap':
             optimize_method=args.optimize_method,
             negative_sample_rate=args.neg_sample_rate,
             normalization=args.normalization,
-            kernel_choice=args.kernel_choice,
+            a=a,
+            b=b,
+            verbose=True
+        )
+elif args.dr_algorithm == 'original_umap':
+    from umap import UMAP
+    dr = UMAP(
+            n_neighbors=args.n_neighbors,
+            n_epochs=args.n_epochs,
+            # random_state=12345, # Comment this out to turn on parallelization
+            init=args.initialization,
+            negative_sample_rate=args.neg_sample_rate,
             a=a,
             b=b,
             verbose=True
         )
 elif args.dr_algorithm == 'tsne':
-    dr = TSNE(random_state=12345)
+    dr = TSNE(random_state=12345, verbose=3)
 else:
     dr = PCA()
 
 print('fitting...')
+start = time.time()
 projection = dr.fit_transform(x_train)
+end = time.time()
+print('Total time took {:.3f} seconds'.format(end - start))
 if args.make_plots:
     make_dist_plots(x_train, projection, y_train, args.dr_algorithm)
 
