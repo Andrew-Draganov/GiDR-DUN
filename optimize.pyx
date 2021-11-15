@@ -244,7 +244,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_sampling(
                     a,
                     b,
                     cell_size=1.0,
-                    average_weight=average_weight,
+                    average_weight=0, # Don't scale by weight since we sample according to weight distribution
                     Z=Z
                 )
                 repulsive_force = rep_outputs[0]
