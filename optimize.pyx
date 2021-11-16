@@ -147,6 +147,7 @@ cdef (float, float) repulsive_force_func(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+@cython.cdivision(True)
 cdef void _cy_umap_sampling(
     int normalization,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
@@ -188,8 +189,6 @@ cdef void _cy_umap_sampling(
             j = head[i]
             k = tail[i]
 
-            if j == k:
-                continue
             for d in range(dim):
                 y1[d] = head_embedding[j, d]
                 y2[d] = tail_embedding[k, d]
@@ -221,8 +220,6 @@ cdef void _cy_umap_sampling(
             )
             for p in range(n_neg_samples):
                 k = rand() % n_vertices
-                if j == k:
-                    continue
                 for d in range(dim):
                     y2[d] = tail_embedding[k, d]
                 dist_squared = rdist(y1, y2, dim)
@@ -298,7 +295,6 @@ cdef void _cy_umap_uniformly(
     np.ndarray[DTYPE_INT, ndim=1] head,
     np.ndarray[DTYPE_INT, ndim=1] tail,
     np.ndarray[DTYPE_FLOAT, ndim=1] weights,
-    np.ndarray[DTYPE_FLOAT, ndim=2] forces,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     float a,
     float b,
@@ -307,7 +303,7 @@ cdef void _cy_umap_uniformly(
     float alpha,
 ):
     cdef:
-        int i, j, k, d
+        int i, j, k, d, v
         np.ndarray[DTYPE_FLOAT, ndim=2] attractive_forces
         np.ndarray[DTYPE_FLOAT, ndim=2] repulsive_forces
         float Z = 0.0
@@ -331,8 +327,6 @@ cdef void _cy_umap_uniformly(
         # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
         j = head[i]
         k = tail[i]
-        if j == k:
-            continue
 
         for d in range(dim):
             # FIXME - index should be typed for more efficient access
@@ -360,8 +354,6 @@ cdef void _cy_umap_uniformly(
         #   calculation to n negative ones
         # FIXME - add random seed option
         k = rand() % n_vertices
-        if j == k:
-            continue
         for d in range(dim):
             y2[d] = tail_embedding[k, d]
         dist_squared = rdist(y1, y2, dim)
@@ -395,8 +387,7 @@ cdef void _cy_umap_uniformly(
             if normalization == 0:
                 repulsive_forces[v, d] = repulsive_forces[v, d] * rep_scalar
                 attractive_forces[v, d] = attractive_forces[v, d] * att_scalar
-            forces[v, d] = attractive_forces[v, d] + repulsive_forces[v, d]
-            head_embedding[v, d] += forces[v, d] * alpha
+            head_embedding[v, d] += (attractive_forces[v, d] + repulsive_forces[v, d]) * alpha
 
 def cy_umap_uniformly(
     int normalization,
@@ -424,7 +415,6 @@ def cy_umap_uniformly(
         head,
         tail,
         weights,
-        forces,
         epochs_per_sample,
         a,
         b,
@@ -586,7 +576,10 @@ def bh_wrapper(
         alpha
     )
 
-def cy_optimize_layout(
+@cython.cdivision(True)
+@cython.wraparound(False)
+@cython.boundscheck(False)
+cpdef cy_optimize_layout(
     str optimize_method,
     int normalization,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
