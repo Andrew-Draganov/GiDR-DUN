@@ -13,8 +13,18 @@ from sklearn.neighbors._quad_tree cimport _QuadTree
 
 np.import_array()
 
+cdef extern from "fastpow.c" nogil:
+    double fastpow "fastPow" (double, double)
+cdef extern from "fastpow.c" nogil:
+    float fmax "my_fmax" (float, float)
+cdef extern from "fastpow.c" nogil:
+    float fmin "my_fmin" (float, float)
+
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
+
+# cdef float clip(float val, float lower, float upper) nogil:
+#     return fmax(lower, fmin(val, upper))
 
 cdef float clip(float val):
     """Standard clamping of a value into a fixed range (in this case -4.0 to
@@ -64,20 +74,20 @@ cdef float rdist(float* x, float* y, int dim):
 @cython.cdivision(True)
 cdef float umap_attraction_grad(float dist_squared, float a, float b):
     cdef float grad_scalar = 0.0
-    grad_scalar = -2.0 * a * b * pow(dist_squared, b - 1.0)
-    grad_scalar /= a * pow(dist_squared, b) + 1.0
+    grad_scalar = -2.0 * a * b * fastpow(dist_squared, b - 1.0)
+    grad_scalar /= a * fastpow(dist_squared, b) + 1.0
     return grad_scalar
 
 @cython.cdivision(True)
 cdef float umap_repulsion_grad(float dist_squared, float a, float b):
     cdef float phi_ijZ = 0.0
     phi_ijZ = 2.0 * b
-    phi_ijZ /= (0.001 + dist_squared) * (a * pow(dist_squared, b) + 1)
+    phi_ijZ /= (0.001 + dist_squared) * (a * fastpow(dist_squared, b) + 1)
     return phi_ijZ
 
 @cython.cdivision(True)
 cdef float kernel_function(float dist_squared, float a, float b):
-    return 1 / (1 + a * pow(dist_squared, b))
+    return 1 / (1 + a * fastpow(dist_squared, b))
 
 ###################
 ##### WEIGHTS #####
@@ -301,9 +311,9 @@ def cy_umap_sampling(
         i_epoch
     )
 
-# @cython.boundscheck(False)
-# @cython.wraparound(False)
-# @cython.cdivision(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
 cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_uniformly(
     str normalization,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
