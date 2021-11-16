@@ -28,11 +28,12 @@ ctypedef np.int32_t DTYPE_INT
 cdef float clip(float val, float lower, float upper) nogil:
     return fmax(lower, fmin(val, upper))
 
-cdef double rdist(float* x, float* y, int dim) nogil:
+cdef double rdist(float* x, float* y, int dim, int thread_num) nogil:
     cdef double result = 0.0
     cdef float diff = 0
+    cdef int i
     for i in range(dim):
-        diff = x[i] - y[i]
+        diff = x[thread_num * dim + i] - y[thread_num * dim + i]
         result += diff * diff
 
     return result
@@ -179,7 +180,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_sampling(
                 y1[d] = head_embedding[j, d]
                 y2[d] = tail_embedding[k, d]
             # ANDREW - optimize positive force for each edge
-            dist_squared = rdist(y1, y2, dim)
+            dist_squared = rdist(y1, y2, dim, 0)
             attractive_force = attractive_force_func(
                 normalization,
                 dist_squared,
@@ -210,7 +211,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_sampling(
                     continue
                 for d in range(dim):
                     y2[d] = tail_embedding[k, d]
-                dist_squared = rdist(y1, y2, dim)
+                dist_squared = rdist(y1, y2, dim, 0)
                 rep_outputs = repulsive_force_func(
                     normalization,
                     dist_squared,
@@ -240,6 +241,7 @@ def cy_umap_sampling(
     np.ndarray[DTYPE_INT, ndim=1] head,
     np.ndarray[DTYPE_INT, ndim=1] tail,
     np.ndarray[DTYPE_FLOAT, ndim=1] weights,
+    float average_weight,
     np.ndarray[DTYPE_FLOAT, ndim=2] forces,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     float a,
@@ -272,178 +274,94 @@ def cy_umap_sampling(
         i_epoch
     )
 
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef void _derive_pos_force(
-    int normalization,
-    float* head_embedding,
-    float* tail_embedding,
-    float* attractive_forces,
-    int* head,
-    int* tail,
-    float* weights,
-    int dim,
-    int n_vertices,
-    int i,
-    float a,
-    double b,
-) nogil:
-    cdef:
-        int j, k, d
-        float dist_squared, attractive_force, grad_d
-
-    y1 = <float*> malloc(sizeof(float) * dim)
-    y2 = <float*> malloc(sizeof(float) * dim)
-
-    # Gets one of the knn in high-dim space relative to the sample point
-    j = head[i]
-    k = tail[i]
-    for d in range(dim):
-        y1[d] = head_embedding[j * dim + d]
-        y2[d] = tail_embedding[k * dim + d]
-    dist_squared = rdist(y1, y2, dim)
-    attractive_force = attractive_force_func(
-        normalization,
-        dist_squared,
-        a,
-        b,
-        weights[i]
-    )
-
-    # ANDREW - apply positive force along each nearest neighbor edge
-    for d in range(dim):
-        grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
-        attractive_forces[j * dim + d] += grad_d
-        attractive_forces[k * dim + d] -= grad_d
-
-    free(y1)
-    free(y2)
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.cdivision(True)
-cdef void _derive_neg_force(
-    int normalization,
-    float* head_embedding,
-    float* tail_embedding,
-    float* repulsive_forces,
-    int* head,
-    int* tail,
-    float* weights,
-    float* Z_array,
-    float average_weight,
-    int dim,
-    int n_vertices,
-    int i,
-    float a,
-    double b,
-) nogil:
-    cdef:
-        int j, k, d
-        float dist_squared, repulsive_force, grad_d
-        (float, float) rep_outputs
-
-    y1 = <float*> malloc(sizeof(float) * dim)
-    y2 = <float*> malloc(sizeof(float) * dim)
-
-    # FIXME - add random seed option
-    j = head[i]
-    k = rand() % n_vertices
-    for d in range(dim):
-        y1[d] = head_embedding[j * dim + d]
-        y2[d] = tail_embedding[k * dim + d]
-    dist_squared = rdist(y1, y2, dim)
-    rep_outputs = repulsive_force_func(
-        normalization,
-        dist_squared,
-        a,
-        b,
-        cell_size=1.0,
-        average_weight=average_weight,
-    )
-    repulsive_force = rep_outputs[0]
-    Z_array[i] = rep_outputs[1]
-
-    # Apply repulsive force along random pair of points
-    for d in range(dim):
-        grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
-        repulsive_forces[j * dim + d] += grad_d
-    
-    free(y1)
-    free(y2)
-
-
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
 cdef void _cy_umap_uniformly(
     int normalization,
-    float* head_embedding,
-    float* tail_embedding,
-    int* head,
-    int* tail,
-    float* weights,
+    float [:, :] head_embedding,
+    float [:, :] tail_embedding,
+    int [:] head,
+    int [:] tail,
+    float [:] weights,
     float [:, :] forces,
     float [:] epochs_per_sample,
     float a,
     double b,
     int dim,
     int n_vertices,
-    float average_weight,
     float alpha,
+    float* y1,
+    float* y2,
+    float [:] grad_d,
+    float [:] attractive_force,
+    float [:] repulsive_force,
+    double [:] dist_squared,
+    float average_weight
 ):
     cdef:
-        int i, d, v
+        int i, j, k, d
         float Z = 0.0
+        float [:] Z_array
+        float [:, :] attractive_forces
+        float [:, :] repulsive_forces
 
-    # FIXME - this is faster if zeros is replaced by empty
     cdef int n_edges = int(epochs_per_sample.shape[0])
-    cdef np.ndarray[DTYPE_FLOAT, ndim=1, mode='c'] py_Z_array = py_np.ascontiguousarray(
-        py_np.zeros([n_edges], dtype=py_np.float32)
-    )
-    cdef float* Z_array = <float*> py_Z_array.data
-    cdef np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] py_attractive_forces = py_np.ascontiguousarray(
-        py_np.zeros([n_vertices, dim], dtype=py_np.float32)
-    )
-    cdef float* attractive_forces = <float*> py_attractive_forces.data
-    cdef np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] py_repulsive_forces = py_np.ascontiguousarray(
-        py_np.zeros([n_vertices, dim], dtype=py_np.float32)
-    )
-    cdef float* repulsive_forces = <float*> py_repulsive_forces.data
+    # FIXME - this is faster if zeros is replaced by empty
+    Z_array = py_np.zeros([n_edges], dtype=py_np.float32)
+    attractive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
+    repulsive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
 
-    for i in prange(epochs_per_sample.shape[0], nogil=True):
-        _derive_pos_force(
+    for i in range(epochs_per_sample.shape[0]):
+        # Gets one of the knn in high-dim space relative to the sample point
+        j = head[i]
+        k = tail[i]
+        for d in range(dim):
+            y1[openmp.omp_get_thread_num() * dim + d] = head_embedding[j, d]
+            y2[openmp.omp_get_thread_num() * dim + d] = tail_embedding[k, d]
+        dist_squared[openmp.omp_get_thread_num()] = rdist(y1, y2, dim, openmp.omp_get_thread_num())
+        attractive_force[openmp.omp_get_thread_num()] = attractive_force_func(
             normalization,
-            head_embedding,
-            tail_embedding,
-            attractive_forces,
-            head,
-            tail,
-            weights,
-            dim, 
-            n_vertices,
-            i,
+            dist_squared[openmp.omp_get_thread_num()],
             a,
             b,
+            weights[i]
         )
-        _derive_neg_force(
+
+        # ANDREW - apply positive force along each nearest neighbor edge
+        for d in range(dim):
+            grad_d[openmp.omp_get_thread_num()] = clip(
+                attractive_force[openmp.omp_get_thread_num()] * (
+                    y1[openmp.omp_get_thread_num() * dim + d] - \
+                    y2[openmp.omp_get_thread_num() * dim + d]
+                ), -4, 4
+            )
+            attractive_forces[j, d] += grad_d[openmp.omp_get_thread_num()]
+            attractive_forces[k, d] -= grad_d[openmp.omp_get_thread_num()]
+
+        # FIXME - add random seed option
+        k = rand() % n_vertices
+        for d in range(dim):
+            y2[openmp.omp_get_thread_num() * dim + d] = tail_embedding[k, d]
+        dist_squared[openmp.omp_get_thread_num()] = rdist(y1, y2, dim, openmp.omp_get_thread_num())
+        repulsive_force[openmp.omp_get_thread_num()], Z_array[i] = repulsive_force_func(
             normalization,
-            head_embedding,
-            tail_embedding,
-            repulsive_forces,
-            head,
-            tail,
-            weights,
-            Z_array,
-            average_weight,
-            dim,
-            n_vertices,
-            i,
+            dist_squared[openmp.omp_get_thread_num()],
             a,
             b,
+            cell_size=1.0,
+            average_weight=average_weight,
         )
+
+        # Apply repulsive force along random pair of points
+        for d in range(dim):
+            grad_d[openmp.omp_get_thread_num()] = clip(
+                repulsive_force[openmp.omp_get_thread_num()] * (
+                    y1[openmp.omp_get_thread_num() * dim + d] - \
+                    y2[openmp.omp_get_thread_num() * dim + d]
+                ), -4, 4
+            )
+            repulsive_forces[j, d] += grad_d[openmp.omp_get_thread_num()]
 
     for i in range(epochs_per_sample.shape[0]):
         Z += Z_array[i]
@@ -454,13 +372,13 @@ cdef void _cy_umap_uniformly(
         rep_scalar = rep_scalar / Z
     cdef float att_scalar = 4
 
-    for v in prange(n_vertices, nogil=True):
+    for v in range(n_vertices):
         for d in range(dim):
             if normalization == 0:
-                repulsive_forces[v * dim + d] *= rep_scalar
-                attractive_forces[v * dim + d] *= att_scalar
-            forces[v, d] = attractive_forces[v * dim + d] + repulsive_forces[v * dim + d]
-            head_embedding[v * dim + d] += forces[v, d] * alpha
+                repulsive_forces[v, d] *= rep_scalar
+                attractive_forces[v, d] *= att_scalar
+            forces[v, d] = attractive_forces[v, d] + repulsive_forces[v, d]
+            head_embedding[v, d] += forces[v, d] * alpha
 
 def cy_umap_uniformly(
     int normalization,
@@ -469,35 +387,36 @@ def cy_umap_uniformly(
     np.ndarray[DTYPE_INT, ndim=1] _head,
     np.ndarray[DTYPE_INT, ndim=1] _tail,
     np.ndarray[DTYPE_FLOAT, ndim=1] _weights,
+    float average_weight,
     np.ndarray[DTYPE_FLOAT, ndim=2] _forces,
     np.ndarray[DTYPE_FLOAT, ndim=1] _epochs_per_sample,
     float a,
     double b,
     int dim,
     int n_vertices,
-    float average_weight,
     float alpha,
     np.ndarray[DTYPE_FLOAT, ndim=1] _epochs_per_negative_sample,
     np.ndarray[DTYPE_FLOAT, ndim=1] _epoch_of_next_negative_sample,
     np.ndarray[DTYPE_FLOAT, ndim=1] _epoch_of_next_sample,
     int i_epoch
 ):
-    # Convert numpy arrays to c format
-    cdef np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] np_head_embedding = py_np.ascontiguousarray(_head_embedding)
-    cdef np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] np_tail_embedding = py_np.ascontiguousarray(_tail_embedding)
-    cdef np.ndarray[DTYPE_INT, ndim=1, mode='c'] np_head = py_np.ascontiguousarray(_head)
-    cdef np.ndarray[DTYPE_INT, ndim=1, mode='c'] np_tail = py_np.ascontiguousarray(_tail)
-    cdef np.ndarray[DTYPE_FLOAT, ndim=1, mode='c'] np_weights = py_np.ascontiguousarray(_weights)
-
-    # Get pointers to numpy arrays
-    cdef float* head_embedding = <float*> np_head_embedding.data
-    cdef float* tail_embedding = <float*> np_tail_embedding.data
-    cdef int* head = <int*> np_head.data
-    cdef int* tail = <int*> np_tail.data
-    cdef float* weights = <float*> np_weights.data
-
+    # Convert numpy arrays to cython memoryviews
+    cdef float [:, :] head_embedding = _head_embedding
+    cdef float [:, :] tail_embedding = _tail_embedding
+    cdef int [:] head = _head
+    cdef int [:] tail = _tail
+    cdef float [:] weights = _weights
     cdef float [:, :] forces = _forces
     cdef float [:] epochs_per_sample = _epochs_per_sample
+
+    # Define thread-local variables
+    cdef int num_threads = openmp.omp_get_max_threads()
+    y1 = <float*> malloc(sizeof(float) * dim * num_threads)
+    y2 = <float*> malloc(sizeof(float) * dim * num_threads)
+    cdef float [:] grad_d = py_np.zeros([num_threads], dtype=py_np.float32)
+    cdef float [:] attractive_force = py_np.zeros([num_threads], dtype=py_np.float32)
+    cdef float [:] repulsive_force = py_np.zeros([num_threads], dtype=py_np.float32)
+    cdef double [:] dist_squared = py_np.zeros([num_threads], dtype=py_np.float64)
 
     _cy_umap_uniformly(
         normalization,
@@ -512,8 +431,14 @@ def cy_umap_uniformly(
         b,
         dim,
         n_vertices,
-        average_weight,
         alpha,
+        y1,
+        y2,
+        grad_d,
+        attractive_force,
+        repulsive_force,
+        dist_squared,
+        average_weight
     )
 
 
@@ -554,7 +479,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] calculate_barnes_hut(
     attractive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     repulsive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     # Allocte memory for data structures
-    cell_summaries = <float*> malloc(sizeof(float) * dim * offset)
+    cell_summaries = <float*> malloc(sizeof(float) * n_vertices * offset)
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
     cdef (float, float) rep_outputs
@@ -577,7 +502,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] calculate_barnes_hut(
             # FIXME - index should be typed for more efficient access
             y1[d] = head_embedding[j, d]
             y2[d] = tail_embedding[k, d]
-        dist_squared = rdist(y1, y2, dim)
+        dist_squared = rdist(y1, y2, dim, 0)
         attractive_force = attractive_force_func(
             normalization,
             dist_squared,
@@ -587,6 +512,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] calculate_barnes_hut(
         )
         for d in range(dim):
             attractive_forces[j, d] += clip(attractive_force * (y1[d] - y2[d]), -4, 4)
+
 
     for v in range(n_vertices):
         # Get necessary data regarding current point and the quadtree cells
@@ -642,13 +568,13 @@ def bh_wrapper(
     np.ndarray[DTYPE_INT, ndim=1] head,
     np.ndarray[DTYPE_INT, ndim=1] tail,
     np.ndarray[DTYPE_FLOAT, ndim=1] weights,
+    float average_weight,
     np.ndarray[DTYPE_FLOAT, ndim=2] forces,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     float a,
     float b,
     int dim,
     int n_vertices,
-    float average_weight,
     float alpha,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
     np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample,
@@ -727,6 +653,12 @@ def cy_optimize_layout(
     else:
         initial_alpha =  alpha
 
+    n_edges = int(epochs_per_sample.shape[0])
+    cdef float average_weight = 0.0
+    for i in range(weights.shape[0]):
+        average_weight += weights[i]
+    average_weight /= n_edges
+
     cdef int normalization
     if _normalization == 'umap':
         normalization = 1
@@ -739,10 +671,6 @@ def cy_optimize_layout(
         'cy_barnes_hut': bh_wrapper
     }
     single_step = single_step_functions[optimize_method]
-    cdef float average_weight = 0.0
-    for i in range(weights.shape[0]):
-        average_weight += weights[i]
-    average_weight /= int(epochs_per_sample.shape[0])
 
     for i_epoch in range(n_epochs):
         single_step(
@@ -752,13 +680,13 @@ def cy_optimize_layout(
             head,
             tail,
             weights,
+            average_weight,
             forces,
             epochs_per_sample,
             a,
             b,
             dim,
             n_vertices,
-            average_weight,
             alpha,
             epochs_per_negative_sample,
             epoch_of_next_negative_sample,

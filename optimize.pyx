@@ -11,31 +11,20 @@ from cython.parallel cimport prange, parallel
 
 from sklearn.neighbors._quad_tree cimport _QuadTree
 
+cdef extern from "fastpow.c" nogil:
+    double fastpow "fastPow" (double, double)
+cdef extern from "fastpow.c" nogil:
+    float fmax "my_fmax" (float, float)
+cdef extern from "fastpow.c" nogil:
+    float fmin "my_fmin" (float, float)
+
 np.import_array()
 
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
 
-cdef float clip(float val):
-    """Standard clamping of a value into a fixed range (in this case -4.0 to
-    4.0)
-
-    Parameters
-    ----------
-    val: float
-        The value to be clamped.
-
-    Returns
-    -------
-    The clamped value, now fixed to be in the range -4.0 to 4.0.
-    """
-    if val > 4.0:
-        return 4.0
-    elif val < -4.0:
-        return -4.0
-    else:
-        return val
-
+cdef float clip(float val, float lower, float upper) nogil:
+    return fmax(lower, fmin(val, upper))
 
 cdef float rdist(float* x, float* y, int dim):
     """Reduced Euclidean distance.
@@ -51,6 +40,7 @@ cdef float rdist(float* x, float* y, int dim):
     """
     cdef float result = 0.0
     cdef float diff = 0
+    cdef int i
     for i in range(dim):
         diff = x[i] - y[i]
         result += diff * diff
@@ -64,20 +54,20 @@ cdef float rdist(float* x, float* y, int dim):
 @cython.cdivision(True)
 cdef float umap_attraction_grad(float dist_squared, float a, float b):
     cdef float grad_scalar = 0.0
-    grad_scalar = -2.0 * a * b * pow(dist_squared, b - 1.0)
-    grad_scalar /= a * pow(dist_squared, b) + 1.0
+    grad_scalar = -2.0 * a * b * fastpow(dist_squared, b - 1.0)
+    grad_scalar /= a * fastpow(dist_squared, b) + 1.0
     return grad_scalar
 
 @cython.cdivision(True)
 cdef float umap_repulsion_grad(float dist_squared, float a, float b):
     cdef float phi_ijZ = 0.0
     phi_ijZ = 2.0 * b
-    phi_ijZ /= (0.001 + dist_squared) * (a * pow(dist_squared, b) + 1)
+    phi_ijZ /= (0.001 + dist_squared) * (a * fastpow(dist_squared, b) + 1)
     return phi_ijZ
 
 @cython.cdivision(True)
 cdef float kernel_function(float dist_squared, float a, float b):
-    return 1 / (1 + a * pow(dist_squared, b))
+    return 1 / (1 + a * fastpow(dist_squared, b))
 
 ###################
 ##### WEIGHTS #####
@@ -216,7 +206,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_sampling(
             )
 
             for d in range(dim):
-                grad_d = clip(attractive_force * (y1[d] - y2[d]))
+                grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
                 head_embedding[j, d] += grad_d * alpha
                 head_embedding[k, d] -= grad_d * alpha
 
@@ -252,7 +242,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_sampling(
 
                 for d in range(dim):
                     if repulsive_force > 0.0:
-                        grad_d = clip(repulsive_force * (y1[d] - y2[d]))
+                        grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
                     else:
                         grad_d = 4.0
                     head_embedding[j, d] += grad_d * alpha
@@ -301,9 +291,9 @@ def cy_umap_sampling(
         i_epoch
     )
 
-# @cython.boundscheck(False)
-# @cython.wraparound(False)
-# @cython.cdivision(True)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
 cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_uniformly(
     str normalization,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
@@ -362,7 +352,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_uniformly(
         )
 
         for d in range(dim):
-            grad_d = clip(attractive_force * (y1[d] - y2[d]))
+            grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
             attractive_forces[j, d] += grad_d
             attractive_forces[k, d] -= grad_d
 
@@ -392,7 +382,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_uniformly(
 
         for d in range(dim):
             if repulsive_force > 0.0:
-                grad_d = clip(repulsive_force * (y1[d] - y2[d]))
+                grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
             else:
                 grad_d = 4.0
             repulsive_forces[j, d] += grad_d
@@ -514,7 +504,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] calculate_barnes_hut(
             weights[edge]
         )
         for d in range(dim):
-            attractive_forces[j, d] += clip(attractive_force * (y1[d] - y2[d]))
+            attractive_forces[j, d] += clip(attractive_force * (y1[d] - y2[d]), -4, 4)
 
     for v in range(n_vertices):
         # Get necessary data regarding current point and the quadtree cells
