@@ -271,6 +271,102 @@ def cy_umap_sampling(
         i_epoch
     )
 
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef void _derive_pos_force(
+    int normalization,
+    float [:, :] head_embedding,
+    float [:, :] tail_embedding,
+    float [:, :] attractive_forces,
+    int [:] head,
+    int [:] tail,
+    float [:] weights,
+    int dim,
+    int i,
+    float a,
+    double b,
+) nogil:
+    cdef:
+        int j, k, d
+        float dist_squared, attractive_force, grad_d
+
+    y1 = <float*> malloc(sizeof(float) * dim)
+    y2 = <float*> malloc(sizeof(float) * dim)
+
+    # Gets one of the knn in high-dim space relative to the sample point
+    j = head[i]
+    k = tail[i]
+    for d in range(dim):
+        y1[d] = head_embedding[j, d]
+        y2[d] = tail_embedding[k, d]
+    dist_squared = rdist(y1, y2, dim)
+    attractive_force = attractive_force_func(
+        normalization,
+        dist_squared,
+        a,
+        b,
+        weights[i]
+    )
+
+    # ANDREW - apply positive force along each nearest neighbor edge
+    for d in range(dim):
+        grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
+        attractive_forces[j, d] += grad_d
+        attractive_forces[k, d] -= grad_d
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+cdef void _derive_neg_force(
+    int normalization,
+    float [:, :] head_embedding,
+    float [:, :] tail_embedding,
+    float [:, :] repulsive_forces,
+    int [:] head,
+    int [:] tail,
+    float [:] weights,
+    float [:] Z_array,
+    float average_weight,
+    int dim,
+    int n_vertices,
+    int i,
+    float a,
+    double b,
+) nogil:
+    cdef:
+        int j, k, d
+        float dist_squared, repulsive_force, grad_d
+        (float, float) rep_outputs
+
+    y1 = <float*> malloc(sizeof(float) * dim)
+    y2 = <float*> malloc(sizeof(float) * dim)
+
+    # FIXME - add random seed option
+    j = head[i]
+    k = rand() % n_vertices
+    for d in range(dim):
+        y1[d] = head_embedding[j, d]
+        y2[d] = tail_embedding[k, d]
+    dist_squared = rdist(y1, y2, dim)
+    rep_outputs = repulsive_force_func(
+        normalization,
+        dist_squared,
+        a,
+        b,
+        cell_size=1.0,
+        average_weight=average_weight,
+    )
+    repulsive_force = rep_outputs[0]
+    Z_array[i] = rep_outputs[1]
+
+    # Apply repulsive force along random pair of points
+    for d in range(dim):
+        grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
+        repulsive_forces[j, d] += grad_d
+
+
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
@@ -303,57 +399,42 @@ cdef void _cy_umap_uniformly(
     Z_array = py_np.zeros([n_edges], dtype=py_np.float32)
     attractive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     repulsive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
-    y1 = <float*> malloc(sizeof(float) * dim)
-    y2 = <float*> malloc(sizeof(float) * dim)
     cdef float grad_d = 0.0
-    cdef (float, float) rep_outputs
     cdef float average_weight = 0.0
     for i in range(weights.shape[0]):
         average_weight += weights[i]
     average_weight /= n_edges
 
-    for i in range(epochs_per_sample.shape[0]):
-        # Gets one of the knn in high-dim space relative to the sample point
-        j = head[i]
-        k = tail[i]
-        for d in range(dim):
-            y1[d] = head_embedding[j, d]
-            y2[d] = tail_embedding[k, d]
-        dist_squared = rdist(y1, y2, dim)
-        attractive_force = attractive_force_func(
+    for i in prange(epochs_per_sample.shape[0], nogil=True):
+        _derive_pos_force(
             normalization,
-            dist_squared,
+            head_embedding,
+            tail_embedding,
+            attractive_forces,
+            head,
+            tail,
+            weights,
+            dim,
+            i,
             a,
             b,
-            weights[i]
         )
-
-        # ANDREW - apply positive force along each nearest neighbor edge
-        for d in range(dim):
-            grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
-            attractive_forces[j, d] += grad_d
-            attractive_forces[k, d] -= grad_d
-
-        # FIXME - add random seed option
-        k = rand() % n_vertices
-        for d in range(dim):
-            y2[d] = tail_embedding[k, d]
-        dist_squared = rdist(y1, y2, dim)
-        rep_outputs = repulsive_force_func(
+        _derive_neg_force(
             normalization,
-            dist_squared,
+            head_embedding,
+            tail_embedding,
+            repulsive_forces,
+            head,
+            tail,
+            weights,
+            Z_array,
+            average_weight,
+            dim,
+            n_vertices,
+            i,
             a,
             b,
-            cell_size=1.0,
-            average_weight=average_weight,
         )
-        repulsive_force = rep_outputs[0]
-        Z_array[i] = rep_outputs[1]
-
-        # Apply repulsive force along random pair of points
-        for d in range(dim):
-            grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
-            repulsive_forces[j, d] += grad_d
 
     for i in range(epochs_per_sample.shape[0]):
         Z += Z_array[i]
