@@ -9,6 +9,11 @@ from libc.math cimport sqrt, log
 from libc.stdlib cimport malloc, free
 from cython.parallel cimport prange, parallel
 
+# FIXME - add flag for faster calculation!
+# Replacing pow with fastpow makes mnist run twice as fast
+cdef extern from "fastpow.c" nogil:
+    double fastpow "fastPow" (double, double)
+
 from sklearn.neighbors._quad_tree cimport _QuadTree
 
 np.import_array()
@@ -37,7 +42,7 @@ cdef float clip(float val) nogil:
         return val
 
 
-cdef float rdist(float* x, float* y, int dim) nogil:
+cdef double rdist(float* x, float* y, int dim) nogil:
     """Reduced Euclidean distance.
 
     Parameters
@@ -49,7 +54,7 @@ cdef float rdist(float* x, float* y, int dim) nogil:
     -------
     The squared euclidean distance between x and y
     """
-    cdef float result = 0.0
+    cdef double result = 0.0
     cdef float diff = 0
     for i in range(dim):
         diff = x[i] - y[i]
@@ -62,22 +67,22 @@ cdef float rdist(float* x, float* y, int dim) nogil:
 ###################
 
 @cython.cdivision(True)
-cdef float umap_attraction_grad(float dist_squared, float a, float b) nogil:
+cdef float umap_attraction_grad(double dist_squared, float a, double b) nogil:
     cdef float grad_scalar = 0.0
-    grad_scalar = -2.0 * a * b * pow(dist_squared, b - 1.0)
-    grad_scalar /= a * pow(dist_squared, b) + 1.0
+    grad_scalar = -2.0 * a * b * fastpow(dist_squared, b - 1.0)
+    grad_scalar /= a * fastpow(dist_squared, b) + 1.0
     return grad_scalar
 
 @cython.cdivision(True)
-cdef float umap_repulsion_grad(float dist_squared, float a, float b) nogil:
+cdef float umap_repulsion_grad(double dist_squared, float a, double b) nogil:
     cdef float phi_ijZ = 0.0
     phi_ijZ = 2.0 * b
-    phi_ijZ /= (0.001 + dist_squared) * (a * pow(dist_squared, b) + 1)
+    phi_ijZ /= (0.001 + dist_squared) * (a * fastpow(dist_squared, b) + 1)
     return phi_ijZ
 
 @cython.cdivision(True)
-cdef float kernel_function(float dist_squared, float a, float b) nogil:
-    return 1 / (1 + a * pow(dist_squared, b))
+cdef float kernel_function(double dist_squared, float a, double b) nogil:
+    return 1 / (1 + a * fastpow(dist_squared, b))
 
 ###################
 ##### WEIGHTS #####
@@ -306,7 +311,7 @@ cdef _cy_umap_uniformly(
     float [:, :] forces,
     float [:] epochs_per_sample,
     float a,
-    float b,
+    double b,
     int dim,
     int n_vertices,
     float alpha,
@@ -320,7 +325,7 @@ cdef _cy_umap_uniformly(
         float [:] Z_array
         float Z = 0.0
 
-    # This is faster if zeros is replaced by empty
+    # FIXME - this is faster if zeros is replaced by empty
     attractive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     repulsive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     y1 = <float*> malloc(sizeof(float) * dim)
@@ -334,7 +339,7 @@ cdef _cy_umap_uniformly(
         average_weight += weights[i]
     average_weight /= n_edges
 
-    for i in prange(epochs_per_sample.shape[0], nogil='True'):
+    for i in range(epochs_per_sample.shape[0]):
         # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
         j = head[i]
         k = tail[i]
@@ -360,11 +365,7 @@ cdef _cy_umap_uniformly(
             attractive_forces[j, d] += grad_d
             attractive_forces[k, d] -= grad_d
 
-        # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
-        # ANDREW - If we are summing the effects of the forces and multiplying them
-        #   by the weights appropriately, we only need to alternate symmetrically
-        #   between positive and negative forces rather than doing 1 positive
-        #   calculation to n negative ones
+        # Repulsive force calculation
         # FIXME - add random seed option
         k = rand() % n_vertices
         if j == k:
@@ -390,7 +391,7 @@ cdef _cy_umap_uniformly(
                 grad_d = 4.0
             repulsive_forces[j, d] += grad_d
 
-    for i in prange(epochs_per_sample.shape[0], nogil='True'):
+    for i in range(epochs_per_sample.shape[0]):
         Z += Z_array[i]
 
     cdef float rep_scalar = -4
@@ -417,7 +418,7 @@ def cy_umap_uniformly(
     np.ndarray[DTYPE_FLOAT, ndim=2] _forces,
     np.ndarray[DTYPE_FLOAT, ndim=1] _epochs_per_sample,
     float a,
-    float b,
+    double b,
     int dim,
     int n_vertices,
     float alpha,
@@ -553,7 +554,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] calculate_barnes_hut(
                 dim_index = i_cell * offset + d
                 repulsive_forces[v, d] += repulsive_force * cell_summaries[dim_index]
 
-    for i in prange(epochs_per_sample.shape[0], nogil='True'):
+    for i in range(epochs_per_sample.shape[0]):
         Z += Z_array[i]
 
     cdef float rep_scalar = -4 / Z
@@ -626,7 +627,7 @@ def cy_optimize_layout(
     int n_vertices,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     float a,
-    float b,
+    double b,
     float alpha,
     float negative_sample_rate,
     verbose=True

@@ -6,7 +6,7 @@ import numpy
 
 optimize = Extension(
     'optimize',
-    ['optimize.pyx'],
+    ['optimize.pyx', 'fastpow.c'],
     libraries=['m'],
 
     # If compiling with clang, uncomment these and use
