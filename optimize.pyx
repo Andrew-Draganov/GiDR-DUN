@@ -23,29 +23,8 @@ cdef extern from "fastpow.c" nogil:
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
 
-# cdef float clip(float val, float lower, float upper) nogil:
-#     return fmax(lower, fmin(val, upper))
-
-cdef float clip(float val):
-    """Standard clamping of a value into a fixed range (in this case -4.0 to
-    4.0)
-
-    Parameters
-    ----------
-    val: float
-        The value to be clamped.
-
-    Returns
-    -------
-    The clamped value, now fixed to be in the range -4.0 to 4.0.
-    """
-    if val > 4.0:
-        return 4.0
-    elif val < -4.0:
-        return -4.0
-    else:
-        return val
-
+cdef float clip(float val, float lower, float upper) nogil:
+    return fmax(lower, fmin(val, upper))
 
 cdef float rdist(float* x, float* y, int dim):
     """Reduced Euclidean distance.
@@ -61,6 +40,7 @@ cdef float rdist(float* x, float* y, int dim):
     """
     cdef float result = 0.0
     cdef float diff = 0
+    cdef int i
     for i in range(dim):
         diff = x[i] - y[i]
         result += diff * diff
@@ -124,16 +104,15 @@ cdef (float, float) tsne_repulsive_force(
     return (repulsive_force, Z)
 
 cdef float attractive_force_func(
-        str normalization,
+        int normalization,
         float dist_squared,
         float a,
         float b,
         float edge_weight
     ):
-    if normalization == 'umap':
+    if normalization == 1:
         edge_force = umap_attraction_grad(dist_squared, a, b)
     else:
-        assert normalization == 'tsne'
         edge_force = kernel_function(dist_squared, a, b)
 
     # FIXME FIXME FIXME
@@ -141,7 +120,7 @@ cdef float attractive_force_func(
     return edge_force * edge_weight
 
 cdef (float, float) repulsive_force_func(
-        str normalization,
+        int normalization,
         float dist_squared,
         float a,
         float b,
@@ -149,7 +128,7 @@ cdef (float, float) repulsive_force_func(
         float average_weight,
         float Z
     ):
-    if normalization == 'umap':
+    if normalization == 1:
         return umap_repulsive_force(
             dist_squared,
             a,
@@ -157,7 +136,6 @@ cdef (float, float) repulsive_force_func(
             cell_size,
             average_weight
         )
-    assert normalization == 'tsne'
     return tsne_repulsive_force(
         dist_squared,
         a,
@@ -169,8 +147,8 @@ cdef (float, float) repulsive_force_func(
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_sampling(
-    str normalization,
+cdef void _cy_umap_sampling(
+    int normalization,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
     np.ndarray[DTYPE_INT, ndim=1] head,
@@ -226,7 +204,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_sampling(
             )
 
             for d in range(dim):
-                grad_d = clip(attractive_force * (y1[d] - y2[d]))
+                grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
                 head_embedding[j, d] += grad_d * alpha
                 head_embedding[k, d] -= grad_d * alpha
 
@@ -262,7 +240,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_sampling(
 
                 for d in range(dim):
                     if repulsive_force > 0.0:
-                        grad_d = clip(repulsive_force * (y1[d] - y2[d]))
+                        grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
                     else:
                         grad_d = 4.0
                     head_embedding[j, d] += grad_d * alpha
@@ -270,10 +248,9 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_sampling(
             epoch_of_next_negative_sample[i] += (
                 n_neg_samples * epochs_per_negative_sample[i]
             )
-    return forces
 
 def cy_umap_sampling(
-    str normalization,
+    int normalization,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
     np.ndarray[DTYPE_INT, ndim=1] head,
@@ -314,8 +291,8 @@ def cy_umap_sampling(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_uniformly(
-    str normalization,
+cdef void _cy_umap_uniformly(
+    int normalization,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
     np.ndarray[DTYPE_INT, ndim=1] head,
@@ -372,7 +349,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_uniformly(
         )
 
         for d in range(dim):
-            grad_d = clip(attractive_force * (y1[d] - y2[d]))
+            grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
             attractive_forces[j, d] += grad_d
             attractive_forces[k, d] -= grad_d
 
@@ -402,29 +379,27 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_uniformly(
 
         for d in range(dim):
             if repulsive_force > 0.0:
-                grad_d = clip(repulsive_force * (y1[d] - y2[d]))
+                grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
             else:
                 grad_d = 4.0
             repulsive_forces[j, d] += grad_d
 
     cdef float rep_scalar = -4
-    if normalization == 'tsne':
+    if normalization == 0:
         # avoid division by zero
         rep_scalar = rep_scalar / Z
     cdef float att_scalar = 4
 
     for v in range(n_vertices):
         for d in range(dim):
-            if normalization == 'tsne':
+            if normalization == 0:
                 repulsive_forces[v, d] = repulsive_forces[v, d] * rep_scalar
                 attractive_forces[v, d] = attractive_forces[v, d] * att_scalar
             forces[v, d] = attractive_forces[v, d] + repulsive_forces[v, d]
             head_embedding[v, d] += forces[v, d] * alpha
 
-    return forces
-
 def cy_umap_uniformly(
-    str normalization,
+    int normalization,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
     np.ndarray[DTYPE_INT, ndim=1] head,
@@ -442,7 +417,7 @@ def cy_umap_uniformly(
     np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample,
     int i_epoch
 ):
-    return _cy_umap_uniformly(
+    _cy_umap_uniformly(
         normalization,
         head_embedding,
         tail_embedding,
@@ -465,8 +440,8 @@ def cy_umap_uniformly(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef np.ndarray[DTYPE_FLOAT, ndim=2] calculate_barnes_hut(
-    str normalization,
+cdef void calculate_barnes_hut(
+    int normalization,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
     np.ndarray[DTYPE_INT, ndim=1] head,
@@ -524,7 +499,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] calculate_barnes_hut(
             weights[edge]
         )
         for d in range(dim):
-            attractive_forces[j, d] = attractive_forces[j, d] + clip(attractive_force * (y1[d] - y2[d]))
+            attractive_forces[j, d] = attractive_forces[j, d] + clip(attractive_force * (y1[d] - y2[d]), -4, 4)
 
     for v in range(n_vertices):
         # Get necessary data regarding current point and the quadtree cells
@@ -559,7 +534,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] calculate_barnes_hut(
     cdef float att_scalar = 4
     for v in range(n_vertices):
         for d in range(dim):
-            if normalization == 'tsne':
+            if normalization == 0:
                 repulsive_forces[v, d] = repulsive_forces[v, d] * rep_scalar
                 attractive_forces[v, d] = attractive_forces[v, d] * att_scalar
 
@@ -567,10 +542,8 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] calculate_barnes_hut(
                            + 0.9 * forces[v, d]
             head_embedding[v, d] -= forces[v, d] * alpha
 
-    return forces
-
 def bh_wrapper(
-    str normalization,
+    int normalization,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
     np.ndarray[DTYPE_INT, ndim=1] head,
@@ -615,7 +588,7 @@ def bh_wrapper(
 
 def cy_optimize_layout(
     str optimize_method,
-    str normalization,
+    int normalization,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
     np.ndarray[DTYPE_INT, ndim=1] head,
@@ -668,7 +641,7 @@ def cy_optimize_layout(
     single_step = single_step_functions[optimize_method]
 
     for i_epoch in range(n_epochs):
-        forces = single_step(
+        single_step(
             normalization,
             head_embedding,
             tail_embedding,

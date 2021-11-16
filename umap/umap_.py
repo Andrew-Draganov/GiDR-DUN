@@ -785,6 +785,10 @@ def _optimize_layout_euclidean(
     start = time.time()
     if 'cy' in optimize_method:
         import optimize
+        if normalization == 'umap':
+            normalization = 1
+        else:
+            normalization = 0
         embedding = optimize.cy_optimize_layout(
             optimize_method,
             normalization,
