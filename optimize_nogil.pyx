@@ -4,8 +4,7 @@ cimport cython
 from libcpp cimport bool
 from libc.stdio cimport printf
 from libc.stdlib cimport rand
-from libc.math cimport pow
-from libc.math cimport sqrt, log
+from libc.math cimport sqrt, log, pow
 from libc.stdlib cimport malloc, free
 from cython.parallel cimport prange, parallel
 
@@ -13,6 +12,10 @@ from cython.parallel cimport prange, parallel
 # Replacing pow with fastpow makes mnist run twice as fast
 cdef extern from "fastpow.c" nogil:
     double fastpow "fastPow" (double, double)
+cdef extern from "fastpow.c" nogil:
+    float fmax "my_fmax" (float, float)
+cdef extern from "fastpow.c" nogil:
+    float fmin "my_fmin" (float, float)
 
 from sklearn.neighbors._quad_tree cimport _QuadTree
 
@@ -21,39 +24,10 @@ np.import_array()
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
 
-cdef float clip(float val) nogil:
-    """Standard clamping of a value into a fixed range (in this case -4.0 to
-    4.0)
-
-    Parameters
-    ----------
-    val: float
-        The value to be clamped.
-
-    Returns
-    -------
-    The clamped value, now fixed to be in the range -4.0 to 4.0.
-    """
-    if val > 4.0:
-        return 4.0
-    elif val < -4.0:
-        return -4.0
-    else:
-        return val
-
+cdef float clip(float val, float lower, float upper) nogil:
+    return fmax(lower, fmin(val, upper))
 
 cdef double rdist(float* x, float* y, int dim) nogil:
-    """Reduced Euclidean distance.
-
-    Parameters
-    ----------
-    x: array of shape (embedding_dim,)
-    y: array of shape (embedding_dim,)
-
-    Returns
-    -------
-    The squared euclidean distance between x and y
-    """
     cdef double result = 0.0
     cdef float diff = 0
     for i in range(dim):
@@ -113,9 +87,10 @@ cdef (float, float) tsne_repulsive_force(
         float cell_size,
     ) nogil:
     cdef float kernel = kernel_function(dist_squared, a, b)
-    cdef float Z = cell_size * kernel # Collect the q_ij's contributions into Z
+    cdef float Z_component = cell_size * kernel
     cdef float repulsive_force = cell_size * kernel * kernel
-    return (repulsive_force, Z)
+    return (repulsive_force, Z_component)
+
 
 cdef float attractive_force_func(
         int normalization,
@@ -129,8 +104,6 @@ cdef float attractive_force_func(
     else:
         edge_force = kernel_function(dist_squared, a, b)
 
-    # FIXME FIXME FIXME
-    # This does NOT work with parallel=True
     return edge_force * edge_weight
 
 cdef (float, float) repulsive_force_func(
@@ -215,7 +188,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_sampling(
             )
 
             for d in range(dim):
-                grad_d = clip(attractive_force * (y1[d] - y2[d]))
+                grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
                 head_embedding[j, d] += grad_d * alpha
                 head_embedding[k, d] -= grad_d * alpha
 
@@ -249,7 +222,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] _cy_umap_sampling(
 
                 for d in range(dim):
                     if repulsive_force > 0.0:
-                        grad_d = clip(repulsive_force * (y1[d] - y2[d]))
+                        grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
                     else:
                         grad_d = 4.0
                     head_embedding[j, d] += grad_d * alpha
@@ -301,7 +274,7 @@ def cy_umap_sampling(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef _cy_umap_uniformly(
+cdef void _cy_umap_uniformly(
     int normalization,
     float [:, :] head_embedding,
     float [:, :] tail_embedding,
@@ -318,39 +291,34 @@ cdef _cy_umap_uniformly(
 ):
     cdef:
         int i, j, k, d
+        float Z = 0.0
+        float [:] Z_array
         float [:, :] attractive_forces
         float [:, :] repulsive_forces
         float attractive_force, repulsive_force
         float dist_squared
-        float [:] Z_array
-        float Z = 0.0
 
     # FIXME - this is faster if zeros is replaced by empty
+    cdef int n_edges = int(epochs_per_sample.shape[0])
+    Z_array = py_np.zeros([n_edges], dtype=py_np.float32)
     attractive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     repulsive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
     cdef float grad_d = 0.0
     cdef (float, float) rep_outputs
-    cdef int n_edges = int(epochs_per_sample.shape[0])
-    Z_array = py_np.zeros([n_edges], dtype=py_np.float32)
     cdef float average_weight = 0.0
     for i in range(weights.shape[0]):
         average_weight += weights[i]
     average_weight /= n_edges
 
     for i in range(epochs_per_sample.shape[0]):
-        # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
+        # Gets one of the knn in high-dim space relative to the sample point
         j = head[i]
         k = tail[i]
-        if j == k:
-            continue
-
         for d in range(dim):
-            # FIXME - index should be typed for more efficient access
             y1[d] = head_embedding[j, d]
             y2[d] = tail_embedding[k, d]
-        # ANDREW - optimize positive force for each edge
         dist_squared = rdist(y1, y2, dim)
         attractive_force = attractive_force_func(
             normalization,
@@ -360,16 +328,14 @@ cdef _cy_umap_uniformly(
             weights[i]
         )
 
+        # ANDREW - apply positive force along each nearest neighbor edge
         for d in range(dim):
-            grad_d = clip(attractive_force * (y1[d] - y2[d]))
+            grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
             attractive_forces[j, d] += grad_d
             attractive_forces[k, d] -= grad_d
 
-        # Repulsive force calculation
         # FIXME - add random seed option
         k = rand() % n_vertices
-        if j == k:
-            continue
         for d in range(dim):
             y2[d] = tail_embedding[k, d]
         dist_squared = rdist(y1, y2, dim)
@@ -384,25 +350,23 @@ cdef _cy_umap_uniformly(
         repulsive_force = rep_outputs[0]
         Z_array[i] = rep_outputs[1]
 
+        # Apply repulsive force along random pair of points
         for d in range(dim):
-            if repulsive_force > 0.0:
-                grad_d = clip(repulsive_force * (y1[d] - y2[d]))
-            else:
-                grad_d = 4.0
+            grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
             repulsive_forces[j, d] += grad_d
 
     for i in range(epochs_per_sample.shape[0]):
         Z += Z_array[i]
 
     cdef float rep_scalar = -4
-    if normalization == 'tsne':
+    if normalization == 0:
         # avoid division by zero
         rep_scalar = rep_scalar / Z
     cdef float att_scalar = 4
 
     for v in range(n_vertices):
         for d in range(dim):
-            if normalization == 'tsne':
+            if normalization == 0:
                 repulsive_forces[v, d] *= rep_scalar
                 attractive_forces[v, d] *= att_scalar
             forces[v, d] = attractive_forces[v, d] + repulsive_forces[v, d]
@@ -522,7 +486,7 @@ cdef np.ndarray[DTYPE_FLOAT, ndim=2] calculate_barnes_hut(
             weights[edge]
         )
         for d in range(dim):
-            attractive_forces[j, d] += clip(attractive_force * (y1[d] - y2[d]))
+            attractive_forces[j, d] += clip(attractive_force * (y1[d] - y2[d]), -4, 4)
 
     for v in range(n_vertices):
         # Get necessary data regarding current point and the quadtree cells

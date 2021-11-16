@@ -12,8 +12,8 @@ optimize = Extension(
     # If compiling with clang, uncomment these and use
     # CC=/usr/local/opt/llvm/bin/clang python setup_cython.py install
     #   - assumes you've installed llvm with `brew install llvm`
-    extra_compile_args=['-ffast-math', '-fopenmp'],
-    extra_link_args=['-lomp'],
+    extra_compile_args=['-O3', '-march=native', '-ffast-math', '-fopenmp'],
+    extra_link_args=['-lomp', '-fopenmp'],
 
     # If compiling regularly, just use this
     # extra_compile_args=['-ffast-math'],
@@ -22,5 +22,6 @@ optimize = Extension(
 )
 CySetup(
     name='cython_dim_reduction',
+    cmdclass={'build_ext': build_ext},
     ext_modules=cythonize([optimize])
 )
