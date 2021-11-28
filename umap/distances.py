@@ -1,6 +1,7 @@
 # Author: Leland McInnes <leland.mcinnes@gmail.com>
 #
 # License: BSD 3 clause
+import warnings
 import os
 import numba
 import math
@@ -12,14 +13,17 @@ def remove_diag(A):
     removed = A[~np.eye(A.shape[0],dtype=bool)].reshape(A.shape[0],int(A.shape[0])-1, -1)
     return np.squeeze(removed)
 
-def make_dist_plots(x_train, projection, y_train, alg_str):
+def make_dist_plots(x_train, projection, y_train, alg_str, dataset_str):
     """
     Make plots of distance relationships before and after projection
     """
     if len(x_train) > 1000:
         raise ValueError("Making plots requires too much memory. Increase the downsample-stride parameter")
+    warnings.filterwarnings("ignore")
 
-    image_dir = os.path.join('images', alg_str)
+    print('Making plots of distance relationships...')
+    print('\t- Calculating high and low dim pairwise distances...')
+    image_dir = os.path.join('images', alg_str, dataset_str)
     os.makedirs(image_dir, exist_ok=True)
     orig_dists = remove_diag(np.expand_dims(x_train, 0) - np.expand_dims(x_train, 1))
     orig_dists = np.sum(np.square(orig_dists), -1)
@@ -28,8 +32,15 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     new_dists = np.sum(np.square(new_dists), -1)
     new_reshaped = np.reshape(new_dists, -1)
 
+    print('\t- Saving dim reduction output...')
+    plt.scatter(projection[:, 0], projection[:, 1], c=y_train, s=1)
+    img_path = os.path.join(image_dir, '%s_output.png' % alg_str)
+    plt.savefig(img_path)
+
+    plt.clf()
+    print('\t- Saving distance vs distance plot...')
     indices = np.argsort(orig_reshaped)
-    new_reshaped = new_reshaped[indices]
+    new_reshaped = np.abs(new_reshaped[indices])
     N = int(new_reshaped.shape[0])
     num_points = int(orig_dists.shape[0])
     conv_size = 1000
@@ -51,6 +62,7 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     # Nat numbers on x axis
     # Low dim distances on y axis (sorted by high-dim distances low -> high)
     # This is just the y-values of the previous plot
+    print('\t- Saving sorted distances plot...')
     plt.clf()
     plt.scatter(np.arange(N), new_reshaped, c='blue', s=0.01)
     plt.scatter(np.arange(int(means.shape[0])), means, c='red', s=0.1)
@@ -68,6 +80,7 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     #   - the y axis is (high_dim_distance - low_dim_distance) / high_dim_distance
     #   - both distance arrays are scaled to [0, 1] (since abs vals are relative)
     #   - avoid division by zero by substituting 1's in for the zeros
+    print('\t- Saving relative error plot...')
     plt.clf()
     scaled_orig = orig_reshaped / np.max(orig_reshaped)
     scaled_new = new_reshaped / np.max(new_reshaped)
@@ -104,6 +117,7 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     # High-dim distance on x-axis
     # Absolute change in sort index on y-axis
     # We're basically looking at "Do relatively small distances stay relatively small?"
+    print('\t- Saving change in sort index plot...')
     plt.clf()
     new_indices = np.argsort(new_reshaped)
     index_diff = np.abs(indices - new_indices)
@@ -125,6 +139,7 @@ def make_dist_plots(x_train, projection, y_train, alg_str):
     #     For each point, the what percent of the [i - k/2, i + k/2]
     #     nearest neighbors in the high-dim space are also in the
     #     [i - k/2, i + k/2] nearest neighbors in the low-dim space
+    print('\t- Saving nearest neighbor overlap plot...')
     plt.clf()
     orig_nn = np.argsort(orig_dists, axis=1)
     new_nn = np.argsort(new_dists, axis=1)

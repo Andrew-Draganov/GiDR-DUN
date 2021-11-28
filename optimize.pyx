@@ -310,7 +310,6 @@ cdef void _cy_umap_uniformly(
         float attractive_force, repulsive_force
         float dist_squared
 
-    # This is faster if zeros is replaced by empty
     attractive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     repulsive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     y1 = <float*> malloc(sizeof(float) * dim)
@@ -370,10 +369,7 @@ cdef void _cy_umap_uniformly(
         Z = rep_outputs[1]
 
         for d in range(dim):
-            if repulsive_force > 0.0:
-                grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
-            else:
-                grad_d = 4.0
+            grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
             repulsive_forces[j, d] += grad_d
 
     cdef float rep_scalar = -4
@@ -422,7 +418,6 @@ def cy_umap_uniformly(
         n_vertices,
         alpha,
     )
-
 
 
 ##### BARNES-HUT CODE #####

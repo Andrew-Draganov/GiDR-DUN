@@ -15,5 +15,6 @@ setup(
         'sklearn',
         'scipy',
         'tensorflow',
+        'tensorflow_datasets'
     ],
 )
