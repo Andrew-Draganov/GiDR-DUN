@@ -1,4 +1,10 @@
 images/
+images.zip
+tex/*.bib
+tex/*.aux
+tex/*.aux
+tex/*.xml
+tex/*.log
 *.html
 *.c
 *.swp

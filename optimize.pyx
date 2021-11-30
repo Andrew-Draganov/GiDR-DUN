@@ -115,8 +115,6 @@ cdef float attractive_force_func(
     else:
         edge_force = kernel_function(dist_squared, a, b)
 
-    # FIXME FIXME FIXME
-    # This does NOT work with parallel=True
     return edge_force * edge_weight
 
 cdef (float, float) repulsive_force_func(
@@ -328,7 +326,6 @@ cdef void _cy_umap_uniformly(
         k = tail[i]
 
         for d in range(dim):
-            # FIXME - index should be typed for more efficient access
             y1[d] = head_embedding[j, d]
             y2[d] = tail_embedding[k, d]
         # ANDREW - optimize positive force for each edge
@@ -372,7 +369,7 @@ cdef void _cy_umap_uniformly(
             grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
             repulsive_forces[j, d] += grad_d
 
-    cdef float rep_scalar = -4
+    cdef float rep_scalar = 0
     if normalization == 0:
         # avoid division by zero
         rep_scalar = rep_scalar / Z

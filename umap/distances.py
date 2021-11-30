@@ -105,10 +105,12 @@ def make_dist_plots(x_train, projection, y_train, alg_str, dataset_str):
     plt.legend(handles=[redpatch, bluepatch])
 
     # Set y axis limits to ignore outliers
-    lower_thresh = np.sort(rel_err_means)[int(len(rel_err_means) * 0.01)]
-    upper_thresh = np.sort(rel_err_means)[int(len(rel_err_means) * 0.99)]
+    # lower_thresh = np.sort(rel_err_means)[int(len(rel_err_means) * 0.01)]
+    # upper_thresh = np.sort(rel_err_means)[int(len(rel_err_means) * 0.99)]
+    # ax = plt.gca()
+    # ax.set_ylim([lower_thresh, upper_thresh])
     ax = plt.gca()
-    ax.set_ylim([lower_thresh, upper_thresh])
+    ax.set_ylim([-0.05, 1.1])
 
     plt.title('Ratio or distances in high- and low-dim space for %s' % alg_str)
     img_path = os.path.join(image_dir, 'relative_error_%s.png' % alg_str)

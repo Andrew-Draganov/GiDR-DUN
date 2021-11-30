@@ -59,7 +59,6 @@ parser.add_argument(
     default='cy_umap_uniform',
     help='Which optimization algorithm to use'
 )
-# FIXME - rename to "normalize_P"
 parser.add_argument(
     '--normalization',
     choices=['tsne', 'umap'],
