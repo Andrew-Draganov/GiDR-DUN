@@ -5,6 +5,8 @@ tex/*.bib
 tex/*.aux
 tex/*.aux
 tex/*.xml
+tex/*.bbl
+tex/*.blg
 tex/*.log
 *.html
 *.c

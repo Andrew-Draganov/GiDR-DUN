@@ -67,7 +67,9 @@ cdef float umap_repulsion_grad(float dist_squared, float a, float b):
 
 @cython.cdivision(True)
 cdef float kernel_function(float dist_squared, float a, float b):
+    # if b <= 1:
     return 1 / (1 + a * fastpow(dist_squared, b))
+    # return fastpow(dist_squared, b - 1) / (1 + a * fastpow(dist_squared, b))
 
 ###################
 ##### WEIGHTS #####
@@ -98,7 +100,7 @@ cdef (float, float) tsne_repulsive_force(
         float cell_size,
         float Z
     ):
-    cdef float kernel = kernel_function(dist_squared, a, b)
+    cdef float kernel = umap_repulsion_grad(dist_squared, a, b)
     Z += cell_size * kernel # Collect the q_ij's contributions into Z
     cdef float repulsive_force = cell_size * kernel * kernel
     return (repulsive_force, Z)
@@ -304,6 +306,7 @@ cdef void _cy_umap_uniformly(
     int dim,
     int n_vertices,
     float alpha,
+    int i_epoch
 ):
     cdef:
         int i, j, k, d, v
@@ -311,8 +314,7 @@ cdef void _cy_umap_uniformly(
         np.ndarray[DTYPE_FLOAT, ndim=2] repulsive_forces
         float Z = 0.0
         float theta = 0.5
-        float attractive_force, repulsive_force
-        float dist_squared
+        float attractive_force, repulsive_force, dist_squared, edge_weight
 
     attractive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     repulsive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
@@ -330,12 +332,18 @@ cdef void _cy_umap_uniformly(
         # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
         j = head[edge]
         k = tail[edge]
-
         for d in range(dim):
             y1[d] = head_embedding[j, d]
             y2[d] = tail_embedding[k, d]
-        # Optimize positive force for each edge
         dist_squared = rdist(y1, y2, dim)
+
+        # t-SNE early exaggeration
+        # if i_epoch < 50 and normalization == 0:
+        #     edge_weight = weights[edge] * 4
+        # else:
+        #     edge_weight = weights[edge]
+
+        # Optimize positive force for each edge
         attractive_force = attractive_force_func(
             normalization,
             dist_squared,
@@ -343,18 +351,13 @@ cdef void _cy_umap_uniformly(
             b,
             weights[edge]
         )
-
         for d in range(dim):
             grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
             attractive_forces[j, d] += grad_d
             if sym_attraction:
                 attractive_forces[k, d] -= grad_d
 
-        # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
-        # ANDREW - If we are summing the effects of the forces and multiplying them
-        #   by the weights appropriately, we only need to alternate symmetrically
-        #   between positive and negative forces rather than doing 1 positive
-        #   calculation to n negative ones
+        # Picks random vertex from ENTIRE graph and calculates repulsive force
         # FIXME - add random seed option
         k = rand() % n_vertices
         for d in range(dim):
@@ -376,8 +379,8 @@ cdef void _cy_umap_uniformly(
             grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
             repulsive_forces[j, d] += grad_d
 
-    cdef float rep_scalar = 4
-    cdef float att_scalar = -4
+    cdef float rep_scalar = 4 # * a * b
+    cdef float att_scalar = -4 # * a * b
     if normalization == 0:
         # avoid division by zero
         rep_scalar /= Z
@@ -431,6 +434,7 @@ def cy_umap_uniformly(
         dim,
         n_vertices,
         alpha,
+        i_epoch
     )
 
 
