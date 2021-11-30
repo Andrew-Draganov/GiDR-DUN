@@ -571,6 +571,8 @@ def make_epochs_per_sample(weights, n_epochs):
 def simplicial_set_embedding(
     optimize_method,
     normalization,
+    sym_attraction,
+    momentum,
     data,
     graph,
     n_components,
@@ -742,6 +744,8 @@ def simplicial_set_embedding(
     embedding = _optimize_layout_euclidean(
         optimize_method,
         normalization,
+        sym_attraction,
+        momentum,
         embedding,
         embedding,
         head,
@@ -765,6 +769,8 @@ def simplicial_set_embedding(
 def _optimize_layout_euclidean(
         optimize_method,
         normalization,
+        sym_attraction,
+        momentum,
         head_embedding,
         tail_embedding,
         head,
@@ -789,9 +795,13 @@ def _optimize_layout_euclidean(
             normalization = 1
         else:
             normalization = 0
+        sym_attraction = int(sym_attraction)
+        momentum = int(momentum)
         embedding = optimize.cy_optimize_layout(
             optimize_method,
             normalization,
+            sym_attraction,
+            momentum,
             head_embedding,
             tail_embedding,
             head,
@@ -810,6 +820,8 @@ def _optimize_layout_euclidean(
         embedding = optimize_layout_euclidean(
             optimize_method,
             normalization,
+            sym_attraction,
+            momentum,
             head_embedding,
             tail_embedding,
             head,
@@ -1040,6 +1052,8 @@ class UMAP(BaseEstimator):
         tsne_symmetrization=False,
         optimize_method='umap_sampling',
         normalization='umap',
+        sym_attraction=True,
+        momentum=False,
         min_dist=0.1,
         spread=1.0,
         low_memory=True,
@@ -1073,6 +1087,8 @@ class UMAP(BaseEstimator):
         self.pseudo_distance = pseudo_distance
         self.optimize_method = optimize_method
         self.normalization = normalization
+        self.sym_attraction = sym_attraction
+        self.momentum = momentum
 
         self.spread = spread
         self.min_dist = min_dist
@@ -1461,6 +1477,8 @@ class UMAP(BaseEstimator):
         return simplicial_set_embedding(
             self.optimize_method,
             self.normalization,
+            self.sym_attraction,
+            self.momentum,
             X,
             self.graph_,
             self.n_components,

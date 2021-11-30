@@ -66,6 +66,16 @@ parser.add_argument(
     help='Whether to use UMAP or tSNE normalization'
 )
 parser.add_argument(
+    '--sym-attraction',
+    action='store_true',
+    help='Whether to attract along both ends of a nearest neighbor edge'
+)
+parser.add_argument(
+    '--momentum',
+    action='store_true',
+    help='Whether to perform mometnum gradient descent'
+)
+parser.add_argument(
     '--kernel-choice',
     choices=['tsne', 'umap'],
     default='umap',
@@ -153,6 +163,8 @@ if args.dr_algorithm == 'uniform_umap':
             optimize_method=args.optimize_method,
             negative_sample_rate=args.neg_sample_rate,
             normalization=args.normalization,
+            sym_attraction=args.sym_attraction,
+            momentum=args.momentum,
             a=a,
             b=b,
             verbose=True
