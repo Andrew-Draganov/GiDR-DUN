@@ -67,9 +67,9 @@ cdef float umap_repulsion_grad(float dist_squared, float a, float b):
 
 @cython.cdivision(True)
 cdef float kernel_function(float dist_squared, float a, float b):
-    # if b <= 1:
-    return 1 / (1 + a * fastpow(dist_squared, b))
-    # return fastpow(dist_squared, b - 1) / (1 + a * fastpow(dist_squared, b))
+    if b <= 1:
+        return 1 / (1 + a * fastpow(dist_squared, b))
+    return fastpow(dist_squared, b - 1) / (1 + a * fastpow(dist_squared, b))
 
 ###################
 ##### WEIGHTS #####
@@ -100,7 +100,7 @@ cdef (float, float) tsne_repulsive_force(
         float cell_size,
         float Z
     ):
-    cdef float kernel = umap_repulsion_grad(dist_squared, a, b)
+    cdef float kernel = kernel_function(dist_squared, a, b)
     Z += cell_size * kernel # Collect the q_ij's contributions into Z
     cdef float repulsive_force = cell_size * kernel * kernel
     return (repulsive_force, Z)
@@ -338,10 +338,10 @@ cdef void _cy_umap_uniformly(
         dist_squared = rdist(y1, y2, dim)
 
         # t-SNE early exaggeration
-        # if i_epoch < 50 and normalization == 0:
-        #     edge_weight = weights[edge] * 4
-        # else:
-        #     edge_weight = weights[edge]
+        if i_epoch < 50 and normalization == 0:
+            edge_weight = weights[edge] * 4
+        else:
+            edge_weight = weights[edge]
 
         # Optimize positive force for each edge
         attractive_force = attractive_force_func(
@@ -379,8 +379,8 @@ cdef void _cy_umap_uniformly(
             grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
             repulsive_forces[j, d] += grad_d
 
-    cdef float rep_scalar = 4 # * a * b
-    cdef float att_scalar = -4 # * a * b
+    cdef float rep_scalar = 4 * a * b
+    cdef float att_scalar = -4 * a * b
     if normalization == 0:
         # avoid division by zero
         rep_scalar /= Z
