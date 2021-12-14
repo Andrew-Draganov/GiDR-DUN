@@ -1,6 +1,6 @@
 import pkg_resources
 import numba
-from .pynndescent_ import NNDescent, PyNNDescentTransformer
+from .pynndescent_ import NNDescent
 
 # Workaround: https://github.com/numba/numba/issues/3341
 if numba.config.THREADING_LAYER == "omp":
