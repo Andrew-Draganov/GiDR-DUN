@@ -74,7 +74,6 @@ cdef float kernel_function(float dist_squared, float a, float b):
 ###################
 ##### WEIGHTS #####
 ###################
-
 cdef (float, float) umap_repulsive_force(
         float dist_squared,
         float a,
@@ -286,6 +285,113 @@ def cy_umap_sampling(
         epoch_of_next_sample,
         i_epoch
     )
+ 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+cdef void _cy_pca(
+    int normalization,
+    int sym_attraction,
+    int momentum,
+    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
+    np.ndarray[DTYPE_INT, ndim=1] head,
+    np.ndarray[DTYPE_INT, ndim=1] tail,
+    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
+    np.ndarray[DTYPE_FLOAT, ndim=2] forces,
+    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
+    float a,
+    float b,
+    int dim,
+    int n_vertices,
+    float alpha,
+    int i_epoch
+):
+    cdef:
+        int i, j, k, d, v
+        np.ndarray[DTYPE_FLOAT, ndim=2] attractive_forces
+        np.ndarray[DTYPE_FLOAT, ndim=2] repulsive_forces
+        float Z = 0.0
+        float theta = 0.5
+        float attractive_force, repulsive_force, dist_squared, edge_weight
+
+    attractive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
+    repulsive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
+    average_dists = py_np.zeros([n_vertices], dtype=py_np.float32)
+    dist_counts = py_np.zeros([n_vertices], dtype=py_np.float32)
+    y1 = <float*> malloc(sizeof(float) * dim)
+    y2 = <float*> malloc(sizeof(float) * dim)
+    mean = <float*> malloc(sizeof(float) * dim)
+    cdef float grad_d = 0.0
+    cdef (float, float) rep_outputs
+    cdef int n_edges = int(epochs_per_sample.shape[0])
+    cdef float average_weight = 0.0
+    for i in range(weights.shape[0]):
+        average_weight += weights[i]
+    average_weight /= n_edges
+
+    # mean[0] = 0
+    # mean[1] = 0
+    # for v in range(n_vertices):
+    #     for d in range(dim):
+    #         mean[d] += head_embedding[v, d]
+    # mean[0] /= n_vertices
+    # mean[1] /= n_vertices
+
+    # for v in range(n_vertices):
+    #     for d in range(dim):
+    #         head_embedding[v, d] -= mean[d]
+
+    # for edge in range(n_edges):
+    #     # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
+    #     j = head[edge]
+    #     k = tail[edge]
+    #     for d in range(dim):
+    #         y1[d] = head_embedding[j, d]
+    #         y2[d] = tail_embedding[k, d]
+    #     dist_squared = rdist(y1, y2, dim)
+    #     average_dists[j] += dist_squared - weights[edge]
+    #     dist_counts[j] += 1
+
+    # for v in range(n_vertices):
+    #     if dist_counts[v] > 0.0:
+    #         average_dists[v] /= dist_counts[v]
+
+    for edge in range(n_edges):
+        # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
+        j = head[edge]
+        k = tail[edge]
+        for d in range(dim):
+            y1[d] = head_embedding[j, d]
+            y2[d] = tail_embedding[k, d]
+        dist_squared = rdist(y1, y2, dim)
+
+        # Optimize positive force for each edge
+        attractive_force = (dist_squared - weights[edge]) - average_dists[j]
+        for d in range(dim):
+            grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
+            attractive_forces[j, d] += grad_d
+            if sym_attraction:
+                attractive_forces[k, d] -= grad_d
+
+        # Picks random vertex from ENTIRE graph and calculates repulsive force
+        # FIXME - add random seed option
+        k = rand() % n_vertices
+        for d in range(dim):
+            y2[d] = tail_embedding[k, d]
+        dist_squared = rdist(y1, y2, dim)
+        repulsive_force = 0 #dist_squared - average_weight / 4
+
+        for d in range(dim):
+            grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
+            repulsive_forces[j, d] += grad_d
+
+    for v in range(n_vertices):
+        for d in range(dim):
+            forces[v, d] = attractive_forces[v, d] + repulsive_forces[v, d]
+            head_embedding[v, d] += forces[v, d] * alpha
+
+   
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -320,6 +426,7 @@ cdef void _cy_umap_uniformly(
     repulsive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
+    mean = <float*> malloc(sizeof(float) * dim)
     cdef float grad_d = 0.0
     cdef (float, float) rep_outputs
     cdef int n_edges = int(epochs_per_sample.shape[0])
@@ -395,6 +502,48 @@ cdef void _cy_umap_uniformly(
             else:
                 forces[v, d] = attractive_forces[v, d] + repulsive_forces[v, d]
             head_embedding[v, d] += forces[v, d] * alpha
+
+
+def cy_pca(
+    int normalization,
+    int sym_attraction,
+    int momentum,
+    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
+    np.ndarray[DTYPE_INT, ndim=1] head,
+    np.ndarray[DTYPE_INT, ndim=1] tail,
+    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
+    np.ndarray[DTYPE_FLOAT, ndim=2] forces,
+    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
+    float a,
+    float b,
+    int dim,
+    int n_vertices,
+    float alpha,
+    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
+    np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample,
+    np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample,
+    int i_epoch
+):
+    _cy_pca(
+        normalization,
+        sym_attraction,
+        momentum,
+        head_embedding,
+        tail_embedding,
+        head,
+        tail,
+        weights,
+        forces,
+        epochs_per_sample,
+        a,
+        b,
+        dim,
+        n_vertices,
+        alpha,
+        i_epoch
+    )
+
 
 
 def cy_umap_uniformly(
@@ -476,6 +625,7 @@ cdef void calculate_barnes_hut(
     # Allocte memory for data structures
     cell_summaries = <float*> malloc(sizeof(float) * n_vertices * offset)
     y1 = <float*> malloc(sizeof(float) * dim)
+    y2 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
 
     cdef int n_edges = int(epochs_per_sample.shape[0])
@@ -646,6 +796,7 @@ cpdef cy_optimize_layout(
 
     single_step_functions = {
         'cy_umap_uniform': cy_umap_uniformly,
+        'cy_pca': cy_pca,
         'cy_umap_sampling': cy_umap_sampling,
         'cy_barnes_hut': bh_wrapper
     }

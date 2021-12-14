@@ -388,10 +388,11 @@ def compute_membership_strengths(
                 # ANDREW - this is where the rhos are subtracted for the UMAP
                 # pseudo distance metric
                 # The sigmas are equivalent to those found for tSNE
-                if pseudo_distance:
-                    val = np.exp(-((knn_dists[i, j] - rhos[i]) / (sigmas[i])))
-                else:
-                    val = np.exp(-((knn_dists[i, j]) / (sigmas[i])))
+                val = knn_dists[i, j]
+                # if pseudo_distance:
+                #     val = np.exp(-((knn_dists[i, j] - rhos[i]) / (sigmas[i])))
+                # else:
+                #     val = np.exp(-((knn_dists[i, j]) / (sigmas[i])))
 
             rows[i * n_neighbors + j] = i
             cols[i * n_neighbors + j] = knn_indices[i, j]
@@ -501,7 +502,6 @@ def fuzzy_simplicial_set(
     knn_dists = knn_dists.astype(np.float32)
 
     # ANDREW - t-SNE does NOT use rhos in its implementation
-    # We need to change the membership strength computation to ignore rhos
     sigmas, rhos = smooth_knn_dist(
         knn_dists,
         float(n_neighbors),
@@ -1271,7 +1271,7 @@ class UMAP(BaseEstimator):
         else:
             init = self.init
 
-        self._initial_alpha = self.learning_rate
+        self._initial_alpha = self.learning_rate * 100
 
         self._validate_parameters()
 

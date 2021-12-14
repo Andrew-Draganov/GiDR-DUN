@@ -54,6 +54,7 @@ parser.add_argument(
         'umap_uniform',
         'cy_barnes_hut',
         'cy_umap_uniform',
+        'cy_pca',
         'cy_umap_sampling',
     ],
     default='cy_umap_uniform',
@@ -199,4 +200,6 @@ if args.make_plots:
     make_dist_plots(points, projection, labels, args.dr_algorithm, args.dataset)
 
 plt.scatter(projection[:, 0], projection[:, 1], c=labels, s=1)
+# Metrics! Bregman divergence
+# 
 plt.show()
