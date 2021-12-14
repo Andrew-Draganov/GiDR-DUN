@@ -36,8 +36,8 @@ from utils import (
 )
 from spectral import spectral_layout
 from layouts import optimize_layout_euclidean
-from pynndescent import NNDescent
-# from adaptive_knn import AdaptiveKNN
+# from pynndescent import NNDescent
+from nndescent.pynndescent_ import NNDescent
 
 locale.setlocale(locale.LC_NUMERIC, "C")
 
