@@ -950,7 +950,6 @@ def make_forest(
     rng_state,
     random_state,
     n_jobs=None,
-    angular=False,
 ):
     """Build a random projection forest with ``n_trees``.
 

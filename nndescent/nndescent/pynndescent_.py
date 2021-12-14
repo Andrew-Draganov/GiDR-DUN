@@ -323,7 +323,6 @@ def nn_descent(
     init_graph=EMPTY_GRAPH,
     rp_tree_init=True,
     leaf_array=None,
-    low_memory=True,
     verbose=False,
 ):
 
@@ -342,30 +341,17 @@ def nn_descent(
     else:
         raise ValueError("Invalid initial graph specified!")
 
-    if low_memory:
-        nn_descent_internal_low_memory_parallel(
-            current_graph,
-            data,
-            n_neighbors,
-            rng_state,
-            max_candidates=max_candidates,
-            dist=dist,
-            n_iters=n_iters,
-            delta=delta,
-            verbose=verbose,
-        )
-    else:
-        nn_descent_internal_high_memory_parallel(
-            current_graph,
-            data,
-            n_neighbors,
-            rng_state,
-            max_candidates=max_candidates,
-            dist=dist,
-            n_iters=n_iters,
-            delta=delta,
-            verbose=verbose,
-        )
+    nn_descent_internal_low_memory_parallel(
+        current_graph,
+        data,
+        n_neighbors,
+        rng_state,
+        max_candidates=max_candidates,
+        dist=dist,
+        n_iters=n_iters,
+        delta=delta,
+        verbose=verbose,
+    )
 
     return deheap_sort(current_graph)
 
@@ -508,42 +494,6 @@ class NNDescent(object):
     data: array os shape (n_samples, n_features)
         The training graph_data set to find nearest neighbors in.
 
-    metric: string or callable (optional, default='euclidean')
-        The metric to use for computing nearest neighbors. If a callable is
-        used it must be a numba njit compiled function. Supported metrics
-        include:
-            * euclidean
-            * manhattan
-            * chebyshev
-            * minkowski
-            * canberra
-            * braycurtis
-            * mahalanobis
-            * wminkowski
-            * seuclidean
-            * cosine
-            * correlation
-            * haversine
-            * hamming
-            * jaccard
-            * dice
-            * russelrao
-            * kulsinski
-            * rogerstanimoto
-            * sokalmichener
-            * sokalsneath
-            * yule
-            * hellinger
-            * wasserstein-1d
-        Metrics that take arguments (such as minkowski, mahalanobis etc.)
-        can have arguments passed via the metric_kwds dictionary. At this
-        time care must be taken and dictionary elements must be ordered
-        appropriately; this will hopefully be fixed in the future.
-
-    metric_kwds: dict (optional, default {})
-        Arguments to pass on to the metric, such as the ``p`` value for
-        Minkowski distance.
-
     n_neighbors: int (optional, default=30)
         The number of neighbors to use in k-neighbor graph graph_data structure
         used for fast approximate nearest neighbor search. Larger values
@@ -596,13 +546,6 @@ class NNDescent(object):
         The``'alternative'`` algorithm has been deprecated and is no longer
         available.
 
-    low_memory: boolean (optional, default=False)
-        Whether to use a lower memory, but more computationally expensive
-        approach to index construction. This defaults to false as for most
-        cases it speeds index construction, but if you are having issues
-        with excessive memory use for your dataset consider setting this
-        to True.
-
     max_candidates: int (optional, default=20)
         Internally each "self-join" keeps a maximum number of candidates (
         nearest neighbors and reverse nearest neighbors) to be considered.
@@ -641,18 +584,14 @@ class NNDescent(object):
     def __init__(
         self,
         data,
-        metric="euclidean",
-        metric_kwds=None,
         n_neighbors=30,
         n_trees=None,
         leaf_size=None,
         pruning_degree_multiplier=1.5,
         diversify_prob=1.0,
         n_search_trees=1,
-        tree_init=True,
         init_graph=None,
         random_state=None,
-        low_memory=True,
         max_candidates=None,
         n_iters=None,
         delta=0.001,
@@ -669,14 +608,11 @@ class NNDescent(object):
 
         self.n_trees = n_trees
         self.n_neighbors = n_neighbors
-        self.metric = metric
-        self.metric_kwds = metric_kwds
         self.leaf_size = leaf_size
         self.prune_degree_multiplier = pruning_degree_multiplier
         self.diversify_prob = diversify_prob
         self.n_search_trees = n_search_trees
         self.max_candidates = max_candidates
-        self.low_memory = low_memory
         self.n_iters = n_iters
         self.delta = delta
         self.dim = data.shape[1]
@@ -687,60 +623,12 @@ class NNDescent(object):
         data = check_array(data, dtype=np.float32, accept_sparse="csr", order="C")
         self._raw_data = data
 
-        if not tree_init or n_trees == 0 or init_graph is not None:
-            self.tree_init = False
-        else:
-            self.tree_init = True
-
-        metric_kwds = metric_kwds or {}
-        self._dist_args = tuple(metric_kwds.values())
-
         self.random_state = random_state
-
         current_random_state = check_random_state(self.random_state)
 
+        self._distance_func = pynnd_dist.euclidean
         self._distance_correction = None
-
-        if callable(metric):
-            _distance_func = metric
-        elif metric in pynnd_dist.named_distances:
-            if metric in pynnd_dist.fast_distance_alternatives:
-                _distance_func = pynnd_dist.fast_distance_alternatives[metric]["dist"]
-                self._distance_correction = pynnd_dist.fast_distance_alternatives[
-                    metric
-                ]["correction"]
-            else:
-                _distance_func = pynnd_dist.named_distances[metric]
-        else:
-            raise ValueError("Metric is neither callable, " + "nor a recognised string")
-
-        # Create a partial function for distances with arguments
-        if len(self._dist_args) > 0:
-            dist_args = self._dist_args
-
-            @numba.njit()
-            def _partial_dist_func(x, y):
-                return _distance_func(x, y, *dist_args)
-
-            self._distance_func = _partial_dist_func
-        else:
-            self._distance_func = _distance_func
-
-        if metric in (
-            "cosine",
-            "dot",
-            "correlation",
-            "dice",
-            "jaccard",
-            "hellinger",
-            "hamming",
-        ):
-            self._angular_trees = True
-        else:
-            self._angular_trees = False
-
-        if metric == "dot":
-            data = normalize(data, norm="l2", copy=False)
+        self._distance_correction = np.sqrt
 
         self.rng_state = current_random_state.randint(INT32_MIN, INT32_MAX, 3).astype(
             np.int64
@@ -749,26 +637,22 @@ class NNDescent(object):
             INT32_MIN, INT32_MAX, 3
         ).astype(np.int64)
         # Warm up the rng state
+        # ANDREW -- what does this do?...
         for i in range(10):
             _ = tau_rand_int(self.search_rng_state)
 
-        if self.tree_init:
-            if verbose:
-                print(ts(), "Building RP forest with", str(n_trees), "trees")
-            self._rp_forest = make_forest(
-                data,
-                n_neighbors,
-                n_trees,
-                leaf_size,
-                self.rng_state,
-                current_random_state,
-                self.n_jobs,
-                self._angular_trees,
-            )
-            leaf_array = rptree_leaf_array(self._rp_forest)
-        else:
-            self._rp_forest = None
-            leaf_array = np.array([[-1]])
+        if verbose:
+            print(ts(), "Building RP forest with", str(n_trees), "trees")
+        self._rp_forest = make_forest(
+            data,
+            n_neighbors,
+            n_trees,
+            leaf_size,
+            self.rng_state,
+            current_random_state,
+            self.n_jobs,
+        )
+        leaf_array = rptree_leaf_array(self._rp_forest)
 
         if self.max_candidates is None:
             effective_max_candidates = min(60, self.n_neighbors)
@@ -780,113 +664,32 @@ class NNDescent(object):
         if self.n_jobs != -1 and self.n_jobs is not None:
             numba.set_num_threads(self.n_jobs)
 
-        if isspmatrix_csr(self._raw_data):
-
-            self._is_sparse = True
-
-            if not self._raw_data.has_sorted_indices:
-                self._raw_data.sort_indices()
-
-            if metric in sparse.sparse_named_distances:
-                if metric in sparse.sparse_fast_distance_alternatives:
-                    _distance_func = sparse.sparse_fast_distance_alternatives[metric][
-                        "dist"
-                    ]
-                    self._distance_correction = (
-                        sparse.sparse_fast_distance_alternatives[metric]["correction"]
-                    )
-                else:
-                    _distance_func = sparse.sparse_named_distances[metric]
-            elif callable(metric):
-                _distance_func = metric
-            else:
-                raise ValueError(
-                    "Metric {} not supported for sparse data".format(metric)
-                )
-
-            if metric in sparse.sparse_need_n_features:
-                metric_kwds["n_features"] = self._raw_data.shape[1]
-            self._dist_args = tuple(metric_kwds.values())
-
-            # Create a partial function for distances with arguments
-            if len(self._dist_args) > 0:
-
-                dist_args = self._dist_args
-
-                @numba.njit()
-                def _partial_dist_func(ind1, data1, ind2, data2):
-                    return _distance_func(ind1, data1, ind2, data2, *dist_args)
-
-                self._distance_func = _partial_dist_func
-            else:
-                self._distance_func = _distance_func
-
-            if init_graph is None:
-                _init_graph = EMPTY_GRAPH
-            else:
-                if init_graph.shape[0] != self._raw_data.shape[0]:
-                    raise ValueError("Init graph size does not match dataset size!")
-                _init_graph = make_heap(init_graph.shape[0], self.n_neighbors)
-                _init_graph = sparse_initalize_heap_from_graph_indices(
-                    _init_graph,
-                    init_graph,
-                    self._raw_data.indptr,
-                    self._raw_data.indices,
-                    self._raw_data.data,
-                    self._distance_func,
-                )
-
-            if verbose:
-                print(ts(), "metric NN descent for", str(n_iters), "iterations")
-
-            self._neighbor_graph = sparse_nnd.nn_descent(
-                self._raw_data.indices,
-                self._raw_data.indptr,
-                self._raw_data.data,
-                self.n_neighbors,
-                self.rng_state,
-                max_candidates=effective_max_candidates,
-                dist=self._distance_func,
-                n_iters=self.n_iters,
-                delta=self.delta,
-                rp_tree_init=True,
-                leaf_array=leaf_array,
-                init_graph=_init_graph,
-                low_memory=self.low_memory,
-                verbose=verbose,
-            )
-
+        if init_graph is None:
+            _init_graph = EMPTY_GRAPH
         else:
-
-            self._is_sparse = False
-
-            if init_graph is None:
-                _init_graph = EMPTY_GRAPH
-            else:
-                if init_graph.shape[0] != self._raw_data.shape[0]:
-                    raise ValueError("Init graph size does not match dataset size!")
-                _init_graph = make_heap(init_graph.shape[0], self.n_neighbors)
-                _init_graph = initalize_heap_from_graph_indices(
-                    _init_graph, init_graph, data, self._distance_func
-                )
-
-            if verbose:
-                print(ts(), "NN descent for", str(n_iters), "iterations")
-
-            self._neighbor_graph = nn_descent(
-                self._raw_data,
-                self.n_neighbors,
-                self.rng_state,
-                effective_max_candidates,
-                self._distance_func,
-                self.n_iters,
-                self.delta,
-                low_memory=self.low_memory,
-                rp_tree_init=True,
-                init_graph=_init_graph,
-                leaf_array=leaf_array,
-                verbose=verbose,
+            if init_graph.shape[0] != self._raw_data.shape[0]:
+                raise ValueError("Init graph size does not match dataset size!")
+            _init_graph = make_heap(init_graph.shape[0], self.n_neighbors)
+            _init_graph = initalize_heap_from_graph_indices(
+                _init_graph, init_graph, data, self._distance_func
             )
+
+        if verbose:
+            print(ts(), "NN descent for", str(n_iters), "iterations")
+
+        self._neighbor_graph = nn_descent(
+            self._raw_data,
+            self.n_neighbors,
+            self.rng_state,
+            effective_max_candidates,
+            self._distance_func,
+            self.n_iters,
+            self.delta,
+            rp_tree_init=True,
+            init_graph=_init_graph,
+            leaf_array=leaf_array,
+            verbose=verbose,
+        )
 
         if np.any(self._neighbor_graph[0] < 0):
             warn(
@@ -901,10 +704,7 @@ class NNDescent(object):
         if not hasattr(self, "_search_graph"):
             self._init_search_graph()
         if not hasattr(self, "_search_function"):
-            if self._is_sparse:
-                self._init_sparse_search_function()
-            else:
-                self._init_search_function()
+            self._init_search_function()
         result = self.__dict__.copy()
         if hasattr(self, "_rp_forest"):
             del result["_rp_forest"]
@@ -918,10 +718,7 @@ class NNDescent(object):
         self._search_forest = tuple(
             [renumbaify_tree(tree) for tree in d["_search_forest"]]
         )
-        if self._is_sparse:
-            self._init_sparse_search_function()
-        else:
-            self._init_search_function()
+        self._init_search_function()
 
     def _init_search_graph(self):
 
@@ -967,48 +764,24 @@ class NNDescent(object):
                 ]
 
         nnz_pre_diversify = np.sum(self._neighbor_graph[0] >= 0)
-        if self._is_sparse:
-            if self.compressed:
-                diversified_rows, diversified_data = sparse.diversify(
-                    self._neighbor_graph[0],
-                    self._neighbor_graph[1],
-                    self._raw_data.indices,
-                    self._raw_data.indptr,
-                    self._raw_data.data,
-                    self._distance_func,
-                    self.rng_state,
-                    self.diversify_prob,
-                )
-            else:
-                diversified_rows, diversified_data = sparse.diversify(
-                    self._neighbor_graph[0].copy(),
-                    self._neighbor_graph[1].copy(),
-                    self._raw_data.indices,
-                    self._raw_data.indptr,
-                    self._raw_data.data,
-                    self._distance_func,
-                    self.rng_state,
-                    self.diversify_prob,
-                )
+        if self.compressed:
+            diversified_rows, diversified_data = diversify(
+                self._neighbor_graph[0],
+                self._neighbor_graph[1],
+                self._raw_data,
+                self._distance_func,
+                self.rng_state,
+                self.diversify_prob,
+            )
         else:
-            if self.compressed:
-                diversified_rows, diversified_data = diversify(
-                    self._neighbor_graph[0],
-                    self._neighbor_graph[1],
-                    self._raw_data,
-                    self._distance_func,
-                    self.rng_state,
-                    self.diversify_prob,
-                )
-            else:
-                diversified_rows, diversified_data = diversify(
-                    self._neighbor_graph[0].copy(),
-                    self._neighbor_graph[1].copy(),
-                    self._raw_data,
-                    self._distance_func,
-                    self.rng_state,
-                    self.diversify_prob,
-                )
+            diversified_rows, diversified_data = diversify(
+                self._neighbor_graph[0].copy(),
+                self._neighbor_graph[1].copy(),
+                self._raw_data,
+                self._distance_func,
+                self.rng_state,
+                self.diversify_prob,
+            )
 
         self._search_graph = coo_matrix(
             (self._raw_data.shape[0], self._raw_data.shape[0]), dtype=np.float32
@@ -1040,28 +813,15 @@ class NNDescent(object):
         # Reverse graph
         pre_reverse_diversify_nnz = self._search_graph.nnz
         reverse_graph = self._search_graph.transpose()
-        if self._is_sparse:
-            sparse.diversify_csr(
-                reverse_graph.indptr,
-                reverse_graph.indices,
-                reverse_graph.data,
-                self._raw_data.indptr,
-                self._raw_data.indices,
-                self._raw_data.data,
-                self._distance_func,
-                self.rng_state,
-                self.diversify_prob,
-            )
-        else:
-            diversify_csr(
-                reverse_graph.indptr,
-                reverse_graph.indices,
-                reverse_graph.data,
-                self._raw_data,
-                self._distance_func,
-                self.rng_state,
-                self.diversify_prob,
-            )
+        diversify_csr(
+            reverse_graph.indptr,
+            reverse_graph.indices,
+            reverse_graph.data,
+            self._raw_data,
+            self._distance_func,
+            self.rng_state,
+            self.diversify_prob,
+        )
         reverse_graph.eliminate_zeros()
 
         if self.verbose:
@@ -1110,10 +870,7 @@ class NNDescent(object):
         self._search_graph = self._search_graph.tocsr()
         self._search_graph.sort_indices()
 
-        if self._is_sparse:
-            self._raw_data = self._raw_data[self._vertex_order, :]
-        else:
-            self._raw_data = np.ascontiguousarray(self._raw_data[self._vertex_order, :])
+        self._raw_data = np.ascontiguousarray(self._raw_data[self._vertex_order, :])
 
         tree_order = np.argsort(self._vertex_order)
         self._search_forest = tuple(
@@ -1525,10 +1282,7 @@ class NNDescent(object):
         if not hasattr(self, "_search_graph"):
             self._init_search_graph()
         if not hasattr(self, "_search_function"):
-            if self._is_sparse:
-                self._init_sparse_search_function()
-            else:
-                self._init_search_function()
+            self._init_search_function()
         return
 
     def query(self, query_data, k=10, epsilon=0.1):
@@ -1565,35 +1319,14 @@ class NNDescent(object):
         if not hasattr(self, "_search_graph"):
             self._init_search_graph()
 
-        if not self._is_sparse:
-            # Standard case
-            if not hasattr(self, "_search_function"):
-                self._init_search_function()
+        # Standard case
+        if not hasattr(self, "_search_function"):
+            self._init_search_function()
 
-            query_data = np.asarray(query_data).astype(np.float32, order="C")
-            result = self._search_function(
-                query_data, k, epsilon, self._visited, self.search_rng_state
-            )
-        else:
-            # Sparse case
-            if not hasattr(self, "_search_function"):
-                self._init_sparse_search_function()
-
-            query_data = check_array(query_data, accept_sparse="csr", dtype=np.float32)
-            if not isspmatrix_csr(query_data):
-                query_data = csr_matrix(query_data, dtype=np.float32)
-            if not query_data.has_sorted_indices:
-                query_data.sort_indices()
-
-            result = self._search_function(
-                query_data.indices,
-                query_data.indptr,
-                query_data.data,
-                k,
-                epsilon,
-                self._visited,
-                self.search_rng_state,
-            )
+        query_data = np.asarray(query_data).astype(np.float32, order="C")
+        result = self._search_function(
+            query_data, k, epsilon, self._visited, self.search_rng_state
+        )
 
         indices, dists = deheap_sort(result)
         # Sort to input graph_data order
@@ -1616,53 +1349,46 @@ class NNDescent(object):
 
         original_order = np.argsort(self._vertex_order)
 
-        if self._is_sparse:
-            self._raw_data = sparse_vstack([self._raw_data, X])
+        self._raw_data = np.ascontiguousarray(
+            np.vstack([self._raw_data[original_order, :], X])
+        )
+
+        self.n_trees = int(np.round(self.n_trees / 3))
+        self._rp_forest = make_forest(
+            self._raw_data,
+            self.n_neighbors,
+            self.n_trees,
+            self.leaf_size,
+            rng_state,
+            current_random_state,
+            self.n_jobs,
+            self._angular_trees,
+        )
+        leaf_array = rptree_leaf_array(self._rp_forest)
+        current_graph = make_heap(self._raw_data.shape[0], self.n_neighbors)
+        init_from_neighbor_graph(
+            current_graph, self._neighbor_graph[0], self._neighbor_graph[1]
+        )
+        init_rp_tree(self._raw_data, self._distance_func, current_graph, leaf_array)
+
+        if self.max_candidates is None:
+            effective_max_candidates = min(60, self.n_neighbors)
         else:
-            self._raw_data = np.ascontiguousarray(
-                np.vstack([self._raw_data[original_order, :], X])
-            )
+            effective_max_candidates = self.max_candidates
 
-        if self._is_sparse:
-            raise NotImplementedError("Sparse update not complete yet")
-        else:
-            self.n_trees = int(np.round(self.n_trees / 3))
-            self._rp_forest = make_forest(
-                self._raw_data,
-                self.n_neighbors,
-                self.n_trees,
-                self.leaf_size,
-                rng_state,
-                current_random_state,
-                self.n_jobs,
-                self._angular_trees,
-            )
-            leaf_array = rptree_leaf_array(self._rp_forest)
-            current_graph = make_heap(self._raw_data.shape[0], self.n_neighbors)
-            init_from_neighbor_graph(
-                current_graph, self._neighbor_graph[0], self._neighbor_graph[1]
-            )
-            init_rp_tree(self._raw_data, self._distance_func, current_graph, leaf_array)
-
-            if self.max_candidates is None:
-                effective_max_candidates = min(60, self.n_neighbors)
-            else:
-                effective_max_candidates = self.max_candidates
-
-            self._neighbor_graph = nn_descent(
-                self._raw_data,
-                self.n_neighbors,
-                self.rng_state,
-                effective_max_candidates,
-                self._distance_func,
-                self.n_iters,
-                self.delta,
-                init_graph=current_graph,
-                low_memory=self.low_memory,
-                rp_tree_init=False,
-                leaf_array=np.array([[-1], [-1]]),
-                verbose=self.verbose,
-            )
+        self._neighbor_graph = nn_descent(
+            self._raw_data,
+            self.n_neighbors,
+            self.rng_state,
+            effective_max_candidates,
+            self._distance_func,
+            self.n_iters,
+            self.delta,
+            init_graph=current_graph,
+            rp_tree_init=False,
+            leaf_array=np.array([[-1], [-1]]),
+            verbose=self.verbose,
+        )
 
 
 class PyNNDescentTransformer(BaseEstimator, TransformerMixin):
@@ -1772,13 +1498,6 @@ class PyNNDescentTransformer(BaseEstimator, TransformerMixin):
         not perfect parallelism, so at several pints the algorithm will be
         single threaded.
 
-    low_memory: boolean (optional, default=False)
-        Whether to use a lower memory, but more computationally expensive
-        approach to index construction. This defaults to false as for most
-        cases it speeds index construction, but if you are having issues
-        with excessive memory use for your dataset consider setting this
-        to True.
-
     max_candidates: int (optional, default=20)
         Internally each "self-join" keeps a maximum number of candidates (
         nearest neighbors and reverse nearest neighbors) to be considered.
@@ -1827,7 +1546,6 @@ class PyNNDescentTransformer(BaseEstimator, TransformerMixin):
         tree_init=True,
         random_state=None,
         n_jobs=None,
-        low_memory=True,
         max_candidates=None,
         n_iters=None,
         early_termination_value=0.001,
@@ -1845,7 +1563,6 @@ class PyNNDescentTransformer(BaseEstimator, TransformerMixin):
         self.n_search_trees = n_search_trees
         self.tree_init = tree_init
         self.random_state = random_state
-        self.low_memory = low_memory
         self.max_candidates = max_candidates
         self.n_iters = n_iters
         self.early_termination_value = early_termination_value
@@ -1892,7 +1609,6 @@ class PyNNDescentTransformer(BaseEstimator, TransformerMixin):
             n_search_trees=self.n_search_trees,
             tree_init=self.tree_init,
             random_state=self.random_state,
-            low_memory=self.low_memory,
             max_candidates=self.max_candidates,
             n_iters=self.n_iters,
             delta=self.early_termination_value,

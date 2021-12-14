@@ -288,12 +288,10 @@ def nearest_neighbors(
         knn_search_index = NNDescent(
             X,
             n_neighbors=n_neighbors,
-            metric=metric,
             random_state=random_state,
             n_trees=n_trees,
             n_iters=n_iters,
             max_candidates=20,
-            low_memory=low_memory,
             n_jobs=n_jobs,
             verbose=verbose,
         )
