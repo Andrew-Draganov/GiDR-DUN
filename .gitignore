@@ -13,6 +13,7 @@ tex/*.log
 *.swp
 */*.swp
 umap/__pycache__
+nndescent/nndescent/__pycache__
 umap/.DS_Store
 umap/Images
 build/

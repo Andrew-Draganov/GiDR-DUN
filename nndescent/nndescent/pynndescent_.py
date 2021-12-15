@@ -8,7 +8,6 @@ import numba
 import numpy as np
 from sklearn.utils import check_random_state, check_array
 from sklearn.preprocessing import normalize
-from scipy.sparse import csr_matrix, coo_matrix, isspmatrix_csr, vstack as sparse_vstack
 
 import heapq
 

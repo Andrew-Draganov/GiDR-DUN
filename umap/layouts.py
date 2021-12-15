@@ -63,6 +63,7 @@ def rdist(x, y):
 
 def optimize_through_sampling(
     normalization,
+    sym_attraction,
     head_embedding,
     tail_embedding,
     head,
@@ -111,7 +112,8 @@ def optimize_through_sampling(
                 # ANDREW - tsne doesn't do grad clipping
                 attraction_d = clip(attractive_force * (current[d] - other[d]))
                 current[d] += attraction_d * alpha
-                other[d] -= attraction_d * alpha
+                if sym_attraction:
+                    other[d] -= attraction_d * alpha
 
             epoch_of_next_sample[i] += epochs_per_sample[i]
 
@@ -163,6 +165,7 @@ def optimize_through_sampling(
 
 def optimize_uniformly(
     normalization,
+    sym_attraction,
     head_embedding,
     tail_embedding,
     head,
@@ -206,7 +209,8 @@ def optimize_uniformly(
         for d in range(dim):
             grad_d = clip(attractive_force * (current[d] - other[d]))
             attraction[j, d] += grad_d
-            attraction[k, d] -= grad_d
+            if sym_attraction:
+                attraction[k, d] -= grad_d
 
         # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
         # ANDREW - If we are summing the effects of the forces and multiplying them
@@ -247,6 +251,8 @@ def optimize_uniformly(
 def optimize_layout_euclidean(
     optimize_method,
     normalization,
+    sym_attraction,
+    momentum,
     head_embedding,
     tail_embedding,
     head,
@@ -301,6 +307,7 @@ def optimize_layout_euclidean(
         # FIXME - clean this up!!
         grads = optimize_fn(
             normalization,
+            sym_attraction,
             head_embedding,
             tail_embedding,
             head,
