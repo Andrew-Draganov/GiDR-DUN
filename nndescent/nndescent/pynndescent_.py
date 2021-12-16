@@ -51,7 +51,7 @@ FLOAT32_EPS = np.finfo(np.float32).eps
 EMPTY_GRAPH = make_heap(1, 1)
 
 
-@numba.njit(parallel=True, cache=True)
+@numba.njit(parallel=True)
 def generate_leaf_updates(leaf_block, dist_thresholds, data, dist):
     updates = [[(-1, -1, np.inf)] for i in range(leaf_block.shape[0])]
     for n in numba.prange(leaf_block.shape[0]):
@@ -72,7 +72,7 @@ def generate_leaf_updates(leaf_block, dist_thresholds, data, dist):
     return updates
 
 
-@numba.njit(locals={"d": numba.float32, "p": numba.int32, "q": numba.int32}, cache=True)
+@numba.njit(locals={"d": numba.float32, "p": numba.int32, "q": numba.int32})
 def init_rp_tree(data, dist, current_graph, leaf_array):
     n_leaves = leaf_array.shape[0]
     block_size = 65536
@@ -115,7 +115,6 @@ def init_rp_tree(data, dist, current_graph, leaf_array):
 @numba.njit(
     fastmath=True,
     locals={"d": numba.float32, "idx": numba.int32, "i": numba.int32},
-    cache=True,
 )
 def init_random(n_neighbors, data, heap, dist, rng_state):
     for i in range(data.shape[0]):
@@ -129,7 +128,7 @@ def init_random(n_neighbors, data, heap, dist, rng_state):
     return
 
 
-@numba.njit(parallel=True, cache=True)
+@numba.njit(parallel=True)
 def generate_graph_updates(
     new_candidate_block, old_candidate_block, dist_thresholds, data, dist
 ):
@@ -165,7 +164,7 @@ def generate_graph_updates(
     return updates
 
 
-@numba.njit(cache=True)
+@numba.njit()
 def process_candidates(
     data,
     dist,
@@ -496,6 +495,7 @@ class NNDescent(object):
         leaf_size=None,
         pruning_degree_multiplier=1.5,
         diversify_prob=1.0,
+        distance_func=pynnd_dist.euclidean,
         n_search_trees=1,
         init_graph=None,
         random_state=None,
@@ -531,7 +531,7 @@ class NNDescent(object):
         self.random_state = random_state
         current_random_state = check_random_state(self.random_state)
 
-        self._distance_func = pynnd_dist.euclidean
+        self._distance_func = distance_func
         self._distance_correction = None
         self._distance_correction = np.sqrt
 

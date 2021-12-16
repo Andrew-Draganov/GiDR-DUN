@@ -17,3 +17,14 @@ float my_fmin(float a, float b) {
 float my_fmax(float a, float b) {
     return fmax(a, b);
 }
+
+// https://www.codeproject.com/Articles/69941/Best-Square-Root-Method-Algorithm-Function-Precisi
+float fastsqrt(float x)
+ {
+   unsigned int i = *(unsigned int*) &x; 
+   // adjust bias
+   i  += 127 << 23;
+   // approximation of square root
+   i >>= 1; 
+   return *(float*) &i;
+ }   

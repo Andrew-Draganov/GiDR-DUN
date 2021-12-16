@@ -46,7 +46,6 @@ point_indices_type = numba.int32[::1]
     },
     fastmath=True,
     nogil=True,
-    cache=True,
 )
 def euclidean_random_projection_split(data, indices, rng_state):
     """Given a set of ``graph_indices`` for graph_data points from ``graph_data``, create
@@ -138,7 +137,6 @@ def euclidean_random_projection_split(data, indices, rng_state):
 
 @numba.njit(
     nogil=True,
-    cache=True,
     locals={"left_node_num": numba.types.int32, "right_node_num": numba.types.int32},
 )
 def make_euclidean_tree(
@@ -196,7 +194,7 @@ def make_euclidean_tree(
     return
 
 
-@numba.njit(nogil=True, cache=True)
+@numba.njit(nogil=True)
 def make_dense_tree(data, rng_state, leaf_size=30):
     indices = np.arange(data.shape[0]).astype(np.int32)
 
@@ -235,7 +233,6 @@ def make_dense_tree(data, rng_state, leaf_size=30):
         "dim": numba.types.intp,
         "d": numba.types.uint16,
     },
-    cache=True,
 )
 def select_side(hyperplane, offset, point, rng_state):
     margin = offset
@@ -268,7 +265,6 @@ def select_side(hyperplane, offset, point, rng_state):
         ),
     ],
     locals={"node": numba.types.uint32, "side": numba.types.boolean},
-    cache=True,
 )
 def search_flat_tree(point, hyperplanes, offsets, children, indices, rng_state):
     node = 0
@@ -331,7 +327,7 @@ def make_forest(
     return tuple(result)
 
 
-@numba.njit(nogil=True, cache=True)
+@numba.njit(nogil=True)
 def get_leaves_from_tree(tree):
     n_leaves = 0
     for i in range(len(tree.children)):
@@ -403,7 +399,7 @@ def recursive_convert(
         return node_num, leaf_start
 
 
-@numba.njit(cache=True)
+@numba.njit()
 def num_nodes_and_leaves(tree):
     n_nodes = 0
     n_leaves = 0
@@ -417,7 +413,7 @@ def num_nodes_and_leaves(tree):
     return n_nodes, n_leaves
 
 
-@numba.njit(cache=True)
+@numba.njit()
 def dense_hyperplane_dim(hyperplanes):
     for i in range(len(hyperplanes)):
         if hyperplanes[i].shape[0] > 1:
@@ -459,7 +455,6 @@ def renumbaify_tree(tree):
         "result": numba.float32,
         "i": numba.uint32,
     },
-    cache=True,
 )
 def score_tree(tree, neighbor_indices, data, rng_state):
     result = 0.0
@@ -476,7 +471,7 @@ def score_tree(tree, neighbor_indices, data, rng_state):
         result += numba.float32(intersection.shape[0] > 1)
     return result / numba.float32(neighbor_indices.shape[0])
 
-@numba.njit(nogil=True, parallel=True, locals={"node": numba.int32}, cache=True)
+@numba.njit(nogil=True, parallel=True, locals={"node": numba.int32})
 def score_linked_tree(tree, neighbor_indices):
     result = 0.0
     n_nodes = len(tree.children)

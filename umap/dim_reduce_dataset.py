@@ -1,8 +1,9 @@
 import time
+from tqdm import tqdm
 import numpy as np
 from tensorflow import keras as tfk
 import tensorflow_datasets as tfds
-from umap_ import UMAP
+from umap_ import UniformUmap
 from distances import make_dist_plots, remove_diag
 import argparse
 from sklearn.manifold import TSNE
@@ -14,7 +15,7 @@ from matplotlib import pyplot as plt
 parser = argparse.ArgumentParser()
 parser.add_argument(
     '--dataset',
-    choices=['mnist', 'cifar', 'swiss_roll', 'coil'],
+    choices=['mnist', 'cifar', 'swiss_roll', 'coil', 'google_news'],
     default='mnist',
     help='Which dataset to apply algorithm to'
 )
@@ -71,6 +72,11 @@ parser.add_argument(
     help='Whether to attract along both ends of a nearest neighbor edge'
 )
 parser.add_argument(
+    '--angular',
+    action='store_true',
+    help='When present, use cosine similarity metric on high-dimensional points'
+)
+parser.add_argument(
     '--momentum',
     action='store_true',
     help='Whether to perform mometnum gradient descent'
@@ -116,7 +122,24 @@ elif args.dataset == 'cifar':
 elif args.dataset == 'swiss_roll':
     num_samples = 50000
     points, _ = make_swiss_roll(n_samples=num_samples, noise=0.01)
-    labels = np.ones([num_samples])
+    labels = np.arange(num_samples)
+elif args.dataset == 'google_news':
+    import os, csv
+    # To run this dataset, download https://data.world/jaredfern/googlenews-reduced-200-d
+    #   and place it into the directory 'datasets'
+    file = open(os.path.join('datasets', 'gnews_mod.csv'), 'r')
+    reader = csv.reader(file)
+    num_points = min(args.num_points, 350000)
+    points = np.zeros([num_points, 200])
+    for i, line in tqdm(enumerate(reader), total=num_points):
+        # First line is column descriptions
+        if i == 0:
+            continue
+        if i > num_points:
+            break
+        for j, element in enumerate(line[1:]): # First column is string text
+            points[i-1, j] = float(element)
+    labels = np.ones([num_points])
 elif args.dataset == 'coil':
     num_samples = 7200
     dataset, _ = tfds.load(
@@ -153,7 +176,7 @@ else:
 
 if args.dr_algorithm == 'uniform_umap':
     # FIXME - change my umap code to have a different name/constructor
-    dr = UMAP(
+    dr = UniformUmap(
             n_neighbors=args.n_neighbors,
             n_epochs=args.n_epochs,
             random_state=12345, # Comment this out to turn on parallelization
@@ -164,6 +187,7 @@ if args.dr_algorithm == 'uniform_umap':
             negative_sample_rate=args.neg_sample_rate,
             normalization=args.normalization,
             sym_attraction=args.sym_attraction,
+            euclidean=not args.angular,
             momentum=args.momentum,
             a=a,
             b=b,
@@ -198,5 +222,5 @@ print('Total time took {:.3f} seconds'.format(end - start))
 if args.make_plots:
     make_dist_plots(points, projection, labels, args.dr_algorithm, args.dataset)
 
-plt.scatter(projection[:, 0], projection[:, 1], c=labels, s=1)
+plt.scatter(projection[:, 0], projection[:, 1], c=labels, s=0.1, alpha=0.5)
 plt.show()

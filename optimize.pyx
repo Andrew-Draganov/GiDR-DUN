@@ -3,9 +3,8 @@ cimport numpy as np
 cimport cython
 from libcpp cimport bool
 from libc.stdio cimport printf
+from libc.math cimport sqrt
 from libc.stdlib cimport rand
-from libc.math cimport pow
-from libc.math cimport sqrt, log
 from libc.stdlib cimport malloc, free
 from cython.parallel cimport prange, parallel
 
@@ -19,6 +18,8 @@ cdef extern from "fastpow.c" nogil:
     float fmax "my_fmax" (float, float)
 cdef extern from "fastpow.c" nogil:
     float fmin "my_fmin" (float, float)
+cdef extern from "fastpow.c" nogil:
+    float fastsqrt "fastsqrt" (float)
 
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
@@ -26,18 +27,8 @@ ctypedef np.int32_t DTYPE_INT
 cdef float clip(float val, float lower, float upper) nogil:
     return fmax(lower, fmin(val, upper))
 
-cdef float rdist(float* x, float* y, int dim):
-    """Reduced Euclidean distance.
-
-    Parameters
-    ----------
-    x: array of shape (embedding_dim,)
-    y: array of shape (embedding_dim,)
-
-    Returns
-    -------
-    The squared euclidean distance between x and y
-    """
+cdef float euc_dist(float* x, float* y, int dim):
+    """ squared euclidean distance between x and y """
     cdef float result = 0.0
     cdef float diff = 0
     cdef int i
@@ -46,6 +37,21 @@ cdef float rdist(float* x, float* y, int dim):
         result += diff * diff
 
     return result
+
+cdef float ang_dist(float* x, float* y, int dim):
+    """ cosine distance between vectors x and y """
+    cdef float result = 0.0
+    cdef float x_len  = 0.0
+    cdef float y_len  = 0.0
+    cdef float eps = 0.0001
+    cdef int i = 0
+    for i in range(dim):
+        result += x[i] * y[i]
+        x_len += x[i] * x[i]
+        y_len += y[i] * y[i]
+    if x_len < eps or y_len < eps:
+        return 1
+    return result / (sqrt(x_len * y_len))
 
 ###################
 ##### KERNELS #####
@@ -193,7 +199,7 @@ cdef void _cy_umap_sampling(
                 y1[d] = head_embedding[j, d]
                 y2[d] = tail_embedding[k, d]
             # ANDREW - optimize positive force for each edge
-            dist_squared = rdist(y1, y2, dim)
+            dist_squared = euc_dist(y1, y2, dim)
             attractive_force = attractive_force_func(
                 normalization,
                 dist_squared,
@@ -222,7 +228,7 @@ cdef void _cy_umap_sampling(
                 k = rand() % n_vertices
                 for d in range(dim):
                     y2[d] = tail_embedding[k, d]
-                dist_squared = rdist(y1, y2, dim)
+                dist_squared = euc_dist(y1, y2, dim)
                 rep_outputs = repulsive_force_func(
                     normalization,
                     dist_squared,
@@ -335,7 +341,7 @@ cdef void _cy_umap_uniformly(
         for d in range(dim):
             y1[d] = head_embedding[j, d]
             y2[d] = tail_embedding[k, d]
-        dist_squared = rdist(y1, y2, dim)
+        dist_squared = euc_dist(y1, y2, dim)
 
         # t-SNE early exaggeration
         if i_epoch < 50 and normalization == 0:
@@ -362,7 +368,8 @@ cdef void _cy_umap_uniformly(
         k = rand() % n_vertices
         for d in range(dim):
             y2[d] = tail_embedding[k, d]
-        dist_squared = rdist(y1, y2, dim)
+        dist_squared = euc_dist(y1, y2, dim)
+
         rep_outputs = repulsive_force_func(
             normalization,
             dist_squared,
@@ -492,7 +499,7 @@ cdef void calculate_barnes_hut(
         for d in range(dim):
             y1[d] = head_embedding[j, d]
             y2[d] = tail_embedding[k, d]
-        dist_squared = rdist(y1, y2, dim)
+        dist_squared = euc_dist(y1, y2, dim)
         attractive_force = attractive_force_func(
             normalization,
             dist_squared,

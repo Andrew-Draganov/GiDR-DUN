@@ -38,6 +38,7 @@ from spectral import spectral_layout
 from layouts import optimize_layout_euclidean
 # from pynndescent import NNDescent
 from nndescent.pynndescent_ import NNDescent
+import nndescent.distances as pynnd_dist
 
 locale.setlocale(locale.LC_NUMERIC, "C")
 
@@ -220,7 +221,7 @@ def nearest_neighbors(
     X,
     n_neighbors,
     metric,
-    angular,
+    euclidean,
     random_state,
     low_memory=True,
     use_pynndescent=True,
@@ -241,9 +242,6 @@ def nearest_neighbors(
 
     metric: string or callable
         The metric to use for the computation.
-
-    angular: bool
-        Whether to use angular rp trees in NN approximation.
 
     random_state: np.random state
         The random state to use for approximate NN computations.
@@ -284,12 +282,17 @@ def nearest_neighbors(
         n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
         n_iters = max(5, int(round(np.log2(X.shape[0]))))
 
-        # ANDREW - t-SNE does NOT use this to find nearest neighbors
+        if euclidean:
+            distance_func = pynnd_dist.euclidean
+        else:
+            distance_func = pynnd_dist.cosine
+
         knn_search_index = NNDescent(
             X,
             n_neighbors=n_neighbors,
             random_state=random_state,
             n_trees=n_trees,
+            distance_func=distance_func,
             n_iters=n_iters,
             max_candidates=20,
             n_jobs=n_jobs,
@@ -407,11 +410,11 @@ def fuzzy_simplicial_set(
     metric,
     knn_indices=None,
     knn_dists=None,
-    angular=False,
     local_connectivity=1.0,
     verbose=False,
     return_dists=True,
     pseudo_distance=True,
+    euclidean=True,
     tsne_symmetrization=False
 ):
     """Given a set of data X, a neighborhood size, and a measure of distance
@@ -456,11 +459,6 @@ def fuzzy_simplicial_set(
         an array with the distances of the k-nearest neighbors as a row for
         each data point.
 
-    angular: bool (optional, default False)
-        Whether to use angular/cosine distance for the random projection
-        forest for seeding NN-descent to determine approximate nearest
-        neighbors.
-
     local_connectivity: int (optional, default 1)
         The local connectivity required -- i.e. the number of nearest
         neighbors that should be assumed to be connected at a local level.
@@ -491,7 +489,7 @@ def fuzzy_simplicial_set(
             X,
             n_neighbors,
             metric,
-            angular,
+            euclidean,
             random_state,
             verbose=verbose,
         )
@@ -906,7 +904,7 @@ def find_ab_params(spread, min_dist):
     return params[0], params[1]
 
 
-class UMAP(BaseEstimator):
+class UniformUmap(BaseEstimator):
     """Uniform Manifold Approximation and Projection
 
     Finds a low dimensional embedding of the data that approximates
@@ -1041,6 +1039,7 @@ class UMAP(BaseEstimator):
         self,
         n_neighbors=15,
         n_components=2,
+        # FIXME - we don't actually use this
         metric="euclidean",
         output_metric="euclidean",
         n_epochs=None,
@@ -1052,6 +1051,7 @@ class UMAP(BaseEstimator):
         normalization='umap',
         sym_attraction=True,
         momentum=False,
+        euclidean=True,
         min_dist=0.1,
         spread=1.0,
         low_memory=True,
@@ -1086,6 +1086,7 @@ class UMAP(BaseEstimator):
         self.optimize_method = optimize_method
         self.normalization = normalization
         self.sym_attraction = sym_attraction
+        self.euclidean = euclidean
         self.momentum = momentum
 
         self.spread = spread
@@ -1346,6 +1347,7 @@ class UMAP(BaseEstimator):
                 self.local_connectivity,
                 self.verbose,
                 pseudo_distance=self.pseudo_distance,
+                euclidean=self.euclidean,
                 tsne_symmetrization=self.tsne_symmetrization
             )
             # Report the number of vertices with degree 0 in our our umap.graph_
@@ -1384,6 +1386,7 @@ class UMAP(BaseEstimator):
                 self.local_connectivity,
                 self.verbose,
                 pseudo_distance=self.pseudo_distance,
+                euclidean=self.euclidean,
                 tsne_symmetrization=self.tsne_symmetrization
             )
             # Report the number of vertices with degree 0 in our our umap.graph_
@@ -1405,6 +1408,7 @@ class UMAP(BaseEstimator):
                 X[index],
                 self._n_neighbors,
                 self.metric,
+                self.euclidean,
                 random_state,
                 self.low_memory,
                 use_pynndescent=True,
@@ -1427,6 +1431,7 @@ class UMAP(BaseEstimator):
                 self.local_connectivity,
                 self.verbose,
                 pseudo_distance=self.pseudo_distance,
+                euclidean=self.euclidean,
                 tsne_symmetrization=self.tsne_symmetrization
             )
             # Report the number of vertices with degree 0 in our our umap.graph_
@@ -1594,7 +1599,7 @@ class UMAP(BaseEstimator):
             indices = submatrix(indices, indices_sorted, self._n_neighbors)
             dists = submatrix(dmat_shortened, indices_sorted, self._n_neighbors)
         else:
-            epsilon = 0.24 if self._knn_search_index._angular_trees else 0.12
+            epsilon = 0.12
             indices, dists = self._knn_search_index.query(
                 X, self.n_neighbors, epsilon=epsilon
             )

@@ -33,7 +33,7 @@ def make_dist_plots(x_train, projection, y_train, alg_str, dataset_str):
     new_reshaped = np.reshape(new_dists, -1)
 
     print('\t- Saving dim reduction output...')
-    plt.scatter(projection[:, 0], projection[:, 1], c=y_train, s=1)
+    plt.scatter(projection[:, 0], projection[:, 1], c=y_train, s=0.1, alpha=0.5)
     img_path = os.path.join(image_dir, '%s_output.png' % alg_str)
     plt.savefig(img_path)
 
