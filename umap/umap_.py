@@ -34,6 +34,7 @@ from utils import (
     csr_unique,
     fast_knn_indices,
 )
+from pytorch_optimize import torch_optimize_layout
 from spectral import spectral_layout
 from layouts import optimize_layout_euclidean
 # from pynndescent import NNDescent
@@ -506,7 +507,12 @@ def fuzzy_simplicial_set(
     )
 
     rows, cols, vals, dists = compute_membership_strengths(
-        knn_indices, knn_dists, sigmas, rhos, return_dists, pseudo_distance=pseudo_distance
+        knn_indices,
+        knn_dists,
+        sigmas,
+        rhos,
+        return_dists,
+        pseudo_distance=pseudo_distance
     )
 
     result = scipy.sparse.coo_matrix(
@@ -646,8 +652,6 @@ def simplicial_set_embedding(
 
     parallel: bool (optional, default False)
         Whether to run the computation using numba parallel.
-        Running in parallel is non-deterministic, and is not used
-        if a random seed has been set, to ensure reproducibility.
 
     verbose: bool (optional, default False)
         Whether to report information on the current progress of the algorithm.
@@ -737,7 +741,7 @@ def simplicial_set_embedding(
     rng_state = random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
 
     print('optimizing layout...')
-    embedding = _optimize_layout_euclidean(
+    embedding = torch_optimize_layout(
         optimize_method,
         normalization,
         sym_attraction,
@@ -752,11 +756,7 @@ def simplicial_set_embedding(
         epochs_per_sample,
         a,
         b,
-        rng_state,
         initial_alpha,
-        negative_sample_rate,
-        parallel=parallel,
-        verbose=verbose,
     )
 
     return embedding, {}

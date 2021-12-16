@@ -329,10 +329,10 @@ cdef void _cy_umap_uniformly(
     cdef float grad_d = 0.0
     cdef (float, float) rep_outputs
     cdef int n_edges = int(epochs_per_sample.shape[0])
-    cdef float average_weight = 0.0
+    cdef float _average_weight = 0.0
     for i in range(weights.shape[0]):
         average_weight += weights[i]
-    average_weight /= n_edges
+    _average_weight /= n_edges
 
     for edge in range(n_edges):
         # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
@@ -346,8 +346,10 @@ cdef void _cy_umap_uniformly(
         # t-SNE early exaggeration
         if i_epoch < 50 and normalization == 0:
             edge_weight = weights[edge] * 4
+            average_weight = average_weight * 4
         else:
             edge_weight = weights[edge]
+            average_weight = _average_weight
 
         # Optimize positive force for each edge
         attractive_force = attractive_force_func(
