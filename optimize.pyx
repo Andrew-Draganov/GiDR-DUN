@@ -68,6 +68,7 @@ cdef float umap_attraction_grad(float dist_squared, float a, float b):
 cdef float umap_repulsion_grad(float dist_squared, float a, float b):
     cdef float phi_ijZ = 0.0
     phi_ijZ = 2.0 * b
+    # FIXME - doing fastpow(dist_squared, b) twice! Pass into function
     phi_ijZ /= (0.001 + dist_squared) * (a * fastpow(dist_squared, b) + 1)
     return phi_ijZ
 
@@ -106,6 +107,7 @@ cdef (float, float) tsne_repulsive_force(
         float cell_size,
         float Z
     ):
+    # Repeating kernel calculations
     cdef float kernel = kernel_function(dist_squared, a, b)
     Z += cell_size * kernel # Collect the q_ij's contributions into Z
     cdef float repulsive_force = cell_size * kernel * kernel
@@ -331,7 +333,7 @@ cdef void _cy_umap_uniformly(
     cdef int n_edges = int(epochs_per_sample.shape[0])
     cdef float _average_weight = 0.0
     for i in range(weights.shape[0]):
-        average_weight += weights[i]
+        _average_weight += weights[i]
     _average_weight /= n_edges
 
     for edge in range(n_edges):
@@ -346,7 +348,7 @@ cdef void _cy_umap_uniformly(
         # t-SNE early exaggeration
         if i_epoch < 50 and normalization == 0:
             edge_weight = weights[edge] * 4
-            average_weight = average_weight * 4
+            average_weight = _average_weight * 4
         else:
             edge_weight = weights[edge]
             average_weight = _average_weight

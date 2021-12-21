@@ -222,5 +222,28 @@ print('Total time took {:.3f} seconds'.format(end - start))
 if args.make_plots:
     make_dist_plots(points, projection, labels, args.dr_algorithm, args.dataset)
 
-plt.scatter(projection[:, 0], projection[:, 1], c=labels, s=0.1, alpha=0.5)
+# count = 0
+# base_Z = 0
+# scaled_Z = 0
+# scalar = 3
+# laurent = 0
+# taylor = 0
+# for i, x in tqdm(enumerate(points), total=args.num_points):
+#     for j, y in enumerate(points):
+#         if i != j:
+#             dist = np.sum(np.square(x - y))
+#             if dist < 2:
+#                 count += 1
+#             base_Z += 1 / (1 + dist)
+#             scaled_Z += 1 / (1 + scalar**2 * dist)
+#             laurent += 1 / (scalar * dist) - 1 / (scalar**2 * dist**2) + 1/(scalar**3 * dist**3)
+#             taylor += 1 - (scalar * dist) + (scalar**2 * dist**2) - (scalar**3 * dist**3)
+# 
+# print('Original Z is {}'.format(base_Z))
+# print('After scaling the points by {}, the new Z is {}'.format(scalar, scaled_Z))
+# print('The Laurent series approximation for the scaled Z is {}'.format(laurent))
+# print('The Taylor series approximation for the scaled Z is {}'.format(taylor))
+# print('Only {} pairs of points have distance < 2'.format(count))
+
+plt.scatter(projection[:, 0], projection[:, 1], c=labels, s=0.1, alpha=0.8)
 plt.show()
