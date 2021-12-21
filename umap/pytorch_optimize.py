@@ -15,7 +15,7 @@ def umap_attr_forces(dist_squared, a, b, edge_weights):
     edge_forces = umap_attract_grad(dist_squared, a, b)
     return edge_forces * edge_weights
 
-def umap_repel_forces(dist_squared, a, b, average_weight,):
+def umap_repel_forces(dist_squared, a, b, average_weight):
     kernels = umap_repel_grad(dist_squared, a, b)
     grads = kernels * (1 - average_weight)
     return (grads, 0)
@@ -30,7 +30,7 @@ def tsne_attr_forces(dist_squared, a, b, edge_weights):
     edge_forces = tsne_kernel(dist_squared, a, b)
     return edge_forces * edge_weights
 
-def tsne_repel_forces(dist_squared, a, b, average_weight,):
+def tsne_repel_forces(dist_squared, a, b, average_weight):
     kernel = tsne_kernel(dist_squared, a, b)
     Z = torch.sum(kernel) # Collect the q_ij's contributions into Z
     grads = kernel * kernel
@@ -102,6 +102,10 @@ def torch_optimize_layout(
     alpha,
     verbose=True
 ):
+    if normalization == 'umap':
+        normalization = 0
+    else:
+        normalization = 1
     n_edges = weights.shape[0]
     n_points = head_embedding.shape[0]
     weights = torch.from_numpy(weights)
@@ -113,49 +117,30 @@ def torch_optimize_layout(
     forces = torch.zeros_like(head_embedding)
 
     # Perform weight scaling on high-dimensional relationships
-    if normalization == 0:
-        weights = weights / torch.mean(weights)
+    if normalization:
+        weights = weights / torch.sum(weights)
         initial_alpha = alpha * 200
     else:
         initial_alpha = alpha
     average_weight = torch.mean(weights)
 
-    # optimizer = torch.optim.SGD(
-    #     [{'params': head_embedding}],
-    #     lr=initial_alpha,
-    #     momentum=0.9 * momentum # momentum variable is a 0/1 integer
-    # )
-    # if sym_attraction:
-    #     tail_embedding = torch.tensor(tail_embedding)
-    # else:
-    #     # FIXME - this will NOT let you do .fit() -> .transform()
-    #     tail_embedding = torch.from_numpy(tail_embedding)
-
-    # lr_scheduler = torch.optim.lr_scheduler.LinearLR(
-    #     optimizer,
-    #     start_factor=1.0,
-    #     end_factor=0.0,
-    #     total_iters=n_epochs
-    # )
-
-    if normalization == 'umap':
-        attr_force_func = umap_attr_forces
-        rep_force_func = umap_repel_forces
-    else:
+    if normalization:
         attr_force_func = tsne_attr_forces
         rep_force_func = tsne_repel_forces
+    else:
+        attr_force_func = umap_attr_forces
+        rep_force_func = umap_repel_forces
     attr_forces = torch.zeros_like(head_embedding)
     rep_forces = torch.zeros_like(head_embedding)
 
     for i_epoch in range(n_epochs):
-        # optimizer.zero_grad()
         # t-SNE early exaggeration
-        # if i_epoch == 0 and normalization == 0:
-        #     average_weight *= 4
-        #     weights *= 4
-        # elif i_epoch == 50 and normalization == 0:
-        #     weights /= 4
-        #     average_weight /= 4
+        if i_epoch == 0 and normalization == 0:
+            average_weight *= 4
+            weights *= 4
+        elif i_epoch == 50 and normalization == 0:
+            weights /= 4
+            average_weight /= 4
 
         points = head_embedding[head]
         nearest_neighbors = tail_embedding[tail]
@@ -184,13 +169,12 @@ def torch_optimize_layout(
         rep_grads = torch.clamp(torch.unsqueeze(rep_grads, 1) * rep_vectors, -4, 4)
         rep_forces = rep_forces.index_add(0, head, rep_grads)
 
-        if normalization == 0:
+        if normalization:
             rep_forces *= 4 * a * b / Z
             attr_forces *= -4 * a * b
 
         lr = initial_alpha * (1.0 - float(i_epoch) / n_epochs)
-        # forces = forces * 0.9 * float(momentum) + (attr_forces + rep_forces)
-        forces = attr_forces + rep_forces
+        forces = forces * 0.9 * float(momentum) + (attr_forces + rep_forces)
         head_embedding += forces * lr
 
         # linearly decaying learning rate
@@ -209,4 +193,3 @@ def torch_optimize_layout(
             print("Completed ", i_epoch, " / ", n_epochs, "epochs")
 
     return head_embedding.detach().numpy()
-
