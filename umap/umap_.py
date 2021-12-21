@@ -572,7 +572,7 @@ def make_epochs_per_sample(weights, n_epochs):
 
 def simplicial_set_embedding(
     optimize_method,
-    normalization,
+    normalized,
     sym_attraction,
     momentum,
     data,
@@ -741,9 +741,9 @@ def simplicial_set_embedding(
     rng_state = random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
 
     print('optimizing layout...')
-    embedding = torch_optimize_layout(
+    embedding = _optimize_layout_euclidean(
         optimize_method,
-        normalization,
+        normalized,
         sym_attraction,
         momentum,
         embedding,
@@ -756,7 +756,10 @@ def simplicial_set_embedding(
         epochs_per_sample,
         a,
         b,
+        rng_state,
         initial_alpha,
+        negative_sample_rate,
+        verbose
     )
 
     return embedding, {}
@@ -764,7 +767,7 @@ def simplicial_set_embedding(
 
 def _optimize_layout_euclidean(
         optimize_method,
-        normalization,
+        normalized,
         sym_attraction,
         momentum,
         head_embedding,
@@ -781,59 +784,40 @@ def _optimize_layout_euclidean(
         initial_alpha,
         negative_sample_rate,
         parallel=False,
-        verbose=False,
+        verbose=True,
     ):
+    if normalized == 'umap':
+        normalized = 0
+    else:
+        normalized = 1
     weights = weights.astype(np.float32)
+    args = {
+        'optimize_method': optimize_method,
+        'normalized': normalized,
+        'sym_attraction': int(sym_attraction),
+        'momentum': int(momentum),
+        'head_embedding': head_embedding,
+        'tail_embedding': tail_embedding,
+        'head': head,
+        'tail': tail,
+        'weights': weights,
+        'n_epochs': n_epochs,
+        'n_vertices': n_vertices,
+        'epochs_per_sample': epochs_per_sample,
+        'a': a,
+        'b': b,
+        'alpha': initial_alpha,
+        'negative_sample_rate': negative_sample_rate,
+        'verbose': verbose
+    }
     start = time.time()
     if 'cy' in optimize_method:
         import optimize
-        if normalization == 'umap':
-            normalization = 1
-        else:
-            normalization = 0
-        sym_attraction = int(sym_attraction)
-        momentum = int(momentum)
-        embedding = optimize.cy_optimize_layout(
-            optimize_method,
-            normalization,
-            sym_attraction,
-            momentum,
-            head_embedding,
-            tail_embedding,
-            head,
-            tail,
-            weights,
-            n_epochs,
-            n_vertices,
-            epochs_per_sample,
-            a,
-            b,
-            initial_alpha,
-            negative_sample_rate,
-            verbose=verbose
-        )
+        embedding = optimize.cy_optimize_layout(**args)
+    elif 'torch' in optimize_method:
+        embedding = torch_optimize_layout(**args)
     else:
-        embedding = optimize_layout_euclidean(
-            optimize_method,
-            normalization,
-            sym_attraction,
-            momentum,
-            head_embedding,
-            tail_embedding,
-            head,
-            tail,
-            weights,
-            n_epochs,
-            n_vertices,
-            epochs_per_sample,
-            a,
-            b,
-            rng_state,
-            initial_alpha,
-            negative_sample_rate,
-            parallel=parallel,
-            verbose=verbose,
-        )
+        embedding = optimize_layout_euclidean(**args)
     end = time.time()
     print('Optimization took {:.3f} seconds'.format(end - start))
     return embedding
@@ -1048,7 +1032,7 @@ class UniformUmap(BaseEstimator):
         pseudo_distance=True,
         tsne_symmetrization=False,
         optimize_method='umap_sampling',
-        normalization='umap',
+        normalized='umap',
         sym_attraction=True,
         momentum=False,
         euclidean=True,
@@ -1084,7 +1068,7 @@ class UniformUmap(BaseEstimator):
         self.tsne_symmetrization = tsne_symmetrization
         self.pseudo_distance = pseudo_distance
         self.optimize_method = optimize_method
-        self.normalization = normalization
+        self.normalized = normalized
         self.sym_attraction = sym_attraction
         self.euclidean = euclidean
         self.momentum = momentum
@@ -1479,7 +1463,7 @@ class UniformUmap(BaseEstimator):
         """
         return simplicial_set_embedding(
             self.optimize_method,
-            self.normalization,
+            self.normalized,
             self.sym_attraction,
             self.momentum,
             X,

@@ -51,6 +51,7 @@ parser.add_argument(
 parser.add_argument(
     '--optimize-method',
     choices=[
+        'pytorch',
         'umap_sampling',
         'umap_uniform',
         'cy_barnes_hut',
@@ -185,7 +186,7 @@ if args.dr_algorithm == 'uniform_umap':
             tsne_symmetrization=args.tsne_symmetrization,
             optimize_method=args.optimize_method,
             negative_sample_rate=args.neg_sample_rate,
-            normalization=args.normalization,
+            normalized=args.normalization,
             sym_attraction=args.sym_attraction,
             euclidean=not args.angular,
             momentum=args.momentum,
