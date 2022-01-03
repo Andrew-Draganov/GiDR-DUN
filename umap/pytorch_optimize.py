@@ -62,9 +62,10 @@ def torch_optimize_layout(
     epochs_per_sample,
     a,
     b,
-    alpha,
+    initial_lr,
     negative_sample_rate,
-    verbose=True
+    verbose=True,
+    **kwargs
 ):
     a = torch.tensor(a)
     b = torch.tensor(b)
@@ -81,9 +82,7 @@ def torch_optimize_layout(
     # Perform weight scaling on high-dimensional relationships
     if normalized:
         weights = weights / torch.sum(weights)
-        initial_alpha = alpha * 200
-    else:
-        initial_alpha = alpha
+        initial_lr *= 200
     average_weight = torch.mean(weights)
 
     if normalized:
@@ -98,10 +97,10 @@ def torch_optimize_layout(
     # Gradient descent loop
     for i_epoch in range(n_epochs):
         # t-SNE early exaggeration
-        if i_epoch == 0 and normalized == 0:
+        if i_epoch == 0 and normalized:
             average_weight *= 4
             weights *= 4
-        elif i_epoch == 50 and normalized == 0:
+        elif i_epoch == 50 and normalized:
             weights /= 4
             average_weight /= 4
 
@@ -141,7 +140,7 @@ def torch_optimize_layout(
             attr_forces *= -4 * a * b
 
         # Momentum gradient descent
-        lr = initial_alpha * (1.0 - float(i_epoch) / n_epochs)
+        lr = initial_lr * (1.0 - float(i_epoch) / n_epochs)
         forces = forces * 0.9 * float(momentum) + (attr_forces + rep_forces)
         head_embedding += forces * lr
 

@@ -62,10 +62,9 @@ parser.add_argument(
     help='Which optimization algorithm to use'
 )
 parser.add_argument(
-    '--normalization',
-    choices=['tsne', 'umap'],
-    default='umap',
-    help='Whether to use UMAP or tSNE normalization'
+    '--normalized',
+    action='store_true',
+    help='If true, normalize high- and low-dimensional pairwise likelihood matrices'
 )
 parser.add_argument(
     '--sym-attraction',
@@ -186,7 +185,7 @@ if args.dr_algorithm == 'uniform_umap':
             tsne_symmetrization=args.tsne_symmetrization,
             optimize_method=args.optimize_method,
             negative_sample_rate=args.neg_sample_rate,
-            normalized=args.normalization,
+            normalized=int(args.normalized),
             sym_attraction=args.sym_attraction,
             euclidean=not args.angular,
             momentum=args.momentum,

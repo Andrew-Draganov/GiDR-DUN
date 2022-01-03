@@ -32,29 +32,28 @@ def kernel_function(dist_squared, a, b):
 @numba.njit()
 def umap_p_scaling(
         weights,
-        initial_alpha
+        initial_lr
     ):
-    return weights, initial_alpha
+    return weights, initial_lr
 
 @numba.njit()
 def tsne_p_scaling(
         weights,
-        initial_alpha
+        initial_lr
     ):
     # FIXME - add early exaggeration!!
-    return weights / np.sum(weights), initial_alpha * 200
+    return weights / np.sum(weights), initial_lr * 200
 
 @numba.njit()
 def p_scaling(
-        normalization,
+        normalized,
         weights,
-        initial_alpha
+        initial_lr
     ):
-    if normalization == 'umap':
+    if not normalized:
         # umap doesn't scale P_ij weights
-        return umap_p_scaling(weights, initial_alpha)
-    assert normalization == 'tsne'
-    return tsne_p_scaling(weights, initial_alpha)
+        return umap_p_scaling(weights, initial_lr)
+    return tsne_p_scaling(weights, initial_lr)
 
 
 @numba.njit()
@@ -89,16 +88,15 @@ def tsne_repulsive_force(
 
 @numba.njit()
 def attractive_force(
-        normalization,
+        normalized,
         dist_squared,
         a,
         b,
         edge_weight
     ):
-    if normalization == 'umap':
+    if not normalized:
         edge_force = umap_attraction_grad(dist_squared, a, b)
     else:
-        assert normalization == 'tsne'
         edge_force = kernel_function(dist_squared, a, b)
 
     # FIXME FIXME FIXME
@@ -107,7 +105,7 @@ def attractive_force(
 
 @numba.njit()
 def repulsive_force(
-        normalization,
+        normalized,
         dist_squared,
         a,
         b,
@@ -115,7 +113,7 @@ def repulsive_force(
         average_weight,
         Z
     ):
-    if normalization == 'umap':
+    if not normalized:
         return umap_repulsive_force(
             dist_squared,
             a,
@@ -123,7 +121,6 @@ def repulsive_force(
             cell_size,
             average_weight
         )
-    assert normalization == 'tsne'
     return tsne_repulsive_force(
         dist_squared,
         a,
@@ -144,14 +141,13 @@ def tsne_grad_scaling(attraction, repulsion, Z):
 
 @numba.njit()
 def grad_scaling(
-        normalization,
+        normalized,
         attraction,
         repulsion,
         Z,
     ):
-    if normalization == 'umap':
+    if not normalized:
         return umap_grad_scaling(attraction, repulsion)
-    assert normalization == 'tsne'
     return tsne_grad_scaling(attraction, repulsion, Z)
 
 

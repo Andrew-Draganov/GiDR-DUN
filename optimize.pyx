@@ -27,6 +27,11 @@ ctypedef np.int32_t DTYPE_INT
 cdef float clip(float val, float lower, float upper) nogil:
     return fmax(lower, fmin(val, upper))
 
+cdef float repel_clip(float val, float scalar, float lower, float upper) nogil:
+    if val > 0.0:
+        return clip(val * scalar, lower, upper)
+    return 4.0
+
 cdef float euc_dist(float* x, float* y, int dim):
     """ squared euclidean distance between x and y """
     cdef float result = 0.0
@@ -156,6 +161,7 @@ cdef (float, float) repulsive_force_func(
 @cython.cdivision(True)
 cdef void _cy_umap_sampling(
     int normalized,
+    int sym_attraction,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
     np.ndarray[DTYPE_INT, ndim=1] head,
@@ -167,7 +173,7 @@ cdef void _cy_umap_sampling(
     float b,
     int dim,
     int n_vertices,
-    float alpha,
+    float lr,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
     np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample,
     np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample,
@@ -179,6 +185,8 @@ cdef void _cy_umap_sampling(
         float dist_squared
         float Z = 0.0
 
+    # FIXME FIXME FIXME -- this version has weird localized clusters compared
+    # to numba version
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
     cdef float grad_d = 0.0
@@ -210,16 +218,13 @@ cdef void _cy_umap_sampling(
 
             for d in range(dim):
                 grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
-                head_embedding[j, d] += grad_d * alpha
-                head_embedding[k, d] -= grad_d * alpha
+                head_embedding[j, d] += grad_d * lr
+                if sym_attraction:
+                    head_embedding[k, d] -= grad_d * lr
 
             epoch_of_next_sample[i] += epochs_per_sample[i]
 
             # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
-            # ANDREW - If we are summing the effects of the forces and multiplying them
-            #   by the weights appropriately, we only need to alternate symmetrically
-            #   between positive and negative forces rather than doing 1 positive
-            #   calculation to n negative ones
             # FIXME - add random seed option
             n_neg_samples = int(
                 (i_epoch - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
@@ -243,10 +248,11 @@ cdef void _cy_umap_sampling(
 
                 for d in range(dim):
                     if repulsive_force > 0.0:
+                        # FIXME - maybe difference in clipping creates change from numba version?
                         grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
                     else:
                         grad_d = 4.0
-                    head_embedding[j, d] += grad_d * alpha
+                    head_embedding[j, d] += grad_d * lr
 
             epoch_of_next_negative_sample[i] += (
                 n_neg_samples * epochs_per_negative_sample[i]
@@ -267,7 +273,7 @@ def cy_umap_sampling(
     float b,
     int dim,
     int n_vertices,
-    float alpha,
+    float lr,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
     np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample,
     np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample,
@@ -275,6 +281,7 @@ def cy_umap_sampling(
 ):
     _cy_umap_sampling(
         normalized,
+        sym_attraction,
         head_embedding,
         tail_embedding,
         head,
@@ -286,7 +293,7 @@ def cy_umap_sampling(
         b,
         dim,
         n_vertices,
-        alpha,
+        lr,
         epochs_per_negative_sample,
         epoch_of_next_negative_sample,
         epoch_of_next_sample,
@@ -311,7 +318,7 @@ cdef void _cy_umap_uniformly(
     float b,
     int dim,
     int n_vertices,
-    float alpha,
+    float lr,
     int i_epoch
 ):
     cdef:
@@ -403,7 +410,7 @@ cdef void _cy_umap_uniformly(
                 forces[v, d] = (attractive_forces[v, d] + repulsive_forces[v, d]) + 0.9 * forces[v, d]
             else:
                 forces[v, d] = attractive_forces[v, d] + repulsive_forces[v, d]
-            head_embedding[v, d] += forces[v, d] * alpha
+            head_embedding[v, d] += forces[v, d] * lr
 
 
 def cy_umap_uniformly(
@@ -421,7 +428,7 @@ def cy_umap_uniformly(
     float b,
     int dim,
     int n_vertices,
-    float alpha,
+    float lr,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
     np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample,
     np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample,
@@ -442,7 +449,7 @@ def cy_umap_uniformly(
         b,
         dim,
         n_vertices,
-        alpha,
+        lr,
         i_epoch
     )
 
@@ -454,6 +461,8 @@ def cy_umap_uniformly(
 @cython.cdivision(True)
 cdef void calculate_barnes_hut(
     int normalized,
+    int sym_attraction,
+    int momentum,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
     np.ndarray[DTYPE_INT, ndim=1] head,
@@ -466,7 +475,7 @@ cdef void calculate_barnes_hut(
     float b,
     int dim,
     int n_vertices,
-    float alpha,
+    float lr,
 ):
     cdef:
         double Z = 0.0
@@ -486,6 +495,7 @@ cdef void calculate_barnes_hut(
     cell_summaries = <float*> malloc(sizeof(float) * n_vertices * offset)
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
+    grad = <float*> malloc(sizeof(float) * dim)
 
     cdef int n_edges = int(epochs_per_sample.shape[0])
     cdef float average_weight = 0.0
@@ -510,7 +520,10 @@ cdef void calculate_barnes_hut(
             weights[edge]
         )
         for d in range(dim):
-            attractive_forces[j, d] += clip(attractive_force * (y1[d] - y2[d]), -4, 4)
+            grad[d] = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
+            attractive_forces[j, d] += grad[d]
+            if sym_attraction:
+                attractive_forces[k, d] -= grad[d]
 
     for v in range(n_vertices):
         # Get necessary data regarding current point and the quadtree cells
@@ -543,17 +556,20 @@ cdef void calculate_barnes_hut(
                     repulsive_force * cell_summaries[dim_index], -4, 4
                 )
 
-    cdef float rep_scalar = -4 / Z
-    cdef float att_scalar = 4
+    cdef float rep_scalar = 4 / Z
+    cdef float att_scalar = -4
     for v in range(n_vertices):
         for d in range(dim):
             if normalized:
                 repulsive_forces[v, d] = repulsive_forces[v, d] * rep_scalar
                 attractive_forces[v, d] = attractive_forces[v, d] * att_scalar
 
-            forces[v, d] = (attractive_forces[v, d] + repulsive_forces[v, d]) \
-                           + 0.9 * forces[v, d]
-            head_embedding[v, d] -= forces[v, d] * alpha
+            if momentum == 1:
+                forces[v, d] = attractive_forces[v, d] + repulsive_forces[v, d] \
+                               + 0.9 * forces[v, d]
+            else:
+                forces[v, d] = attractive_forces[v, d] + repulsive_forces[v, d]
+            head_embedding[v, d] += forces[v, d] * lr
 
 def bh_wrapper(
     int normalized,
@@ -570,7 +586,7 @@ def bh_wrapper(
     float b,
     int dim,
     int n_vertices,
-    float alpha,
+    float lr,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
     np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample,
     np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample,
@@ -586,6 +602,8 @@ def bh_wrapper(
     qt.build_tree(head_embedding)
     return calculate_barnes_hut(
         normalized,
+        sym_attraction,
+        momentum,
         head_embedding,
         tail_embedding,
         head,
@@ -598,13 +616,13 @@ def bh_wrapper(
         b,
         dim,
         n_vertices,
-        alpha
+        lr
     )
 
 @cython.cdivision(True)
 @cython.wraparound(False)
 @cython.boundscheck(False)
-cpdef cy_optimize_layout(
+def cy_optimize_layout(
     str optimize_method,
     int normalized,
     int sym_attraction,
@@ -619,13 +637,13 @@ cpdef cy_optimize_layout(
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     float a,
     float b,
-    float alpha,
+    float initial_lr,
     float negative_sample_rate,
-    verbose=True
+    bool verbose=True,
+    **kwargs
 ):
     cdef:
         int dim, i_epoch
-        float initial_alpha
         int n_edges
         np.ndarray[DTYPE_FLOAT, ndim=2] forces
         np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
@@ -649,9 +667,7 @@ cpdef cy_optimize_layout(
             weight_sum = weight_sum + weights[i]
         for i in range(weights.shape[0]):
             weights[i] = weights[i] / weight_sum
-        initial_alpha = alpha * 200
-    else:
-        initial_alpha = alpha
+        initial_lr *= 200
 
     single_step_functions = {
         'cy_umap_uniform': cy_umap_uniformly,
@@ -661,6 +677,7 @@ cpdef cy_optimize_layout(
     single_step = single_step_functions[optimize_method]
 
     for i_epoch in range(n_epochs):
+        lr = initial_lr * (1.0 - (float(i_epoch) / float(n_epochs)))
         single_step(
             normalized,
             sym_attraction,
@@ -676,7 +693,7 @@ cpdef cy_optimize_layout(
             b,
             dim,
             n_vertices,
-            alpha,
+            lr,
             epochs_per_negative_sample,
             epoch_of_next_negative_sample,
             epoch_of_next_sample,
@@ -685,6 +702,5 @@ cpdef cy_optimize_layout(
         if verbose and i_epoch % int(n_epochs / 10) == 0:
             print("Completed ", i_epoch, " / ", n_epochs, "epochs")
 
-        alpha = initial_alpha * (1.0 - (float(i_epoch) / float(n_epochs)))
     return head_embedding
 

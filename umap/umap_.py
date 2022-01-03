@@ -35,8 +35,9 @@ from utils import (
     fast_knn_indices,
 )
 from pytorch_optimize import torch_optimize_layout
+from optimize import cy_optimize_layout
+from layouts import numba_optimize_layout
 from spectral import spectral_layout
-from layouts import optimize_layout_euclidean
 # from pynndescent import NNDescent
 from nndescent.pynndescent_ import NNDescent
 import nndescent.distances as pynnd_dist
@@ -578,7 +579,7 @@ def simplicial_set_embedding(
     data,
     graph,
     n_components,
-    initial_alpha,
+    initial_lr,
     a,
     b,
     negative_sample_rate,
@@ -609,7 +610,7 @@ def simplicial_set_embedding(
     n_components: int
         The dimensionality of the euclidean space into which to embed the data.
 
-    initial_alpha: float
+    initial_lr: float
         Initial learning rate for the SGD.
 
     a: float
@@ -757,7 +758,7 @@ def simplicial_set_embedding(
         a,
         b,
         rng_state,
-        initial_alpha,
+        initial_lr,
         negative_sample_rate,
         verbose
     )
@@ -781,15 +782,11 @@ def _optimize_layout_euclidean(
         a,
         b,
         rng_state,
-        initial_alpha,
+        initial_lr,
         negative_sample_rate,
         parallel=False,
         verbose=True,
     ):
-    if normalized == 'umap':
-        normalized = 0
-    else:
-        normalized = 1
     weights = weights.astype(np.float32)
     args = {
         'optimize_method': optimize_method,
@@ -806,18 +803,18 @@ def _optimize_layout_euclidean(
         'epochs_per_sample': epochs_per_sample,
         'a': a,
         'b': b,
-        'alpha': initial_alpha,
+        'initial_lr': initial_lr,
         'negative_sample_rate': negative_sample_rate,
+        'rng_state': rng_state,
         'verbose': verbose
     }
     start = time.time()
     if 'cy' in optimize_method:
-        import optimize
-        embedding = optimize.cy_optimize_layout(**args)
+        embedding = cy_optimize_layout(**args)
     elif 'torch' in optimize_method:
         embedding = torch_optimize_layout(**args)
     else:
-        embedding = optimize_layout_euclidean(**args)
+        embedding = numba_optimize_layout(**args)
     end = time.time()
     print('Optimization took {:.3f} seconds'.format(end - start))
     return embedding
@@ -1032,7 +1029,7 @@ class UniformUmap(BaseEstimator):
         pseudo_distance=True,
         tsne_symmetrization=False,
         optimize_method='umap_sampling',
-        normalized='umap',
+        normalized=0,
         sym_attraction=True,
         momentum=False,
         euclidean=True,
@@ -1115,7 +1112,7 @@ class UniformUmap(BaseEstimator):
             raise ValueError("metric must be string or callable")
         if self.negative_sample_rate < 0:
             raise ValueError("negative sample rate must be positive")
-        if self._initial_alpha < 0.0:
+        if self._initial_lr < 0.0:
             raise ValueError("learning_rate must be positive")
         if self.n_neighbors < 2:
             raise ValueError("n_neighbors must be greater than 1")
@@ -1254,10 +1251,8 @@ class UniformUmap(BaseEstimator):
         else:
             init = self.init
 
-        self._initial_alpha = self.learning_rate
-
+        self._initial_lr = self.learning_rate
         self._validate_parameters()
-
         if self.verbose:
             print(str(self))
 
@@ -1469,7 +1464,7 @@ class UniformUmap(BaseEstimator):
             X,
             self.graph_,
             self.n_components,
-            self._initial_alpha,
+            self._initial_lr,
             self._a,
             self._b,
             self.negative_sample_rate,

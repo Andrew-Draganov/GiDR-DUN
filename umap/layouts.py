@@ -62,7 +62,7 @@ def rdist(x, y):
 
 
 def optimize_through_sampling(
-    normalization,
+    normalized,
     sym_attraction,
     head_embedding,
     tail_embedding,
@@ -77,7 +77,7 @@ def optimize_through_sampling(
     b,
     rng_state,
     dim,
-    alpha,
+    lr,
     epochs_per_negative_sample,
     epoch_of_next_negative_sample,
     epoch_of_next_sample,
@@ -101,7 +101,7 @@ def optimize_through_sampling(
             other = tail_embedding[k]
             dist_squared = rdist(current, other)
             attractive_force = comparison_utils.attractive_force(
-                normalization,
+                normalized,
                 dist_squared,
                 a,
                 b,
@@ -111,9 +111,9 @@ def optimize_through_sampling(
             for d in range(dim):
                 # ANDREW - tsne doesn't do grad clipping
                 attraction_d = clip(attractive_force * (current[d] - other[d]))
-                current[d] += attraction_d * alpha
+                current[d] += attraction_d * lr
                 if sym_attraction:
-                    other[d] -= attraction_d * alpha
+                    other[d] -= attraction_d * lr
 
             epoch_of_next_sample[i] += epochs_per_sample[i]
 
@@ -138,7 +138,7 @@ def optimize_through_sampling(
                 other = tail_embedding[k]
                 dist_squared = rdist(current, other)
                 repulsive_force, _ = comparison_utils.repulsive_force(
-                    normalization,
+                    normalized,
                     dist_squared,
                     a,
                     b,
@@ -153,7 +153,7 @@ def optimize_through_sampling(
                         repulsion_d = clip(repulsive_force * (current[d] - other[d]))
                     else:
                         repulsion_d = 4.0
-                    current[d] += repulsion_d * alpha
+                    current[d] += repulsion_d * lr
 
             epoch_of_next_negative_sample[i] += (
                 n_neg_samples * epochs_per_negative_sample[i]
@@ -164,7 +164,7 @@ def optimize_through_sampling(
 
 
 def optimize_uniformly(
-    normalization,
+    normalized,
     sym_attraction,
     head_embedding,
     tail_embedding,
@@ -179,7 +179,7 @@ def optimize_uniformly(
     b,
     rng_state,
     dim,
-    alpha,
+    lr,
     epochs_per_negative_sample,
     epoch_of_next_negative_sample,
     epoch_of_next_sample,
@@ -199,7 +199,7 @@ def optimize_uniformly(
         other = tail_embedding[k]
         dist_squared = rdist(current, other)
         attractive_force = comparison_utils.attractive_force(
-            normalization,
+            normalized,
             dist_squared,
             a,
             b,
@@ -221,7 +221,7 @@ def optimize_uniformly(
         other = tail_embedding[k]
         dist_squared = rdist(current, other)
         repulsive_force, Z = comparison_utils.repulsive_force(
-            normalization,
+            normalized,
             dist_squared,
             a,
             b,
@@ -238,19 +238,19 @@ def optimize_uniformly(
             repulsion[j, d] += grad_d
 
     attraction, repulsion = comparison_utils.grad_scaling(
-        normalization,
+        normalized,
         attraction,
         repulsion,
         Z
     )
 
-    head_embedding += (attraction + repulsion) * alpha
+    head_embedding += (attraction + repulsion) * lr
     return grads
 
 
-def optimize_layout_euclidean(
+def numba_optimize_layout(
     optimize_method,
-    normalization,
+    normalized,
     sym_attraction,
     momentum,
     head_embedding,
@@ -264,10 +264,11 @@ def optimize_layout_euclidean(
     a,
     b,
     rng_state,
-    initial_alpha=1.0,
+    initial_lr=1.0,
     negative_sample_rate=5.0,
     parallel=False,
     verbose=False,
+    **kwargs,
 ):
     """
     FIXME FIXME FIXME
@@ -282,10 +283,10 @@ def optimize_layout_euclidean(
     epoch_of_next_sample = epochs_per_sample.copy()
 
     # Perform weight scaling on high-dimensional relationships
-    weights, initial_alpha = comparison_utils.p_scaling(
-        normalization,
+    weights, initial_lr = comparison_utils.p_scaling(
+        normalized,
         weights,
-        initial_alpha
+        initial_lr
     )
 
     n_edges = n_vertices * (n_vertices - 1)
@@ -302,11 +303,11 @@ def optimize_layout_euclidean(
         parallel=parallel
     )
 
-    alpha = initial_alpha
+    lr = initial_lr
     for i_epoch in range(n_epochs):
         # FIXME - clean this up!!
         grads = optimize_fn(
-            normalization,
+            normalized,
             sym_attraction,
             head_embedding,
             tail_embedding,
@@ -321,13 +322,13 @@ def optimize_layout_euclidean(
             b,
             rng_state,
             dim,
-            alpha,
+            lr,
             epochs_per_negative_sample,
             epoch_of_next_negative_sample,
             epoch_of_next_sample,
             i_epoch,
         )
-        alpha = initial_alpha * (1.0 - (float(i_epoch) / float(n_epochs)))
+        lr = initial_lr * (1.0 - (float(i_epoch) / float(n_epochs)))
 
         if verbose and i_epoch % int(n_epochs / 10) == 0:
             print("\tcompleted ", i_epoch, " / ", n_epochs, "epochs")
