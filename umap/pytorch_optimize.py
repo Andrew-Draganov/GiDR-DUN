@@ -1,4 +1,5 @@
 import torch
+from torch.utils.data import Dataset, DataLoader
 
 @torch.jit.script
 def umap_attract_grad(dist_squared, a, b):
@@ -24,9 +25,9 @@ def umap_repel_forces(dist_squared, a, b, average_weight):
     grads = kernels * (1 - average_weight)
     return (grads, 0)
 
-
 @torch.jit.script
 def tsne_kernel(dist_squared, a, b):
+    # torch.pow(x, y) returns x if y = 1
     if b <= 1:
         return torch.ones_like(dist_squared) / (1 + a * torch.pow(dist_squared, b))
     return torch.pow(dist_squared, b - 1) / (1 + a * torch.pow(dist_squared, b))
@@ -47,11 +48,52 @@ def tsne_repel_forces(dist_squared, a, b, average_weight):
 def squared_dists(x, y):
     return torch.sum(torch.square(x - y), dim=1)
 
+class DimReductionDataset(Dataset):
+    def __init__(
+        self,
+        head_embedding,
+        tail_embedding,
+        head,
+        tail,
+        weights
+    ):
+        self.head_embedding = head_embedding
+        self.tail_embedding = tail_embedding
+        self.head = head
+        self.tail = tail
+        self.weights = weights
+
+    def __len__(self):
+        """ len is the number of edges in the nearest neighbor graph """
+        return len(self.weights)
+
+    def __getitem__(self, index):
+        # Select sample
+        y_i = self.head_embedding[self.head[index]]
+
+        # Get y_i's y_j such that (x_i, x_j) are nearest neighbors
+        nearest_neighbor = self.tail_embedding[self.tail[index]]
+
+        # Get random point to repel from
+        random_point = torch.squeeze(self.tail_embedding[
+            torch.randint(
+                low=0,
+                high=len(self.tail_embedding),
+                size=(1,)
+            )
+        ])
+
+        # Weight between y_i and its relative nearest neighbor
+        weight = self.weights[index]
+
+        return y_i, nearest_neighbor, random_point, weight, index
+
 def torch_optimize_layout(
     optimize_method,
     normalized,
     sym_attraction,
     momentum,
+    batch_size,
     head_embedding,
     tail_embedding,
     head,
@@ -94,26 +136,34 @@ def torch_optimize_layout(
     attr_forces = torch.zeros_like(head_embedding)
     rep_forces = torch.zeros_like(head_embedding)
 
+    dataset = DimReductionDataset(head_embedding, tail_embedding, head, tail, weights)
+    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    generator = iter(data_loader)
+
     # Gradient descent loop
-    for i_epoch in range(n_epochs):
+    for i_batch in range(n_epochs):
+        try:
+            batch = next(generator)
+        except StopIteration:
+            generator = iter(data_loader)
+            batch = next(generator)
+
+        # Get batch of attraction and repulsion directions
+        points = batch[0]
+        nearest_neighbors = batch[1]
+        random_points = batch[2]
+        weights = batch[3]
+        indices = batch[4]
+        attr_vectors = points - nearest_neighbors
+        rep_vectors = points - random_points
+
         # t-SNE early exaggeration
-        if i_epoch == 0 and normalized:
+        if i_batch == 0 and normalized:
             average_weight *= 4
             weights *= 4
-        elif i_epoch == 50 and normalized:
+        elif i_batch == 50 and normalized:
             weights /= 4
             average_weight /= 4
-
-        # Get points in low-dim whose high-dim analogs are nearest neighbors
-        points = head_embedding[head]
-        nearest_neighbors = tail_embedding[tail]
-        attr_vectors = points - nearest_neighbors
-
-        # Get n_edges worth of random points to perform repulsions
-        tail_perm = torch.randperm(n_edges)
-        tail_perm = tail_perm % n_points
-        random_points = tail_embedding[tail_perm]
-        rep_vectors = points - random_points
 
         # Squared Euclidean distance between attr and rep points
         near_nb_dists = squared_dists(points, nearest_neighbors)
@@ -123,15 +173,15 @@ def torch_optimize_layout(
         attr_forces *= 0
         attr_grads = attr_force_func(near_nb_dists, a, b, weights)
         attr_grads = torch.clamp(torch.unsqueeze(attr_grads, 1) * attr_vectors, -4, 4)
-        attr_forces = attr_forces.index_add(0, head, attr_grads)
+        attr_forces = attr_forces.index_add(0, head[indices], attr_grads)
         if sym_attraction:
-            attr_forces = attr_forces.index_add(0, tail, -1 * attr_grads)
+            attr_forces = attr_forces.index_add(0, tail[indices], -1 * attr_grads)
 
         # Calculate repulsive forces
         rep_forces *= 0
         rep_grads, Z = rep_force_func(rand_pt_dists, a, b, average_weight)
         rep_grads = torch.clamp(torch.unsqueeze(rep_grads, 1) * rep_vectors, -4, 4)
-        rep_forces = rep_forces.index_add(0, head, rep_grads)
+        rep_forces = rep_forces.index_add(0, head[indices], rep_grads)
 
         if normalized:
             # p_{ij} in the attractive forces is normalized by the sum of the weights,
@@ -140,11 +190,12 @@ def torch_optimize_layout(
             attr_forces *= -4 * a * b
 
         # Momentum gradient descent
-        lr = initial_lr * (1.0 - float(i_epoch) / n_epochs)
-        forces = forces * 0.9 * float(momentum) + (attr_forces + rep_forces)
-        head_embedding += forces * lr
+        lr = initial_lr * (1.0 - float(i_batch) / n_epochs)
+        forces[head[indices]] = forces[head[indices]] * 0.9 * float(momentum)
+        forces[head[indices]] += attr_forces[head[indices]] + rep_forces[head[indices]]
+        head_embedding[head[indices]] += forces[head[indices]] * lr
 
-        if verbose and i_epoch % int(n_epochs / 10) == 0:
-            print("Completed ", i_epoch, " / ", n_epochs, "epochs")
+        if verbose and i_batch % int(n_epochs / 10) == 0:
+            print("Completed ", i_batch, " / ", n_epochs, "epochs")
 
     return head_embedding.detach().numpy()

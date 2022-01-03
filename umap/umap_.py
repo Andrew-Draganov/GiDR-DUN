@@ -576,6 +576,7 @@ def simplicial_set_embedding(
     normalized,
     sym_attraction,
     momentum,
+    batch_size,
     data,
     graph,
     n_components,
@@ -747,6 +748,7 @@ def simplicial_set_embedding(
         normalized,
         sym_attraction,
         momentum,
+        batch_size,
         embedding,
         embedding,
         head,
@@ -771,6 +773,7 @@ def _optimize_layout_euclidean(
         normalized,
         sym_attraction,
         momentum,
+        batch_size,
         head_embedding,
         tail_embedding,
         head,
@@ -793,6 +796,7 @@ def _optimize_layout_euclidean(
         'normalized': normalized,
         'sym_attraction': int(sym_attraction),
         'momentum': int(momentum),
+        'batch_size': weights.shape[0] if batch_size == -1 else batch_size,
         'head_embedding': head_embedding,
         'tail_embedding': tail_embedding,
         'head': head,
@@ -1032,6 +1036,7 @@ class UniformUmap(BaseEstimator):
         normalized=0,
         sym_attraction=True,
         momentum=False,
+        batch_size=-1,
         euclidean=True,
         min_dist=0.1,
         spread=1.0,
@@ -1069,6 +1074,7 @@ class UniformUmap(BaseEstimator):
         self.sym_attraction = sym_attraction
         self.euclidean = euclidean
         self.momentum = momentum
+        self.batch_size = batch_size
 
         self.spread = spread
         self.min_dist = min_dist
@@ -1461,6 +1467,7 @@ class UniformUmap(BaseEstimator):
             self.normalized,
             self.sym_attraction,
             self.momentum,
+            self.batch_size,
             X,
             self.graph_,
             self.n_components,

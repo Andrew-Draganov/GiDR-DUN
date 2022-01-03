@@ -94,6 +94,13 @@ parser.add_argument(
     help='Number of samples to use from the dataset'
 )
 parser.add_argument(
+    '--batch-size',
+    type=int,
+    default=-1,
+    help='Batch size for Uniform-UMAP optimization.'
+         'If -1, defaults to regular gradient descent'
+)
+parser.add_argument(
     '--n-neighbors',
     type=int,
     default=15
@@ -189,6 +196,7 @@ if args.dr_algorithm == 'uniform_umap':
             sym_attraction=args.sym_attraction,
             euclidean=not args.angular,
             momentum=args.momentum,
+            batch_size=args.batch_size,
             a=a,
             b=b,
             verbose=True

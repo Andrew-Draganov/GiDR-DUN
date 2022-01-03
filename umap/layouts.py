@@ -61,7 +61,7 @@ def rdist(x, y):
     return result
 
 
-def optimize_through_sampling(
+def optimize_sampling(
     normalized,
     sym_attraction,
     head_embedding,
@@ -294,7 +294,7 @@ def numba_optimize_layout(
 
     single_step_functions = {
         'umap_uniform': optimize_uniformly,
-        'umap_sampling': optimize_through_sampling
+        'umap_sampling': optimize_sampling
     }
     single_step = single_step_functions[optimize_method]
     optimize_fn = numba.njit(
