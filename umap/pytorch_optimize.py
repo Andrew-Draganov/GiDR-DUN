@@ -204,6 +204,28 @@ def torch_optimize_batched(
 
     return head_embedding.detach().numpy()
 
+def get_num_repulsions(attr_count, ratio_count, ratio):
+    if ratio == 1:
+        return 1, 1, 1
+
+    if ratio > 1:
+        if int(ratio_count) > attr_count:
+            num_repulsions = 1 + int(ratio_count) - attr_count
+            ratio_count -= (num_repulsions - 1)
+        else:
+            num_repulsions = 1
+    elif ratio < 1:
+        if ratio_count >= 1:
+            num_repulsions = 1
+            ratio_count -= 1
+        else:
+            num_repulsions = 0
+    elif ratio < 0:
+        raise ValueError("Cannot have a negative attr-repel ratio.")
+
+    return num_repulsions, attr_count, ratio_count
+
+
 def torch_optimize_full(
     normalized,
     sym_attraction,
@@ -241,6 +263,9 @@ def torch_optimize_full(
     rep_forces = torch.zeros_like(head_embedding)
 
     # Gradient descent loop
+    attr_count = 0
+    ratio_count = 0
+    ratio = 1.5
     for i_epoch in range(n_epochs):
         # t-SNE early exaggeration
         if i_epoch == 0 and normalized:
@@ -250,34 +275,44 @@ def torch_optimize_full(
             weights /= 4
             average_weight /= 4
 
+        attr_forces *= 0
+        rep_forces *= 0
+
         # Get points in low-dim whose high-dim analogs are nearest neighbors
         points = head_embedding[head]
         nearest_neighbors = tail_embedding[tail]
         attr_vectors = points - nearest_neighbors
-
-        # Get n_edges worth of random points to perform repulsions
-        tail_perm = torch.randperm(n_edges)
-        tail_perm = tail_perm % n_vertices
-        random_points = tail_embedding[tail_perm]
-        rep_vectors = points - random_points
-
-        # Squared Euclidean distance between attr and rep points
         near_nb_dists = squared_dists(points, nearest_neighbors)
-        rand_pt_dists = squared_dists(points, random_points)
 
         # Calculate attractive forces
-        attr_forces *= 0
         attr_grads = attr_force_func(near_nb_dists, a, b, weights)
         attr_grads = torch.clamp(torch.unsqueeze(attr_grads, 1) * attr_vectors, -4, 4)
         attr_forces = attr_forces.index_add(0, head, attr_grads)
         if sym_attraction:
             attr_forces = attr_forces.index_add(0, tail, -1 * attr_grads)
 
-        # Calculate repulsive forces
-        rep_forces *= 0
-        rep_grads, Z = rep_force_func(rand_pt_dists, a, b, average_weight)
-        rep_grads = torch.clamp(torch.unsqueeze(rep_grads, 1) * rep_vectors, -4, 4)
-        rep_forces = rep_forces.index_add(0, head, rep_grads)
+        num_repulsions, attr_count, ratio_count = get_num_repulsions(
+            attr_count,
+            ratio_count,
+            ratio
+        )
+
+        if num_repulsions > 0:
+            # Get num_repulsions worth of random points to perform repulsions
+            tail_perms = [torch.randperm(n_edges) for i in range(num_repulsions)]
+            tail_perms = [tail_perm % n_vertices for tail_perm in tail_perms]
+            random_points = [tail_embedding[tail_perm] for tail_perm in tail_perms]
+            random_points = torch.stack(random_points, dim=0)
+            random_points = torch.mean(random_points, dim=0)
+            rep_vectors = points - random_points
+
+            # Squared Euclidean distance between attr and rep points
+            rand_pt_dists = squared_dists(points, random_points)
+
+            # Calculate repulsive forces
+            rep_grads, Z = rep_force_func(rand_pt_dists, a, b, average_weight)
+            rep_grads = torch.clamp(torch.unsqueeze(rep_grads, 1) * rep_vectors, -4, 4)
+            rep_forces = rep_forces.index_add(0, head, rep_grads)
 
         if normalized:
             # p_{ij} in the attractive forces is normalized by the sum of the weights,
@@ -292,6 +327,9 @@ def torch_optimize_full(
 
         if verbose and i_epoch % int(n_epochs / 10) == 0:
             print("Completed ", i_epoch, " / ", n_epochs, "epochs")
+
+        attr_count += 1
+        ratio_count += ratio
 
     return head_embedding.detach().numpy()
 

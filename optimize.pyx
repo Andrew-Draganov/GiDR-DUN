@@ -247,11 +247,7 @@ cdef void _cy_umap_sampling(
                 Z = rep_outputs[1]
 
                 for d in range(dim):
-                    if repulsive_force > 0.0:
-                        # FIXME - maybe difference in clipping creates change from numba version?
-                        grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
-                    else:
-                        grad_d = 4.0
+                    grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
                     head_embedding[j, d] += grad_d * lr
 
             epoch_of_next_negative_sample[i] += (
@@ -564,7 +560,7 @@ cdef void calculate_barnes_hut(
                 repulsive_forces[v, d] = repulsive_forces[v, d] * rep_scalar
                 attractive_forces[v, d] = attractive_forces[v, d] * att_scalar
 
-            if momentum == 1:
+            if momentum:
                 forces[v, d] = attractive_forces[v, d] + repulsive_forces[v, d] \
                                + 0.9 * forces[v, d]
             else:
