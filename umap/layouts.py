@@ -231,6 +231,7 @@ def optimize_uniformly(
         )
 
         for d in range(dim):
+            # FIXME - this can just be regular clip, no?
             if repulsive_force > 0.0:
                 grad_d = clip(repulsive_force * (current[d] - other[d]))
             else:

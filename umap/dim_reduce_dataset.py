@@ -51,7 +51,8 @@ parser.add_argument(
 parser.add_argument(
     '--optimize-method',
     choices=[
-        'pytorch',
+        'torch_sgd',
+        'torch',
         'umap_sampling',
         'umap_uniform',
         'cy_barnes_hut',

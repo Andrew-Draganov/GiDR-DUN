@@ -135,8 +135,8 @@ def umap_grad_scaling(attraction, repulsion):
 
 @numba.njit()
 def tsne_grad_scaling(attraction, repulsion, Z):
-    repulsion *= - 4 / Z
-    attraction *= 4
+    repulsion *= 4 / Z
+    attraction *= -4
     return attraction, repulsion
 
 @numba.njit()
