@@ -535,6 +535,7 @@ cdef void calculate_barnes_hut(
     int dim,
     int n_vertices,
     float lr,
+    int i_epoch
 ):
     cdef:
         double Z = 0.0
@@ -578,6 +579,10 @@ cdef void calculate_barnes_hut(
             b,
             weights[edge]
         )
+        # t-SNE early exaggeration
+        if i_epoch < 250 and normalized:
+            attractive_force *= 4
+
         for d in range(dim):
             grad[d] = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
             attractive_forces[j, d] += grad[d]
@@ -675,7 +680,8 @@ def bh_wrapper(
         b,
         dim,
         n_vertices,
-        lr
+        lr,
+        i_epoch
     )
 
 @cython.cdivision(True)
