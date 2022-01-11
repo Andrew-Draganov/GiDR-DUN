@@ -130,6 +130,49 @@ cdef float attractive_force_func(
 
     return edge_force * edge_weight
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+cdef (float*, float) multiple_normed_repulsions(
+        float* base_point,
+        float* points,
+        int num_points,
+        int dim
+    ):
+    cdef int i, j
+    repulsive_force = <float*> malloc(sizeof(float) * dim)
+    for d in range(dim):
+        repulsive_force[d] = 0
+    current = <float*> malloc(sizeof(float) * dim)
+    dists = <float*> malloc(sizeof(float) * num_points)
+    kernels = <float*> malloc(sizeof(float) * num_points)
+    sq_kernels = <float*> malloc(sizeof(float) * num_points)
+    for i in range(num_points):
+        for j in range(dim):
+            current[j] = points[dim * i + j]
+        dists[i] = euc_dist(base_point, current, dim)
+        kernels[i] = (1 + dists[i])
+        sq_kernels[i] = kernels[i] * kernels[i]
+
+    cdef float kernel_sum = 0
+    cdef float kernel_prod = 1
+    cdef float Z = 0
+    for i in range(num_points):
+        kernel_sum += 1 / sq_kernels[i]
+        kernel_prod *= sq_kernels[i]
+
+    for d in range(dim):
+        for i in range(num_points):
+            for j in range(dim):
+                current[j] = points[dim * i + j]
+            repulsive_force[d] -= current[d] * kernel_prod / sq_kernels[i]
+            Z += 1 / kernels[i]
+        repulsive_force[d] /= kernel_prod
+        repulsive_force[d] += base_point[d] * kernel_sum
+
+    Z *= 3
+    return repulsive_force, Z
+
 cdef (float, float) repulsive_force_func(
         int normalized,
         float dist_squared,
@@ -329,6 +372,13 @@ cdef void _cy_umap_uniformly(
     repulsive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
+
+    num_repels = 5
+    repel_points = <float*> malloc(sizeof(float) * num_repels * dim)
+    grad = <float*> malloc(sizeof(float) * dim)
+    cdef int p = 0
+    cdef float z_component = 0.0
+
     cdef float grad_d = 0.0
     cdef (float, float) rep_outputs
     cdef int n_edges = int(epochs_per_sample.shape[0])
@@ -370,26 +420,39 @@ cdef void _cy_umap_uniformly(
 
         # Picks random vertex from ENTIRE graph and calculates repulsive force
         # FIXME - add random seed option
-        k = rand() % n_vertices
-        for d in range(dim):
-            y2[d] = tail_embedding[k, d]
-        dist_squared = euc_dist(y1, y2, dim)
-
-        rep_outputs = repulsive_force_func(
-            normalized,
-            dist_squared,
-            a,
-            b,
-            cell_size=1.0,
-            average_weight=average_weight,
-            Z=Z
+        for p in range(num_repels):
+            k = rand() % n_vertices
+            for d in range(dim):
+                repel_points[p * dim + d] = tail_embedding[k, d]
+        grad, z_component = multiple_normed_repulsions(
+            y1,
+            repel_points,
+            num_repels,
+            dim
         )
-        repulsive_force = rep_outputs[0]
-        Z = rep_outputs[1]
+        Z += z_component
+
+        # k = rand() % n_vertices
+        # for d in range(dim):
+        #     y2[d] = tail_embedding[k, d]
+        # dist_squared = euc_dist(y1, y2, dim)
+
+        # rep_outputs = repulsive_force_func(
+        #     normalized,
+        #     dist_squared,
+        #     a,
+        #     b,
+        #     cell_size=1.0,
+        #     average_weight=average_weight,
+        #     Z=Z
+        # )
+        # repulsive_force = rep_outputs[0]
+        # Z = rep_outputs[1]
 
         for d in range(dim):
-            grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
-            repulsive_forces[j, d] += grad_d
+            grad_d = clip(grad[d], -4, 4)
+            # repulsive_forces[j, d] += grad_d
+            # repulsive_forces[k, d] -= grad_d
 
     cdef float rep_scalar = 4 * a * b
     cdef float att_scalar = -4 * a * b

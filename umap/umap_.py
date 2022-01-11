@@ -38,8 +38,8 @@ from pytorch_optimize import torch_optimize_layout
 from optimize import cy_optimize_layout
 from layouts import numba_optimize_layout
 from spectral import spectral_layout
-from pynndescent import NNDescent
-# from nndescent.pynndescent_ import NNDescent
+# from pynndescent import NNDescent
+from nndescent.pynndescent_ import NNDescent
 import nndescent.distances as pynnd_dist
 
 locale.setlocale(locale.LC_NUMERIC, "C")
