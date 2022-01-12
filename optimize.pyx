@@ -170,7 +170,7 @@ cdef (float*, float) multiple_normed_repulsions(
         repulsive_force[d] /= kernel_prod
         repulsive_force[d] += base_point[d] * kernel_sum
 
-    Z *= 3
+    # Z /= num_points
     return repulsive_force, Z
 
 cdef (float, float) repulsive_force_func(
@@ -373,7 +373,7 @@ cdef void _cy_umap_uniformly(
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
 
-	num_repels = 5
+    num_repels = 5
     repel_points = <float*> malloc(sizeof(float) * num_repels * dim)
     grad = <float*> malloc(sizeof(float) * dim)
     cdef int p = 0
@@ -420,39 +420,34 @@ cdef void _cy_umap_uniformly(
 
         # Picks random vertex from ENTIRE graph and calculates repulsive force
         # FIXME - add random seed option
+        # for p in range(num_repels):
+        #     k = rand() % n_vertices
+        #     for d in range(dim):
+        #         repel_points[p * dim + d] = tail_embedding[k, d]
+        # grad, z_component = multiple_normed_repulsions(
+        #     y1,
+        #     repel_points,
+        #     num_repels,
+        #     dim
+        # )
+        # Z += z_component
+
         k = rand() % n_vertices
         for d in range(dim):
             y2[d] = tail_embedding[k, d]
         dist_squared = euc_dist(y1, y2, dim)
 
-		for p in range(num_repels):
-            k = rand() % n_vertices
-            for d in range(dim):
-                repel_points[p * dim + d] = tail_embedding[k, d]
-        grad, z_component = multiple_normed_repulsions(
-            y1,
-            repel_points,
-            num_repels,
-            dim
+        rep_outputs = repulsive_force_func(
+            normalized,
+            dist_squared,
+            a,
+            b,
+            cell_size=1.0,
+            average_weight=average_weight,
+            Z=Z
         )
-        Z += z_component
-
-        # k = rand() % n_vertices
-        # for d in range(dim):
-        #     y2[d] = tail_embedding[k, d]
-        # dist_squared = euc_dist(y1, y2, dim)
-
-        # rep_outputs = repulsive_force_func(
-        #     normalized,
-        #     dist_squared,
-        #     a,
-        #     b,
-        #     cell_size=1.0,
-        #     average_weight=average_weight,
-        #     Z=Z
-        # )
-        # repulsive_force = rep_outputs[0]
-        # Z = rep_outputs[1]
+        repulsive_force = rep_outputs[0]
+        Z = rep_outputs[1]
 
         for d in range(dim):
             grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
@@ -533,6 +528,7 @@ cdef void calculate_barnes_hut(
     np.ndarray[DTYPE_INT, ndim=1] tail,
     np.ndarray[DTYPE_FLOAT, ndim=1] weights,
     np.ndarray[DTYPE_FLOAT, ndim=2] forces,
+    np.ndarray[DTYPE_FLOAT, ndim=2] gains,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     _QuadTree qt,
     float a,
@@ -561,6 +557,7 @@ cdef void calculate_barnes_hut(
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
     grad = <float*> malloc(sizeof(float) * dim)
+    cdef float grad_d
 
     cdef int n_edges = int(epochs_per_sample.shape[0])
     cdef float average_weight = 0.0
@@ -634,13 +631,21 @@ cdef void calculate_barnes_hut(
             if normalized:
                 repulsive_forces[v, d] = repulsive_forces[v, d] * rep_scalar
                 attractive_forces[v, d] = attractive_forces[v, d] * att_scalar
+            grad_d = attractive_forces[v, d] + repulsive_forces[v, d]
+
+            if grad_d * forces[v, d] > 0.0:
+                gains[v, d] += 0.2
+            else:
+                gains[v, d] *= 0.8
+            gains[v, d] = clip(gains[v, d], 0.01, 1000)
+            grad_d *= gains[v, d]
 
             if momentum:
-                forces[v, d] = attractive_forces[v, d] + repulsive_forces[v, d] \
-                               + 0.8 * forces[v, d]
+                forces[v, d] = grad_d * lr + 0.8 * forces[v, d]
             else:
-                forces[v, d] = attractive_forces[v, d] + repulsive_forces[v, d]
-            head_embedding[v, d] += forces[v, d] * lr
+                forces[v, d] = grad_d * lr
+
+            head_embedding[v, d] += forces[v, d]
 
 def bh_wrapper(
     int normalized,
@@ -652,6 +657,7 @@ def bh_wrapper(
     np.ndarray[DTYPE_INT, ndim=1] tail,
     np.ndarray[DTYPE_FLOAT, ndim=1] weights,
     np.ndarray[DTYPE_FLOAT, ndim=2] forces,
+    np.ndarray[DTYPE_FLOAT, ndim=2] gains,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     float a,
     float b,
@@ -681,6 +687,7 @@ def bh_wrapper(
         tail,
         weights,
         forces,
+        gains,
         epochs_per_sample,
         qt,
         a,
@@ -724,6 +731,7 @@ def cy_optimize_layout(
 
     dim = head_embedding.shape[1]
     forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
+    gains = py_np.ones([n_vertices, dim], dtype=py_np.float32)
 
     # ANDREW - perform negative samples x times more often
     #          by making the number of epochs between samples smaller
@@ -761,6 +769,7 @@ def cy_optimize_layout(
             tail,
             weights,
             forces,
+            gains,
             epochs_per_sample,
             a,
             b,
