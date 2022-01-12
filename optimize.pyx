@@ -307,6 +307,7 @@ def cy_umap_sampling(
     np.ndarray[DTYPE_INT, ndim=1] tail,
     np.ndarray[DTYPE_FLOAT, ndim=1] weights,
     np.ndarray[DTYPE_FLOAT, ndim=2] forces,
+    np.ndarray[DTYPE_FLOAT, ndim=2] gains,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     float a,
     float b,
@@ -352,6 +353,7 @@ cdef void _cy_umap_uniformly(
     np.ndarray[DTYPE_INT, ndim=1] tail,
     np.ndarray[DTYPE_FLOAT, ndim=1] weights,
     np.ndarray[DTYPE_FLOAT, ndim=2] forces,
+    np.ndarray[DTYPE_FLOAT, ndim=2] gains,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     float a,
     float b,
@@ -413,7 +415,8 @@ cdef void _cy_umap_uniformly(
             weights[edge]
         )
         for d in range(dim):
-            grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
+            # grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
+            grad_d = attractive_force * (y1[d] - y2[d])
             attractive_forces[j, d] += grad_d
             if sym_attraction:
                 attractive_forces[k, d] -= grad_d
@@ -450,7 +453,8 @@ cdef void _cy_umap_uniformly(
         Z = rep_outputs[1]
 
         for d in range(dim):
-            grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
+            # grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
+            grad_d = repulsive_force * (y1[d] - y2[d])
             repulsive_forces[j, d] += grad_d
 
     cdef float rep_scalar = 4 * a * b
@@ -464,12 +468,20 @@ cdef void _cy_umap_uniformly(
             if normalized:
                 repulsive_forces[v, d] = repulsive_forces[v, d] * rep_scalar
                 attractive_forces[v, d] = attractive_forces[v, d] * att_scalar
-            if momentum == 1:
-                forces[v, d] = (attractive_forces[v, d] + repulsive_forces[v, d]) \
-                               + 0.8 * forces[v, d]
+            grad_d = attractive_forces[v, d] + repulsive_forces[v, d]
+
+            if grad_d * forces[v, d] > 0.0:
+                gains[v, d] += 0.2
             else:
-                forces[v, d] = attractive_forces[v, d] + repulsive_forces[v, d]
-            head_embedding[v, d] += forces[v, d] * lr
+                gains[v, d] *= 0.8
+            gains[v, d] = clip(gains[v, d], 0.01, 1000)
+            grad_d *= gains[v, d]
+
+            if momentum == 1:
+                forces[v, d] = grad_d * lr + 0.9 * forces[v, d]
+            else:
+                forces[v, d] = grad_d * lr
+            head_embedding[v, d] += forces[v, d]
 
 
 def cy_umap_uniformly(
@@ -482,6 +494,7 @@ def cy_umap_uniformly(
     np.ndarray[DTYPE_INT, ndim=1] tail,
     np.ndarray[DTYPE_FLOAT, ndim=1] weights,
     np.ndarray[DTYPE_FLOAT, ndim=2] forces,
+    np.ndarray[DTYPE_FLOAT, ndim=2] gains,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     float a,
     float b,
@@ -503,6 +516,7 @@ def cy_umap_uniformly(
         tail,
         weights,
         forces,
+        gains,
         epochs_per_sample,
         a,
         b,
