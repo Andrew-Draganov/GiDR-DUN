@@ -384,10 +384,10 @@ cdef void _cy_umap_uniformly(
     cdef float grad_d = 0.0
     cdef (float, float) rep_outputs
     cdef int n_edges = int(epochs_per_sample.shape[0])
-    cdef float _average_weight = 0.0
+    cdef float average_weight = 0.0
     for i in range(weights.shape[0]):
-        _average_weight += weights[i]
-    _average_weight /= n_edges
+        average_weight += weights[i]
+    average_weight /= n_edges
 
     for edge in range(n_edges):
         # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
@@ -399,12 +399,10 @@ cdef void _cy_umap_uniformly(
         dist_squared = euc_dist(y1, y2, dim)
 
         # t-SNE early exaggeration
-        if i_epoch < 50 and normalized:
+        if i_epoch < 100:
             edge_weight = weights[edge] * 4
-            average_weight = _average_weight * 4
         else:
             edge_weight = weights[edge]
-            average_weight = _average_weight
 
         # Optimize positive force for each edge
         attractive_force = attractive_force_func(
@@ -412,11 +410,13 @@ cdef void _cy_umap_uniformly(
             dist_squared,
             a,
             b,
-            weights[edge]
+            edge_weight
         )
         for d in range(dim):
             # grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
             grad_d = attractive_force * (y1[d] - y2[d])
+            # if not normalized:
+            #     grad_d = clip(grad_d, -4, 4)
             attractive_forces[j, d] += grad_d
             if sym_attraction:
                 attractive_forces[k, d] -= grad_d
@@ -455,6 +455,8 @@ cdef void _cy_umap_uniformly(
         for d in range(dim):
             # grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
             grad_d = repulsive_force * (y1[d] - y2[d])
+            # if not normalized:
+            #     grad_d = clip(grad_d, -4, 4)
             repulsive_forces[j, d] += grad_d
 
     cdef float rep_scalar = 4 * a * b
@@ -474,7 +476,7 @@ cdef void _cy_umap_uniformly(
                 gains[v, d] += 0.2
             else:
                 gains[v, d] *= 0.8
-            gains[v, d] = clip(gains[v, d], 0.01, 1000)
+            gains[v, d] = clip(gains[v, d], 0.01, 100)
             grad_d *= gains[v, d]
 
             if momentum == 1:
@@ -771,8 +773,8 @@ def cy_optimize_layout(
     single_step = single_step_functions[optimize_method]
 
     for i_epoch in range(n_epochs):
-        # lr = initial_lr * (1.0 - (float(i_epoch) / float(n_epochs)))
-        lr = initial_lr
+        lr = initial_lr * (1.0 - (float(i_epoch) / float(n_epochs)))
+        # lr = initial_lr
         single_step(
             normalized,
             sym_attraction,
