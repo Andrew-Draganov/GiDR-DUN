@@ -193,7 +193,7 @@ def torch_optimize_batched(
 
         # Momentum gradient descent
         lr = initial_lr * (1.0 - float(i_batch) / n_epochs)
-        forces[head_batch] = forces[head_batch] * 0.9 * float(momentum)
+        forces[head_batch] = forces[head_batch] * 0.8 * float(momentum)
 
         # FIXME - indexing probably not necessary here
         forces += attr_forces + rep_forces
@@ -322,7 +322,7 @@ def torch_optimize_full(
 
         # Momentum gradient descent
         lr = initial_lr * (1.0 - float(i_epoch) / n_epochs)
-        forces = forces * 0.9 * float(momentum) + (attr_forces + rep_forces)
+        forces = forces * 0.8 * float(momentum) + (attr_forces + rep_forces)
         head_embedding += forces * lr
 
         if verbose and i_epoch % int(n_epochs / 10) == 0:

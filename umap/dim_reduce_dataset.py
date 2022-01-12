@@ -42,7 +42,7 @@ parser.add_argument(
     help='When present, make plots regarding distance relationships. ' \
          'Requires a high downsample_stride to not run out of memory'
 )
-          
+
 parser.add_argument(
     '--ignore-umap-metric',
     action='store_true',
