@@ -112,6 +112,7 @@ def torch_optimize_batched(
     tail,
     weights,
     forces,
+    gains,
     n_epochs,
     n_vertices,
     a,
@@ -136,54 +137,58 @@ def torch_optimize_batched(
         rep_force_func = umap_repel_forces
     attr_forces = torch.zeros_like(head_embedding)
     rep_forces = torch.zeros_like(head_embedding)
+    step_forces = torch.zeros_like(head_embedding)
 
     dataset = NNGraphDataset(head_embedding, tail_embedding, head, tail, weights)
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True, drop_last=False)
-    generator = iter(data_loader)
+    batches_per_epoch = int(len(dataset) / batch_size)
 
     # Gradient descent loop
-    for i_batch in range(n_epochs):
-        try:
-            batch = next(generator)
-        except StopIteration:
-            generator = iter(data_loader)
-            batch = next(generator)
-
-        # Get batch of attraction and repulsion directions
-        points = batch[0]
-        nearest_neighbors = batch[1]
-        random_points = batch[2]
-        weights = batch[3]
-        head_batch = batch[4]
-        tail_batch = batch[5]
-        attr_vectors = points - nearest_neighbors
-        rep_vectors = points - random_points
-
-        # t-SNE early exaggeration
-        if i_batch == 0 and normalized:
-            average_weight *= 4
-            weights *= 4
-        elif i_batch == 50 and normalized:
-            weights /= 4
-            average_weight /= 4
-
-        # Squared Euclidean distance between attr and rep points
-        near_nb_dists = squared_dists(points, nearest_neighbors)
-        rand_pt_dists = squared_dists(points, random_points)
-
-        # Calculate attractive forces
+    for i_epoch in range(n_epochs):
+        generator = iter(data_loader)
         attr_forces *= 0
-        attr_grads = attr_force_func(near_nb_dists, a, b, weights)
-        attr_grads = torch.clamp(torch.unsqueeze(attr_grads, 1) * attr_vectors, -4, 4)
-        attr_forces = attr_forces.index_add(0, head_batch, attr_grads)
-        if sym_attraction:
-            attr_forces = attr_forces.index_add(0, tail_batch, -1 * attr_grads)
-
-        # Calculate repulsive forces
         rep_forces *= 0
-        rep_grads, Z = rep_force_func(rand_pt_dists, a, b, average_weight)
-        rep_grads = torch.clamp(torch.unsqueeze(rep_grads, 1) * rep_vectors, -4, 4)
-        rep_forces = rep_forces.index_add(0, head_batch, rep_grads)
+        Z = 0
+        for i_batch in range(batches_per_epoch):
+            try:
+                batch = next(generator)
+            except StopIteration:
+                break
+
+            # Get batch of attraction and repulsion directions
+            points = batch[0]
+            nearest_neighbors = batch[1]
+            random_points = batch[2]
+            weights = batch[3]
+            head_batch = batch[4]
+            tail_batch = batch[5]
+            attr_vectors = points - nearest_neighbors
+            rep_vectors = points - random_points
+
+            # t-SNE early exaggeration
+            if i_batch == 0:
+                average_weight *= 4
+                weights *= 4
+            elif i_batch == 50:
+                weights /= 4
+                average_weight /= 4
+
+            # Squared Euclidean distance between attr and rep points
+            near_nb_dists = squared_dists(points, nearest_neighbors)
+            rand_pt_dists = squared_dists(points, random_points)
+
+            # Calculate attractive forces
+            attr_grads = attr_force_func(near_nb_dists, a, b, weights)
+            attr_grads = torch.clamp(torch.unsqueeze(attr_grads, 1) * attr_vectors, -4, 4)
+            attr_forces = attr_forces.index_add(0, head_batch, attr_grads)
+            if sym_attraction:
+                attr_forces = attr_forces.index_add(0, tail_batch, -1 * attr_grads)
+
+            # Calculate repulsive forces
+            rep_grads, batch_Z = rep_force_func(rand_pt_dists, a, b, average_weight)
+            rep_grads = torch.clamp(torch.unsqueeze(rep_grads, 1) * rep_vectors, -4, 4)
+            rep_forces = rep_forces.index_add(0, head_batch, rep_grads)
+            Z += batch_Z
 
         if normalized:
             # p_{ij} in the attractive forces is normalized by the sum of the weights,
@@ -192,15 +197,21 @@ def torch_optimize_batched(
             attr_forces *= -4 * a * b
 
         # Momentum gradient descent
-        lr = initial_lr * (1.0 - float(i_batch) / n_epochs)
-        forces[head_batch] = forces[head_batch] * 0.8 * float(momentum)
+        lr = initial_lr * (1.0 - float(i_epoch) / n_epochs)
 
-        # FIXME - indexing probably not necessary here
-        forces += attr_forces + rep_forces
-        head_embedding[head_batch] += forces[head_batch] * lr
+        step_forces *= 0
+        step_forces = attr_forces + rep_forces
+        inc_indices = forces * step_forces > 0.0
+        gains[inc_indices] += 0.2
+        gains[~inc_indices] *= 0.8
+        step_forces *= gains
 
-        if verbose and i_batch % int(n_epochs / 10) == 0:
-            print("Completed ", i_batch, " / ", n_epochs, "epochs")
+        forces = forces * 0.9 * float(momentum)
+        forces += step_forces * lr
+        head_embedding += forces
+
+        if verbose and i_epoch % int(n_epochs / 10) == 0:
+            print("Completed ", i_epoch, " / ", n_epochs, "epochs")
 
     return head_embedding.detach().numpy()
 
@@ -237,6 +248,7 @@ def torch_optimize_full(
     tail,
     weights,
     forces,
+    gains,
     n_epochs,
     n_vertices,
     a,
@@ -268,10 +280,10 @@ def torch_optimize_full(
     ratio = 1.5
     for i_epoch in range(n_epochs):
         # t-SNE early exaggeration
-        if i_epoch == 0 and normalized:
+        if i_epoch == 0:
             average_weight *= 4
             weights *= 4
-        elif i_epoch == 50 and normalized:
+        elif i_epoch == 50:
             weights /= 4
             average_weight /= 4
 
@@ -312,6 +324,7 @@ def torch_optimize_full(
             # Calculate repulsive forces
             rep_grads, Z = rep_force_func(rand_pt_dists, a, b, average_weight)
             rep_grads = torch.clamp(torch.unsqueeze(rep_grads, 1) * rep_vectors, -4, 4)
+            rep_grads *= num_repulsions
             rep_forces = rep_forces.index_add(0, head, rep_grads)
 
         if normalized:
@@ -322,8 +335,13 @@ def torch_optimize_full(
 
         # Momentum gradient descent
         lr = initial_lr * (1.0 - float(i_epoch) / n_epochs)
-        forces = forces * 0.8 * float(momentum) + (attr_forces + rep_forces)
-        head_embedding += forces * lr
+        step_forces = attr_forces + rep_forces
+        inc_indices = forces * step_forces > 0.0
+        gains[inc_indices] += 0.2
+        gains[~inc_indices] *= 0.8
+        step_forces *= gains
+        forces = forces * 0.9 * float(momentum) + step_forces * lr
+        head_embedding += forces
 
         if verbose and i_epoch % int(n_epochs / 10) == 0:
             print("Completed ", i_epoch, " / ", n_epochs, "epochs")
@@ -352,37 +370,40 @@ def torch_optimize_layout(
     verbose=True,
     **kwargs
 ):
-    a = torch.tensor(a)
-    b = torch.tensor(b)
-    weights = torch.from_numpy(weights)
-    head = torch.from_numpy(head).type(torch.long)
-    # FIXME - is clone necessary to avoid pass-by-reference concerns?
-    tail = torch.clone(torch.from_numpy(tail).type(torch.long))
-    head_embedding = torch.from_numpy(head_embedding)
-    tail_embedding = torch.from_numpy(tail_embedding)
-    forces = torch.zeros_like(head_embedding)
-    if 'sgd' in optimize_method:
-        optimization_fn = torch_optimize_batched
-    else:
-        optimization_fn = torch_optimize_full
+    with torch.no_grad():
+        a = torch.tensor(a)
+        b = torch.tensor(b)
+        weights = torch.from_numpy(weights)
+        head = torch.from_numpy(head).type(torch.long)
+        # FIXME - is clone necessary to avoid pass-by-reference concerns?
+        tail = torch.clone(torch.from_numpy(tail).type(torch.long))
+        head_embedding = torch.from_numpy(head_embedding)
+        tail_embedding = torch.from_numpy(tail_embedding)
+        forces = torch.zeros_like(head_embedding)
+        gains = torch.ones_like(head_embedding)
+        if 'sgd' in optimize_method:
+            optimization_fn = torch_optimize_batched
+        else:
+            optimization_fn = torch_optimize_full
 
-    embedding = optimization_fn(
-        normalized,
-        sym_attraction,
-        momentum,
-        batch_size,
-        head_embedding,
-        tail_embedding,
-        head,
-        tail,
-        weights,
-        forces,
-        n_epochs,
-        n_vertices,
-        a,
-        b,
-        initial_lr,
-        verbose=verbose,
-    )
+        embedding = optimization_fn(
+            normalized,
+            sym_attraction,
+            momentum,
+            batch_size,
+            head_embedding,
+            tail_embedding,
+            head,
+            tail,
+            weights,
+            forces,
+            gains,
+            n_epochs,
+            n_vertices,
+            a,
+            b,
+            initial_lr,
+            verbose=verbose,
+        )
 
     return embedding
