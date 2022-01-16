@@ -23,7 +23,7 @@ def umap_attr_forces(dist_squared, a, b, edge_weights):
 def umap_repel_forces(dist_squared, a, b, average_weight):
     kernels = umap_repel_grad(dist_squared, a, b)
     grads = kernels * (1 - average_weight)
-    return (grads, 0)
+    return (grads, 1)
 
 @torch.jit.script
 def tsne_kernel(dist_squared, a, b):
@@ -277,7 +277,7 @@ def torch_optimize_full(
     # Gradient descent loop
     attr_count = 0
     ratio_count = 0
-    ratio = 1.5
+    ratio = 1.0
     for i_epoch in range(n_epochs):
         # t-SNE early exaggeration
         if i_epoch == 0:
@@ -309,23 +309,32 @@ def torch_optimize_full(
             ratio
         )
 
+        Z = 0
         if num_repulsions > 0:
             # Get num_repulsions worth of random points to perform repulsions
-            tail_perms = [torch.randperm(n_edges) for i in range(num_repulsions)]
-            tail_perms = [tail_perm % n_vertices for tail_perm in tail_perms]
-            random_points = [tail_embedding[tail_perm] for tail_perm in tail_perms]
-            random_points = torch.stack(random_points, dim=0)
-            random_points = torch.mean(random_points, dim=0)
-            rep_vectors = points - random_points
+            for _ in range(num_repulsions):
+                tail_perms = torch.randperm(n_edges)
+                tail_perms = tail_perms % n_vertices
+                random_points = tail_embedding[tail_perms]
+                rep_vectors = points - random_points
+                rand_pt_dists = squared_dists(points, random_points)
+                rep_grads, z_component = rep_force_func(rand_pt_dists, a, b, average_weight)
+                Z += z_component
+                rep_grads = torch.unsqueeze(rep_grads, 1)
+                rep_grads = torch.clamp(rep_grads * rep_vectors, -4, 4)
+                rep_forces = rep_forces.index_add(0, head, rep_grads)
+            # random_points = torch.stack(random_points, dim=0)
+            # random_points = torch.mean(random_points, dim=0)
+            # rep_vectors = points - random_points
 
-            # Squared Euclidean distance between attr and rep points
-            rand_pt_dists = squared_dists(points, random_points)
+            # # Squared Euclidean distance between attr and rep points
+            # rand_pt_dists = squared_dists(points, random_points)
 
-            # Calculate repulsive forces
-            rep_grads, Z = rep_force_func(rand_pt_dists, a, b, average_weight)
-            rep_grads = torch.clamp(torch.unsqueeze(rep_grads, 1) * rep_vectors, -4, 4)
-            rep_grads *= num_repulsions
-            rep_forces = rep_forces.index_add(0, head, rep_grads)
+            # # Calculate repulsive forces
+            # rep_grads, Z = rep_force_func(rand_pt_dists, a, b, average_weight)
+            # rep_grads = torch.clamp(torch.unsqueeze(rep_grads, 1) * rep_vectors, -4, 4)
+            # rep_grads *= num_repulsions
+            # rep_forces = rep_forces.index_add(0, head, rep_grads)
 
         if normalized:
             # p_{ij} in the attractive forces is normalized by the sum of the weights,

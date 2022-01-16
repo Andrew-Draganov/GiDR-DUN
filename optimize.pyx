@@ -109,7 +109,7 @@ cdef (float, float) umap_repulsive_force(
     #          enough iterations
     cdef float kernel = umap_repulsion_grad(dist_squared, a, b)
     repulsive_force = cell_size * kernel * (1 - average_weight)
-    return (repulsive_force, 0)
+    return (repulsive_force, 1)
 
 cdef (float, float) tsne_repulsive_force(
         float dist_squared,
@@ -346,23 +346,21 @@ cdef void _cy_umap_uniformly(
         int i, j, k, d, v
         np.ndarray[DTYPE_FLOAT, ndim=2] attractive_forces
         np.ndarray[DTYPE_FLOAT, ndim=2] repulsive_forces
-        float Z = 0.0
+        float Z
         float theta = 0.5
         float attractive_force, repulsive_force, dist_squared, edge_weight
+
+    if normalized:
+        Z = 0
+    else:
+        Z = 1
 
     attractive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     repulsive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
 
-    num_repels = 5
-    repel_points = <float*> malloc(sizeof(float) * num_repels * dim)
-    grad = <float*> malloc(sizeof(float) * dim)
-    cdef int p = 0
-    cdef float z_component = 0.0
-
     cdef float grad_d = 0.0
-    cdef (float, float) rep_outputs
     cdef int n_edges = int(head.shape[0])
     cdef float average_weight = 0.0
     for i in range(weights.shape[0]):
@@ -394,32 +392,18 @@ cdef void _cy_umap_uniformly(
         )
         for d in range(dim):
             grad_d = attractive_force * (y1[d] - y2[d])
-            # if not normalized:
-            #     grad_d = clip(grad_d, -4, 4)
             attractive_forces[j, d] += grad_d
             if sym_attraction:
                 attractive_forces[k, d] -= grad_d
 
         # Picks random vertex from ENTIRE graph and calculates repulsive force
         # FIXME - add random seed option
-        # for p in range(num_repels):
-        #     k = rand() % n_vertices
-        #     for d in range(dim):
-        #         repel_points[p * dim + d] = tail_embedding[k, d]
-        # grad, z_component = multiple_normed_repulsions(
-        #     y1,
-        #     repel_points,
-        #     num_repels,
-        #     dim
-        # )
-        # Z += z_component
-
         k = rand() % n_vertices
         for d in range(dim):
             y2[d] = tail_embedding[k, d]
         dist_squared = sq_euc_dist(y1, y2, dim)
 
-        rep_outputs = repulsive_force_func(
+        repulsive_force, Z = repulsive_force_func(
             normalized,
             dist_squared,
             a,
@@ -428,19 +412,13 @@ cdef void _cy_umap_uniformly(
             average_weight=average_weight,
             Z=Z
         )
-        repulsive_force = rep_outputs[0]
-        Z = rep_outputs[1]
 
         for d in range(dim):
-            grad_d = repulsive_force * (y1[d] - y2[d])
-            # if not normalized:
-            #     grad_d = clip(grad_d, -4, 4)
-            repulsive_forces[j, d] += grad_d
+            repulsive_forces[j, d] += repulsive_force * (y1[d] - y2[d])
 
     cdef float rep_scalar = 4 * a * b
     cdef float att_scalar = -4 * a * b
     if normalized:
-        # avoid division by zero
         rep_scalar /= Z
 
     for v in range(n_vertices):
@@ -544,7 +522,6 @@ cdef void calculate_barnes_hut(
         np.ndarray[DTYPE_FLOAT, ndim=2] attractive_forces
         np.ndarray[DTYPE_FLOAT, ndim=2] repulsive_forces
 
-    # FIXME - add early exaggeration
     attractive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     repulsive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
     # Allocte memory for data structures
