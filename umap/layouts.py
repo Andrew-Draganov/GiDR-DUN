@@ -113,6 +113,7 @@ def optimize_sampling(
                 attraction_d = clip(attractive_force * (current[d] - other[d]))
                 current[d] += attraction_d * lr
                 if sym_attraction:
+                    # FIXME FIXME FIXME - Should this really be moving the tail embedding???
                     other[d] -= attraction_d * lr
 
             epoch_of_next_sample[i] += epochs_per_sample[i]

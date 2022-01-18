@@ -153,7 +153,7 @@ if __name__ == '__main__':
     # CHOOSE HOW TO GET LOW- AND HIGH-DIM DISTANCES #
 
     # Uncomment for exponentially growing distances
-    low_dim_dists, high_dim_dists = get_exp_dists()
+    # low_dim_dists, high_dim_dists = get_exp_dists()
 
     # Uncomment for random multivariate-gaussian distances
     # low_dim_dists, high_dim_dists = get_gaussian_dists(
@@ -166,7 +166,7 @@ if __name__ == '__main__':
     # low_dim_dists, high_dim_dists = get_mnist_dists(num_points=20)
 
     # Uncomment this and below for linearly growing distances
-    # low_dim_dists, high_dim_dists = get_simple_dists(upper_bound=10)
+    low_dim_dists, high_dim_dists = get_simple_dists(upper_bound=10)
 
     # tSNE gradients plot
     gradient = tsne_grads(high_dim_dists, low_dim_dists)
@@ -174,7 +174,7 @@ if __name__ == '__main__':
     make_plot(num_dists, gradient)
 
     # Uncomment this and above for linearly growing distances
-    # low_dim_dists, high_dim_dists = get_simple_dists(upper_bound=1)
+    low_dim_dists, high_dim_dists = get_simple_dists(upper_bound=1)
 
     # UMAP gradients plot
     a = 1

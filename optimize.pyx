@@ -3,7 +3,7 @@ cimport numpy as np
 cimport cython
 from libcpp cimport bool
 from libc.stdio cimport printf
-from libc.math cimport sqrt
+from libc.math cimport sqrt, pow
 from libc.stdlib cimport rand
 from libc.stdlib cimport malloc, free
 from cython.parallel cimport prange, parallel
@@ -166,7 +166,7 @@ cdef (float, float) repulsive_force_func(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef float _cy_umap_sampling(
+cdef void _cy_umap_sampling(
     int normalized,
     int sym_attraction,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
@@ -190,7 +190,6 @@ cdef float _cy_umap_sampling(
         int i, j, k, d, n_neg_samples
         float attractive_force, repulsive_force
         float dist_squared
-        float current_Z = 0.0
 
     # FIXME FIXME FIXME -- this version has weird localized clusters compared
     # to numba version
@@ -199,10 +198,6 @@ cdef float _cy_umap_sampling(
     cdef float grad_d = 0.0
     cdef (float, float) rep_outputs
     cdef int n_edges = int(epochs_per_sample.shape[0])
-    cdef float average_weight = 0.0
-    for i in range(weights.shape[0]):
-        average_weight = average_weight + weights[i]
-    average_weight = average_weight / n_edges
 
     for i in range(epochs_per_sample.shape[0]):
         if epoch_of_next_sample[i] <= i_epoch:
@@ -220,7 +215,7 @@ cdef float _cy_umap_sampling(
                 dist_squared,
                 a,
                 b,
-                weights[i]
+                1
             )
 
             for d in range(dim):
@@ -232,7 +227,7 @@ cdef float _cy_umap_sampling(
 
             epoch_of_next_sample[i] += epochs_per_sample[i]
 
-            # ANDREW - Picks random vertex from ENTIRE graph and calculates repulsive force
+            # ANDREW - Picks random vertices from ENTIRE graph and calculates repulsive forces
             # FIXME - add random seed option
             n_neg_samples = int(
                 (i_epoch - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
@@ -259,8 +254,6 @@ cdef float _cy_umap_sampling(
             epoch_of_next_negative_sample[i] += (
                 n_neg_samples * epochs_per_negative_sample[i]
             )
-
-    return current_Z
 
 def cy_umap_sampling(
     int normalized,
@@ -570,12 +563,17 @@ cdef void calculate_barnes_hut(
         cell_metadata = qt.summarize(y1, cell_summaries, theta * theta)
         num_cells = cell_metadata // offset
 
+        # Instead of the for-loop over all cells, we can just pick a random one
+        # If you replace the for-loop with this line, though, you also
+        # need to remove the normalization by Z after the loop over vertices
+        # i_cell = rand() % num_cells
+
         # For each quadtree cell with respect to the current point
         for i_cell in range(num_cells):
             cell_dist = cell_summaries[i_cell * offset + dim]
             cell_size = cell_summaries[i_cell * offset + dim + 1]
             # FIXME - think more about this cell_size bounding
-            # Ignoring small cells gives clusters that REALLY preserve 
+            # Ignoring small cells gives clusters that REALLY emphasize
             #      local relationships while generally maintaining global ones
             # if cell_size < 3:
             #     continue
