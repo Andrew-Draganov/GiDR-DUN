@@ -215,6 +215,7 @@ def torch_optimize_batched(
 
     return head_embedding.detach().numpy()
 
+
 def get_num_repulsions(attr_count, ratio_count, ratio):
     if ratio == 1:
         return 1, 1, 1
@@ -312,6 +313,7 @@ def torch_optimize_full(
         Z = 0
         if num_repulsions > 0:
             # Get num_repulsions worth of random points to perform repulsions
+            # FIXME - repulsions from average point give UMAP even with normalization??
             for _ in range(num_repulsions):
                 tail_perms = torch.randperm(n_edges)
                 tail_perms = tail_perms % n_vertices

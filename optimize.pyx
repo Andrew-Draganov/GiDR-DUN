@@ -102,11 +102,11 @@ cdef (float, float) umap_repulsive_force(
     ):
     cdef:
         float repulsive_force
-    # ANDREW - Using average_weight is a lame approximation
-    #        - Realistically, we should use the actual weight on
-    #          the edge e_{ik}, but the coo_matrix is not
-    #          indexable. So we assume the differences cancel out over
-    #          enough iterations
+    # - Using average_weight is a lame approximation
+    # - Realistically, we should use the actual weight on
+    #   the edge e_{ik}, but the coo_matrix is not
+    #   indexable. So we assume the differences cancel out over
+    #   enough iterations
     cdef float kernel = umap_repulsion_grad(dist_squared, a, b)
     repulsive_force = cell_size * kernel * (1 - average_weight)
     return (repulsive_force, 1)
@@ -191,8 +191,6 @@ cdef void _cy_umap_sampling(
         float attractive_force, repulsive_force
         float dist_squared
 
-    # FIXME FIXME FIXME -- this version has weird localized clusters compared
-    # to numba version
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
     cdef float grad_d = 0.0
@@ -208,7 +206,7 @@ cdef void _cy_umap_sampling(
             for d in range(dim):
                 y1[d] = head_embedding[j, d]
                 y2[d] = tail_embedding[k, d]
-            # ANDREW - optimize positive force for each edge
+            # optimize positive force for each edge
             dist_squared = sq_euc_dist(y1, y2, dim)
             attractive_force = attractive_force_func(
                 normalized,
@@ -227,7 +225,7 @@ cdef void _cy_umap_sampling(
 
             epoch_of_next_sample[i] += epochs_per_sample[i]
 
-            # ANDREW - Picks random vertices from ENTIRE graph and calculates repulsive forces
+            # Picks random vertices from ENTIRE graph and calculates repulsive forces
             # FIXME - add random seed option
             n_neg_samples = int(
                 (i_epoch - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
@@ -281,8 +279,8 @@ def cy_umap_sampling(
         np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample,
         np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample,
 
-    # ANDREW - perform negative samples x times more often
-    #          by making the number of epochs between samples smaller
+    # perform negative samples x times more often
+    #   by making the number of epochs between samples smaller
     epochs_per_negative_sample = epochs_per_sample / negative_sample_rate
     # Make copies of these two
     epoch_of_next_negative_sample = py_np.ones_like(epochs_per_negative_sample) * epochs_per_negative_sample
@@ -395,6 +393,8 @@ cdef void _cy_umap_uniformly(
         for d in range(dim):
             y2[d] = tail_embedding[k, d]
         dist_squared = sq_euc_dist(y1, y2, dim)
+        # FIXME - doing repulsions from average of multiple points gives UMAP
+        #         even with normalization??
 
         repulsive_force, Z = repulsive_force_func(
             normalized,
@@ -407,7 +407,7 @@ cdef void _cy_umap_uniformly(
         )
 
         for d in range(dim):
-            repulsive_forces[j, d] += repulsive_force * (y1[d] - y2[d])
+            repulsive_forces[j, d] += clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
 
     cdef float rep_scalar = 4 * a * b
     cdef float att_scalar = -4 * a * b
@@ -421,12 +421,13 @@ cdef void _cy_umap_uniformly(
                 attractive_forces[v, d] = attractive_forces[v, d] * att_scalar
             grad_d = attractive_forces[v, d] + repulsive_forces[v, d]
 
-            if grad_d * forces[v, d] > 0.0:
-                gains[v, d] += 0.2
-            else:
-                gains[v, d] *= 0.8
-            gains[v, d] = clip(gains[v, d], 0.01, 100)
-            grad_d *= gains[v, d]
+            if normalized:
+                if grad_d * forces[v, d] > 0.0:
+                    gains[v, d] += 0.2
+                else:
+                    gains[v, d] *= 0.8
+                gains[v, d] = clip(gains[v, d], 0.01, 100)
+                grad_d *= gains[v, d]
 
             if momentum == 1:
                 forces[v, d] = grad_d * lr + 0.9 * forces[v, d]
