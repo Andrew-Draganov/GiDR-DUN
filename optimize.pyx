@@ -590,7 +590,8 @@ cdef void calculate_barnes_hut(
             for d in range(dim):
                 dim_index = i_cell * offset + d
                 grad[d] = repulsive_force * cell_summaries[dim_index]
-                repulsive_forces[v, d] += grad[d] / n_vertices
+                repulsive_forces[v, d] += grad[d]
+                # repulsive_forces[v, d] += grad[d] / n_vertices
 
     cdef float rep_scalar = 4 * a * b
     cdef float att_scalar = -4 * a * b
@@ -602,6 +603,8 @@ cdef void calculate_barnes_hut(
             if normalized:
                 repulsive_forces[v, d] = repulsive_forces[v, d] * rep_scalar
                 attractive_forces[v, d] = attractive_forces[v, d] * att_scalar
+            else:
+                repulsive_forces[v, d] = repulsive_forces[v, d] / n_vertices
             grad_d = attractive_forces[v, d] + repulsive_forces[v, d]
 
             if grad_d * forces[v, d] > 0.0:

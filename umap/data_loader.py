@@ -11,6 +11,7 @@ def get_dataset(dataset_name, num_points):
     if dataset_name == 'mnist':
         train, _ = tfk.datasets.mnist.load_data(path='mnist.npz')
         points, labels = train
+        points = np.array(points) / 255.0
     elif dataset_name == 'cifar':
         train, _ = tfk.datasets.cifar10.load_data()
         points, labels = train
@@ -60,8 +61,6 @@ def get_dataset(dataset_name, num_points):
     num_samples = int(points.shape[0])
     points = np.reshape(points, [num_samples, -1])
 
-    # FIXME - do I need this normalization?
-    if np.max(points) == 255:
-        points = np.array(points) / 255.0
+    # FIXME - CHECK NORMALIZATIONS??
 
     return points, labels

@@ -565,6 +565,7 @@ def make_epochs_per_sample(weights, n_epochs):
     -------
     An array of number of epochs per sample, one for each 1-simplex.
     """
+    # FIXME - only necessary if optimize method is umap_sampling
     result = -1.0 * np.ones(weights.shape[0], dtype=np.float32)
     n_samples = n_epochs * (weights / weights.max())
     result[n_samples > 0] = float(n_epochs) / n_samples[n_samples > 0]

@@ -133,7 +133,7 @@ if args.dr_algorithm == 'uniform_umap':
     dr = UniformUmap(
             n_neighbors=args.n_neighbors,
             n_epochs=args.n_epochs,
-            random_state=12345, # Comment this out to turn on parallelization
+            random_state=12345,
             init=args.initialization,
             pseudo_distance=(not args.ignore_umap_metric),
             tsne_symmetrization=args.tsne_symmetrization,
