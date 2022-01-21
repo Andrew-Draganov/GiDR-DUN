@@ -43,16 +43,16 @@ for i_epoch in tqdm(range(n_epochs), total=n_epochs):
     y_dists -= np.mean(y_dists, axis=1, keepdims=True)
     y_dists -= np.mean(y_dists, axis=0, keepdims=True)
 
-    attractive_forces = - 4 / (n_points**2) * y_dists
-    attractive_grads = np.expand_dims(attractive_forces, -1) * y_vecs
-    attractive_grads = np.sum(attractive_grads, axis=0)
+    Y_forces = - 4 / (n_points**2) * y_dists
+    Y_grads = np.expand_dims(Y_forces, -1) * y_vecs
+    Y_grads = np.sum(Y_grads, axis=0)
 
-    repulsive_forces = 4 / (n_points**2) * x_dists
-    repulsive_grads = np.expand_dims(repulsive_forces, -1) * y_vecs
-    repulsive_grads = np.sum(repulsive_grads, axis=0)
+    X_forces = 4 / (n_points**2) * x_dists
+    X_grads = np.expand_dims(X_forces, -1) * y_vecs
+    X_grads = np.sum(X_grads, axis=0)
 
     # momentum gradient descent
-    forces = forces * 0.9 + lr * (attractive_grads + repulsive_grads)
+    forces = forces * 0.9 + lr * (Y_grads + X_grads)
     y += forces
     
     if i_epoch % 100 == 0:
