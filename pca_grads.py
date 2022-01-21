@@ -29,6 +29,7 @@ plt.clf()
 
 y = np.random.multivariate_normal([0, 0], [[1, 0], [0, 1]], n_points)
 
+# FIXME FIXME FIXME -- what happens if we only do this with nearest/farthest neighbors???
 lr = 1.0
 forces = np.zeros_like(y)
 x_dists = np.sum(np.square(np.expand_dims(x, 0) - np.expand_dims(x, 1)), axis=-1)

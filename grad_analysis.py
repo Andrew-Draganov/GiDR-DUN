@@ -127,6 +127,7 @@ def tsne_grads(Dx, Dy):
     Q = 1 / (1 + np.square(Dy))
     P, Q = np.meshgrid(P, Q)
     Z_stack = [1 / (1 + np.square(Dy)) for _ in Dy]
+    # FIXME - Is it okay to use the same distance values for both the kernels and the (y_i - y_j) scaling?
     Dy_stack = [Dy for _ in Dy]
     gradient = 4 * (P - Q) * np.stack(Z_stack, -1) * np.stack(Dy_stack, -1)
     gradient = np.flip(gradient, 0)
