@@ -100,6 +100,15 @@ distributions as $P = \left( p_{ij} \right)_{i, j < N}$ and $Q = \left( q_{ij}
 In essence, tSNE minimizes the KL divergence of the low- and high-dimensional pairwise distance matrices under their respective kernels, whereas UMAP sums over
 each edge's KL divergence in terms of the Bernoulli distribution.
 
+\subsection{Intuition}
+
+We would like to provide some intuition for these two normalizations. In the normalized case we have a probability distribution over all
+distinct pairwise relationships $p(x_i, x_j)$ and $q(y_i, y_j)$ for $i \neq j$. In the unnormalized case we instead have a probability distribution over each
+individual distinct pairwise relationship. We can look at these through the lens of a fully-connected graphs in which each edge $e_{ij}$ is the
+kernel value $p(x_i, x_j)$ or $q(y_i, y_j)$. Under this lens, the probabilities in the normalized case are akin to asking ``when we pick a random edge, what is the
+probability that we pick $e_{ij}$?''. Alternatively, the unnormalized variant asks ``for the specific edge $e_{ij}$, what is the probability that it exists?''
+Minimizing the KL divergence therefore amounts to ensuring that these probabilities in the high- and low-dimensional spaces are as similar as possible.
+
 In practice, both tSNE and UMAP optimize this KL divergence by separately calculating attractive and repulsive forces. It is, however, unnecessary to calculate
 each such attraction and repulsion as, for example, dissimilar points in the high-dimensional space impose negligible attraction in the low-dimensional space.
 To simplify the complexity, both approaches establish a nearest neighbor graph \cite{van2014accelerating} with edges $|\mathcal{E}|$ among the
@@ -107,6 +116,8 @@ high-dimensional points where points $x_i$ and $x_j$ share an edge if either $x_
 Then both algorithms simply perform attractions along these edges while performing repulsions evenly across the rest of the points. In this sense, we can
 interpret the gradient descent problem as a set of springs between every pair of points in $Y$ where the spring constants are determined by the Gaussian and
 Student-t kernels.
+
+\subsection{Gradients}
 
 The gradient of the KL divergences becomes substantially different due to the differing normalizations. In tSNE, the gradient can be written as
 \begin{equation}
@@ -225,22 +236,24 @@ can successfully recreate UMAP's outputs across a variety of datasets. Then, we 
 each choice has on the tSNE and Uniform UMAP embeddings. Using this, we identify the changes necessary to produce tSNE's outputs within the UMAP framework and vice versa.
 
 \subsection{Metrics}
-To avoid relying on qualitative observation, we introduce several metrics that we will be using to describe both embedding quality and the differences between
-tSNE and UMAP.
-\begin{enumerate}
-    \item Change in sort index - If we sort the high-dimensional distances and the low-dimensional distances, how different are the sort indices? The x-axis
-        goes through all the high-dimensional distances in order; the y-axis is the relative change for that high-dimensional sort index
-    \item High dimensional distance vs. low dimensional distance - These are simply the low-dimensional distances plotted vs. the high dimensional distances. The high dimensional distances
-        have been sorted from least to greatest. Note that PCA is a straight line (which is what we expected). Also, note that the large high-dim distances are
-        represented by larger low-dim distances in UMAP than in tSNE
-    \item Sorted distances - This is just the y-values of the previous plot. Basically, when we sort the high-dimensional distances, what do the low
-        dimensional ones look like?
-    \item Nearest neighbor overlap - For every point, what percent of its [k, k + 10] nearest neighbors are preserved? Note that immediate local distances are preserved in
-        tSNE and UMAP, after which there is a giant portion where the middle distances aren't relevant.
-    \item Relative error - This is the relative error for high-dimensional distances. We normalize both the high-dim and low-dim distances to $[0, 1]$, since the
-        magnitudes are arbitrary in our setting. Thus, we do $| (d^h(x_i, x_j) - d^l(y_i - y_j)) |/ d^h(x_i, x_j)$. We replace the 0's in the high dimensional
-        distances with 1's to avoid division errors.
-\end{enumerate}
+To avoid relying on qualitative observation, we introduce several metrics that we will be using to describe both embedding quality and the differences between tSNE and UMAP.
+
+Want one metric that is ``quality of embedding'' and one that captures ``amount of space between clusters''. For the latter, it should be enough to get
+distances of all points between two clusters and take the 1\% cut. Basically, something to give you the distance between the shells of the two clusters.
+% \begin{enumerate}
+%     \item Change in sort index - If we sort the high-dimensional distances and the low-dimensional distances, how different are the sort indices? The x-axis
+%         goes through all the high-dimensional distances in order; the y-axis is the relative change for that high-dimensional sort index
+%     \item High dimensional distance vs. low dimensional distance - These are simply the low-dimensional distances plotted vs. the high dimensional distances. The high dimensional distances
+%         have been sorted from least to greatest. Note that PCA is a straight line (which is what we expected). Also, note that the large high-dim distances are
+%         represented by larger low-dim distances in UMAP than in tSNE
+%     \item Sorted distances - This is just the y-values of the previous plot. Basically, when we sort the high-dimensional distances, what do the low
+%         dimensional ones look like?
+%     \item Nearest neighbor overlap - For every point, what percent of its [k, k + 10] nearest neighbors are preserved? Note that immediate local distances are preserved in
+%         tSNE and UMAP, after which there is a giant portion where the middle distances aren't relevant.
+%     \item Relative error - This is the relative error for high-dimensional distances. We normalize both the high-dim and low-dim distances to $[0, 1]$, since the
+%         magnitudes are arbitrary in our setting. Thus, we do $| (d^h(x_i, x_j) - d^l(y_i - y_j)) |/ d^h(x_i, x_j)$. We replace the 0's in the high dimensional
+%         distances with 1's to avoid division errors.
+% \end{enumerate}
 
 \subsection{UMAP and Uniform UMAP Equivalency}
 
@@ -267,6 +280,10 @@ Due to using tSNE's normalization, we also require the corresponding modificatio
    and $Z = \sum_{k \neq l} (1 + a ||y_i
    - y_j||_2^{2b})^{-1}$. Notice that this is essentially the tSNE kernels with UMAP's $\rho_i$, $a$, and $b$ scalars. We show later that these can be removed
    in practice.
+
+\subsection{Achieving UMAP within tSNE}
+This direction turns out to be significantly easier. Performing the Barnes-Hut algorithm for tSNE with a Laplacian eigenmap initialization and symmetric
+attraction is sufficient to obtain UMAP consistently.
 
 \subsection{Claims and misconceptions}
 % FIXME - talk about GAINS in tSNE optimization

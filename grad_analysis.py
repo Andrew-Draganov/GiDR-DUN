@@ -3,25 +3,47 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 np.set_printoptions(threshold=np.inf)
-from tensorflow import keras as tfk
 
 # Low- and High-Dim distance getters
-def get_simple_dists(upper_bound):
+def get_matrix_pca_dists():
+    low_dim_points = np.arange(0.01, 0.5, 0.01)
+    low_dim_points = np.expand_dims(low_dim_points, 1)
+    low_dim_dists = get_pairwise_dist_matrix(low_dim_points)
+    low_dim_dists = np.reshape(low_dim_dists, -1)
+
+    high_dim_points = np.arange(0.01, 0.5, 0.01)
+    high_dim_points = np.expand_dims(high_dim_points, 1)
+    high_dim_dists = get_pairwise_dist_matrix(high_dim_points)
+    high_dim_dists = np.reshape(high_dim_dists, -1)
+
+    return low_dim_dists, high_dim_dists, len(low_dim_points)
+
+def get_pairwise_dist_matrix(points):
+    # FIXME -- just don't sqrt here and remove them from all grads calcs
+    num_points = int(points.shape[0])
+    dists = np.zeros([num_points, num_points])
+    for i, x_i in enumerate(points):
+        for j, x_j in enumerate(points):
+            if i != j:
+                dists[i, j] = np.sqrt(np.sum(np.square(x_i - x_j)))
+    return dists
+
+def get_linear_progression(upper_bound):
     low_dim_dists = np.arange(0.01, upper_bound, 0.01)
     high_dim_dists = np.arange(0.01, upper_bound, 0.01)
     return low_dim_dists, high_dim_dists
 
-def get_exp_dists():
+def get_exp_progression():
     low_dim_dists = [0.005 * 1.12 ** i for i in range(100)]
     high_dim_dists = [0.005 * 1.12 ** i for i in range(100)]
     return low_dim_dists, high_dim_dists
 
-def get_pairwise_dists(points):
+def get_pairwise_dist_array(points):
     dists = []
     for i, x_i in enumerate(points):
         for x_j in points[i:]:
             if not np.all(x_i == x_j):
-                dists.append(np.sum(np.square(x_i - x_j)))
+                dists.append(np.square(np.sum(np.square(x_i - x_j))))
     return np.sort(dists)
 
 def get_random_low_dim_dists(low_dimensionality, num_points):
@@ -30,7 +52,7 @@ def get_random_low_dim_dists(low_dimensionality, num_points):
         np.eye(low_dimensionality),
         size=num_points
     )
-    return get_pairwise_dists(low_dim_points)
+    return get_pairwise_dist_array(low_dim_points)
 
 def get_gaussian_dists(high_dimensionality, low_dimensionality, num_points):
     high_dim_points = np.random.multivariate_normal(
@@ -38,7 +60,7 @@ def get_gaussian_dists(high_dimensionality, low_dimensionality, num_points):
         np.eye(high_dimensionality),
         size=num_points
     )
-    high_dim_dists = get_pairwise_dists(high_dim_points)
+    high_dim_dists = get_pairwise_dist_array(high_dim_points)
     low_dim_dists = get_random_low_dim_dists(low_dimensionality, num_points)
 
     return low_dim_dists, high_dim_dists
@@ -54,14 +76,52 @@ def get_mnist_dists(num_points):
     points, labels = points[::downsample_stride], labels[::downsample_stride]
     num_samples = int(points.shape[0])
     points = np.reshape(points, [num_samples, -1]).astype(np.float32)
-    high_dim_dists = get_pairwise_dists(points)
+    high_dim_dists = get_pairwise_dist_array(points)
     low_dim_dists = get_random_low_dim_dists(2, num_points)
 
     return low_dim_dists, high_dim_dists
 
 
-
 # GRADIENT DERIVATIONS
+def pca_kernel(Dx, Dy, num_points):
+    Kern_x = np.reshape(Dx, [num_points, num_points])
+    Kern_x = np.square(Kern_x)
+    # Zero row/col mean for PCA grads
+    Kern_x -= np.mean(Kern_x, axis=0, keepdims=True)
+    Kern_x -= np.mean(Kern_x, axis=1, keepdims=True)
+
+    Kern_y = np.reshape(Dy, [num_points, num_points])
+    Kern_y = np.square(Kern_y)
+    # Zero row/col mean for PCA grads
+    Kern_y -= np.mean(Kern_y, axis=0, keepdims=True)
+    Kern_y -= np.mean(Kern_y, axis=1, keepdims=True)
+
+    return Kern_x, Kern_y
+
+def centered_pca_kernels(Dx, Dy, num_points):
+    scalar = -4
+    x_sort_indices = np.argsort(np.reshape(Dx, -1))
+    y_sort_indices = np.argsort(np.reshape(Dy, -1))
+
+    P, Q = pca_kernel(Dx, Dy, num_points)
+    P = np.reshape(P, -1)[x_sort_indices]
+    Q = np.reshape(Q, -1)[y_sort_indices]
+    P, Q = np.meshgrid(P, Q)
+
+    return P, Q
+
+def pca_grads(Dx, Dy, num_points=-1, centered=False):
+    scalar = -4
+    if centered:
+        assert num_points > 0
+        P, Q = centered_pca_kernels(Dx, Dy, num_points)
+    else:
+        P, Q = np.meshgrid(np.square(Dx), np.square(Dy))
+    Dy_stack = [Dy for _ in Dy]
+    gradient = scalar * (Q - P) * np.stack(Dy_stack, -1)
+    gradient = np.flip(gradient, 0)
+    return gradient
+
 def tsne_grads(Dx, Dy):
     P = np.exp(-(np.square(Dx) / 2))
     Q = 1 / (1 + np.square(Dy))
@@ -109,51 +169,77 @@ def find_sigma(D, target):
     return mid
 
 
-def make_plot(num_dists, gradient):
+def make_plot(low_dim_dists, high_dim_dists, gradient, contour=True):
+    num_dists = len(low_dim_dists)
     fig = plt.figure()
     ax1 = fig.add_subplot(1, 1, 1)
     X, Y = np.meshgrid(np.arange(num_dists), np.arange(num_dists))
     ax1.matshow(gradient, cmap=plt.get_cmap('viridis'))
     PC = ax1.pcolor(X, Y, gradient)
-    contour = ax1.contour(
-        X,
-        Y,
-        gradient,
-        levels=[0, 10],
-        colors='black',
-        linestyles='dashed'
-    )
-
     cbar = plt.colorbar(PC)
-    cbar.add_lines(contour)
+
+    if contour:
+        contour = ax1.contour(
+            X,
+            Y,
+            gradient,
+            levels=[0, 10],
+            colors='black',
+            linestyles='dashed'
+        )
+        cbar.add_lines(contour)
     plt.xlabel('High dim distance >>')
     plt.ylabel('Low dim distance >>')
+
+    x_tick_indices = np.arange(
+        int(num_dists/10),
+        num_dists,
+        num_dists/10
+    )
+    x_tick_indices = x_tick_indices.astype(np.int32)
+
+    y_tick_indices = np.arange(
+        0,
+        num_dists,
+        num_dists/10
+    )
+    y_tick_indices = y_tick_indices.astype(np.int32)
+
+    plt.xticks(x_tick_indices, np.sort(np.round(high_dim_dists, 2))[x_tick_indices])
     plt.tick_params(
         axis='x',
-        which='both',
-        bottom=False,
+        bottom=True,
+        labelbottom=True,
         top=False,
-        labelbottom=False,
-        labeltop=False
+        labeltop=False,
+        which='both',
     )
+    plt.yticks(y_tick_indices, np.sort(np.round(low_dim_dists, 2))[::-1][y_tick_indices])
     plt.tick_params(
         axis='y',
+        left=True,
+        labelleft=True,
         which='both',
-        left=False,
-        right=False,
-        labelleft=False,
-        labelright=False
     )
     plt.show()
     cbar.remove()
 
 
-
 if __name__ == '__main__':
+    # Basic PCA gradients plot
+    low_dim_dists, high_dim_dists = get_linear_progression(upper_bound=0.5)
+    gradient = pca_grads(high_dim_dists, low_dim_dists, centered=False)
+    make_plot(low_dim_dists, high_dim_dists, gradient, contour=True)
+
+    # Centered PCA gradients plot
+    low_dim_dists, high_dim_dists, num_points = get_matrix_pca_dists()
+    gradient = pca_grads(high_dim_dists, low_dim_dists, num_points, centered=True)
+    make_plot(low_dim_dists, high_dim_dists, gradient, contour=False)
+
     # CHOOSE HOW TO GET LOW- AND HIGH-DIM DISTANCES #
 
     # Uncomment for exponentially growing distances
-    # low_dim_dists, high_dim_dists = get_exp_dists()
+    # low_dim_dists, high_dim_dists = get_exp_progression()
 
     # Uncomment for random multivariate-gaussian distances
     # low_dim_dists, high_dim_dists = get_gaussian_dists(
@@ -163,23 +249,22 @@ if __name__ == '__main__':
     # )
 
     # Uncomment for MNIST distances
+    # from tensorflow import keras as tfk
     # low_dim_dists, high_dim_dists = get_mnist_dists(num_points=20)
 
     # Uncomment this and below for linearly growing distances
-    low_dim_dists, high_dim_dists = get_simple_dists(upper_bound=10)
+    low_dim_dists, high_dim_dists = get_linear_progression(upper_bound=10)
 
     # tSNE gradients plot
     gradient = tsne_grads(high_dim_dists, low_dim_dists)
-    num_dists = len(low_dim_dists)
-    make_plot(num_dists, gradient)
+    make_plot(low_dim_dists, high_dim_dists, gradient)
 
     # Uncomment this and above for linearly growing distances
-    low_dim_dists, high_dim_dists = get_simple_dists(upper_bound=1)
+    low_dim_dists, high_dim_dists = get_linear_progression(upper_bound=1)
 
     # UMAP gradients plot
     a = 1
     b = 1
     k = 20
     gradient = umap_grads(high_dim_dists, low_dim_dists, a, b, k)
-    num_dists = len(low_dim_dists)
-    make_plot(num_dists, gradient)
+    make_plot(low_dim_dists, high_dim_dists, gradient)
