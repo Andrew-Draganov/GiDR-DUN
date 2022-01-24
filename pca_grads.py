@@ -16,7 +16,11 @@ def get_neighbors(x, n_neighbors=20, stride=False):
         inds = np.arange(n_points)[sort_indices]
 
         if stride:
-            neighbors[i] = inds[::int(n_points / n_neighbors)]
+            # Rather than doing nearest and farthest neighbors, just get the
+            #   n_neighbors points at evenly spaced indices
+            # So neighbors[i] could be x_i's closest, 10th closest, 20th closest, ... points
+            # Start from 1 to avoid ||x_i - x_i||^2
+            neighbors[i] = inds[1::int(n_points / n_neighbors)]
         else:
             # Get the nearest and furthest neighbors
             # inds[0] is just i since dist(x_i, x_i) = 0 is the min
@@ -31,13 +35,15 @@ def get_neighbors(x, n_neighbors=20, stride=False):
 
 optimize_by_neighbors = True
 desired_size = 1000
-# x, _ = make_swiss_roll(n_samples=n_points, noise=0.001)
-# labels = np.ones([int(x.shape[0])])
 
+# Download datasets
+# x, _ = make_swiss_roll(n_samples=desired_size, noise=0.001)
+# labels = np.ones([int(x.shape[0])])
 train, _ = tfk.datasets.mnist.load_data(path='mnist.npz')
 x, labels = train
 x = x.astype(np.float32)
 
+# Resize MNIST dataset to be desired number of points
 dataset_size = int(x.shape[0])
 downsample_stride = int(float(dataset_size) / desired_size)
 x, labels = x[::downsample_stride], labels[::downsample_stride]
@@ -46,20 +52,22 @@ x = np.reshape(x, [n_points, -1])
 x /= 255.0
 x = x.astype(np.float32)
 
+# SKLearn library PCA implementation
 # pca = PCA()
 # y = pca.fit_transform(x)
 # plt.scatter(y[:, 0], y[:, 1], c=labels)
 # plt.savefig(os.path.join('images', 'True_PCA.png'))
 # plt.clf()
 
+# Initialize embedding
 y = np.random.multivariate_normal([0, 0], [[1, 0], [0, 1]], n_points)
 
-# FIXME FIXME FIXME -- what happens if we only do this with nearest/farthest neighbors???
 lr = 1.0
 forces = np.zeros_like(y)
 X_forces = np.zeros_like(y)
 Y_forces = np.zeros_like(y)
 if optimize_by_neighbors:
+    # If n_neighbors is set to n_points, then it's just regular PCA gradient descent
     n_neighbors = 50
     neighbors = get_neighbors(x, n_neighbors, stride=False)
 else:
@@ -69,6 +77,8 @@ x_dists = np.zeros([n_points, n_points])
 y_dists = np.zeros([n_points, n_points])
 
 if optimize_by_neighbors:
+    # If optimizing by neighbors, only calculate high-dim distances for
+    #   each point to its respective neighbors
     for i in range(n_points):
         neighbor_vecs = np.expand_dims(x[i], 0) - x[neighbors[i]]
         neighbor_dists = np.sum(np.square(neighbor_vecs), axis=-1)
@@ -79,11 +89,14 @@ else:
 # Zero row/col means
 x_dists -= np.mean(x_dists, axis=1, keepdims=True)
 x_dists -= np.mean(x_dists, axis=0, keepdims=True)
+
 n_epochs = 1000
 for i_epoch in tqdm(range(n_epochs), total=n_epochs):
     y_vecs = np.expand_dims(y, 0) - np.expand_dims(y, 1)
 
     if optimize_by_neighbors:
+        # y_i gets ||x_i - x_j||^2 force w.r.t. y_j if x_i and x_j are nearest neighbors
+        # So for each such force, also sample a y_k to calculate ||y_i - y_k||^2
         n_samples = n_neighbors
         random_row_inds = {
             i: np.random.choice(np.arange(n_points), size=n_samples, replace=False)
@@ -95,6 +108,8 @@ for i_epoch in tqdm(range(n_epochs), total=n_epochs):
         }
         y_dists *= 0
         for i in range(n_points):
+            # Sample points down the rows and columns to ensure the mean subtractions
+            #   are fully populated
             sampled_row_dists = np.sum(np.square(y_vecs[i][random_row_inds[i]]), -1)
             y_dists[i][random_row_inds[i]] = sampled_row_dists
             sampled_col_dists = np.sum(np.square(y_vecs[:, i][random_col_inds[i]]), -1)
@@ -117,6 +132,8 @@ for i_epoch in tqdm(range(n_epochs), total=n_epochs):
 
     # momentum gradient descent
     # forces = forces * 0.9 + lr * (Y_grads + X_grads)
+
+    # regular gradient descent
     forces = lr * (Y_grads + X_grads)
     y += forces
     
@@ -125,5 +142,6 @@ for i_epoch in tqdm(range(n_epochs), total=n_epochs):
         plt.show()
         # plt.savefig(os.path.join('images', '{0:04d}.png'.format(i_epoch)))
         plt.clf()
+
 plt.scatter(y[:, 0], y[:, 1], c=labels)
 plt.show()
