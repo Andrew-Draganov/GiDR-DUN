@@ -90,9 +90,9 @@ def pca_kernel(Dx, Dy, num_points):
     Kern_x -= np.mean(Kern_x, axis=0, keepdims=True)
     Kern_x -= np.mean(Kern_x, axis=1, keepdims=True)
 
+    # Zero row/col mean for PCA grads
     Kern_y = np.reshape(Dy, [num_points, num_points])
     Kern_y = np.square(Kern_y)
-    # Zero row/col mean for PCA grads
     Kern_y -= np.mean(Kern_y, axis=0, keepdims=True)
     Kern_y -= np.mean(Kern_y, axis=1, keepdims=True)
 

@@ -32,116 +32,194 @@ def get_neighbors(x, n_neighbors=20, stride=False):
 
     return neighbors
 
-
-optimize_by_neighbors = True
-desired_size = 1000
-
-# Download datasets
-# x, _ = make_swiss_roll(n_samples=desired_size, noise=0.001)
-# labels = np.ones([int(x.shape[0])])
-train, _ = tfk.datasets.mnist.load_data(path='mnist.npz')
-x, labels = train
-x = x.astype(np.float32)
-
-# Resize MNIST dataset to be desired number of points
-dataset_size = int(x.shape[0])
-downsample_stride = int(float(dataset_size) / desired_size)
-x, labels = x[::downsample_stride], labels[::downsample_stride]
-n_points = int(x.shape[0])
-x = np.reshape(x, [n_points, -1])
-x /= 255.0
-x = x.astype(np.float32)
-
-# SKLearn library PCA implementation
-# pca = PCA()
-# y = pca.fit_transform(x)
-# plt.scatter(y[:, 0], y[:, 1], c=labels)
-# plt.savefig(os.path.join('images', 'True_PCA.png'))
-# plt.clf()
-
-# Initialize embedding
-y = np.random.multivariate_normal([0, 0], [[1, 0], [0, 1]], n_points)
-
-lr = 1.0
-forces = np.zeros_like(y)
-X_forces = np.zeros_like(y)
-Y_forces = np.zeros_like(y)
-if optimize_by_neighbors:
-    # If n_neighbors is set to n_points, then it's just regular PCA gradient descent
-    n_neighbors = 50
-    neighbors = get_neighbors(x, n_neighbors, stride=False)
-else:
-    n_neighbors = n_points
-
-x_dists = np.zeros([n_points, n_points])
-y_dists = np.zeros([n_points, n_points])
-
-if optimize_by_neighbors:
+def get_neighbor_x_dists(x, full_x_dists, n_neighbors, stride=False):
     # If optimizing by neighbors, only calculate high-dim distances for
     #   each point to its respective neighbors
+    n_points = int(x.shape[0])
+    x_dists = np.zeros([n_points, n_points])
+    neighbors = get_neighbors(x, n_neighbors, stride=stride)
     for i in range(n_points):
-        neighbor_vecs = np.expand_dims(x[i], 0) - x[neighbors[i]]
-        neighbor_dists = np.sum(np.square(neighbor_vecs), axis=-1)
+        # FIXME -- made this change without checking it
+        neighbor_dists = full_x_dists[i][neighbors[i]]
+
         x_dists[i][neighbors[i]] = neighbor_dists
-else:
-    x_dists = np.sum(np.square(np.expand_dims(x, 0) - np.expand_dims(x, 1)), axis=-1)
 
-# Zero row/col means
-x_dists -= np.mean(x_dists, axis=1, keepdims=True)
-x_dists -= np.mean(x_dists, axis=0, keepdims=True)
+def get_sampling_x_dists(n_samples, full_x_dists):
+    n_points = int(full_x_dists.shape[0])
+    sparse_x_dists = np.zeros([n_points, n_points])
+    random_row_inds = {
+        i: np.random.choice(np.arange(n_points), size=n_samples, replace=False)
+        for i in range(n_points)
+    }
+    random_col_inds = {
+        i: np.random.choice(np.arange(n_points), size=n_samples, replace=False)
+        for i in range(n_points)
+    }
+    for i in range(n_points):
+        # Sample points down the rows and columns to ensure the mean subtractions
+        #   are fully populated
+        sampled_row_dists = full_x_dists[i][random_row_inds[i]]
+        sparse_x_dists[i][random_row_inds[i]] = sampled_row_dists
+        sampled_col_dists = full_x_dists[:, i][random_col_inds[i]]
+        sparse_x_dists[:, i][random_col_inds[i]] = sampled_col_dists
 
-n_epochs = 1000
-for i_epoch in tqdm(range(n_epochs), total=n_epochs):
-    y_vecs = np.expand_dims(y, 0) - np.expand_dims(y, 1)
+    return sparse_x_dists
 
-    if optimize_by_neighbors:
-        # y_i gets ||x_i - x_j||^2 force w.r.t. y_j if x_i and x_j are nearest neighbors
-        # So for each such force, also sample a y_k to calculate ||y_i - y_k||^2
-        n_samples = n_neighbors
-        random_row_inds = {
-            i: np.random.choice(np.arange(n_points), size=n_samples, replace=False)
-            for i in range(n_points)
-        }
-        random_col_inds = {
-            i: np.random.choice(np.arange(n_points), size=n_samples, replace=False)
-            for i in range(n_points)
-        }
-        y_dists *= 0
-        for i in range(n_points):
-            # Sample points down the rows and columns to ensure the mean subtractions
-            #   are fully populated
-            sampled_row_dists = np.sum(np.square(y_vecs[i][random_row_inds[i]]), -1)
-            y_dists[i][random_row_inds[i]] = sampled_row_dists
-            sampled_col_dists = np.sum(np.square(y_vecs[:, i][random_col_inds[i]]), -1)
-            y_dists[:, i][random_col_inds[i]] = sampled_col_dists
-    else:
-        y_dists = np.sum(np.square(y_vecs), axis=-1)
+def get_sampling_y_dists(n_samples, y_vecs):
+    # y_i gets ||x_i - x_j||^2 force w.r.t. y_j if x_i and x_j are being sampled
+    # So for each such force, also sample a y_k to calculate ||y_i - y_k||^2
+    n_points = int(y_vecs.shape[0])
+    sparse_y_dists = np.zeros([n_points, n_points])
+    random_row_inds = {
+        i: np.random.choice(np.arange(n_points), size=n_samples, replace=False)
+        for i in range(n_points)
+    }
+    random_col_inds = {
+        i: np.random.choice(np.arange(n_points), size=n_samples, replace=False)
+        for i in range(n_points)
+    }
+    for i in range(n_points):
+        # Sample points down the rows and columns to ensure the mean subtractions
+        #   are fully populated
+        sampled_row_dists = np.sum(np.square(y_vecs[i][random_row_inds[i]]), -1)
+        sparse_y_dists[i][random_row_inds[i]] = sampled_row_dists
+        sampled_col_dists = np.sum(np.square(y_vecs[:, i][random_col_inds[i]]), -1)
+        sparse_y_dists[:, i][random_col_inds[i]] = sampled_col_dists
 
-    # zero row/col mean y distances
-    y_dists -= np.mean(y_dists, axis=1, keepdims=True)
-    y_dists -= np.mean(y_dists, axis=0, keepdims=True)
+    return sparse_y_dists
 
-    # PCA kernels
-    Y_forces = - 4 / (n_points * n_neighbors) * y_dists
-    Y_grads = np.expand_dims(Y_forces, -1) * y_vecs
-    Y_grads = np.sum(Y_grads, axis=0)
 
-    X_forces = 4 / (n_points * n_neighbors) * x_dists
-    X_grads = np.expand_dims(X_forces, -1) * y_vecs
-    X_grads = np.sum(X_grads, axis=0)
+def get_dataset(desired_size, mnist=True):
+    # Download datasets
+    if not mnist:
+        x, _ = make_swiss_roll(n_samples=desired_size, noise=0.001)
+        labels = np.ones([int(x.shape[0])])
+        return x, labels
 
-    # momentum gradient descent
-    # forces = forces * 0.9 + lr * (Y_grads + X_grads)
+    train, _ = tfk.datasets.mnist.load_data(path='mnist.npz')
+    x, labels = train
+    x = x.astype(np.float32)
 
-    # regular gradient descent
-    forces = lr * (Y_grads + X_grads)
-    y += forces
-    
-    if i_epoch % 50 == 0:
-        plt.scatter(y[:, 0], y[:, 1], c=labels)
-        plt.show()
-        # plt.savefig(os.path.join('images', '{0:04d}.png'.format(i_epoch)))
-        plt.clf()
+    # Resize MNIST dataset to be desired number of points
+    dataset_size = int(x.shape[0])
+    downsample_stride = int(float(dataset_size) / desired_size)
+    x, labels = x[::downsample_stride], labels[::downsample_stride]
+    n_points = int(x.shape[0])
+    x = np.reshape(x, [n_points, -1])
+    x /= 255.0
+    x = x.astype(np.float32)
 
-plt.scatter(y[:, 0], y[:, 1], c=labels)
-plt.show()
+    return x, labels, n_points
+
+def sklearn_PCA(x, labels):
+    # SKLearn library PCA implementation
+    pca = PCA()
+    y = pca.fit_transform(x)
+    plt.scatter(y[:, 0], y[:, 1], c=labels)
+    plt.show()
+    # plt.savefig(os.path.join('images', 'True_PCA.png'))
+    # plt.clf()
+
+def zero_row_cols(array):
+    # Zero row/col means
+    array -= np.mean(array, axis=1, keepdims=True)
+    array -= np.mean(array, axis=0, keepdims=True)
+    return array
+
+def get_vecs(array):
+    return np.expand_dims(array, 0) - np.expand_dims(array, 1)
+
+def grad_descent_PCA(
+    x,
+    y,
+    labels,
+    n_points,
+    optimize_by_neighbors,
+    optimize_by_sampling,
+    momentum=False,
+    n_samples=50
+):
+    lr = 1.0
+    forces = np.zeros_like(y)
+
+    if not (optimize_by_neighbors or optimize_by_sampling):
+        # If n_samples is set to n_points, then it's just regular PCA gradient descent
+        n_samples = n_points
+
+    x_vecs = get_vecs(x)
+    full_x_dists = np.sum(
+        np.square(x_vecs),
+        axis=-1
+    )
+    if not optimize_by_sampling:
+        # if optimizing by sampling, need to zero out row/col means every epoch
+        if optimize_by_neighbors:
+            x_dists = get_neighbor_x_dists(
+                x,
+                full_x_dists,
+                n_samples,
+                stride=False
+            )
+        else:
+            x_dists = full_x_dists
+        x_dists = zero_row_cols(x_dists)
+
+    n_epochs = 1000
+    for i_epoch in tqdm(range(n_epochs), total=n_epochs):
+        if optimize_by_sampling:
+            x_dists = get_sampling_x_dists(n_samples, full_x_dists)
+            x_dists = zero_row_cols(x_dists)
+
+        y_vecs = get_vecs(y)
+        if optimize_by_neighbors or optimize_by_sampling:
+            y_dists = get_sampling_y_dists(n_samples, y_vecs)
+        else:
+            y_dists = np.sum(np.square(y_vecs), axis=-1)
+
+        # zero row/col mean y distances
+        y_dists = zero_row_cols(y_dists)
+
+        # PCA kernels
+        Y_forces = - 4 / (n_points * n_samples) * y_dists
+        Y_grads = np.expand_dims(Y_forces, -1) * y_vecs
+        Y_grads = np.sum(Y_grads, axis=0)
+        X_forces = 4 / (n_points * n_samples) * x_dists
+        X_grads = np.expand_dims(X_forces, -1) * y_vecs
+        X_grads = np.sum(X_grads, axis=0)
+
+        if momentum:
+            forces = forces * 0.9 + lr * (Y_grads + X_grads)
+        else:
+            forces = lr * (Y_grads + X_grads)
+        y += forces
+        
+        if i_epoch % 50 == 0:
+            plt.scatter(y[:, 0], y[:, 1], c=labels)
+            plt.show()
+            # plt.savefig(os.path.join('images', '{0:04d}.png'.format(i_epoch)))
+            plt.clf()
+
+    plt.scatter(y[:, 0], y[:, 1], c=labels)
+    plt.show()
+
+if __name__ == '__main__':
+    optimize_by_neighbors = False
+    optimize_by_sampling = True
+    momentum = True
+    n_samples = 100
+    assert not(optimize_by_neighbors and optimize_by_sampling)
+
+    desired_size = 1000
+    x, labels, n_points = get_dataset(desired_size, mnist=True)
+    y = np.random.multivariate_normal([0, 0], [[1, 0], [0, 1]], n_points)
+    # sklearn_PCA(x, labels)
+    grad_descent_PCA(
+        x,
+        y,
+        labels,
+        n_points,
+        optimize_by_neighbors,
+        optimize_by_sampling,
+        momentum=momentum,
+        n_samples=n_samples
+    )
