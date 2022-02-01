@@ -46,48 +46,21 @@ def get_neighbor_x_dists(x, full_x_dists, n_neighbors, stride=False):
 
 def get_sampling_x_dists(n_samples, full_x_dists):
     n_points = int(full_x_dists.shape[0])
-    sparse_x_dists = np.zeros([n_points, n_points])
-    random_row_inds = {
-        i: np.random.choice(np.arange(n_points), size=n_samples, replace=False)
-        for i in range(n_points)
-    }
-    random_col_inds = {
-        i: np.random.choice(np.arange(n_points), size=n_samples, replace=False)
-        for i in range(n_points)
-    }
-    for i in range(n_points):
-        # Sample points down the rows and columns to ensure the mean subtractions
-        #   are fully populated
-        sampled_row_dists = full_x_dists[i][random_row_inds[i]]
-        sparse_x_dists[i][random_row_inds[i]] = sampled_row_dists
-        sampled_col_dists = full_x_dists[:, i][random_col_inds[i]]
-        sparse_x_dists[:, i][random_col_inds[i]] = sampled_col_dists
+    sampling_rate = float(n_samples) / n_points
+    mask = np.random.rand(n_points, n_points) < sampling_rate
+    sparse_x_dists = full_x_dists * mask
 
-    return sparse_x_dists
+    return sparse_x_dists, mask
 
 def get_sampling_y_dists(n_samples, y_vecs):
     # y_i gets ||x_i - x_j||^2 force w.r.t. y_j if x_i and x_j are being sampled
     # So for each such force, also sample a y_k to calculate ||y_i - y_k||^2
     n_points = int(y_vecs.shape[0])
-    sparse_y_dists = np.zeros([n_points, n_points])
-    random_row_inds = {
-        i: np.random.choice(np.arange(n_points), size=n_samples, replace=False)
-        for i in range(n_points)
-    }
-    random_col_inds = {
-        i: np.random.choice(np.arange(n_points), size=n_samples, replace=False)
-        for i in range(n_points)
-    }
-    for i in range(n_points):
-        # Sample points down the rows and columns to ensure the mean subtractions
-        #   are fully populated
-        sampled_row_dists = np.sum(np.square(y_vecs[i][random_row_inds[i]]), -1)
-        sparse_y_dists[i][random_row_inds[i]] = sampled_row_dists
-        sampled_col_dists = np.sum(np.square(y_vecs[:, i][random_col_inds[i]]), -1)
-        sparse_y_dists[:, i][random_col_inds[i]] = sampled_col_dists
+    sampling_rate = float(n_samples) / n_points
+    mask = np.random.rand(n_points, n_points) < sampling_rate
+    sparse_y_dists = np.sum(np.square(y_vecs), axis=-1) * mask
 
-    return sparse_y_dists
-
+    return sparse_y_dists, mask
 
 def get_dataset(desired_size, mnist=True):
     # Download datasets
@@ -120,11 +93,12 @@ def sklearn_PCA(x, labels):
     # plt.savefig(os.path.join('images', 'True_PCA.png'))
     # plt.clf()
 
-def zero_row_cols(array):
+def zero_row_cols(dists, mask):
     # Zero row/col means
-    array -= np.mean(array, axis=1, keepdims=True)
-    array -= np.mean(array, axis=0, keepdims=True)
-    return array
+    dists -= np.sum(dists, axis=1, keepdims=True) / np.sum(mask, axis=1, keepdims=True)
+    dists -= np.sum(dists, axis=0, keepdims=True) / np.sum(mask, axis=0, keepdims=True)
+    dists *= mask
+    return dists
 
 def get_vecs(array):
     return np.expand_dims(array, 0) - np.expand_dims(array, 1)
@@ -162,22 +136,24 @@ def grad_descent_PCA(
             )
         else:
             x_dists = full_x_dists
-        x_dists = zero_row_cols(x_dists)
+            mask = np.ones_like(x_dists)
+        x_dists = zero_row_cols(x_dists, mask)
 
     n_epochs = 1000
     for i_epoch in tqdm(range(n_epochs), total=n_epochs):
         if optimize_by_sampling:
-            x_dists = get_sampling_x_dists(n_samples, full_x_dists)
-            x_dists = zero_row_cols(x_dists)
+            x_dists, mask = get_sampling_x_dists(n_samples, full_x_dists)
+            x_dists = zero_row_cols(x_dists, mask)
 
         y_vecs = get_vecs(y)
         if optimize_by_neighbors or optimize_by_sampling:
-            y_dists = get_sampling_y_dists(n_samples, y_vecs)
+            y_dists, mask = get_sampling_y_dists(n_samples, y_vecs)
         else:
             y_dists = np.sum(np.square(y_vecs), axis=-1)
+            mask = np.ones_like(y_dists)
 
         # zero row/col mean y distances
-        y_dists = zero_row_cols(y_dists)
+        y_dists = zero_row_cols(y_dists, mask)
 
         # PCA kernels
         Y_forces = - 4 / (n_points * n_samples) * y_dists
@@ -204,7 +180,7 @@ def grad_descent_PCA(
 
 if __name__ == '__main__':
     optimize_by_neighbors = False
-    optimize_by_sampling = True
+    optimize_by_sampling = False
     momentum = True
     n_samples = 100
     assert not(optimize_by_neighbors and optimize_by_sampling)
