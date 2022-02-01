@@ -57,6 +57,7 @@ parser.add_argument(
         'umap_uniform',
         'cy_barnes_hut',
         'cy_umap_uniform',
+        'cy_pca',
         'cy_umap_sampling',
     ],
     default='cy_umap_uniform',

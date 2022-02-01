@@ -92,7 +92,6 @@ cdef float kernel_function(float dist_squared, float a, float b):
 ###################
 ##### WEIGHTS #####
 ###################
-
 cdef (float, float) umap_repulsive_force(
         float dist_squared,
         float a,
@@ -313,7 +312,6 @@ def cy_umap_sampling(
         if verbose:
             print_status(i_epoch, n_epochs)
 
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
@@ -433,6 +431,48 @@ cdef void _cy_umap_uniformly(
             else:
                 forces[v, d] = grad_d * lr
             head_embedding[v, d] += forces[v, d]
+
+
+def cy_pca(
+    int normalization,
+    int sym_attraction,
+    int momentum,
+    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
+    np.ndarray[DTYPE_INT, ndim=1] head,
+    np.ndarray[DTYPE_INT, ndim=1] tail,
+    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
+    np.ndarray[DTYPE_FLOAT, ndim=2] forces,
+    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
+    float a,
+    float b,
+    int dim,
+    int n_vertices,
+    float alpha,
+    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
+    np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample,
+    np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample,
+    int i_epoch
+):
+    _cy_pca(
+        normalization,
+        sym_attraction,
+        momentum,
+        head_embedding,
+        tail_embedding,
+        head,
+        tail,
+        weights,
+        forces,
+        epochs_per_sample,
+        a,
+        b,
+        dim,
+        n_vertices,
+        alpha,
+        i_epoch
+    )
+
 
 
 def cy_umap_uniformly(
@@ -714,6 +754,7 @@ def cy_optimize_layout(
 
     optimize_dict = {
         'cy_umap_uniform': cy_umap_uniformly,
+        'cy_pca': cy_pca,
         'cy_umap_sampling': cy_umap_sampling,
         'cy_barnes_hut': bh_wrapper
     }

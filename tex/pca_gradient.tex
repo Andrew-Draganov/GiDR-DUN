@@ -1,0 +1,73 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{bbm}
+\usepackage{mathtools}
+\usepackage{amsfonts}
+\usepackage{changepage}
+\usepackage{amsthm}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\usepackage[backend=bibtex]{biblatex}
+\bibliography{pca_references}
+\theoremstyle{definition}
+\newtheorem*{definition}{Definition}
+\title{PCA gradient derivation}
+
+\begin{document}
+\maketitle
+\section{Gradient derivation}
+
+We start with the objective function for PCA given by
+
+\[ F_{\text{PCA}} = ||L (E^Y - E^X) ||_F^2 \]
+
+where $L = I - \frac{\mathbbm{1} \mathbbm{1}^T}{N}$ is the centering matrix for $N$ data points. We define the pairwise distance matrix $E^Y
+= \text{diag}(G_Y) \mathbbm{1}^T + \mathbbm{1} \text{diag}(G_Y) - 2G_Y$, where $G_Y = Y^TY$ is the Gram matrix of pairwise inner products.
+
+
+The methods employing gradient descent for PCA currently perform the search over principal component directions \cite{shamir2016convergence}. We instead aim to
+search the space of points $Y$, so our gradient derivations will be with respect to those points.
+
+\begin{align*}
+    F_{\text{PCA}} = &||L (E^Y - E^X) ||_F^2 \\
+    = &\text{tr}\left( (L(E^X - E^Y))^T L (E^X - E^Y) \right) \\
+    = &\text{tr}\left( (E^X)^T L^T L E^X \right) - \text{tr}\left( (E^X)^T L^T L E^Y \right) - \\
+    &\text{tr}\left( (E^Y)^T L^T L E^X \right) + \text{tr}\left( (E^Y)^T L^T L E^Y \right) \\ 
+\end{align*}
+We now replace $L^TL$ by $L$ and take the derivative with respect to $Y$ to obtain
+\[ d ||L (E^Y - E^X) ||_F^2  = \text{tr}\left( (d E^Y)^T L(E^Y - E^X) + (E^Y - E^X)^T L \; d E^Y) \right) \]
+
+The trace is unaffected by transposes, giving us:
+\[ d ||L (E^Y - E^X) ||_F^2  = 2 \text{tr}\left( (E^Y - E^X)^T L \; dE^Y \right)\]
+
+Notice that $L$, $(E^Y - E^X)$ and $dE^Y$ are all symmetric, so the trace is unaffected by commutative switches. This gives us
+\[ d ||L (E^Y - E^X) ||_F^2  = 2 \text{tr}\left( L \left( (E^Y - E^X) \; dE^Y \right) \right)\]
+
+Plugging in the definition of the centering matrix $L = I - \frac{\mathbbm{1} \mathbbm{1}^T}{N}$ and rearranging gives us the resulting expression for the
+gradient:
+
+\begin{equation}
+    d ||L (E^Y - E^X) ||_F^2 = 2 \text{tr}\left( (E^Y - E^X) \; dE^Y \right) - 2 \text{tr}\left( \frac{\mathbbm{1} \mathbbm{1}^T}{N} (E^Y - E^X)
+    \; dE^Y \right) 
+\end{equation}
+where the second term is the sum of column means of $(E^Y - E^X) \; dE^Y$. Assuming $dE^Y \neq 0$, we see that $F_{\text{PCA}}$ can be minimzed by two methods:
+
+\begin{enumerate}
+        \item Find $Y$ such that $E^Y - E^X = 0$
+        \item Find $dY$ such that $\text{tr}\left( (E^Y - E^X) \; dE^Y \right)$ equals the sum of column means of $(E^Y - E^X) \; dE^Y$ 
+\end{enumerate}
+
+In essence, the first bullet implies that we can minimize PCA's objective function by taking gradient steps in the direction of $E^Y = E^X$ while the second
+bullet requires that our steps keep $(E^Y - E^X)dE^Y$ at zero mean. This leads us to the following gradient descent algorithm:
+\begin{enumerate}
+        \item For epoch $t$ in range $T$
+        \begin{enumerate}
+            \item For each $y \in Y$, collect the gradients: \\
+                $dY = \alpha \nabla_Y$ towards $E^Y = E^X$
+            \item Re-center $dY$ such that $(E^Y - E^X) dE^Y$ is zero-mean
+            \item Apply the step with $Y_{t+1} = Y_t + dY$
+        \end{enumerate}
+\end{enumerate}
+
+\printbibliography
+\end{document}
