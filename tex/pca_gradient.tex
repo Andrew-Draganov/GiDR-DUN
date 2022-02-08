@@ -4,11 +4,13 @@
 \usepackage{amsmath}
 \usepackage{bbm}
 \usepackage{mathtools}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage{amsfonts}
 \usepackage{changepage}
 \usepackage{amsthm}
 \usepackage{graphicx}
-\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+% \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \usepackage[backend=bibtex]{biblatex}
 \theoremstyle{definition}
 \newtheorem*{definition}{Definition}
@@ -35,9 +37,12 @@ We start with formalizing PCA as minimizing the function
     f_{PCA}(X, Y) = ||L (E^X - E^Y) L ||^2_F
 \end{equation}
 where $E^X \in \mathbb{R}^{N \times N}$ and $E^Y \in \mathbb{R}^{N \times N}$ are the pairwise squared distance matrix for $X$ and $Y$ and $L$ is the $N \times N$ centering matrix. Optimizing this function inherently
-amounts to minimizing the Frobenius norm between the two matrices.
+amounts to minimizing the Frobenius norm between the two matrices. We show two separate ways to calculate the gradient of $f_{PCA}$ with respect to the
+low-dimensional points $Y$.
 
-To identify the effect of gradient descent on $Y$, we deconstruct the matrices into a set of element-wise operations. We can re-arrange the term in the
+\subsection{Element-wise gradient calculations}
+
+To identify the effect of gradient descent on $Y$, we can deconstruct the matrices into a set of element-wise operations. We can re-arrange the term in the
 Frobenius norm:
 \begin{align*}
     L (E^X - E^Y) L &= LE^XL - LE^YL \\
@@ -54,19 +59,43 @@ Then the PCA objective function can equivalently be written as
 \end{equation}
 
 To perform gradient descent, we take the partial derivative with respect to $y_i$ to obtain
-\[ \nabla_{y_i} f(X, Y) = -4 \sum_{j} (||x_i - x_j||^2 - ||y_i - y_j||^2 - \lambda_{ij}) (\vec{y}_i - \vec{y}_j) \]
+\[ \nabla_{y_i} f(X, Y) = -4 \sum_{j} (||x_i - x_j||^2 - ||y_i - y_j||^2 - \lambda_{ij}) (\dfrac{\partial \vec{\lambda}_{ij}}{\partial y_i} + \vec{y}_i - \vec{y}_j) \]
 
 This gives us the following gradient descent algorithm with learning rate $\nu$:
 \begin{equation*}
     \boxed{
     \begin{aligned}
-        \nabla_{y_i} f(X, Y) &= -4 \sum_{j} ( ||x_i - x_j||^2 - ||y_i - y_j||^2 - \lambda_{ij}) (\vec{y}_i - \vec{y}_j) \\
+        \nabla_{y_i} f(X, Y) &= -4 \sum_{j} (||x_i - x_j||^2 - ||y_i - y_j||^2 - \lambda_{ij}) \left( \dfrac{\partial \vec{\lambda}_{ij}}{\partial y_i}
+        + \vec{y}_i - \vec{y}_j \right) \\
         Y_{t + 1} &= Y_t + \nu \nabla_{Y} f(X, Y)
     \end{aligned}
     }
 \end{equation*}
 
-Notice that we only use the off-diagonal elements of the pairwise relationships, as both $E^X$ and $E^Y$ are zero on the diagonal.
+This gives us the following algorithm:
+\begin{algorithm}
+\caption{PCA by gradient descent on the points}\label{alg:cap}
+\begin{algorithmic}
+\Require Input: $X \in \mathbb{R}^{N \times D}$, n\_epochs, $\nu$
+\State $D^X \gets \text{pairwise\_dists}(X) \in \mathbb{R}^{N \times N}$
+\State $D^X \gets D^X - \text{row\_means}(D^X)$
+\State $D^X \gets D^X - \text{col\_means}(D^X)$
+\State $Y \gets \mathcal{N}_{(0, 1)} \in \mathbb{R}^{N \times d}$
+\While{$e < \text{n\_epochs}$}
+\State $V^Y \gets \text{pairwise\_vectors}(Y) \in \mathbb{R}^{N \times N \times 2}$
+\\
+\State $D^Y \gets \text{pairwise\_dists}(Y) \in \mathbb{R}^{N \times N}$
+\State $D^Y \gets D^Y - \text{row\_means}(D^Y)$
+\State $D^Y \gets D^Y - \text{col\_means}(D^Y)$
+\\
+\State $ \nabla_Y \gets -4 \cdot \text{SUM}\left(( D^X - D^Y ) V^Y, \; \text{axis}=1 \right)$
+\State $ Y \gets Y + \nu \nabla_Y$
+\State $e++$
+\EndWhile
+\\
+\Return $Y$
+\end{algorithmic}
+\end{algorithm}
 
 Lastly, we note that we can separate the PCA gradient descent algorithm into a pair of alternating forces. For $\Lambda^X = \bar{X}^{\rightarrow}
 + \bar{X}^{\downarrow}$ and $\Lambda^Y = - \bar{Y}^{\rightarrow} - \bar{Y}^{\downarrow}$ Namely, we have
@@ -81,5 +110,63 @@ and $x_j$ are one another's nearest neighbors in the high-dimensional space, the
 $\lambda^X_{ij}$. Thus, nearest neighbors in the high-dimensional space \textit{only} exert attractions on the embedding. Similarly, farthest
 neighbors in the high-dimensional space \textit{only} create repulsive forces. Inversely, nearest neighbors in the embedding exert repulsions while
 farthest neighbors exert attractions. PCA is the single convergence of these individual systems. Therefore, as one progresses from $x_i$'s nearest to its farthest neighbor, the force must this neighbor exerts on $x_i$ must change monotonically.
+
+
+\subsection{Vectorized PCA gradient}
+A different approach would be to rely on matrix differentiation using vectorizations and Kronecker products. We first establish the following preliminaries:
+\begin{enumerate}
+    \item Given Gram matrix $G_X = X^T X$, we can write $E^X$ as $E^X = \text{diag}(G_X) \mathbbm{1} + \mathbbm{1} \text{diag}(G_X)^T - 2G$ as the matrix of
+        pairwise squared distances
+    \begin{itemize}
+        \item We simplify notation by writing $\text{diag}(G_X) = g_x$, giving us
+            \[ E^X = g_X \mathbbm{1} + \mathbbm{1} g_X^T - 2G_X \]
+        \item $\mathbbm{1}$ is the vector consisting of all 1's
+    \end{itemize}
+    \item The product of three matrices $ABC$ can be \textit{vectorized} (transformed into a column vector by linear transformation) using the operation
+        $\textit{vec}(ABC) = (C^T \otimes A) \textit{vec}(B)$, where $\otimes$ represents the Kronecker product.
+    \item Vectorized matrices are transposed by appropriately sized \textit{commutation matrices} $K$ s.t. for any matrix $A \in \mathbb{R}^{n \times m}$ it is
+        the case that $K^{(m \times n)} \textit{vec}(A) = \textit{vec}(A^T)$, where $K \in \mathbb{R}^{mn \times mn}$
+\end{enumerate}
+
+We begin with the error function for PCA
+\[ f_{PCA}(X, Y) = ||L(E^X - E^Y)L||_F^2 \]
+
+By applying the first preliminary, we rearrange this by
+\begin{align*}
+    f_{PCA}(X, Y) &= ||L(E^X - E^Y)L||_F^2 \\
+    f_{PCA}(X, Y) &= ||L(g_X \mathbbm{1} + \mathbbm{1} g_X^T - 2G_X - g_Y \mathbbm{1} - \mathbbm{1} g_Y^T + 2G_Y)L||_F^2 
+\end{align*}
+
+But now notice that $L \mathbbm{1} = 0 = \mathbbm{1}^T L$. So we can simplify this expression into
+\[ f_{PCA}(X, Y) = ||L(2G_Y - 2G_X)L||_F^2 \]
+
+The squared Frobenius norm $||M||_F^2$ can be rewritten as $tr(M^T M)$. Applying this gives us
+\begin{align*}
+    f_{PCA}(X, Y) &= tr \left( \left(L(2G_Y - 2G_X)L\right)^T L(2G_Y - 2G_X)L \right) \\
+    &= 4 tr \left( L (G_Y - G_X)^T L L(G_Y - G_X)L \right) \\
+    &= 4 tr \left( L (G_Y^T - G_X^T) L (G_Y - G_X)L \right) \\
+    &= 4 tr \left( L (G_Y^T L G_Y - G_X^T L G_Y - G_Y^T L G_X + G_X^T L G_X )L \right) \\
+\end{align*}
+
+We now separate this by the linearity of the trace operation to obtain
+\[ f_{PCA}(X, Y) = 4 \left[ tr \left( L G_Y^T L G_Y L \right) - tr \left( L G_X^T L G_Y L \right) - tr \left( L G_Y^T L G_X L \right) + tr \left( L G_X^T L G_X L \right) \right] \]
+
+The product is commutative within the trace operation, so we can cancel the outer centering matrices to obtain
+\begin{align*}
+f_{PCA}(X, Y) &= 4 \left[ tr \left( G_Y^T L G_Y \right) - tr \left( G_X^T L G_Y \right) - tr \left( G_Y^T L G_X \right) + tr \left( G_X^T L G_X \right) \right]
+\\
+f_{PCA}(X, Y) &= 4 tr \left( G_Y^T L G_Y - G_X^T L G_Y - G_Y^T L G_X + G_X^T L G_X \right) \\
+&\textit{By further commutative swaps and removing the transposes, we get} \rightarrow \\
+\rightarrow f_{PCA}(X, Y) &= 4 tr \left( L \left( G_Y G_Y - 2 G_X G_Y + G_X G_X \right) \right) \\
+&= 4 tr \left( L \left( G_Y - G_X \right)^2 \right)
+\end{align*}
+
+We now incorporate the fact that the trace of a product of symmetric matrices is the inner product of the vectorizations of those matrices
+\[ \rightarrow f_{PCA}(X, Y) = 4 \langle \text{vec}( (G_Y - G_X)^2 ), \text{vec}( L ) \rangle \]
+
+Taking the partial derivative with respect to $Y$ gives:
+\begin{align*}
+    \dfrac{\partial(f_{PCA}(X, Y))}{\partial Y} = \text{vec}(L) \dfrac{\partial \text{vec}\left( (G_Y - G_X)^2 \right)}{\partial Y}
+\end{align*}
 
 \end{document}
