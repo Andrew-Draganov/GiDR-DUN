@@ -166,7 +166,19 @@ We now incorporate the fact that the trace of a product of symmetric matrices is
 
 Taking the partial derivative with respect to $Y$ gives:
 \begin{align*}
-    \dfrac{\partial(f_{PCA}(X, Y))}{\partial Y} = \text{vec}(L) \dfrac{\partial \text{vec}\left( (G_Y - G_X)^2 \right)}{\partial Y}
+    d(f_{PCA}(X, Y)) &= 4\text{vec}(L)^T \text{vec}\left( d \left( (G_Y - G_X)^2 \right) \right) \\
+    &= 4\text{vec}(L)^T \text{vec}\left( d \left( G_Y^2 \right) - d \left( G_Y G_X \right) - d \left( G_X G_Y \right) \right) \\
+    &= 4\text{vec}(L)^T \text{vec}\left( d \left( G_Y^2 \right) - 2G_X \right) \\
+    &= 4\text{vec}(L)^T \text{vec}\left( 2 G_Y d \left( G_Y \right) - 2G_X \right) \\
+    &= 8\text{vec}(L)^T \text{vec}\left( G_Y (dY^T Y + Y^T dY) - G_X \right) \\
+    &= 8\text{vec}(L)^T \text{vec}\left( G_Y (dY^T Y + Y^T dY)\right) - 8\text{vec}(L)^T \text{vec} \left( 2G_X \right) \\
+    &= 8\text{vec}(L)^T \left( \text{vec} \left( G_Y dY^T Y \right) + \text{vec} \left( G_Y Y^T dY \right)\right) - 4\text{vec}(L)^T \text{vec} \left( 2G_X \right) \\
+\end{align*}
+
+We now extract the $dY$ vectors by performing the $\text{vec}(ABC) = (C^T \otimes A) \text{vec}(B)$ trick:
+\begin{align*}
+    df_{PCA}(X, Y) &= 8\text{vec}(L)^T \left( (Y^T \otimes G_Y)K dY + (I \otimes G_Y Y^T) dY \right) - 4\text{vec}(L)^T \text{vec} \left( 2G_X \right) \\
+    &= 8\text{vec}(L)^T \left[ \left( (Y^T \otimes G_Y)K + (I \otimes G_Y Y^T) \right) dY \right] - 4\text{vec}(L)^T \text{vec} \left( 2G_X \right) \\
 \end{align*}
 
 \end{document}
