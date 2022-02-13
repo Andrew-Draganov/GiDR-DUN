@@ -368,10 +368,10 @@ cdef void _cy_umap_uniformly(
         dist_squared = sq_euc_dist(y1, y2, dim)
 
         # t-SNE early exaggeration
-        # if i_epoch < 100:
-        #     edge_weight = weights[edge] * 4
-        # else:
-        #     edge_weight = weights[edge]
+        if i_epoch < 100:
+            edge_weight = weights[edge] * 4
+        else:
+            edge_weight = weights[edge]
 
         # Optimize positive force for each edge
         attractive_force = attractive_force_func(
@@ -382,7 +382,7 @@ cdef void _cy_umap_uniformly(
             weights[edge]
         )
         for d in range(dim):
-            grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
+            grad_d = attractive_force * (y1[d] - y2[d])
             attractive_forces[j, d] += grad_d
             if sym_attraction:
                 attractive_forces[k, d] -= grad_d
@@ -404,7 +404,7 @@ cdef void _cy_umap_uniformly(
         )
 
         for d in range(dim):
-            repulsive_forces[j, d] += clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
+            repulsive_forces[j, d] += repulsive_force * (y1[d] - y2[d])
 
     cdef float rep_scalar = 4 * a * b
     cdef float att_scalar = -4 * a * b
@@ -418,12 +418,12 @@ cdef void _cy_umap_uniformly(
                 attractive_forces[v, d] = attractive_forces[v, d] * att_scalar
             grad_d = attractive_forces[v, d] + repulsive_forces[v, d]
 
-            # if grad_d * forces[v, d] > 0.0:
-            #     gains[v, d] += 0.2
-            # else:
-            #     gains[v, d] *= 0.8
-            # gains[v, d] = clip(gains[v, d], 0.01, 100)
-            # grad_d *= gains[v, d]
+            if grad_d * forces[v, d] > 0.0:
+                gains[v, d] += 0.2
+            else:
+                gains[v, d] *= 0.8
+            gains[v, d] = clip(gains[v, d], 0.01, 100)
+            grad_d *= gains[v, d]
 
             if momentum == 1:
                 forces[v, d] = grad_d * lr + 0.9 * forces[v, d]

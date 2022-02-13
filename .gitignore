@@ -8,6 +8,7 @@ tex/*.xml
 tex/*.bbl
 tex/*.blg
 tex/*.log
+tex/*.out
 *.html
 *.c
 *.swp
