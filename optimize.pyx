@@ -220,7 +220,7 @@ cdef void _cy_umap_sampling(
             for d in range(dim):
                 grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
                 head_embedding[j, d] += grad_d * lr
-                # Need to perform attraction on both for stability
+                # Need to perform attraction on both for stability if working not normalizing
                 if sym_attraction:
                     head_embedding[k, d] -= grad_d * lr
 
@@ -368,10 +368,10 @@ cdef void _cy_umap_uniformly(
         dist_squared = sq_euc_dist(y1, y2, dim)
 
         # t-SNE early exaggeration
-        if i_epoch < 100:
-            edge_weight = weights[edge] * 4
-        else:
-            edge_weight = weights[edge]
+        # if i_epoch < 100:
+        #     edge_weight = weights[edge] * 4
+        # else:
+        #     edge_weight = weights[edge]
 
         # Optimize positive force for each edge
         attractive_force = attractive_force_func(
@@ -379,10 +379,10 @@ cdef void _cy_umap_uniformly(
             dist_squared,
             a,
             b,
-            edge_weight
+            weights[edge]
         )
         for d in range(dim):
-            grad_d = attractive_force * (y1[d] - y2[d])
+            grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
             attractive_forces[j, d] += grad_d
             if sym_attraction:
                 attractive_forces[k, d] -= grad_d
@@ -393,7 +393,6 @@ cdef void _cy_umap_uniformly(
         for d in range(dim):
             y2[d] = tail_embedding[k, d]
         dist_squared = sq_euc_dist(y1, y2, dim)
-
         repulsive_force, Z = repulsive_force_func(
             normalized,
             dist_squared,
@@ -405,7 +404,7 @@ cdef void _cy_umap_uniformly(
         )
 
         for d in range(dim):
-            repulsive_forces[j, d] += repulsive_force * (y1[d] - y2[d])
+            repulsive_forces[j, d] += clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
 
     cdef float rep_scalar = 4 * a * b
     cdef float att_scalar = -4 * a * b
@@ -419,59 +418,18 @@ cdef void _cy_umap_uniformly(
                 attractive_forces[v, d] = attractive_forces[v, d] * att_scalar
             grad_d = attractive_forces[v, d] + repulsive_forces[v, d]
 
-            if grad_d * forces[v, d] > 0.0:
-                gains[v, d] += 0.2
-            else:
-                gains[v, d] *= 0.8
-            gains[v, d] = clip(gains[v, d], 0.01, 100)
-            grad_d *= gains[v, d]
+            # if grad_d * forces[v, d] > 0.0:
+            #     gains[v, d] += 0.2
+            # else:
+            #     gains[v, d] *= 0.8
+            # gains[v, d] = clip(gains[v, d], 0.01, 100)
+            # grad_d *= gains[v, d]
 
             if momentum == 1:
                 forces[v, d] = grad_d * lr + 0.9 * forces[v, d]
             else:
                 forces[v, d] = grad_d * lr
             head_embedding[v, d] += forces[v, d]
-
-
-def cy_pca(
-    int normalization,
-    int sym_attraction,
-    int momentum,
-    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
-    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
-    np.ndarray[DTYPE_INT, ndim=1] head,
-    np.ndarray[DTYPE_INT, ndim=1] tail,
-    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
-    np.ndarray[DTYPE_FLOAT, ndim=2] forces,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
-    float a,
-    float b,
-    int dim,
-    int n_vertices,
-    float alpha,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample,
-    int i_epoch
-):
-    _cy_pca(
-        normalization,
-        sym_attraction,
-        momentum,
-        head_embedding,
-        tail_embedding,
-        head,
-        tail,
-        weights,
-        forces,
-        epochs_per_sample,
-        a,
-        b,
-        dim,
-        n_vertices,
-        alpha,
-        i_epoch
-    )
 
 
 
@@ -518,6 +476,67 @@ def cy_umap_uniformly(
         )
         if verbose:
             print_status(i_epoch, n_epochs)
+
+
+cdef _cy_pca(
+    int normalization,
+    int sym_attraction,
+    int momentum,
+    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
+    np.ndarray[DTYPE_INT, ndim=1] head,
+    np.ndarray[DTYPE_INT, ndim=1] tail,
+    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
+    np.ndarray[DTYPE_FLOAT, ndim=2] forces,
+    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
+    float a,
+    float b,
+    int dim,
+    int n_vertices,
+    float alpha,
+    int i_epoch
+):
+    pass
+
+def cy_pca(
+    int normalization,
+    int sym_attraction,
+    int momentum,
+    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
+    np.ndarray[DTYPE_INT, ndim=1] head,
+    np.ndarray[DTYPE_INT, ndim=1] tail,
+    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
+    np.ndarray[DTYPE_FLOAT, ndim=2] forces,
+    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
+    float a,
+    float b,
+    int dim,
+    int n_vertices,
+    float alpha,
+    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
+    np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample,
+    np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample,
+    int i_epoch
+):
+    _cy_pca(
+        normalization,
+        sym_attraction,
+        momentum,
+        head_embedding,
+        tail_embedding,
+        head,
+        tail,
+        weights,
+        forces,
+        epochs_per_sample,
+        a,
+        b,
+        dim,
+        n_vertices,
+        alpha,
+        i_epoch
+    )
 
 
 ##### BARNES-HUT CODE #####
