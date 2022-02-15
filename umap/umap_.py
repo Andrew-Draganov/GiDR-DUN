@@ -106,7 +106,7 @@ def smooth_knn_dist(
         n_iter=64,
         local_connectivity=1.0,
         bandwidth=1.0,
-        pseudo_distance=True
+        pseudo_distance=True,
     ):
     """Compute a continuous version of the distance to the kth nearest
     neighbor. That is, this is similar to knn-distance but allows continuous
@@ -325,7 +325,8 @@ def compute_membership_strengths(
     rhos,
     return_dists=False,
     bipartite=False,
-    pseudo_distance=True
+    pseudo_distance=True,
+    pca=False
 ):
     """Construct the membership strength data for the 1-skeleton of each local
     fuzzy simplicial set -- this is formed as a sparse matrix where each row is
@@ -392,8 +393,9 @@ def compute_membership_strengths(
                 # ANDREW - this is where the rhos are subtracted for the UMAP
                 # pseudo distance metric
                 # The sigmas are equivalent to those found for tSNE
-                # val = knn_dists[i, j]
-                if pseudo_distance:
+                if pca:
+                    val = knn_dists[i, j]
+                elif pseudo_distance:
                     val = np.exp(-((knn_dists[i, j] - rhos[i]) / (sigmas[i])))
                 else:
                     val = np.exp(-((knn_dists[i, j]) / (sigmas[i])))
@@ -419,7 +421,8 @@ def fuzzy_simplicial_set(
     return_dists=True,
     pseudo_distance=True,
     euclidean=True,
-    tsne_symmetrization=False
+    tsne_symmetrization=False,
+    pca=False
 ):
     """Given a set of data X, a neighborhood size, and a measure of distance
     compute the fuzzy simplicial set (here represented as a fuzzy graph in
@@ -505,7 +508,7 @@ def fuzzy_simplicial_set(
         knn_dists,
         float(n_neighbors),
         local_connectivity=float(local_connectivity),
-        pseudo_distance=pseudo_distance
+        pseudo_distance=pseudo_distance,
     )
 
     rows, cols, vals, dists = compute_membership_strengths(
@@ -514,7 +517,8 @@ def fuzzy_simplicial_set(
         sigmas,
         rhos,
         return_dists,
-        pseudo_distance=pseudo_distance
+        pseudo_distance=pseudo_distance,
+        pca=pca
     )
 
     result = scipy.sparse.coo_matrix(
@@ -1073,6 +1077,7 @@ class UniformUmap(BaseEstimator):
         self.tsne_symmetrization = tsne_symmetrization
         self.pseudo_distance = pseudo_distance
         self.optimize_method = optimize_method
+        self.pca = 'pca' in self.optimize_method
         self.normalized = normalized
         self.sym_attraction = sym_attraction
         self.euclidean = euclidean
@@ -1336,7 +1341,8 @@ class UniformUmap(BaseEstimator):
                 self.verbose,
                 pseudo_distance=self.pseudo_distance,
                 euclidean=self.euclidean,
-                tsne_symmetrization=self.tsne_symmetrization
+                tsne_symmetrization=self.tsne_symmetrization,
+                pca=self.pca
             )
             # Report the number of vertices with degree 0 in our our umap.graph_
             # This ensures that they were properly disconnected.
@@ -1375,7 +1381,8 @@ class UniformUmap(BaseEstimator):
                 self.verbose,
                 pseudo_distance=self.pseudo_distance,
                 euclidean=self.euclidean,
-                tsne_symmetrization=self.tsne_symmetrization
+                tsne_symmetrization=self.tsne_symmetrization,
+                pca=self.pca
             )
             # Report the number of vertices with degree 0 in our our umap.graph_
             # This ensures that they were properly disconnected.
@@ -1420,7 +1427,8 @@ class UniformUmap(BaseEstimator):
                 self.verbose,
                 pseudo_distance=self.pseudo_distance,
                 euclidean=self.euclidean,
-                tsne_symmetrization=self.tsne_symmetrization
+                tsne_symmetrization=self.tsne_symmetrization,
+                pca=self.pca
             )
             # Report the number of vertices with degree 0 in our our umap.graph_
             # This ensures that they were properly disconnected.
@@ -1599,11 +1607,11 @@ class UniformUmap(BaseEstimator):
             dists,
             float(self._n_neighbors),
             local_connectivity=float(adjusted_local_connectivity),
-            pseudo_distance=self.pseudo_distance
+            pseudo_distance=self.pseudo_distance,
         )
 
         rows, cols, vals, dists = compute_membership_strengths(
-            indices, dists, sigmas, rhos, bipartite=True
+            indices, dists, sigmas, rhos, bipartite=True, pca=self.pca
         )
 
         graph = scipy.sparse.coo_matrix(

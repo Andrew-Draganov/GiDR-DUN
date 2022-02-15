@@ -27,11 +27,6 @@ ctypedef np.int32_t DTYPE_INT
 cdef float clip(float val, float lower, float upper) nogil:
     return fmax(lower, fmin(val, upper))
 
-cdef float repel_clip(float val, float scalar, float lower, float upper) nogil:
-    if val > 0.0:
-        return clip(val * scalar, lower, upper)
-    return 4.0
-
 cdef float sq_euc_dist(float* x, float* y, int dim):
     """ squared euclidean distance between x and y """
     cdef float result = 0.0
@@ -338,7 +333,6 @@ cdef void _cy_umap_uniformly(
         np.ndarray[DTYPE_FLOAT, ndim=2] attractive_forces
         np.ndarray[DTYPE_FLOAT, ndim=2] repulsive_forces
         float Z
-        float theta = 0.5
         float attractive_force, repulsive_force, dist_squared, edge_weight
 
     if normalized:
