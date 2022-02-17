@@ -52,6 +52,7 @@ parser.add_argument(
     '--optimize-method',
     choices=[
         'torch_sgd',
+        'torch_frob',
         'torch',
         'umap_sampling',
         'umap_uniform',

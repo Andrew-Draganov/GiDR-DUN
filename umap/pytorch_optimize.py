@@ -215,27 +215,69 @@ def torch_optimize_batched(
 
     return head_embedding.detach().numpy()
 
-def get_num_repulsions(attr_count, ratio_count, ratio):
-    if ratio == 1:
-        return 1, 1, 1
+def torch_optimize_frob(
+    normalized,
+    sym_attraction,
+    momentum,
+    batch_size,
+    head_embedding,
+    tail_embedding,
+    head,
+    tail,
+    weights,
+    forces,
+    gains,
+    n_epochs,
+    n_vertices,
+    a,
+    b,
+    initial_lr,
+    verbose=True,
+    **kwargs
+):
+    attr_forces = torch.zeros_like(head_embedding)
+    rep_forces = torch.zeros_like(head_embedding)
+    n_edges = weights.shape[0]
 
-    if ratio > 1:
-        if int(ratio_count) > attr_count:
-            num_repulsions = 1 + int(ratio_count) - attr_count
-            ratio_count -= (num_repulsions - 1)
-        else:
-            num_repulsions = 1
-    elif ratio < 1:
-        if ratio_count >= 1:
-            num_repulsions = 1
-            ratio_count -= 1
-        else:
-            num_repulsions = 0
-    elif ratio < 0:
-        raise ValueError("Cannot have a negative attr-repel ratio.")
+    # Gradient descent loop
+    for i_epoch in range(n_epochs):
+        attr_forces *= 0
+        rep_forces *= 0
 
-    return num_repulsions, attr_count, ratio_count
+        # Get points in low-dim whose high-dim analogs are nearest neighbors
+        points = head_embedding[head]
+        nearest_neighbors = tail_embedding[tail]
+        attr_vectors = points - nearest_neighbors
+        near_nb_dists = squared_dists(points, nearest_neighbors)
+        Q1 = 1 / (1 + near_nb_dists)
 
+        tail_perms = torch.randperm(n_edges)
+        tail_perms = tail_perms % n_vertices
+        random_points = tail_embedding[tail_perms]
+        rep_vectors = points - random_points
+        rand_pt_dists = squared_dists(points, random_points)
+        Q2 = 1 / (1 + rand_pt_dists)
+
+        # Calculate attractive forces
+        attr_grads = weights * Q1 * Q1
+        attr_grads = -1 * torch.unsqueeze(attr_grads, 1) * attr_vectors
+        attr_forces = attr_forces.index_add(0, head, attr_grads)
+        if sym_attraction:
+            attr_forces = attr_forces.index_add(0, tail, -1 * attr_grads)
+
+        # Calculate repulsive forces
+        rep_grads = Q2 * Q2 * Q2
+        rep_grads = torch.unsqueeze(rep_grads, 1) * rep_vectors
+        rep_forces = rep_forces.index_add(0, head, rep_grads)
+
+        # Gradient descent
+        lr = initial_lr * (1.0 - float(i_epoch) / n_epochs)
+        head_embedding += (attr_forces + rep_forces) * lr
+
+        if verbose and i_epoch % int(n_epochs / 10) == 0:
+            print("Completed ", i_epoch, " / ", n_epochs, "epochs")
+
+    return head_embedding.detach().numpy()
 
 def torch_optimize_full(
     normalized,
@@ -275,9 +317,6 @@ def torch_optimize_full(
     rep_forces = torch.zeros_like(head_embedding)
 
     # Gradient descent loop
-    attr_count = 0
-    ratio_count = 0
-    ratio = 1.0
     for i_epoch in range(n_epochs):
         # t-SNE early exaggeration
         if i_epoch == 0:
@@ -289,12 +328,19 @@ def torch_optimize_full(
 
         attr_forces *= 0
         rep_forces *= 0
+        Z = 0
 
         # Get points in low-dim whose high-dim analogs are nearest neighbors
         points = head_embedding[head]
         nearest_neighbors = tail_embedding[tail]
         attr_vectors = points - nearest_neighbors
         near_nb_dists = squared_dists(points, nearest_neighbors)
+
+        tail_perms = torch.randperm(n_edges)
+        tail_perms = tail_perms % n_vertices
+        random_points = tail_embedding[tail_perms]
+        rep_vectors = points - random_points
+        rand_pt_dists = squared_dists(points, random_points)
 
         # Calculate attractive forces
         attr_grads = attr_force_func(near_nb_dists, a, b, weights)
@@ -303,38 +349,11 @@ def torch_optimize_full(
         if sym_attraction:
             attr_forces = attr_forces.index_add(0, tail, -1 * attr_grads)
 
-        num_repulsions, attr_count, ratio_count = get_num_repulsions(
-            attr_count,
-            ratio_count,
-            ratio
-        )
 
-        Z = 0
-        if num_repulsions > 0:
-            # Get num_repulsions worth of random points to perform repulsions
-            for _ in range(num_repulsions):
-                tail_perms = torch.randperm(n_edges)
-                tail_perms = tail_perms % n_vertices
-                random_points = tail_embedding[tail_perms]
-                rep_vectors = points - random_points
-                rand_pt_dists = squared_dists(points, random_points)
-                rep_grads, z_component = rep_force_func(rand_pt_dists, a, b, average_weight)
-                Z += z_component
-                rep_grads = torch.unsqueeze(rep_grads, 1)
-                rep_grads = torch.clamp(rep_grads * rep_vectors, -4, 4)
-                rep_forces = rep_forces.index_add(0, head, rep_grads)
-            # random_points = torch.stack(random_points, dim=0)
-            # random_points = torch.mean(random_points, dim=0)
-            # rep_vectors = points - random_points
-
-            # # Squared Euclidean distance between attr and rep points
-            # rand_pt_dists = squared_dists(points, random_points)
-
-            # # Calculate repulsive forces
-            # rep_grads, Z = rep_force_func(rand_pt_dists, a, b, average_weight)
-            # rep_grads = torch.clamp(torch.unsqueeze(rep_grads, 1) * rep_vectors, -4, 4)
-            # rep_grads *= num_repulsions
-            # rep_forces = rep_forces.index_add(0, head, rep_grads)
+        # Calculate repulsive forces
+        rep_grads, Z = rep_force_func(rand_pt_dists, a, b, average_weight)
+        rep_grads = torch.clamp(torch.unsqueeze(rep_grads, 1) * rep_vectors, -4, 4)
+        rep_forces = rep_forces.index_add(0, head, rep_grads)
 
         if normalized:
             # p_{ij} in the attractive forces is normalized by the sum of the weights,
@@ -354,9 +373,6 @@ def torch_optimize_full(
 
         if verbose and i_epoch % int(n_epochs / 10) == 0:
             print("Completed ", i_epoch, " / ", n_epochs, "epochs")
-
-        attr_count += 1
-        ratio_count += ratio
 
     return head_embedding.detach().numpy()
 
@@ -392,6 +408,8 @@ def torch_optimize_layout(
         gains = torch.ones_like(head_embedding)
         if 'sgd' in optimize_method:
             optimization_fn = torch_optimize_batched
+        elif 'frob' in optimize_method:
+            optimization_fn = torch_optimize_frob
         else:
             optimization_fn = torch_optimize_full
 

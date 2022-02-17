@@ -820,10 +820,10 @@ def _optimize_layout_euclidean(
     start = time.time()
     if 'cy' in optimize_method:
         embedding = cy_optimize_layout(**args)
-    elif 'frob' in optimize_method:
-        embedding = cy_optimize_frob(**args)
     elif 'torch' in optimize_method:
         embedding = torch_optimize_layout(**args)
+    elif 'frob' in optimize_method:
+        embedding = cy_optimize_frob(**args)
     else:
         embedding = numba_optimize_layout(**args)
     end = time.time()
