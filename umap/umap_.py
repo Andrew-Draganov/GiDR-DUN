@@ -315,7 +315,8 @@ def nearest_neighbors(
         "rhos": numba.types.float32[::1],
         "val": numba.types.float32,
     },
-    parallel=True,
+    # FIXME FIXME
+    # parallel=True,
     fastmath=True,
 )
 def compute_membership_strengths(
@@ -802,11 +803,11 @@ def _optimize_layout_euclidean(
         'sym_attraction': int(sym_attraction),
         'momentum': int(momentum),
         'batch_size': weights.shape[0] if batch_size == -1 else batch_size,
-        'head_embedding': head_embedding,
-        'tail_embedding': tail_embedding,
-        'head': head,
-        'tail': tail,
-        'weights': weights,
+        'py_head_embedding': head_embedding,
+        'py_tail_embedding': tail_embedding,
+        'py_head': head,
+        'py_tail': tail,
+        'py_weights': weights,
         'n_epochs': n_epochs,
         'n_vertices': n_vertices,
         'epochs_per_sample': epochs_per_sample,
@@ -815,7 +816,7 @@ def _optimize_layout_euclidean(
         'initial_lr': initial_lr,
         'negative_sample_rate': negative_sample_rate,
         'rng_state': rng_state,
-        'verbose': verbose
+        'verbose': int(verbose)
     }
     start = time.time()
     if 'cy' in optimize_method:

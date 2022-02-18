@@ -1,33 +1,25 @@
 import numpy as py_np
 cimport numpy as np
 cimport cython
-from libcpp cimport bool
 from libc.stdio cimport printf
 from libc.math cimport sqrt
 from libc.stdlib cimport rand
 from libc.stdlib cimport malloc, free
-from cython.parallel cimport prange, parallel
+from cython.parallel cimport prange, parallel, threadid
+from cython.view cimport array as cvarray
 
 from sklearn.neighbors._quad_tree cimport _QuadTree
 
 np.import_array()
 
+
 cdef extern from "fastpow.c" nogil:
     double fastpow "fastPow" (double, double)
-cdef extern from "fastpow.c" nogil:
-    float fmax "my_fmax" (float, float)
-cdef extern from "fastpow.c" nogil:
-    float fmin "my_fmin" (float, float)
-cdef extern from "fastpow.c" nogil:
-    float fastsqrt "fastsqrt" (float)
 
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
 
-cdef float clip(float val, float lower, float upper) nogil:
-    return fmax(lower, fmin(val, upper))
-
-cdef float sq_euc_dist(float* x, float* y, int dim):
+cdef float sq_euc_dist(float* x, float* y, int dim) nogil:
     """ squared euclidean distance between x and y """
     cdef float result = 0.0
     cdef float diff = 0
@@ -38,21 +30,6 @@ cdef float sq_euc_dist(float* x, float* y, int dim):
 
     return result
 
-cdef float ang_dist(float* x, float* y, int dim):
-    """ cosine distance between vectors x and y """
-    cdef float result = 0.0
-    cdef float x_len  = 0.0
-    cdef float y_len  = 0.0
-    cdef float eps = 0.0001
-    cdef int i = 0
-    for i in range(dim):
-        result += x[i] * y[i]
-        x_len += x[i] * x[i]
-        y_len += y[i] * y[i]
-    if x_len < eps or y_len < eps:
-        return 1
-    return result / (sqrt(x_len * y_len))
-
 cdef float get_lr(initial_lr, i_epoch, n_epochs): 
     return initial_lr * (1.0 - (float(i_epoch) / float(n_epochs)))
 
@@ -61,7 +38,7 @@ cdef void print_status(i_epoch, n_epochs):
         print("Completed ", i_epoch, " / ", n_epochs, "epochs")
 
 @cython.cdivision(True)
-cdef float kernel_function(float dist_squared, float a, float b):
+cdef float kernel_function(float dist_squared, float a, float b) nogil:
     if b <= 1:
         return 1 / (1 + a * fastpow(dist_squared, b))
     return fastpow(dist_squared, b - 1) / (1 + a * fastpow(dist_squared, b))
@@ -71,7 +48,7 @@ cdef float pos_force(
     float p,
     float q,
     float Z
-):
+) nogil:
     if normalized:
         # FIXME - is it faster to get q^2 and then use that for q^3?
         return Z * p * (q ** 2 + 2 * q ** 3)
@@ -81,7 +58,7 @@ cdef float neg_force(
     int normalized,
     float q,
     float Z
-):
+) nogil:
     if normalized:
         return Z * (q ** 3 + 2 * q ** 4)
     return q ** 3
@@ -190,7 +167,7 @@ def frob_umap_sampling(
     float negative_sample_rate,
     int n_epochs,
     int n_vertices,
-    bool verbose
+    int verbose
 ):
     cdef:
         np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
@@ -232,17 +209,131 @@ def frob_umap_sampling(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
+cdef void get_kernels(
+    float *Q1,
+    float *Q2,
+    float *attr_vecs,
+    float *rep_vecs,
+    int[:] head,
+    int[:] tail,
+    float[:, :] head_embedding,
+    float[:, :] tail_embedding,
+    int normalized,
+    int n_vertices,
+    int n_edges,
+    int dim,
+    float a,
+    float b
+) nogil:
+    cdef:
+        int edge, j, k, d
+        float dist_squared
+        float *y1
+        float *y2
+
+    with parallel():
+        y1 = <float*> malloc(sizeof(float) * dim)
+        y2 = <float*> malloc(sizeof(float) * dim)
+        for edge in prange(n_edges):
+            j = head[edge]
+            k = tail[edge]
+            for d in range(dim):
+                y1[d] = head_embedding[j, d]
+                y2[d] = tail_embedding[k, d]
+                attr_vecs[edge * dim + d] = y1[d] - y2[d]
+            dist_squared = sq_euc_dist(y1, y2, dim)
+            Q1[edge] = kernel_function(dist_squared, a, b)
+
+            k = rand() % n_vertices
+            for d in range(dim):
+                y2[d] = tail_embedding[k, d]
+                rep_vecs[edge * dim + d] = y1[d] - y2[d]
+            dist_squared = sq_euc_dist(y1, y2, dim)
+            Q2[edge] = kernel_function(dist_squared, a, b)
+
+        free(y1)
+        free(y2)
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+cdef void calc_forces(
+    float *local_attr_forces,
+    float *local_rep_forces,
+    int[:] head,
+    int[:] tail,
+    float[:] weights,
+    float* Q1,
+    float* Q2,
+    float* attr_vecs,
+    float* rep_vecs,
+    int normalized,
+    int sym_attraction,
+    int n_vertices,
+    int n_edges,
+    int dim,
+) nogil:
+    cdef:
+        int j, k, v, d, edge, index
+        float grad, grad_d
+
+    with parallel():
+        for v in prange(n_vertices):
+            for d in range(dim):
+                index = v * dim + d
+                local_attr_forces[index] = 0
+                local_rep_forces[index] = 0
+
+        for edge in prange(n_edges):
+            j = head[edge]
+            k = tail[edge]
+            grad = pos_force(normalized, weights[edge], Q1[edge], 0.0)
+            for d in range(dim):
+                grad_d = grad * attr_vecs[edge * dim + d]
+                local_attr_forces[j * dim + d] += grad_d
+                if sym_attraction:
+                    local_attr_forces[k * dim + d] -= grad_d
+
+            grad = neg_force(normalized, Q2[edge], 0.0)
+            for d in range(dim):
+                local_rep_forces[j * dim + d] += grad * rep_vecs[edge * dim + d]
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
+cdef void gather_forces(
+    float* attractive_forces,
+    float* repulsive_forces,
+    float* forces,
+    int dim,
+    int n_vertices,
+    float lr
+) nogil:
+
+    cdef:
+        int v, d, index
+        float grad_d
+    with parallel():
+        for v in prange(n_vertices):
+            for d in range(dim):
+                index = v * dim + d
+                grad_d = repulsive_forces[index] - attractive_forces[index]
+                forces[index] = grad_d * lr
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
 cdef void _frob_umap_uniformly(
     int normalized,
     int sym_attraction,
     int momentum,
-    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
-    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
-    np.ndarray[DTYPE_INT, ndim=1] head,
-    np.ndarray[DTYPE_INT, ndim=1] tail,
-    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
-    np.ndarray[DTYPE_FLOAT, ndim=2] forces,
-    np.ndarray[DTYPE_FLOAT, ndim=2] gains,
+    float[:, :] head_embedding,
+    float[:, :] tail_embedding,
+    int[:] head,
+    int[:] tail,
+    float[:] weights,
+    float[:, :] gains,
     float a,
     float b,
     int dim,
@@ -251,78 +342,101 @@ cdef void _frob_umap_uniformly(
     int i_epoch
 ):
     cdef:
-        int i, j, k, d, v
-        np.ndarray[DTYPE_FLOAT, ndim=2] attractive_forces
-        np.ndarray[DTYPE_FLOAT, ndim=2] repulsive_forces
-        np.ndarray[DTYPE_FLOAT, ndim=1] Q1
-        np.ndarray[DTYPE_FLOAT, ndim=1] Q2
-        np.ndarray[DTYPE_FLOAT, ndim=2] attr_vecs
-        np.ndarray[DTYPE_FLOAT, ndim=2] rep_vecs
+        int i, j, k, v, d, index, edge 
         float dist_squared, Z
+        float *local_attr_forces
+        float *local_rep_forces
+        float *attractive_forces
+        float *repulsive_forces
+        float *attr_vecs
+        float *rep_vecs
+        float *Q1
+        float *Q2
+        float *forces
 
-    if normalized:
-        Z = 0
-    else:
-        Z = 1
-
-    attractive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
-    repulsive_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
-    y1 = <float*> malloc(sizeof(float) * dim)
-    y2 = <float*> malloc(sizeof(float) * dim)
+    cdef int n_edges = int(head.shape[0])
+    attractive_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
+    repulsive_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
+    forces = <float*> malloc(sizeof(float) * n_vertices * dim)
+    Q1 = <float*> malloc(sizeof(float) * n_edges)
+    Q2 = <float*> malloc(sizeof(float) * n_edges)
+    attr_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
+    rep_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
+    local_attr_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
+    local_rep_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
+    with nogil:
+        for v in prange(n_vertices):
+            for d in range(dim):
+                index = v * dim + d
+                attractive_forces[index] = 0
+                repulsive_forces[index] = 0
 
     cdef float grad = 0.0
     cdef float grad_d = 0.0
-    cdef int n_edges = int(head.shape[0])
-    Q1 = py_np.zeros([n_edges], dtype=py_np.float32)
-    Q2 = py_np.zeros([n_edges], dtype=py_np.float32)
-    attr_vecs = py_np.zeros([n_edges, dim], dtype=py_np.float32)
-    rep_vecs = py_np.zeros([n_edges, dim], dtype=py_np.float32)
+    with nogil:
+        get_kernels(
+            Q1,
+            Q2,
+            attr_vecs,
+            rep_vecs,
+            head,
+            tail,
+            head_embedding,
+            tail_embedding,
+            normalized,
+            n_vertices,
+            n_edges,
+            dim,
+            a,
+            b
+        )
 
-    for edge in range(n_edges):
-        j = head[edge]
-        k = tail[edge]
-        for d in range(dim):
-            y1[d] = head_embedding[j, d]
-            y2[d] = tail_embedding[k, d]
-            attr_vecs[edge, d] = y1[d] - y2[d]
-        dist_squared = sq_euc_dist(y1, y2, dim)
-        Q1[edge] = kernel_function(dist_squared, a, b)
-
-        k = rand() % n_vertices
-        for d in range(dim):
-            y2[d] = tail_embedding[k, d]
-            rep_vecs[edge, d] = y1[d] - y2[d]
-        dist_squared = sq_euc_dist(y1, y2, dim)
-        Q2[edge] = kernel_function(dist_squared, a, b)
-        if normalized:
-            Z += Q2[edge]
-
-    for edge in range(n_edges):
-        j = head[edge]
-        k = tail[edge]
-        if normalized:
-            Q1[edge] /= Z
-            Q2[edge] /= Z
-        grad = pos_force(normalized, weights[edge], Q1[edge], Z)
-        for d in range(dim):
-            grad_d = grad * attr_vecs[edge, d]
-            attractive_forces[j, d] += grad_d
-            if sym_attraction:
-                attractive_forces[k, d] -= grad_d
-
-        grad = neg_force(normalized, Q2[edge], Z)
-        for d in range(dim):
-            repulsive_forces[j, d] += grad * rep_vecs[edge, d]
+        calc_forces(
+            local_attr_forces,
+            local_rep_forces,
+            head,
+            tail,
+            weights,
+            Q1,
+            Q2,
+            attr_vecs,
+            rep_vecs,
+            normalized,
+            sym_attraction,
+            n_vertices,
+            n_edges,
+            dim,
+        )
+        free(Q1)
+        free(Q2)
+        free(attr_vecs)
+        free(rep_vecs)
 
     for v in range(n_vertices):
         for d in range(dim):
-            grad_d = repulsive_forces[v, d] - attractive_forces[v, d]
-            if momentum == 1:
-                forces[v, d] = grad_d * lr + 0.9 * forces[v, d]
-            else:
-                forces[v, d] = grad_d * lr
+            index = v * dim + d
+            attractive_forces[index] += local_attr_forces[index]
+            repulsive_forces[index] += local_rep_forces[index]
+    free(local_attr_forces)
+    free(local_rep_forces)
 
-            head_embedding[v, d] += forces[v, d]
+    with nogil:
+        gather_forces(
+            attractive_forces,
+            repulsive_forces,
+            forces,
+            dim,
+            n_vertices,
+            lr
+        )
+
+    for v in range(n_vertices):
+        for d in range(dim):
+            head_embedding[v, d] += forces[v * dim + d]
+    free(forces)
+
+    free(attractive_forces)
+    free(repulsive_forces)
 
 
 
@@ -330,13 +444,13 @@ def frob_umap_uniformly(
     int normalized,
     int sym_attraction,
     int momentum,
-    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
-    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
-    np.ndarray[DTYPE_INT, ndim=1] head,
-    np.ndarray[DTYPE_INT, ndim=1] tail,
-    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
-    np.ndarray[DTYPE_FLOAT, ndim=2] forces,
-    np.ndarray[DTYPE_FLOAT, ndim=2] gains,
+    float[:, :] head_embedding,
+    float[:, :] tail_embedding,
+    int[:] head,
+    int[:] tail,
+    float[:] weights,
+    float[:, :] forces,
+    float[:, :] gains,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     float a,
     float b,
@@ -345,7 +459,7 @@ def frob_umap_uniformly(
     float negative_sample_rate,
     int n_epochs,
     int n_vertices,
-    bool verbose
+    int verbose
 ):
     for i_epoch in range(n_epochs):
         lr = get_lr(initial_lr, i_epoch, n_epochs)
@@ -358,7 +472,6 @@ def frob_umap_uniformly(
             head,
             tail,
             weights,
-            forces,
             gains,
             a,
             b,
@@ -369,6 +482,7 @@ def frob_umap_uniformly(
         )
         if verbose:
             print_status(i_epoch, n_epochs)
+
 
 
 @cython.boundscheck(False)
@@ -427,7 +541,6 @@ cdef _frob_pca(
         k = tail[edge]
         grad = weights[edge] - y_dists[edge]
         for d in range(dim):
-            # grad_d = clip(grad * vecs[edge, d], -1, 1)
             grad_d = grad * vecs[edge, d]
             step_forces[j, d] += grad_d
             if sym_attraction:
@@ -466,7 +579,7 @@ def frob_pca(
     float negative_sample_rate,
     int n_epochs,
     int n_vertices,
-    bool verbose
+    int verbose
 ):
     cdef float mean_weight = 0.0
     for weight in weights:
@@ -504,11 +617,11 @@ def cy_optimize_frob(
     int normalized,
     int sym_attraction,
     int momentum,
-    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
-    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
-    np.ndarray[DTYPE_INT, ndim=1] head,
-    np.ndarray[DTYPE_INT, ndim=1] tail,
-    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
+    np.ndarray[DTYPE_FLOAT, ndim=2] py_head_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=2] py_tail_embedding,
+    np.ndarray[DTYPE_INT, ndim=1] py_head,
+    np.ndarray[DTYPE_INT, ndim=1] py_tail,
+    np.ndarray[DTYPE_FLOAT, ndim=1] py_weights,
     int n_epochs,
     int n_vertices,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
@@ -516,18 +629,21 @@ def cy_optimize_frob(
     float b,
     float initial_lr,
     float negative_sample_rate,
-    bool verbose=True,
+    int verbose=True,
     **kwargs
 ):
     cdef:
         int dim, i_epoch
         int n_edges
-        np.ndarray[DTYPE_FLOAT, ndim=2] forces
-        np.ndarray[DTYPE_FLOAT, ndim=2] gains
 
-    dim = head_embedding.shape[1]
-    forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
-    gains = py_np.ones([n_vertices, dim], dtype=py_np.float32)
+    dim = py_head_embedding.shape[1]
+    cdef float [:, :] forces = np.PyArray_SimpleNew(2, [n_vertices, dim], np.NPY_FLOAT32) * 0
+    cdef float [:, :] gains = np.PyArray_SimpleNew(2, [n_vertices, dim], np.NPY_FLOAT32) * 0 + 1
+    cdef float [:, :] head_embedding = py_head_embedding
+    cdef float [:, :] tail_embedding = py_tail_embedding
+    cdef float [:] weights = py_weights
+    cdef int [:] head = py_head
+    cdef int [:] tail = py_tail
 
     # Perform weight scaling on high-dimensional relationships
     cdef float weight_sum = 0.0
@@ -570,5 +686,5 @@ def cy_optimize_frob(
         verbose
     )
 
-    return head_embedding
+    return py_np.asarray(head_embedding)
 
