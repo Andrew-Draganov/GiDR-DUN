@@ -75,36 +75,43 @@ cdef void _frob_umap_sampling(
     np.ndarray[DTYPE_INT, ndim=1] tail,
     np.ndarray[DTYPE_FLOAT, ndim=1] weights,
     np.ndarray[DTYPE_FLOAT, ndim=2] forces,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     float a,
     float b,
     int dim,
     int n_vertices,
     float lr,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample,
+    np.ndarray[DTYPE_FLOAT, ndim=2] pos_sample_steps,
+    float negative_sample_rate,
     int i_epoch,
 ):
     cdef:
-        int i, j, k, d, n_neg_samples, edge
+        int i, j, k, d, n_neg_samples, edge, p, index, v
         float attractive_force, repulsive_force
         float dist_squared
+        float *y1
+        float *y2
+        float *attractive_forces
+        float *repulsive_forces
 
     if normalized:
         raise ValueError("Cannot perform frobenius umap sampling with normalization")
     y1 = <float*> malloc(sizeof(float) * dim)
     y2 = <float*> malloc(sizeof(float) * dim)
+    attractive_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
+    repulsive_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
+    for v in range(n_vertices):
+        for d in range(dim):
+            index = v * dim + d
+            attractive_forces[index] = 0
+            repulsive_forces[index] = 0
     cdef float grad_d = 0.0
-    cdef (float, float) rep_outputs
-    cdef int n_edges = int(epochs_per_sample.shape[0])
-    cdef float max_weight = np.max(weights)
+    cdef int n_edges = int(pos_sample_steps.shape[0])
+    cdef float max_weight = weights[0]
     cdef float weight_ratio
 
     for edge in range(n_edges):
-        weight_ratio = weights[edge]
         # FIXME - need to get sampling to be predetermined for effective parallelization
-        if edge :
+        if pos_sample_steps[edge, i_epoch]:
             # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
             j = head[edge]
             k = tail[edge]
@@ -124,16 +131,11 @@ cdef void _frob_umap_sampling(
                 grad_d = attractive_force * (y1[d] - y2[d])
                 # Attractive force has a negative scalar on it
                 #   in frobenius norm gradient
-                head_embedding[j, d] -= grad_d * lr
+                attractive_forces[j * dim + d] -= grad_d * lr
                 if sym_attraction:
-                    head_embedding[k, d] += grad_d * lr
+                    attractive_forces[k * dim + d] += grad_d * lr
 
-            epoch_of_next_sample[edge] += epochs_per_sample[i]
-
-            n_neg_samples = int(
-                (i_epoch - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
-            )
-            for p in range(n_neg_samples):
+            for p in range(int(negative_sample_rate)):
                 k = rand() % n_vertices
                 for d in range(dim):
                     y2[d] = tail_embedding[k, d]
@@ -146,11 +148,13 @@ cdef void _frob_umap_sampling(
 
                 for d in range(dim):
                     grad_d = repulsive_force * (y1[d] - y2[d])
-                    head_embedding[j, d] += grad_d * lr
+                    repulsive_forces[j * dim + d] += grad_d * lr
 
-            epoch_of_next_negative_sample[edge] += (
-                n_neg_samples * epochs_per_negative_sample[i]
-            )
+    for v in range(n_vertices):
+        for d in range(dim):
+            grad_d = attractive_forces[v * dim + d] + repulsive_forces[v * dim + d]
+            head_embedding[v, d] += grad_d * lr
+
 
 def frob_umap_sampling(
     int normalized,
@@ -174,16 +178,19 @@ def frob_umap_sampling(
     int verbose
 ):
     cdef:
-        np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
-        np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample,
-        np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample,
+        np.ndarray[DTYPE_FLOAT, ndim=2] pos_sample_steps
+        int i_edge
+        int sample_rate
+        int n_edges, i_epoch
+        float lr
 
     # ANDREW - perform negative samples x times more often
     #          by making the number of epochs between samples smaller
-    epochs_per_negative_sample = epochs_per_sample / negative_sample_rate
-    # Make copies of these two
-    epoch_of_next_negative_sample = py_np.ones_like(epochs_per_negative_sample) * epochs_per_negative_sample
-    epoch_of_next_sample = py_np.ones_like(epochs_per_sample) * epochs_per_sample
+    n_edges = int(epochs_per_sample.shape[0])
+    pos_sample_steps = py_np.zeros([n_edges, n_epochs], dtype=py_np.float32)
+    for i_edge in range(n_edges):
+        sample_rate = int(epochs_per_sample[i_edge])
+        pos_sample_steps[i_edge, ::sample_rate] = 1
 
     for i_epoch in range(n_epochs):
         lr = get_lr(initial_lr, i_epoch, n_epochs)
@@ -196,15 +203,13 @@ def frob_umap_sampling(
             tail,
             weights,
             forces,
-            epochs_per_sample,
             a,
             b,
             dim,
             n_vertices,
             lr,
-            epochs_per_negative_sample,
-            epoch_of_next_negative_sample,
-            epoch_of_next_sample,
+            pos_sample_steps,
+            negative_sample_rate,
             i_epoch,
         )
         if verbose:
@@ -614,23 +619,27 @@ def cy_optimize_frob(
     cdef:
         int dim, i_epoch
         int n_edges
+        np.ndarray[DTYPE_FLOAT, ndim=2] forces
+        np.ndarray[DTYPE_FLOAT, ndim=2] gains
 
     dim = py_head_embedding.shape[1]
-    cdef float [:, :] forces = np.PyArray_SimpleNew(2, [n_vertices, dim], np.NPY_FLOAT32) * 0
-    cdef float [:, :] gains = np.PyArray_SimpleNew(2, [n_vertices, dim], np.NPY_FLOAT32) * 0 + 1
-    cdef float [:, :] head_embedding = py_head_embedding
-    cdef float [:, :] tail_embedding = py_tail_embedding
-    cdef float [:] weights = py_weights
-    cdef int [:] head = py_head
-    cdef int [:] tail = py_tail
+    # cdef float [:, :] forces = np.PyArray_SimpleNew(2, [n_vertices, dim], np.NPY_FLOAT32) * 0
+    # cdef float [:, :] gains = np.PyArray_SimpleNew(2, [n_vertices, dim], np.NPY_FLOAT32) * 0 + 1
+    # cdef float [:, :] head_embedding = py_head_embedding
+    # cdef float [:, :] tail_embedding = py_tail_embedding
+    # cdef float [:] weights = py_weights
+    # cdef int [:] head = py_head
+    # cdef int [:] tail = py_tail
+    forces = py_np.zeros([n_vertices, dim], py_np.float32)
+    gains = py_np.zeros([n_vertices, dim], py_np.float32)
 
     # Perform weight scaling on high-dimensional relationships
     cdef float weight_sum = 0.0
     if normalized:
-        for i in range(weights.shape[0]):
-            weight_sum = weight_sum + weights[i]
-        for i in range(weights.shape[0]):
-            weights[i] = weights[i] / weight_sum
+        for i in range(py_weights.shape[0]):
+            weight_sum = weight_sum + py_weights[i]
+        for i in range(py_weights.shape[0]):
+            py_weights[i] = py_weights[i] / weight_sum
         initial_lr *= 2000000
     # FIXME
     if 'pca' in optimize_method:
@@ -647,11 +656,11 @@ def cy_optimize_frob(
         normalized,
         sym_attraction,
         momentum,
-        head_embedding,
-        tail_embedding,
-        head,
-        tail,
-        weights,
+        py_head_embedding,
+        py_tail_embedding,
+        py_head,
+        py_tail,
+        py_weights,
         forces,
         gains,
         epochs_per_sample,
@@ -665,5 +674,6 @@ def cy_optimize_frob(
         verbose
     )
 
-    return py_np.asarray(head_embedding)
+    # return py_np.asarray(head_embedding)
+    return py_head_embedding
 
