@@ -75,6 +75,7 @@ cdef void _frob_umap_sampling(
     np.ndarray[DTYPE_INT, ndim=1] tail,
     np.ndarray[DTYPE_FLOAT, ndim=1] weights,
     np.ndarray[DTYPE_FLOAT, ndim=2] forces,
+    np.ndarray[DTYPE_FLOAT, ndim=2] gains,
     float a,
     float b,
     int dim,
@@ -128,7 +129,7 @@ cdef void _frob_umap_sampling(
             )
 
             for d in range(dim):
-                grad_d = attractive_force * (y1[d] - y2[d])
+                grad_d = attractive_force * (y1[d] - y2[d]) * weights[edge]
                 # Attractive force has a negative scalar on it
                 #   in frobenius norm gradient
                 attractive_forces[j * dim + d] -= grad_d * lr
@@ -147,13 +148,21 @@ cdef void _frob_umap_sampling(
                 )
 
                 for d in range(dim):
-                    grad_d = repulsive_force * (y1[d] - y2[d])
+                    grad_d = repulsive_force * (y1[d] - y2[d]) * weights[edge]
                     repulsive_forces[j * dim + d] += grad_d * lr
 
     for v in range(n_vertices):
         for d in range(dim):
             grad_d = attractive_forces[v * dim + d] + repulsive_forces[v * dim + d]
-            head_embedding[v, d] += grad_d * lr
+
+            if grad_d * forces[v, d] > 0.0:
+                gains[v, d] += 0.2
+            else:
+                gains[v, d] *= 0.8
+            grad_d *= gains[v, d]
+
+            forces[v, d] = grad_d * lr
+            head_embedding[v, d] += forces[v, d]
 
 
 def frob_umap_sampling(
@@ -203,6 +212,7 @@ def frob_umap_sampling(
             tail,
             weights,
             forces,
+            gains,
             a,
             b,
             dim,
@@ -631,7 +641,7 @@ def cy_optimize_frob(
     # cdef int [:] head = py_head
     # cdef int [:] tail = py_tail
     forces = py_np.zeros([n_vertices, dim], py_np.float32)
-    gains = py_np.zeros([n_vertices, dim], py_np.float32)
+    gains = py_np.ones([n_vertices, dim], py_np.float32)
 
     # Perform weight scaling on high-dimensional relationships
     cdef float weight_sum = 0.0
