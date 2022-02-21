@@ -146,6 +146,19 @@ def umap_grads(Dx, Dy, a, b, k):
     gradient = -1 * np.flip(gradient, 0)
     return gradient
 
+def frob_umap_grads(Dx, Dy, a, b, k):
+    sigma = find_sigma(Dx, np.log2(k))
+    P_vec = np.exp(-1 * (np.square(Dx) - np.min(np.square(Dx))) / sigma)
+    Q_vec = 1 / (1 + a * np.square(Dy) ** b)
+    attr_vec = P_vec * Q_vec * Q_vec
+    rep_vec = Q_vec * Q_vec * Q_vec
+
+    rep, attr = np.meshgrid(attr_vec, rep_vec)
+    Dy_stack = [Dy for _ in Dy]
+    gradient = (rep - attr) * np.stack(Dy_stack, -1)
+    gradient = np.flip(gradient, 0)
+    return gradient
+
 # UTILS
 def find_sigma(D, target):
     error = 1
@@ -228,14 +241,14 @@ def make_plot(low_dim_dists, high_dim_dists, gradient, contour=True):
 
 if __name__ == '__main__':
     # Basic PCA gradients plot
-    low_dim_dists, high_dim_dists = get_linear_progression(upper_bound=0.5)
-    gradient = pca_grads(high_dim_dists, low_dim_dists, centered=False)
-    make_plot(low_dim_dists, high_dim_dists, gradient, contour=True)
+    # low_dim_dists, high_dim_dists = get_linear_progression(upper_bound=0.5)
+    # gradient = pca_grads(high_dim_dists, low_dim_dists, centered=False)
+    # make_plot(low_dim_dists, high_dim_dists, gradient, contour=True)
 
     # Centered PCA gradients plot
-    low_dim_dists, high_dim_dists, num_points = get_matrix_pca_dists()
-    gradient = pca_grads(high_dim_dists, low_dim_dists, num_points, centered=True)
-    make_plot(low_dim_dists, high_dim_dists, gradient, contour=False)
+    # low_dim_dists, high_dim_dists, num_points = get_matrix_pca_dists()
+    # gradient = pca_grads(high_dim_dists, low_dim_dists, num_points, centered=True)
+    # make_plot(low_dim_dists, high_dim_dists, gradient, contour=False)
 
     # CHOOSE HOW TO GET LOW- AND HIGH-DIM DISTANCES #
 
@@ -257,8 +270,8 @@ if __name__ == '__main__':
     low_dim_dists, high_dim_dists = get_linear_progression(upper_bound=10)
 
     # tSNE gradients plot
-    gradient = tsne_grads(high_dim_dists, low_dim_dists)
-    make_plot(low_dim_dists, high_dim_dists, gradient)
+    # gradient = tsne_grads(high_dim_dists, low_dim_dists)
+    # make_plot(low_dim_dists, high_dim_dists, gradient)
 
     # Uncomment this and above for linearly growing distances
     low_dim_dists, high_dim_dists = get_linear_progression(upper_bound=1)
@@ -268,4 +281,11 @@ if __name__ == '__main__':
     b = 1
     k = 20
     gradient = umap_grads(high_dim_dists, low_dim_dists, a, b, k)
+    make_plot(low_dim_dists, high_dim_dists, gradient)
+
+    # Frobenius UMAP gradients plot
+    a = 1
+    b = 1
+    k = 20
+    gradient = frob_umap_grads(high_dim_dists, low_dim_dists, a, b, k)
     make_plot(low_dim_dists, high_dim_dists, gradient)

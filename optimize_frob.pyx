@@ -87,7 +87,7 @@ cdef void _frob_umap_sampling(
     int i_epoch,
 ):
     cdef:
-        int i, j, k, d, n_neg_samples
+        int i, j, k, d, n_neg_samples, edge
         float attractive_force, repulsive_force
         float dist_squared
 
@@ -98,12 +98,16 @@ cdef void _frob_umap_sampling(
     cdef float grad_d = 0.0
     cdef (float, float) rep_outputs
     cdef int n_edges = int(epochs_per_sample.shape[0])
+    cdef float max_weight = np.max(weights)
+    cdef float weight_ratio
 
-    for i in range(epochs_per_sample.shape[0]):
-        if epoch_of_next_sample[i] <= i_epoch:
+    for edge in range(n_edges):
+        weight_ratio = weights[edge]
+        # FIXME - need to get sampling to be predetermined for effective parallelization
+        if edge :
             # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
-            j = head[i]
-            k = tail[i]
+            j = head[edge]
+            k = tail[edge]
 
             for d in range(dim):
                 y1[d] = head_embedding[j, d]
@@ -111,7 +115,7 @@ cdef void _frob_umap_sampling(
             dist_squared = sq_euc_dist(y1, y2, dim)
             attractive_force = pos_force(
                 normalized,
-                weights[i],
+                weights[edge],
                 kernel_function(dist_squared, a, b),
                 Z=1
             )
@@ -124,7 +128,7 @@ cdef void _frob_umap_sampling(
                 if sym_attraction:
                     head_embedding[k, d] += grad_d * lr
 
-            epoch_of_next_sample[i] += epochs_per_sample[i]
+            epoch_of_next_sample[edge] += epochs_per_sample[i]
 
             n_neg_samples = int(
                 (i_epoch - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
@@ -144,7 +148,7 @@ cdef void _frob_umap_sampling(
                     grad_d = repulsive_force * (y1[d] - y2[d])
                     head_embedding[j, d] += grad_d * lr
 
-            epoch_of_next_negative_sample[i] += (
+            epoch_of_next_negative_sample[edge] += (
                 n_neg_samples * epochs_per_negative_sample[i]
             )
 
@@ -299,27 +303,6 @@ cdef void calc_forces(
             for d in range(dim):
                 local_rep_forces[j * dim + d] += grad * rep_vecs[edge * dim + d]
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.cdivision(True)
-cdef void gather_forces(
-    float* attractive_forces,
-    float* repulsive_forces,
-    float* forces,
-    int dim,
-    int n_vertices,
-    float lr
-) nogil:
-
-    cdef:
-        int v, d, index
-        float grad_d
-    with parallel():
-        for v in prange(n_vertices):
-            for d in range(dim):
-                index = v * dim + d
-                grad_d = repulsive_forces[index] - attractive_forces[index]
-                forces[index] = grad_d * lr
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -412,29 +395,25 @@ cdef void _frob_umap_uniformly(
         free(attr_vecs)
         free(rep_vecs)
 
-    for v in range(n_vertices):
-        for d in range(dim):
-            index = v * dim + d
-            attractive_forces[index] += local_attr_forces[index]
-            repulsive_forces[index] += local_rep_forces[index]
-    free(local_attr_forces)
-    free(local_rep_forces)
+        # Need to collect thread-local forces into single gradient
+        #   before performing gradient descent
+        with parallel():
+            for v in prange(n_vertices):
+                for d in range(dim):
+                    index = v * dim + d
+                    attractive_forces[index] += local_attr_forces[index]
+                    repulsive_forces[index] += local_rep_forces[index]
 
-    with nogil:
-        gather_forces(
-            attractive_forces,
-            repulsive_forces,
-            forces,
-            dim,
-            n_vertices,
-            lr
-        )
+        with parallel():
+            for v in prange(n_vertices):
+                for d in range(dim):
+                    index = v * dim + d
+                    grad_d = repulsive_forces[index] - attractive_forces[index]
+                    head_embedding[v, d] += grad_d * lr
+        free(local_attr_forces)
+        free(local_rep_forces)
 
-    for v in range(n_vertices):
-        for d in range(dim):
-            head_embedding[v, d] += forces[v * dim + d]
     free(forces)
-
     free(attractive_forces)
     free(repulsive_forces)
 
