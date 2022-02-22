@@ -3737,7 +3737,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
  * 
  *             for d in range(dim):             # <<<<<<<<<<<<<<
  *                 grad_d = attractive_force * (y1[d] - y2[d])
- *                 if i_epoch < 100:
+ *                 # FIXME early exaggeration
  */
       __pyx_t_6 = __pyx_v_dim;
       __pyx_t_7 = __pyx_t_6;
@@ -3748,14 +3748,14 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
  * 
  *             for d in range(dim):
  *                 grad_d = attractive_force * (y1[d] - y2[d])             # <<<<<<<<<<<<<<
+ *                 # FIXME early exaggeration
  *                 if i_epoch < 100:
- *                     grad_d *= 4
  */
         __pyx_v_grad_d = (__pyx_v_attractive_force * ((__pyx_v_y1[__pyx_v_d]) - (__pyx_v_y2[__pyx_v_d])));
 
-        /* "optimize_frob.pyx":134
- *             for d in range(dim):
+        /* "optimize_frob.pyx":135
  *                 grad_d = attractive_force * (y1[d] - y2[d])
+ *                 # FIXME early exaggeration
  *                 if i_epoch < 100:             # <<<<<<<<<<<<<<
  *                     grad_d *= 4
  *                 # Attractive force has a negative scalar on it
@@ -3763,8 +3763,8 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
         __pyx_t_1 = ((__pyx_v_i_epoch < 0x64) != 0);
         if (__pyx_t_1) {
 
-          /* "optimize_frob.pyx":135
- *                 grad_d = attractive_force * (y1[d] - y2[d])
+          /* "optimize_frob.pyx":136
+ *                 # FIXME early exaggeration
  *                 if i_epoch < 100:
  *                     grad_d *= 4             # <<<<<<<<<<<<<<
  *                 # Attractive force has a negative scalar on it
@@ -3772,16 +3772,16 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
  */
           __pyx_v_grad_d = (__pyx_v_grad_d * 4.0);
 
-          /* "optimize_frob.pyx":134
- *             for d in range(dim):
+          /* "optimize_frob.pyx":135
  *                 grad_d = attractive_force * (y1[d] - y2[d])
+ *                 # FIXME early exaggeration
  *                 if i_epoch < 100:             # <<<<<<<<<<<<<<
  *                     grad_d *= 4
  *                 # Attractive force has a negative scalar on it
  */
         }
 
-        /* "optimize_frob.pyx":138
+        /* "optimize_frob.pyx":139
  *                 # Attractive force has a negative scalar on it
  *                 #   in frobenius norm gradient
  *                 attractive_forces[j * dim + d] -= grad_d * lr             # <<<<<<<<<<<<<<
@@ -3791,7 +3791,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
         __pyx_t_11 = ((__pyx_v_j * __pyx_v_dim) + __pyx_v_d);
         (__pyx_v_attractive_forces[__pyx_t_11]) = ((__pyx_v_attractive_forces[__pyx_t_11]) - (__pyx_v_grad_d * __pyx_v_lr));
 
-        /* "optimize_frob.pyx":139
+        /* "optimize_frob.pyx":140
  *                 #   in frobenius norm gradient
  *                 attractive_forces[j * dim + d] -= grad_d * lr
  *                 if sym_attraction:             # <<<<<<<<<<<<<<
@@ -3801,7 +3801,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
         __pyx_t_1 = (__pyx_v_sym_attraction != 0);
         if (__pyx_t_1) {
 
-          /* "optimize_frob.pyx":140
+          /* "optimize_frob.pyx":141
  *                 attractive_forces[j * dim + d] -= grad_d * lr
  *                 if sym_attraction:
  *                     attractive_forces[k * dim + d] += grad_d * lr             # <<<<<<<<<<<<<<
@@ -3811,7 +3811,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
           __pyx_t_11 = ((__pyx_v_k * __pyx_v_dim) + __pyx_v_d);
           (__pyx_v_attractive_forces[__pyx_t_11]) = ((__pyx_v_attractive_forces[__pyx_t_11]) + (__pyx_v_grad_d * __pyx_v_lr));
 
-          /* "optimize_frob.pyx":139
+          /* "optimize_frob.pyx":140
  *                 #   in frobenius norm gradient
  *                 attractive_forces[j * dim + d] -= grad_d * lr
  *                 if sym_attraction:             # <<<<<<<<<<<<<<
@@ -3821,7 +3821,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
         }
       }
 
-      /* "optimize_frob.pyx":142
+      /* "optimize_frob.pyx":143
  *                     attractive_forces[k * dim + d] += grad_d * lr
  * 
  *             for p in range(int(negative_sample_rate)):             # <<<<<<<<<<<<<<
@@ -3833,7 +3833,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
       for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_13; __pyx_t_6+=1) {
         __pyx_v_p = __pyx_t_6;
 
-        /* "optimize_frob.pyx":143
+        /* "optimize_frob.pyx":144
  * 
  *             for p in range(int(negative_sample_rate)):
  *                 k = rand() % n_vertices             # <<<<<<<<<<<<<<
@@ -3842,7 +3842,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
  */
         __pyx_v_k = (rand() % __pyx_v_n_vertices);
 
-        /* "optimize_frob.pyx":144
+        /* "optimize_frob.pyx":145
  *             for p in range(int(negative_sample_rate)):
  *                 k = rand() % n_vertices
  *                 for d in range(dim):             # <<<<<<<<<<<<<<
@@ -3854,7 +3854,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
         for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_8; __pyx_t_11+=1) {
           __pyx_v_d = __pyx_t_11;
 
-          /* "optimize_frob.pyx":145
+          /* "optimize_frob.pyx":146
  *                 k = rand() % n_vertices
  *                 for d in range(dim):
  *                     y2[d] = tail_embedding[k, d]             # <<<<<<<<<<<<<<
@@ -3866,7 +3866,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
           (__pyx_v_y2[__pyx_v_d]) = (*__Pyx_BufPtrStrided2d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.buf, __pyx_t_10, __pyx_pybuffernd_tail_embedding.diminfo[0].strides, __pyx_t_9, __pyx_pybuffernd_tail_embedding.diminfo[1].strides));
         }
 
-        /* "optimize_frob.pyx":146
+        /* "optimize_frob.pyx":147
  *                 for d in range(dim):
  *                     y2[d] = tail_embedding[k, d]
  *                 dist_squared = sq_euc_dist(y1, y2, dim)             # <<<<<<<<<<<<<<
@@ -3875,7 +3875,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
  */
         __pyx_v_dist_squared = __pyx_f_13optimize_frob_sq_euc_dist(__pyx_v_y1, __pyx_v_y2, __pyx_v_dim);
 
-        /* "optimize_frob.pyx":147
+        /* "optimize_frob.pyx":148
  *                     y2[d] = tail_embedding[k, d]
  *                 dist_squared = sq_euc_dist(y1, y2, dim)
  *                 repulsive_force = neg_force(             # <<<<<<<<<<<<<<
@@ -3884,7 +3884,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
  */
         __pyx_v_repulsive_force = __pyx_f_13optimize_frob_neg_force(__pyx_v_normalized, __pyx_f_13optimize_frob_kernel_function(__pyx_v_dist_squared, __pyx_v_a, __pyx_v_b), 1.0);
 
-        /* "optimize_frob.pyx":153
+        /* "optimize_frob.pyx":154
  *                 )
  * 
  *                 for d in range(dim):             # <<<<<<<<<<<<<<
@@ -3896,7 +3896,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
         for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_8; __pyx_t_11+=1) {
           __pyx_v_d = __pyx_t_11;
 
-          /* "optimize_frob.pyx":154
+          /* "optimize_frob.pyx":155
  * 
  *                 for d in range(dim):
  *                     grad_d = repulsive_force * (y1[d] - y2[d])             # <<<<<<<<<<<<<<
@@ -3905,7 +3905,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
  */
           __pyx_v_grad_d = (__pyx_v_repulsive_force * ((__pyx_v_y1[__pyx_v_d]) - (__pyx_v_y2[__pyx_v_d])));
 
-          /* "optimize_frob.pyx":155
+          /* "optimize_frob.pyx":156
  *                 for d in range(dim):
  *                     grad_d = repulsive_force * (y1[d] - y2[d])
  *                     repulsive_forces[j * dim + d] += grad_d * lr             # <<<<<<<<<<<<<<
@@ -3927,7 +3927,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
     }
   }
 
-  /* "optimize_frob.pyx":157
+  /* "optimize_frob.pyx":158
  *                     repulsive_forces[j * dim + d] += grad_d * lr
  * 
  *     for v in range(n_vertices):             # <<<<<<<<<<<<<<
@@ -3939,7 +3939,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
   for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=1) {
     __pyx_v_v = __pyx_t_5;
 
-    /* "optimize_frob.pyx":158
+    /* "optimize_frob.pyx":159
  * 
  *     for v in range(n_vertices):
  *         for d in range(dim):             # <<<<<<<<<<<<<<
@@ -3951,7 +3951,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
     for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=1) {
       __pyx_v_d = __pyx_t_8;
 
-      /* "optimize_frob.pyx":159
+      /* "optimize_frob.pyx":160
  *     for v in range(n_vertices):
  *         for d in range(dim):
  *             grad_d = attractive_forces[v * dim + d] + repulsive_forces[v * dim + d]             # <<<<<<<<<<<<<<
@@ -3960,9 +3960,9 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
  */
       __pyx_v_grad_d = ((__pyx_v_attractive_forces[((__pyx_v_v * __pyx_v_dim) + __pyx_v_d)]) + (__pyx_v_repulsive_forces[((__pyx_v_v * __pyx_v_dim) + __pyx_v_d)]));
 
-      /* "optimize_frob.pyx":167
- *             # grad_d *= gains[v, d]
+      /* "optimize_frob.pyx":169
  * 
+ *             # FIXME inverse momentum
  *             forces[v, d] = -1 * forces[v, d] * 0.3 + grad_d * lr             # <<<<<<<<<<<<<<
  *             head_embedding[v, d] += forces[v, d]
  * 
@@ -3973,8 +3973,8 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
       __pyx_t_16 = __pyx_v_d;
       *__Pyx_BufPtrStrided2d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_16, __pyx_pybuffernd_forces.diminfo[1].strides) = (((-1.0 * (*__Pyx_BufPtrStrided2d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_9, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_10, __pyx_pybuffernd_forces.diminfo[1].strides))) * 0.3) + (__pyx_v_grad_d * __pyx_v_lr));
 
-      /* "optimize_frob.pyx":168
- * 
+      /* "optimize_frob.pyx":170
+ *             # FIXME inverse momentum
  *             forces[v, d] = -1 * forces[v, d] * 0.3 + grad_d * lr
  *             head_embedding[v, d] += forces[v, d]             # <<<<<<<<<<<<<<
  * 
@@ -4026,7 +4026,7 @@ static void __pyx_f_13optimize_frob__frob_umap_sampling(int __pyx_v_normalized, 
   __Pyx_RefNannyFinishContext();
 }
 
-/* "optimize_frob.pyx":171
+/* "optimize_frob.pyx":173
  * 
  * 
  * def frob_umap_sampling(             # <<<<<<<<<<<<<<
@@ -4120,113 +4120,113 @@ static PyObject *__pyx_pw_13optimize_frob_1frob_umap_sampling(PyObject *__pyx_se
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_sym_attraction)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 1); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 1); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_momentum)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 2); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 2); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 3); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 3); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 4); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 4); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 5); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 5); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 6); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 6); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  7:
         if (likely((values[7] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_weights)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 7); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 7); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  8:
         if (likely((values[8] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_forces)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 8); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 8); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  9:
         if (likely((values[9] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_gains)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 9); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 9); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 10:
         if (likely((values[10] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_epochs_per_sample)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 10); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 10); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 11:
         if (likely((values[11] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_a)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 11); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 11); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 12:
         if (likely((values[12] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_b)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 12); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 12); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 13:
         if (likely((values[13] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_dim)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 13); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 13); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 14:
         if (likely((values[14] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_initial_lr)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 14); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 14); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 15:
         if (likely((values[15] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_negative_sample_rate)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 15); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 15); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 16:
         if (likely((values[16] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_epochs)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 16); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 16); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 17:
         if (likely((values[17] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_vertices)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 17); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 17); __PYX_ERR(0, 173, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 18:
         if (likely((values[18] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_verbose)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 18); __PYX_ERR(0, 171, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, 18); __PYX_ERR(0, 173, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "frob_umap_sampling") < 0)) __PYX_ERR(0, 171, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "frob_umap_sampling") < 0)) __PYX_ERR(0, 173, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 19) {
       goto __pyx_L5_argtuple_error;
@@ -4251,9 +4251,9 @@ static PyObject *__pyx_pw_13optimize_frob_1frob_umap_sampling(PyObject *__pyx_se
       values[17] = PyTuple_GET_ITEM(__pyx_args, 17);
       values[18] = PyTuple_GET_ITEM(__pyx_args, 18);
     }
-    __pyx_v_normalized = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 172, __pyx_L3_error)
-    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 173, __pyx_L3_error)
-    __pyx_v_momentum = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 174, __pyx_L3_error)
+    __pyx_v_normalized = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 174, __pyx_L3_error)
+    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 175, __pyx_L3_error)
+    __pyx_v_momentum = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 176, __pyx_L3_error)
     __pyx_v_head_embedding = ((PyArrayObject *)values[3]);
     __pyx_v_tail_embedding = ((PyArrayObject *)values[4]);
     __pyx_v_head = ((PyArrayObject *)values[5]);
@@ -4262,31 +4262,31 @@ static PyObject *__pyx_pw_13optimize_frob_1frob_umap_sampling(PyObject *__pyx_se
     __pyx_v_forces = ((PyArrayObject *)values[8]);
     __pyx_v_gains = ((PyArrayObject *)values[9]);
     __pyx_v_epochs_per_sample = ((PyArrayObject *)values[10]);
-    __pyx_v_a = __pyx_PyFloat_AsFloat(values[11]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 183, __pyx_L3_error)
-    __pyx_v_b = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 184, __pyx_L3_error)
-    __pyx_v_dim = __Pyx_PyInt_As_int(values[13]); if (unlikely((__pyx_v_dim == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 185, __pyx_L3_error)
-    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 186, __pyx_L3_error)
-    __pyx_v_negative_sample_rate = __pyx_PyFloat_AsFloat(values[15]); if (unlikely((__pyx_v_negative_sample_rate == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 187, __pyx_L3_error)
-    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 188, __pyx_L3_error)
-    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[17]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 189, __pyx_L3_error)
-    __pyx_v_verbose = __Pyx_PyInt_As_int(values[18]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 190, __pyx_L3_error)
+    __pyx_v_a = __pyx_PyFloat_AsFloat(values[11]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 185, __pyx_L3_error)
+    __pyx_v_b = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 186, __pyx_L3_error)
+    __pyx_v_dim = __Pyx_PyInt_As_int(values[13]); if (unlikely((__pyx_v_dim == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 187, __pyx_L3_error)
+    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 188, __pyx_L3_error)
+    __pyx_v_negative_sample_rate = __pyx_PyFloat_AsFloat(values[15]); if (unlikely((__pyx_v_negative_sample_rate == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 189, __pyx_L3_error)
+    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 190, __pyx_L3_error)
+    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[17]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 191, __pyx_L3_error)
+    __pyx_v_verbose = __Pyx_PyInt_As_int(values[18]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 192, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 171, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("frob_umap_sampling", 1, 19, 19, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 173, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("optimize_frob.frob_umap_sampling", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head_embedding), __pyx_ptype_5numpy_ndarray, 1, "head_embedding", 0))) __PYX_ERR(0, 175, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail_embedding), __pyx_ptype_5numpy_ndarray, 1, "tail_embedding", 0))) __PYX_ERR(0, 176, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head), __pyx_ptype_5numpy_ndarray, 1, "head", 0))) __PYX_ERR(0, 177, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail), __pyx_ptype_5numpy_ndarray, 1, "tail", 0))) __PYX_ERR(0, 178, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_weights), __pyx_ptype_5numpy_ndarray, 1, "weights", 0))) __PYX_ERR(0, 179, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_forces), __pyx_ptype_5numpy_ndarray, 1, "forces", 0))) __PYX_ERR(0, 180, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_gains), __pyx_ptype_5numpy_ndarray, 1, "gains", 0))) __PYX_ERR(0, 181, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_epochs_per_sample), __pyx_ptype_5numpy_ndarray, 1, "epochs_per_sample", 0))) __PYX_ERR(0, 182, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head_embedding), __pyx_ptype_5numpy_ndarray, 1, "head_embedding", 0))) __PYX_ERR(0, 177, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail_embedding), __pyx_ptype_5numpy_ndarray, 1, "tail_embedding", 0))) __PYX_ERR(0, 178, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head), __pyx_ptype_5numpy_ndarray, 1, "head", 0))) __PYX_ERR(0, 179, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail), __pyx_ptype_5numpy_ndarray, 1, "tail", 0))) __PYX_ERR(0, 180, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_weights), __pyx_ptype_5numpy_ndarray, 1, "weights", 0))) __PYX_ERR(0, 181, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_forces), __pyx_ptype_5numpy_ndarray, 1, "forces", 0))) __PYX_ERR(0, 182, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_gains), __pyx_ptype_5numpy_ndarray, 1, "gains", 0))) __PYX_ERR(0, 183, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_epochs_per_sample), __pyx_ptype_5numpy_ndarray, 1, "epochs_per_sample", 0))) __PYX_ERR(0, 184, __pyx_L1_error)
   __pyx_r = __pyx_pf_13optimize_frob_frob_umap_sampling(__pyx_self, __pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_momentum, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_head, __pyx_v_tail, __pyx_v_weights, __pyx_v_forces, __pyx_v_gains, __pyx_v_epochs_per_sample, __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_initial_lr, __pyx_v_negative_sample_rate, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_verbose);
 
   /* function exit code */
@@ -4382,46 +4382,46 @@ static PyObject *__pyx_pf_13optimize_frob_frob_umap_sampling(CYTHON_UNUSED PyObj
   __pyx_pybuffernd_epochs_per_sample.rcbuffer = &__pyx_pybuffer_epochs_per_sample;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 171, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 173, __pyx_L1_error)
   }
   __pyx_pybuffernd_head_embedding.diminfo[0].strides = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_head_embedding.diminfo[0].shape = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_head_embedding.diminfo[1].strides = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_head_embedding.diminfo[1].shape = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 171, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 173, __pyx_L1_error)
   }
   __pyx_pybuffernd_tail_embedding.diminfo[0].strides = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_tail_embedding.diminfo[0].shape = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_tail_embedding.diminfo[1].strides = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_tail_embedding.diminfo[1].shape = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_head, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 171, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_head, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 173, __pyx_L1_error)
   }
   __pyx_pybuffernd_head.diminfo[0].strides = __pyx_pybuffernd_head.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_head.diminfo[0].shape = __pyx_pybuffernd_head.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 171, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 173, __pyx_L1_error)
   }
   __pyx_pybuffernd_tail.diminfo[0].strides = __pyx_pybuffernd_tail.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_tail.diminfo[0].shape = __pyx_pybuffernd_tail.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_weights, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 171, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_weights, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 173, __pyx_L1_error)
   }
   __pyx_pybuffernd_weights.diminfo[0].strides = __pyx_pybuffernd_weights.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_weights.diminfo[0].shape = __pyx_pybuffernd_weights.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_forces.rcbuffer->pybuffer, (PyObject*)__pyx_v_forces, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 171, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_forces.rcbuffer->pybuffer, (PyObject*)__pyx_v_forces, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 173, __pyx_L1_error)
   }
   __pyx_pybuffernd_forces.diminfo[0].strides = __pyx_pybuffernd_forces.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_forces.diminfo[0].shape = __pyx_pybuffernd_forces.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_forces.diminfo[1].strides = __pyx_pybuffernd_forces.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_forces.diminfo[1].shape = __pyx_pybuffernd_forces.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_gains.rcbuffer->pybuffer, (PyObject*)__pyx_v_gains, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 171, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_gains.rcbuffer->pybuffer, (PyObject*)__pyx_v_gains, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 173, __pyx_L1_error)
   }
   __pyx_pybuffernd_gains.diminfo[0].strides = __pyx_pybuffernd_gains.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_gains.diminfo[0].shape = __pyx_pybuffernd_gains.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_gains.diminfo[1].strides = __pyx_pybuffernd_gains.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_gains.diminfo[1].shape = __pyx_pybuffernd_gains.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer, (PyObject*)__pyx_v_epochs_per_sample, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 171, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer, (PyObject*)__pyx_v_epochs_per_sample, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 173, __pyx_L1_error)
   }
   __pyx_pybuffernd_epochs_per_sample.diminfo[0].strides = __pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_epochs_per_sample.diminfo[0].shape = __pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer.shape[0];
 
-  /* "optimize_frob.pyx":201
+  /* "optimize_frob.pyx":203
  *     # ANDREW - perform negative samples x times more often
  *     #          by making the number of epochs between samples smaller
  *     n_edges = int(epochs_per_sample.shape[0])             # <<<<<<<<<<<<<<
@@ -4430,23 +4430,23 @@ static PyObject *__pyx_pf_13optimize_frob_frob_umap_sampling(CYTHON_UNUSED PyObj
  */
   __pyx_v_n_edges = ((int)(__pyx_v_epochs_per_sample->dimensions[0]));
 
-  /* "optimize_frob.pyx":202
+  /* "optimize_frob.pyx":204
  *     #          by making the number of epochs between samples smaller
  *     n_edges = int(epochs_per_sample.shape[0])
  *     pos_sample_steps = py_np.zeros([n_edges, n_epochs], dtype=py_np.float32)             # <<<<<<<<<<<<<<
  *     for i_edge in range(n_edges):
  *         sample_rate = int(epochs_per_sample[i_edge])
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_n_edges); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_n_edges); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = PyList_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __pyx_t_4 = PyList_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_1);
   PyList_SET_ITEM(__pyx_t_4, 0, __pyx_t_1);
@@ -4454,26 +4454,26 @@ static PyObject *__pyx_pf_13optimize_frob_frob_umap_sampling(CYTHON_UNUSED PyObj
   PyList_SET_ITEM(__pyx_t_4, 1, __pyx_t_3);
   __pyx_t_1 = 0;
   __pyx_t_3 = 0;
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4);
   __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float32); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float32); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 202, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 202, __pyx_L1_error)
+  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 204, __pyx_L1_error)
   __pyx_t_6 = ((PyArrayObject *)__pyx_t_5);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -4490,13 +4490,13 @@ static PyObject *__pyx_pf_13optimize_frob_frob_umap_sampling(CYTHON_UNUSED PyObj
       __pyx_t_8 = __pyx_t_9 = __pyx_t_10 = 0;
     }
     __pyx_pybuffernd_pos_sample_steps.diminfo[0].strides = __pyx_pybuffernd_pos_sample_steps.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_pos_sample_steps.diminfo[0].shape = __pyx_pybuffernd_pos_sample_steps.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_pos_sample_steps.diminfo[1].strides = __pyx_pybuffernd_pos_sample_steps.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_pos_sample_steps.diminfo[1].shape = __pyx_pybuffernd_pos_sample_steps.rcbuffer->pybuffer.shape[1];
-    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 202, __pyx_L1_error)
+    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 204, __pyx_L1_error)
   }
   __pyx_t_6 = 0;
   __pyx_v_pos_sample_steps = ((PyArrayObject *)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "optimize_frob.pyx":203
+  /* "optimize_frob.pyx":205
  *     n_edges = int(epochs_per_sample.shape[0])
  *     pos_sample_steps = py_np.zeros([n_edges, n_epochs], dtype=py_np.float32)
  *     for i_edge in range(n_edges):             # <<<<<<<<<<<<<<
@@ -4508,7 +4508,7 @@ static PyObject *__pyx_pf_13optimize_frob_frob_umap_sampling(CYTHON_UNUSED PyObj
   for (__pyx_t_12 = 0; __pyx_t_12 < __pyx_t_11; __pyx_t_12+=1) {
     __pyx_v_i_edge = __pyx_t_12;
 
-    /* "optimize_frob.pyx":204
+    /* "optimize_frob.pyx":206
  *     pos_sample_steps = py_np.zeros([n_edges, n_epochs], dtype=py_np.float32)
  *     for i_edge in range(n_edges):
  *         sample_rate = int(epochs_per_sample[i_edge])             # <<<<<<<<<<<<<<
@@ -4523,25 +4523,25 @@ static PyObject *__pyx_pf_13optimize_frob_frob_umap_sampling(CYTHON_UNUSED PyObj
     } else if (unlikely(__pyx_t_13 >= __pyx_pybuffernd_epochs_per_sample.diminfo[0].shape)) __pyx_t_14 = 0;
     if (unlikely(__pyx_t_14 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_14);
-      __PYX_ERR(0, 204, __pyx_L1_error)
+      __PYX_ERR(0, 206, __pyx_L1_error)
     }
     __pyx_v_sample_rate = ((int)(*__Pyx_BufPtrStrided1d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_epochs_per_sample.diminfo[0].strides)));
 
-    /* "optimize_frob.pyx":205
+    /* "optimize_frob.pyx":207
  *     for i_edge in range(n_edges):
  *         sample_rate = int(epochs_per_sample[i_edge])
  *         pos_sample_steps[i_edge, ::sample_rate] = 1             # <<<<<<<<<<<<<<
  * 
  *     for i_epoch in range(n_epochs):
  */
-    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_i_edge); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 205, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_i_edge); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 207, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_sample_rate); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 205, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_sample_rate); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 207, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_3 = PySlice_New(Py_None, Py_None, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 205, __pyx_L1_error)
+    __pyx_t_3 = PySlice_New(Py_None, Py_None, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 207, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 205, __pyx_L1_error)
+    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 207, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_GIVEREF(__pyx_t_5);
     PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_5);
@@ -4549,11 +4549,11 @@ static PyObject *__pyx_pf_13optimize_frob_frob_umap_sampling(CYTHON_UNUSED PyObj
     PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_t_3);
     __pyx_t_5 = 0;
     __pyx_t_3 = 0;
-    if (unlikely(PyObject_SetItem(((PyObject *)__pyx_v_pos_sample_steps), __pyx_t_4, __pyx_int_1) < 0)) __PYX_ERR(0, 205, __pyx_L1_error)
+    if (unlikely(PyObject_SetItem(((PyObject *)__pyx_v_pos_sample_steps), __pyx_t_4, __pyx_int_1) < 0)) __PYX_ERR(0, 207, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   }
 
-  /* "optimize_frob.pyx":207
+  /* "optimize_frob.pyx":209
  *         pos_sample_steps[i_edge, ::sample_rate] = 1
  * 
  *     for i_epoch in range(n_epochs):             # <<<<<<<<<<<<<<
@@ -4565,25 +4565,25 @@ static PyObject *__pyx_pf_13optimize_frob_frob_umap_sampling(CYTHON_UNUSED PyObj
   for (__pyx_t_12 = 0; __pyx_t_12 < __pyx_t_11; __pyx_t_12+=1) {
     __pyx_v_i_epoch = __pyx_t_12;
 
-    /* "optimize_frob.pyx":208
+    /* "optimize_frob.pyx":210
  * 
  *     for i_epoch in range(n_epochs):
  *         lr = get_lr(initial_lr, i_epoch, n_epochs)             # <<<<<<<<<<<<<<
  *         _frob_umap_sampling(
  *             normalized,
  */
-    __pyx_t_4 = PyFloat_FromDouble(__pyx_v_initial_lr); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 208, __pyx_L1_error)
+    __pyx_t_4 = PyFloat_FromDouble(__pyx_v_initial_lr); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 210, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_i_epoch); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 208, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_i_epoch); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 210, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 208, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 210, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_v_lr = __pyx_f_13optimize_frob_get_lr(__pyx_t_4, __pyx_t_3, __pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "optimize_frob.pyx":209
+    /* "optimize_frob.pyx":211
  *     for i_epoch in range(n_epochs):
  *         lr = get_lr(initial_lr, i_epoch, n_epochs)
  *         _frob_umap_sampling(             # <<<<<<<<<<<<<<
@@ -4592,7 +4592,7 @@ static PyObject *__pyx_pf_13optimize_frob_frob_umap_sampling(CYTHON_UNUSED PyObj
  */
     __pyx_f_13optimize_frob__frob_umap_sampling(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_momentum, ((PyArrayObject *)__pyx_v_head_embedding), ((PyArrayObject *)__pyx_v_tail_embedding), ((PyArrayObject *)__pyx_v_head), ((PyArrayObject *)__pyx_v_tail), ((PyArrayObject *)__pyx_v_weights), ((PyArrayObject *)__pyx_v_forces), ((PyArrayObject *)__pyx_v_gains), __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_n_vertices, __pyx_v_lr, ((PyArrayObject *)__pyx_v_pos_sample_steps), __pyx_v_negative_sample_rate, __pyx_v_i_epoch);
 
-    /* "optimize_frob.pyx":229
+    /* "optimize_frob.pyx":231
  *             i_epoch,
  *         )
  *         if verbose:             # <<<<<<<<<<<<<<
@@ -4602,22 +4602,22 @@ static PyObject *__pyx_pf_13optimize_frob_frob_umap_sampling(CYTHON_UNUSED PyObj
     __pyx_t_15 = (__pyx_v_verbose != 0);
     if (__pyx_t_15) {
 
-      /* "optimize_frob.pyx":230
+      /* "optimize_frob.pyx":232
  *         )
  *         if verbose:
  *             print_status(i_epoch, n_epochs)             # <<<<<<<<<<<<<<
  * 
  * @cython.boundscheck(False)
  */
-      __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_i_epoch); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 230, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_i_epoch); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 232, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 230, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 232, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __pyx_f_13optimize_frob_print_status(__pyx_t_5, __pyx_t_3);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "optimize_frob.pyx":229
+      /* "optimize_frob.pyx":231
  *             i_epoch,
  *         )
  *         if verbose:             # <<<<<<<<<<<<<<
@@ -4627,7 +4627,7 @@ static PyObject *__pyx_pf_13optimize_frob_frob_umap_sampling(CYTHON_UNUSED PyObj
     }
   }
 
-  /* "optimize_frob.pyx":171
+  /* "optimize_frob.pyx":173
  * 
  * 
  * def frob_umap_sampling(             # <<<<<<<<<<<<<<
@@ -4678,7 +4678,7 @@ static PyObject *__pyx_pf_13optimize_frob_frob_umap_sampling(CYTHON_UNUSED PyObj
   return __pyx_r;
 }
 
-/* "optimize_frob.pyx":235
+/* "optimize_frob.pyx":237
  * @cython.wraparound(False)
  * @cython.cdivision(True)
  * cdef void get_kernels(             # <<<<<<<<<<<<<<
@@ -4703,7 +4703,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
   int __pyx_t_7;
   Py_ssize_t __pyx_t_8;
 
-  /* "optimize_frob.pyx":257
+  /* "optimize_frob.pyx":259
  *         float *y2
  * 
  *     with parallel():             # <<<<<<<<<<<<<<
@@ -4725,7 +4725,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
           __pyx_v_y1 = ((float *)1);
           __pyx_v_y2 = ((float *)1);
 
-          /* "optimize_frob.pyx":258
+          /* "optimize_frob.pyx":260
  * 
  *     with parallel():
  *         y1 = <float*> malloc(sizeof(float) * dim)             # <<<<<<<<<<<<<<
@@ -4734,7 +4734,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
  */
           __pyx_v_y1 = ((float *)malloc(((sizeof(float)) * __pyx_v_dim)));
 
-          /* "optimize_frob.pyx":259
+          /* "optimize_frob.pyx":261
  *     with parallel():
  *         y1 = <float*> malloc(sizeof(float) * dim)
  *         y2 = <float*> malloc(sizeof(float) * dim)             # <<<<<<<<<<<<<<
@@ -4743,7 +4743,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
  */
           __pyx_v_y2 = ((float *)malloc(((sizeof(float)) * __pyx_v_dim)));
 
-          /* "optimize_frob.pyx":260
+          /* "optimize_frob.pyx":262
  *         y1 = <float*> malloc(sizeof(float) * dim)
  *         y2 = <float*> malloc(sizeof(float) * dim)
  *         for edge in prange(n_edges):             # <<<<<<<<<<<<<<
@@ -4768,7 +4768,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
                           __pyx_v_j = ((int)0xbad0bad0);
                           __pyx_v_k = ((int)0xbad0bad0);
 
-                          /* "optimize_frob.pyx":261
+                          /* "optimize_frob.pyx":263
  *         y2 = <float*> malloc(sizeof(float) * dim)
  *         for edge in prange(n_edges):
  *             j = head[edge]             # <<<<<<<<<<<<<<
@@ -4778,7 +4778,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
                           __pyx_t_4 = __pyx_v_edge;
                           __pyx_v_j = (*((int *) ( /* dim=0 */ (__pyx_v_head.data + __pyx_t_4 * __pyx_v_head.strides[0]) )));
 
-                          /* "optimize_frob.pyx":262
+                          /* "optimize_frob.pyx":264
  *         for edge in prange(n_edges):
  *             j = head[edge]
  *             k = tail[edge]             # <<<<<<<<<<<<<<
@@ -4788,7 +4788,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
                           __pyx_t_4 = __pyx_v_edge;
                           __pyx_v_k = (*((int *) ( /* dim=0 */ (__pyx_v_tail.data + __pyx_t_4 * __pyx_v_tail.strides[0]) )));
 
-                          /* "optimize_frob.pyx":263
+                          /* "optimize_frob.pyx":265
  *             j = head[edge]
  *             k = tail[edge]
  *             for d in range(dim):             # <<<<<<<<<<<<<<
@@ -4800,7 +4800,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
                           for (__pyx_t_7 = 0; __pyx_t_7 < __pyx_t_6; __pyx_t_7+=1) {
                             __pyx_v_d = __pyx_t_7;
 
-                            /* "optimize_frob.pyx":264
+                            /* "optimize_frob.pyx":266
  *             k = tail[edge]
  *             for d in range(dim):
  *                 y1[d] = head_embedding[j, d]             # <<<<<<<<<<<<<<
@@ -4811,7 +4811,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
                             __pyx_t_8 = __pyx_v_d;
                             (__pyx_v_y1[__pyx_v_d]) = (*((float *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_head_embedding.data + __pyx_t_4 * __pyx_v_head_embedding.strides[0]) ) + __pyx_t_8 * __pyx_v_head_embedding.strides[1]) )));
 
-                            /* "optimize_frob.pyx":265
+                            /* "optimize_frob.pyx":267
  *             for d in range(dim):
  *                 y1[d] = head_embedding[j, d]
  *                 y2[d] = tail_embedding[k, d]             # <<<<<<<<<<<<<<
@@ -4822,7 +4822,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
                             __pyx_t_4 = __pyx_v_d;
                             (__pyx_v_y2[__pyx_v_d]) = (*((float *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_tail_embedding.data + __pyx_t_8 * __pyx_v_tail_embedding.strides[0]) ) + __pyx_t_4 * __pyx_v_tail_embedding.strides[1]) )));
 
-                            /* "optimize_frob.pyx":266
+                            /* "optimize_frob.pyx":268
  *                 y1[d] = head_embedding[j, d]
  *                 y2[d] = tail_embedding[k, d]
  *                 attr_vecs[edge * dim + d] = y1[d] - y2[d]             # <<<<<<<<<<<<<<
@@ -4832,7 +4832,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
                             (__pyx_v_attr_vecs[((__pyx_v_edge * __pyx_v_dim) + __pyx_v_d)]) = ((__pyx_v_y1[__pyx_v_d]) - (__pyx_v_y2[__pyx_v_d]));
                           }
 
-                          /* "optimize_frob.pyx":267
+                          /* "optimize_frob.pyx":269
  *                 y2[d] = tail_embedding[k, d]
  *                 attr_vecs[edge * dim + d] = y1[d] - y2[d]
  *             dist_squared = sq_euc_dist(y1, y2, dim)             # <<<<<<<<<<<<<<
@@ -4841,7 +4841,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
  */
                           __pyx_v_dist_squared = __pyx_f_13optimize_frob_sq_euc_dist(__pyx_v_y1, __pyx_v_y2, __pyx_v_dim);
 
-                          /* "optimize_frob.pyx":268
+                          /* "optimize_frob.pyx":270
  *                 attr_vecs[edge * dim + d] = y1[d] - y2[d]
  *             dist_squared = sq_euc_dist(y1, y2, dim)
  *             Q1[edge] = kernel_function(dist_squared, a, b)             # <<<<<<<<<<<<<<
@@ -4850,7 +4850,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
  */
                           (__pyx_v_Q1[__pyx_v_edge]) = __pyx_f_13optimize_frob_kernel_function(__pyx_v_dist_squared, __pyx_v_a, __pyx_v_b);
 
-                          /* "optimize_frob.pyx":270
+                          /* "optimize_frob.pyx":272
  *             Q1[edge] = kernel_function(dist_squared, a, b)
  * 
  *             k = rand() % n_vertices             # <<<<<<<<<<<<<<
@@ -4859,7 +4859,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
  */
                           __pyx_v_k = (rand() % __pyx_v_n_vertices);
 
-                          /* "optimize_frob.pyx":271
+                          /* "optimize_frob.pyx":273
  * 
  *             k = rand() % n_vertices
  *             for d in range(dim):             # <<<<<<<<<<<<<<
@@ -4871,7 +4871,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
                           for (__pyx_t_7 = 0; __pyx_t_7 < __pyx_t_6; __pyx_t_7+=1) {
                             __pyx_v_d = __pyx_t_7;
 
-                            /* "optimize_frob.pyx":272
+                            /* "optimize_frob.pyx":274
  *             k = rand() % n_vertices
  *             for d in range(dim):
  *                 y2[d] = tail_embedding[k, d]             # <<<<<<<<<<<<<<
@@ -4882,7 +4882,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
                             __pyx_t_8 = __pyx_v_d;
                             (__pyx_v_y2[__pyx_v_d]) = (*((float *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_tail_embedding.data + __pyx_t_4 * __pyx_v_tail_embedding.strides[0]) ) + __pyx_t_8 * __pyx_v_tail_embedding.strides[1]) )));
 
-                            /* "optimize_frob.pyx":273
+                            /* "optimize_frob.pyx":275
  *             for d in range(dim):
  *                 y2[d] = tail_embedding[k, d]
  *                 rep_vecs[edge * dim + d] = y1[d] - y2[d]             # <<<<<<<<<<<<<<
@@ -4892,7 +4892,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
                             (__pyx_v_rep_vecs[((__pyx_v_edge * __pyx_v_dim) + __pyx_v_d)]) = ((__pyx_v_y1[__pyx_v_d]) - (__pyx_v_y2[__pyx_v_d]));
                           }
 
-                          /* "optimize_frob.pyx":274
+                          /* "optimize_frob.pyx":276
  *                 y2[d] = tail_embedding[k, d]
  *                 rep_vecs[edge * dim + d] = y1[d] - y2[d]
  *             dist_squared = sq_euc_dist(y1, y2, dim)             # <<<<<<<<<<<<<<
@@ -4901,7 +4901,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
  */
                           __pyx_v_dist_squared = __pyx_f_13optimize_frob_sq_euc_dist(__pyx_v_y1, __pyx_v_y2, __pyx_v_dim);
 
-                          /* "optimize_frob.pyx":275
+                          /* "optimize_frob.pyx":277
  *                 rep_vecs[edge * dim + d] = y1[d] - y2[d]
  *             dist_squared = sq_euc_dist(y1, y2, dim)
  *             Q2[edge] = kernel_function(dist_squared, a, b)             # <<<<<<<<<<<<<<
@@ -4914,7 +4914,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
               }
           }
 
-          /* "optimize_frob.pyx":277
+          /* "optimize_frob.pyx":279
  *             Q2[edge] = kernel_function(dist_squared, a, b)
  * 
  *         free(y1)             # <<<<<<<<<<<<<<
@@ -4923,7 +4923,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
  */
           free(__pyx_v_y1);
 
-          /* "optimize_frob.pyx":278
+          /* "optimize_frob.pyx":280
  * 
  *         free(y1)
  *         free(y2)             # <<<<<<<<<<<<<<
@@ -4940,7 +4940,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
       #define unlikely(x) __builtin_expect(!!(x), 0)
   #endif
 
-  /* "optimize_frob.pyx":235
+  /* "optimize_frob.pyx":237
  * @cython.wraparound(False)
  * @cython.cdivision(True)
  * cdef void get_kernels(             # <<<<<<<<<<<<<<
@@ -4951,7 +4951,7 @@ static void __pyx_f_13optimize_frob_get_kernels(float *__pyx_v_Q1, float *__pyx_
   /* function exit code */
 }
 
-/* "optimize_frob.pyx":284
+/* "optimize_frob.pyx":286
  * @cython.wraparound(False)
  * @cython.cdivision(True)
  * cdef void calc_forces(             # <<<<<<<<<<<<<<
@@ -4978,7 +4978,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
   int __pyx_t_8;
   int __pyx_t_9;
 
-  /* "optimize_frob.pyx":304
+  /* "optimize_frob.pyx":306
  *         float grad, grad_d
  * 
  *     with parallel():             # <<<<<<<<<<<<<<
@@ -4997,7 +4997,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
       #endif /* _OPENMP */
       {
 
-          /* "optimize_frob.pyx":305
+          /* "optimize_frob.pyx":307
  * 
  *     with parallel():
  *         for v in prange(n_vertices):             # <<<<<<<<<<<<<<
@@ -5020,7 +5020,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
                           __pyx_v_d = ((int)0xbad0bad0);
                           __pyx_v_index = ((int)0xbad0bad0);
 
-                          /* "optimize_frob.pyx":306
+                          /* "optimize_frob.pyx":308
  *     with parallel():
  *         for v in prange(n_vertices):
  *             for d in range(dim):             # <<<<<<<<<<<<<<
@@ -5032,7 +5032,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
                           for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
                             __pyx_v_d = __pyx_t_6;
 
-                            /* "optimize_frob.pyx":307
+                            /* "optimize_frob.pyx":309
  *         for v in prange(n_vertices):
  *             for d in range(dim):
  *                 index = v * dim + d             # <<<<<<<<<<<<<<
@@ -5041,7 +5041,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
  */
                             __pyx_v_index = ((__pyx_v_v * __pyx_v_dim) + __pyx_v_d);
 
-                            /* "optimize_frob.pyx":308
+                            /* "optimize_frob.pyx":310
  *             for d in range(dim):
  *                 index = v * dim + d
  *                 local_attr_forces[index] = 0             # <<<<<<<<<<<<<<
@@ -5050,7 +5050,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
  */
                             (__pyx_v_local_attr_forces[__pyx_v_index]) = 0.0;
 
-                            /* "optimize_frob.pyx":309
+                            /* "optimize_frob.pyx":311
  *                 index = v * dim + d
  *                 local_attr_forces[index] = 0
  *                 local_rep_forces[index] = 0             # <<<<<<<<<<<<<<
@@ -5064,7 +5064,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
               }
           }
 
-          /* "optimize_frob.pyx":311
+          /* "optimize_frob.pyx":313
  *                 local_rep_forces[index] = 0
  * 
  *         for edge in prange(n_edges):             # <<<<<<<<<<<<<<
@@ -5090,7 +5090,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
                           __pyx_v_j = ((int)0xbad0bad0);
                           __pyx_v_k = ((int)0xbad0bad0);
 
-                          /* "optimize_frob.pyx":312
+                          /* "optimize_frob.pyx":314
  * 
  *         for edge in prange(n_edges):
  *             j = head[edge]             # <<<<<<<<<<<<<<
@@ -5100,7 +5100,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
                           __pyx_t_7 = __pyx_v_edge;
                           __pyx_v_j = (*((int *) ( /* dim=0 */ (__pyx_v_head.data + __pyx_t_7 * __pyx_v_head.strides[0]) )));
 
-                          /* "optimize_frob.pyx":313
+                          /* "optimize_frob.pyx":315
  *         for edge in prange(n_edges):
  *             j = head[edge]
  *             k = tail[edge]             # <<<<<<<<<<<<<<
@@ -5110,7 +5110,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
                           __pyx_t_7 = __pyx_v_edge;
                           __pyx_v_k = (*((int *) ( /* dim=0 */ (__pyx_v_tail.data + __pyx_t_7 * __pyx_v_tail.strides[0]) )));
 
-                          /* "optimize_frob.pyx":314
+                          /* "optimize_frob.pyx":316
  *             j = head[edge]
  *             k = tail[edge]
  *             grad = pos_force(normalized, weights[edge], Q1[edge], 0.0)             # <<<<<<<<<<<<<<
@@ -5120,7 +5120,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
                           __pyx_t_7 = __pyx_v_edge;
                           __pyx_v_grad = __pyx_f_13optimize_frob_pos_force(__pyx_v_normalized, (*((float *) ( /* dim=0 */ (__pyx_v_weights.data + __pyx_t_7 * __pyx_v_weights.strides[0]) ))), (__pyx_v_Q1[__pyx_v_edge]), 0.0);
 
-                          /* "optimize_frob.pyx":315
+                          /* "optimize_frob.pyx":317
  *             k = tail[edge]
  *             grad = pos_force(normalized, weights[edge], Q1[edge], 0.0)
  *             for d in range(dim):             # <<<<<<<<<<<<<<
@@ -5132,7 +5132,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
                           for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
                             __pyx_v_d = __pyx_t_6;
 
-                            /* "optimize_frob.pyx":316
+                            /* "optimize_frob.pyx":318
  *             grad = pos_force(normalized, weights[edge], Q1[edge], 0.0)
  *             for d in range(dim):
  *                 grad_d = grad * attr_vecs[edge * dim + d]             # <<<<<<<<<<<<<<
@@ -5141,7 +5141,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
  */
                             __pyx_v_grad_d = (__pyx_v_grad * (__pyx_v_attr_vecs[((__pyx_v_edge * __pyx_v_dim) + __pyx_v_d)]));
 
-                            /* "optimize_frob.pyx":317
+                            /* "optimize_frob.pyx":319
  *             for d in range(dim):
  *                 grad_d = grad * attr_vecs[edge * dim + d]
  *                 local_attr_forces[j * dim + d] += grad_d             # <<<<<<<<<<<<<<
@@ -5151,7 +5151,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
                             __pyx_t_8 = ((__pyx_v_j * __pyx_v_dim) + __pyx_v_d);
                             (__pyx_v_local_attr_forces[__pyx_t_8]) = ((__pyx_v_local_attr_forces[__pyx_t_8]) + __pyx_v_grad_d);
 
-                            /* "optimize_frob.pyx":318
+                            /* "optimize_frob.pyx":320
  *                 grad_d = grad * attr_vecs[edge * dim + d]
  *                 local_attr_forces[j * dim + d] += grad_d
  *                 if sym_attraction:             # <<<<<<<<<<<<<<
@@ -5161,7 +5161,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
                             __pyx_t_9 = (__pyx_v_sym_attraction != 0);
                             if (__pyx_t_9) {
 
-                              /* "optimize_frob.pyx":319
+                              /* "optimize_frob.pyx":321
  *                 local_attr_forces[j * dim + d] += grad_d
  *                 if sym_attraction:
  *                     local_attr_forces[k * dim + d] -= grad_d             # <<<<<<<<<<<<<<
@@ -5171,7 +5171,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
                               __pyx_t_8 = ((__pyx_v_k * __pyx_v_dim) + __pyx_v_d);
                               (__pyx_v_local_attr_forces[__pyx_t_8]) = ((__pyx_v_local_attr_forces[__pyx_t_8]) - __pyx_v_grad_d);
 
-                              /* "optimize_frob.pyx":318
+                              /* "optimize_frob.pyx":320
  *                 grad_d = grad * attr_vecs[edge * dim + d]
  *                 local_attr_forces[j * dim + d] += grad_d
  *                 if sym_attraction:             # <<<<<<<<<<<<<<
@@ -5181,7 +5181,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
                             }
                           }
 
-                          /* "optimize_frob.pyx":321
+                          /* "optimize_frob.pyx":323
  *                     local_attr_forces[k * dim + d] -= grad_d
  * 
  *             grad = neg_force(normalized, Q2[edge], 0.0)             # <<<<<<<<<<<<<<
@@ -5190,7 +5190,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
  */
                           __pyx_v_grad = __pyx_f_13optimize_frob_neg_force(__pyx_v_normalized, (__pyx_v_Q2[__pyx_v_edge]), 0.0);
 
-                          /* "optimize_frob.pyx":322
+                          /* "optimize_frob.pyx":324
  * 
  *             grad = neg_force(normalized, Q2[edge], 0.0)
  *             for d in range(dim):             # <<<<<<<<<<<<<<
@@ -5202,7 +5202,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
                           for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
                             __pyx_v_d = __pyx_t_6;
 
-                            /* "optimize_frob.pyx":323
+                            /* "optimize_frob.pyx":325
  *             grad = neg_force(normalized, Q2[edge], 0.0)
  *             for d in range(dim):
  *                 local_rep_forces[j * dim + d] += grad * rep_vecs[edge * dim + d]             # <<<<<<<<<<<<<<
@@ -5225,7 +5225,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
       #define unlikely(x) __builtin_expect(!!(x), 0)
   #endif
 
-  /* "optimize_frob.pyx":284
+  /* "optimize_frob.pyx":286
  * @cython.wraparound(False)
  * @cython.cdivision(True)
  * cdef void calc_forces(             # <<<<<<<<<<<<<<
@@ -5236,7 +5236,7 @@ static void __pyx_f_13optimize_frob_calc_forces(float *__pyx_v_local_attr_forces
   /* function exit code */
 }
 
-/* "optimize_frob.pyx":329
+/* "optimize_frob.pyx":331
  * @cython.wraparound(False)
  * @cython.cdivision(True)
  * cdef void _frob_umap_uniformly(             # <<<<<<<<<<<<<<
@@ -5272,7 +5272,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
   Py_ssize_t __pyx_t_9;
   __Pyx_RefNannySetupContext("_frob_umap_uniformly", 0);
 
-  /* "optimize_frob.pyx":359
+  /* "optimize_frob.pyx":361
  *         float *forces
  * 
  *     cdef int n_edges = int(head.shape[0])             # <<<<<<<<<<<<<<
@@ -5281,7 +5281,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
   __pyx_v_n_edges = ((int)(__pyx_v_head.shape[0]));
 
-  /* "optimize_frob.pyx":360
+  /* "optimize_frob.pyx":362
  * 
  *     cdef int n_edges = int(head.shape[0])
  *     attractive_forces = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
@@ -5290,7 +5290,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
   __pyx_v_attractive_forces = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
-  /* "optimize_frob.pyx":361
+  /* "optimize_frob.pyx":363
  *     cdef int n_edges = int(head.shape[0])
  *     attractive_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     repulsive_forces = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
@@ -5299,7 +5299,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
   __pyx_v_repulsive_forces = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
-  /* "optimize_frob.pyx":362
+  /* "optimize_frob.pyx":364
  *     attractive_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     repulsive_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     forces = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
@@ -5308,7 +5308,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
   __pyx_v_forces = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
-  /* "optimize_frob.pyx":363
+  /* "optimize_frob.pyx":365
  *     repulsive_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     forces = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     Q1 = <float*> malloc(sizeof(float) * n_edges)             # <<<<<<<<<<<<<<
@@ -5317,7 +5317,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
   __pyx_v_Q1 = ((float *)malloc(((sizeof(float)) * __pyx_v_n_edges)));
 
-  /* "optimize_frob.pyx":364
+  /* "optimize_frob.pyx":366
  *     forces = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     Q1 = <float*> malloc(sizeof(float) * n_edges)
  *     Q2 = <float*> malloc(sizeof(float) * n_edges)             # <<<<<<<<<<<<<<
@@ -5326,7 +5326,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
   __pyx_v_Q2 = ((float *)malloc(((sizeof(float)) * __pyx_v_n_edges)));
 
-  /* "optimize_frob.pyx":365
+  /* "optimize_frob.pyx":367
  *     Q1 = <float*> malloc(sizeof(float) * n_edges)
  *     Q2 = <float*> malloc(sizeof(float) * n_edges)
  *     attr_vecs = <float*> malloc(sizeof(float) * n_edges * dim)             # <<<<<<<<<<<<<<
@@ -5335,7 +5335,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
   __pyx_v_attr_vecs = ((float *)malloc((((sizeof(float)) * __pyx_v_n_edges) * __pyx_v_dim)));
 
-  /* "optimize_frob.pyx":366
+  /* "optimize_frob.pyx":368
  *     Q2 = <float*> malloc(sizeof(float) * n_edges)
  *     attr_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
  *     rep_vecs = <float*> malloc(sizeof(float) * n_edges * dim)             # <<<<<<<<<<<<<<
@@ -5344,7 +5344,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
   __pyx_v_rep_vecs = ((float *)malloc((((sizeof(float)) * __pyx_v_n_edges) * __pyx_v_dim)));
 
-  /* "optimize_frob.pyx":367
+  /* "optimize_frob.pyx":369
  *     attr_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
  *     rep_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
  *     local_attr_forces = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
@@ -5353,7 +5353,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
   __pyx_v_local_attr_forces = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
-  /* "optimize_frob.pyx":368
+  /* "optimize_frob.pyx":370
  *     rep_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
  *     local_attr_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     local_rep_forces = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
@@ -5362,7 +5362,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
   __pyx_v_local_rep_forces = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
-  /* "optimize_frob.pyx":369
+  /* "optimize_frob.pyx":371
  *     local_attr_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     local_rep_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -5377,7 +5377,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
       #endif
       /*try:*/ {
 
-        /* "optimize_frob.pyx":370
+        /* "optimize_frob.pyx":372
  *     local_rep_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     with nogil:
  *         for v in prange(n_vertices):             # <<<<<<<<<<<<<<
@@ -5410,7 +5410,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
                             __pyx_v_d = ((int)0xbad0bad0);
                             __pyx_v_index = ((int)0xbad0bad0);
 
-                            /* "optimize_frob.pyx":371
+                            /* "optimize_frob.pyx":373
  *     with nogil:
  *         for v in prange(n_vertices):
  *             for d in range(dim):             # <<<<<<<<<<<<<<
@@ -5422,7 +5422,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
                             for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
                               __pyx_v_d = __pyx_t_6;
 
-                              /* "optimize_frob.pyx":372
+                              /* "optimize_frob.pyx":374
  *         for v in prange(n_vertices):
  *             for d in range(dim):
  *                 index = v * dim + d             # <<<<<<<<<<<<<<
@@ -5431,7 +5431,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
                               __pyx_v_index = ((__pyx_v_v * __pyx_v_dim) + __pyx_v_d);
 
-                              /* "optimize_frob.pyx":373
+                              /* "optimize_frob.pyx":375
  *             for d in range(dim):
  *                 index = v * dim + d
  *                 attractive_forces[index] = 0             # <<<<<<<<<<<<<<
@@ -5440,7 +5440,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
                               (__pyx_v_attractive_forces[__pyx_v_index]) = 0.0;
 
-                              /* "optimize_frob.pyx":374
+                              /* "optimize_frob.pyx":376
  *                 index = v * dim + d
  *                 attractive_forces[index] = 0
  *                 repulsive_forces[index] = 0             # <<<<<<<<<<<<<<
@@ -5462,7 +5462,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
         #endif
       }
 
-      /* "optimize_frob.pyx":369
+      /* "optimize_frob.pyx":371
  *     local_attr_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     local_rep_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -5481,7 +5481,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
       }
   }
 
-  /* "optimize_frob.pyx":376
+  /* "optimize_frob.pyx":378
  *                 repulsive_forces[index] = 0
  * 
  *     cdef float grad = 0.0             # <<<<<<<<<<<<<<
@@ -5490,7 +5490,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
   __pyx_v_grad = 0.0;
 
-  /* "optimize_frob.pyx":377
+  /* "optimize_frob.pyx":379
  * 
  *     cdef float grad = 0.0
  *     cdef float grad_d = 0.0             # <<<<<<<<<<<<<<
@@ -5499,7 +5499,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
   __pyx_v_grad_d = 0.0;
 
-  /* "optimize_frob.pyx":378
+  /* "optimize_frob.pyx":380
  *     cdef float grad = 0.0
  *     cdef float grad_d = 0.0
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -5514,7 +5514,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
       #endif
       /*try:*/ {
 
-        /* "optimize_frob.pyx":379
+        /* "optimize_frob.pyx":381
  *     cdef float grad_d = 0.0
  *     with nogil:
  *         get_kernels(             # <<<<<<<<<<<<<<
@@ -5523,7 +5523,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
         __pyx_f_13optimize_frob_get_kernels(__pyx_v_Q1, __pyx_v_Q2, __pyx_v_attr_vecs, __pyx_v_rep_vecs, __pyx_v_head, __pyx_v_tail, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_normalized, __pyx_v_n_vertices, __pyx_v_n_edges, __pyx_v_dim, __pyx_v_a, __pyx_v_b);
 
-        /* "optimize_frob.pyx":396
+        /* "optimize_frob.pyx":398
  *         )
  * 
  *         calc_forces(             # <<<<<<<<<<<<<<
@@ -5532,7 +5532,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
         __pyx_f_13optimize_frob_calc_forces(__pyx_v_local_attr_forces, __pyx_v_local_rep_forces, __pyx_v_head, __pyx_v_tail, __pyx_v_weights, __pyx_v_Q1, __pyx_v_Q2, __pyx_v_attr_vecs, __pyx_v_rep_vecs, __pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_n_vertices, __pyx_v_n_edges, __pyx_v_dim);
 
-        /* "optimize_frob.pyx":412
+        /* "optimize_frob.pyx":414
  *             dim,
  *         )
  *         free(Q1)             # <<<<<<<<<<<<<<
@@ -5541,7 +5541,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
         free(__pyx_v_Q1);
 
-        /* "optimize_frob.pyx":413
+        /* "optimize_frob.pyx":415
  *         )
  *         free(Q1)
  *         free(Q2)             # <<<<<<<<<<<<<<
@@ -5550,7 +5550,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
         free(__pyx_v_Q2);
 
-        /* "optimize_frob.pyx":414
+        /* "optimize_frob.pyx":416
  *         free(Q1)
  *         free(Q2)
  *         free(attr_vecs)             # <<<<<<<<<<<<<<
@@ -5559,7 +5559,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
         free(__pyx_v_attr_vecs);
 
-        /* "optimize_frob.pyx":415
+        /* "optimize_frob.pyx":417
  *         free(Q2)
  *         free(attr_vecs)
  *         free(rep_vecs)             # <<<<<<<<<<<<<<
@@ -5568,7 +5568,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
         free(__pyx_v_rep_vecs);
 
-        /* "optimize_frob.pyx":419
+        /* "optimize_frob.pyx":421
  *         # Need to collect thread-local forces into single gradient
  *         #   before performing gradient descent
  *         with parallel():             # <<<<<<<<<<<<<<
@@ -5587,7 +5587,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
             #endif /* _OPENMP */
             {
 
-                /* "optimize_frob.pyx":420
+                /* "optimize_frob.pyx":422
  *         #   before performing gradient descent
  *         with parallel():
  *             for v in prange(n_vertices):             # <<<<<<<<<<<<<<
@@ -5610,7 +5610,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
                                 __pyx_v_d = ((int)0xbad0bad0);
                                 __pyx_v_index = ((int)0xbad0bad0);
 
-                                /* "optimize_frob.pyx":421
+                                /* "optimize_frob.pyx":423
  *         with parallel():
  *             for v in prange(n_vertices):
  *                 for d in range(dim):             # <<<<<<<<<<<<<<
@@ -5622,7 +5622,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
                                 for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
                                   __pyx_v_d = __pyx_t_6;
 
-                                  /* "optimize_frob.pyx":422
+                                  /* "optimize_frob.pyx":424
  *             for v in prange(n_vertices):
  *                 for d in range(dim):
  *                     index = v * dim + d             # <<<<<<<<<<<<<<
@@ -5631,7 +5631,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
                                   __pyx_v_index = ((__pyx_v_v * __pyx_v_dim) + __pyx_v_d);
 
-                                  /* "optimize_frob.pyx":423
+                                  /* "optimize_frob.pyx":425
  *                 for d in range(dim):
  *                     index = v * dim + d
  *                     attractive_forces[index] += local_attr_forces[index]             # <<<<<<<<<<<<<<
@@ -5641,7 +5641,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
                                   __pyx_t_7 = __pyx_v_index;
                                   (__pyx_v_attractive_forces[__pyx_t_7]) = ((__pyx_v_attractive_forces[__pyx_t_7]) + (__pyx_v_local_attr_forces[__pyx_v_index]));
 
-                                  /* "optimize_frob.pyx":424
+                                  /* "optimize_frob.pyx":426
  *                     index = v * dim + d
  *                     attractive_forces[index] += local_attr_forces[index]
  *                     repulsive_forces[index] += local_rep_forces[index]             # <<<<<<<<<<<<<<
@@ -5664,7 +5664,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
             #define unlikely(x) __builtin_expect(!!(x), 0)
         #endif
 
-        /* "optimize_frob.pyx":426
+        /* "optimize_frob.pyx":428
  *                     repulsive_forces[index] += local_rep_forces[index]
  * 
  *         with parallel():             # <<<<<<<<<<<<<<
@@ -5683,7 +5683,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
             #endif /* _OPENMP */
             {
 
-                /* "optimize_frob.pyx":427
+                /* "optimize_frob.pyx":429
  * 
  *         with parallel():
  *             for v in prange(n_vertices):             # <<<<<<<<<<<<<<
@@ -5707,7 +5707,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
                                 __pyx_v_grad_d = ((float)__PYX_NAN());
                                 __pyx_v_index = ((int)0xbad0bad0);
 
-                                /* "optimize_frob.pyx":428
+                                /* "optimize_frob.pyx":430
  *         with parallel():
  *             for v in prange(n_vertices):
  *                 for d in range(dim):             # <<<<<<<<<<<<<<
@@ -5719,7 +5719,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
                                 for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
                                   __pyx_v_d = __pyx_t_6;
 
-                                  /* "optimize_frob.pyx":429
+                                  /* "optimize_frob.pyx":431
  *             for v in prange(n_vertices):
  *                 for d in range(dim):
  *                     index = v * dim + d             # <<<<<<<<<<<<<<
@@ -5728,7 +5728,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
                                   __pyx_v_index = ((__pyx_v_v * __pyx_v_dim) + __pyx_v_d);
 
-                                  /* "optimize_frob.pyx":430
+                                  /* "optimize_frob.pyx":432
  *                 for d in range(dim):
  *                     index = v * dim + d
  *                     grad_d = repulsive_forces[index] - attractive_forces[index]             # <<<<<<<<<<<<<<
@@ -5737,7 +5737,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
                                   __pyx_v_grad_d = ((__pyx_v_repulsive_forces[__pyx_v_index]) - (__pyx_v_attractive_forces[__pyx_v_index]));
 
-                                  /* "optimize_frob.pyx":431
+                                  /* "optimize_frob.pyx":433
  *                     index = v * dim + d
  *                     grad_d = repulsive_forces[index] - attractive_forces[index]
  *                     head_embedding[v, d] += grad_d * lr             # <<<<<<<<<<<<<<
@@ -5761,7 +5761,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
             #define unlikely(x) __builtin_expect(!!(x), 0)
         #endif
 
-        /* "optimize_frob.pyx":432
+        /* "optimize_frob.pyx":434
  *                     grad_d = repulsive_forces[index] - attractive_forces[index]
  *                     head_embedding[v, d] += grad_d * lr
  *         free(local_attr_forces)             # <<<<<<<<<<<<<<
@@ -5770,7 +5770,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
         free(__pyx_v_local_attr_forces);
 
-        /* "optimize_frob.pyx":433
+        /* "optimize_frob.pyx":435
  *                     head_embedding[v, d] += grad_d * lr
  *         free(local_attr_forces)
  *         free(local_rep_forces)             # <<<<<<<<<<<<<<
@@ -5780,7 +5780,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
         free(__pyx_v_local_rep_forces);
       }
 
-      /* "optimize_frob.pyx":378
+      /* "optimize_frob.pyx":380
  *     cdef float grad = 0.0
  *     cdef float grad_d = 0.0
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -5799,7 +5799,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
       }
   }
 
-  /* "optimize_frob.pyx":435
+  /* "optimize_frob.pyx":437
  *         free(local_rep_forces)
  * 
  *     free(forces)             # <<<<<<<<<<<<<<
@@ -5808,7 +5808,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
   free(__pyx_v_forces);
 
-  /* "optimize_frob.pyx":436
+  /* "optimize_frob.pyx":438
  * 
  *     free(forces)
  *     free(attractive_forces)             # <<<<<<<<<<<<<<
@@ -5817,7 +5817,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
   free(__pyx_v_attractive_forces);
 
-  /* "optimize_frob.pyx":437
+  /* "optimize_frob.pyx":439
  *     free(forces)
  *     free(attractive_forces)
  *     free(repulsive_forces)             # <<<<<<<<<<<<<<
@@ -5826,7 +5826,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
  */
   free(__pyx_v_repulsive_forces);
 
-  /* "optimize_frob.pyx":329
+  /* "optimize_frob.pyx":331
  * @cython.wraparound(False)
  * @cython.cdivision(True)
  * cdef void _frob_umap_uniformly(             # <<<<<<<<<<<<<<
@@ -5838,7 +5838,7 @@ static void __pyx_f_13optimize_frob__frob_umap_uniformly(int __pyx_v_normalized,
   __Pyx_RefNannyFinishContext();
 }
 
-/* "optimize_frob.pyx":441
+/* "optimize_frob.pyx":443
  * 
  * 
  * def frob_umap_uniformly(             # <<<<<<<<<<<<<<
@@ -5932,113 +5932,113 @@ static PyObject *__pyx_pw_13optimize_frob_3frob_umap_uniformly(PyObject *__pyx_s
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_sym_attraction)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 1); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 1); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_momentum)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 2); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 2); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 3); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 3); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 4); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 4); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 5); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 5); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 6); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 6); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  7:
         if (likely((values[7] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_weights)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 7); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 7); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  8:
         if (likely((values[8] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_forces)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 8); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 8); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  9:
         if (likely((values[9] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_gains)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 9); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 9); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 10:
         if (likely((values[10] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_epochs_per_sample)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 10); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 10); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 11:
         if (likely((values[11] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_a)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 11); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 11); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 12:
         if (likely((values[12] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_b)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 12); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 12); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 13:
         if (likely((values[13] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_dim)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 13); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 13); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 14:
         if (likely((values[14] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_initial_lr)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 14); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 14); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 15:
         if (likely((values[15] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_negative_sample_rate)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 15); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 15); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 16:
         if (likely((values[16] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_epochs)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 16); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 16); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 17:
         if (likely((values[17] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_vertices)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 17); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 17); __PYX_ERR(0, 443, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 18:
         if (likely((values[18] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_verbose)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 18); __PYX_ERR(0, 441, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, 18); __PYX_ERR(0, 443, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "frob_umap_uniformly") < 0)) __PYX_ERR(0, 441, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "frob_umap_uniformly") < 0)) __PYX_ERR(0, 443, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 19) {
       goto __pyx_L5_argtuple_error;
@@ -6063,35 +6063,35 @@ static PyObject *__pyx_pw_13optimize_frob_3frob_umap_uniformly(PyObject *__pyx_s
       values[17] = PyTuple_GET_ITEM(__pyx_args, 17);
       values[18] = PyTuple_GET_ITEM(__pyx_args, 18);
     }
-    __pyx_v_normalized = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 442, __pyx_L3_error)
-    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 443, __pyx_L3_error)
-    __pyx_v_momentum = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 444, __pyx_L3_error)
-    __pyx_v_head_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[3], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head_embedding.memview)) __PYX_ERR(0, 445, __pyx_L3_error)
-    __pyx_v_tail_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail_embedding.memview)) __PYX_ERR(0, 446, __pyx_L3_error)
-    __pyx_v_head = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head.memview)) __PYX_ERR(0, 447, __pyx_L3_error)
-    __pyx_v_tail = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[6], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail.memview)) __PYX_ERR(0, 448, __pyx_L3_error)
-    __pyx_v_weights = __Pyx_PyObject_to_MemoryviewSlice_ds_float(values[7], PyBUF_WRITABLE); if (unlikely(!__pyx_v_weights.memview)) __PYX_ERR(0, 449, __pyx_L3_error)
-    __pyx_v_forces = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[8], PyBUF_WRITABLE); if (unlikely(!__pyx_v_forces.memview)) __PYX_ERR(0, 450, __pyx_L3_error)
-    __pyx_v_gains = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[9], PyBUF_WRITABLE); if (unlikely(!__pyx_v_gains.memview)) __PYX_ERR(0, 451, __pyx_L3_error)
+    __pyx_v_normalized = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 444, __pyx_L3_error)
+    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 445, __pyx_L3_error)
+    __pyx_v_momentum = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 446, __pyx_L3_error)
+    __pyx_v_head_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[3], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head_embedding.memview)) __PYX_ERR(0, 447, __pyx_L3_error)
+    __pyx_v_tail_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail_embedding.memview)) __PYX_ERR(0, 448, __pyx_L3_error)
+    __pyx_v_head = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head.memview)) __PYX_ERR(0, 449, __pyx_L3_error)
+    __pyx_v_tail = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[6], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail.memview)) __PYX_ERR(0, 450, __pyx_L3_error)
+    __pyx_v_weights = __Pyx_PyObject_to_MemoryviewSlice_ds_float(values[7], PyBUF_WRITABLE); if (unlikely(!__pyx_v_weights.memview)) __PYX_ERR(0, 451, __pyx_L3_error)
+    __pyx_v_forces = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[8], PyBUF_WRITABLE); if (unlikely(!__pyx_v_forces.memview)) __PYX_ERR(0, 452, __pyx_L3_error)
+    __pyx_v_gains = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[9], PyBUF_WRITABLE); if (unlikely(!__pyx_v_gains.memview)) __PYX_ERR(0, 453, __pyx_L3_error)
     __pyx_v_epochs_per_sample = ((PyArrayObject *)values[10]);
-    __pyx_v_a = __pyx_PyFloat_AsFloat(values[11]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 453, __pyx_L3_error)
-    __pyx_v_b = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 454, __pyx_L3_error)
-    __pyx_v_dim = __Pyx_PyInt_As_int(values[13]); if (unlikely((__pyx_v_dim == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 455, __pyx_L3_error)
-    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 456, __pyx_L3_error)
-    __pyx_v_negative_sample_rate = __pyx_PyFloat_AsFloat(values[15]); if (unlikely((__pyx_v_negative_sample_rate == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 457, __pyx_L3_error)
-    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 458, __pyx_L3_error)
-    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[17]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 459, __pyx_L3_error)
-    __pyx_v_verbose = __Pyx_PyInt_As_int(values[18]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 460, __pyx_L3_error)
+    __pyx_v_a = __pyx_PyFloat_AsFloat(values[11]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 455, __pyx_L3_error)
+    __pyx_v_b = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 456, __pyx_L3_error)
+    __pyx_v_dim = __Pyx_PyInt_As_int(values[13]); if (unlikely((__pyx_v_dim == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 457, __pyx_L3_error)
+    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 458, __pyx_L3_error)
+    __pyx_v_negative_sample_rate = __pyx_PyFloat_AsFloat(values[15]); if (unlikely((__pyx_v_negative_sample_rate == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 459, __pyx_L3_error)
+    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 460, __pyx_L3_error)
+    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[17]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 461, __pyx_L3_error)
+    __pyx_v_verbose = __Pyx_PyInt_As_int(values[18]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 462, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 441, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("frob_umap_uniformly", 1, 19, 19, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 443, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("optimize_frob.frob_umap_uniformly", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_epochs_per_sample), __pyx_ptype_5numpy_ndarray, 1, "epochs_per_sample", 0))) __PYX_ERR(0, 452, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_epochs_per_sample), __pyx_ptype_5numpy_ndarray, 1, "epochs_per_sample", 0))) __PYX_ERR(0, 454, __pyx_L1_error)
   __pyx_r = __pyx_pf_13optimize_frob_2frob_umap_uniformly(__pyx_self, __pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_momentum, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_head, __pyx_v_tail, __pyx_v_weights, __pyx_v_forces, __pyx_v_gains, __pyx_v_epochs_per_sample, __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_initial_lr, __pyx_v_negative_sample_rate, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_verbose);
 
   /* function exit code */
@@ -6129,11 +6129,11 @@ static PyObject *__pyx_pf_13optimize_frob_2frob_umap_uniformly(CYTHON_UNUSED PyO
   __pyx_pybuffernd_epochs_per_sample.rcbuffer = &__pyx_pybuffer_epochs_per_sample;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer, (PyObject*)__pyx_v_epochs_per_sample, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 441, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer, (PyObject*)__pyx_v_epochs_per_sample, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 443, __pyx_L1_error)
   }
   __pyx_pybuffernd_epochs_per_sample.diminfo[0].strides = __pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_epochs_per_sample.diminfo[0].shape = __pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer.shape[0];
 
-  /* "optimize_frob.pyx":462
+  /* "optimize_frob.pyx":464
  *     int verbose
  * ):
  *     for i_epoch in range(n_epochs):             # <<<<<<<<<<<<<<
@@ -6145,20 +6145,20 @@ static PyObject *__pyx_pf_13optimize_frob_2frob_umap_uniformly(CYTHON_UNUSED PyO
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i_epoch = __pyx_t_3;
 
-    /* "optimize_frob.pyx":463
+    /* "optimize_frob.pyx":465
  * ):
  *     for i_epoch in range(n_epochs):
  *         lr = get_lr(initial_lr, i_epoch, n_epochs)             # <<<<<<<<<<<<<<
  *         _frob_umap_uniformly(
  *             normalized,
  */
-    __pyx_t_4 = PyFloat_FromDouble(__pyx_v_initial_lr); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 463, __pyx_L1_error)
+    __pyx_t_4 = PyFloat_FromDouble(__pyx_v_initial_lr); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 465, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_i_epoch); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 463, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_i_epoch); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 465, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 463, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 465, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = PyFloat_FromDouble(__pyx_f_13optimize_frob_get_lr(__pyx_t_4, __pyx_t_5, __pyx_t_6)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 463, __pyx_L1_error)
+    __pyx_t_7 = PyFloat_FromDouble(__pyx_f_13optimize_frob_get_lr(__pyx_t_4, __pyx_t_5, __pyx_t_6)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 465, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -6166,16 +6166,16 @@ static PyObject *__pyx_pf_13optimize_frob_2frob_umap_uniformly(CYTHON_UNUSED PyO
     __Pyx_XDECREF_SET(__pyx_v_lr, __pyx_t_7);
     __pyx_t_7 = 0;
 
-    /* "optimize_frob.pyx":478
+    /* "optimize_frob.pyx":480
  *             dim,
  *             n_vertices,
  *             lr,             # <<<<<<<<<<<<<<
  *             i_epoch
  *         )
  */
-    __pyx_t_8 = __pyx_PyFloat_AsFloat(__pyx_v_lr); if (unlikely((__pyx_t_8 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 478, __pyx_L1_error)
+    __pyx_t_8 = __pyx_PyFloat_AsFloat(__pyx_v_lr); if (unlikely((__pyx_t_8 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 480, __pyx_L1_error)
 
-    /* "optimize_frob.pyx":464
+    /* "optimize_frob.pyx":466
  *     for i_epoch in range(n_epochs):
  *         lr = get_lr(initial_lr, i_epoch, n_epochs)
  *         _frob_umap_uniformly(             # <<<<<<<<<<<<<<
@@ -6184,7 +6184,7 @@ static PyObject *__pyx_pf_13optimize_frob_2frob_umap_uniformly(CYTHON_UNUSED PyO
  */
     __pyx_f_13optimize_frob__frob_umap_uniformly(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_momentum, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_head, __pyx_v_tail, __pyx_v_weights, __pyx_v_gains, __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_n_vertices, __pyx_t_8, __pyx_v_i_epoch);
 
-    /* "optimize_frob.pyx":481
+    /* "optimize_frob.pyx":483
  *             i_epoch
  *         )
  *         if verbose:             # <<<<<<<<<<<<<<
@@ -6194,22 +6194,22 @@ static PyObject *__pyx_pf_13optimize_frob_2frob_umap_uniformly(CYTHON_UNUSED PyO
     __pyx_t_9 = (__pyx_v_verbose != 0);
     if (__pyx_t_9) {
 
-      /* "optimize_frob.pyx":482
+      /* "optimize_frob.pyx":484
  *         )
  *         if verbose:
  *             print_status(i_epoch, n_epochs)             # <<<<<<<<<<<<<<
  * 
  * 
  */
-      __pyx_t_7 = __Pyx_PyInt_From_int(__pyx_v_i_epoch); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 482, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyInt_From_int(__pyx_v_i_epoch); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 484, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
-      __pyx_t_6 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 482, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 484, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __pyx_f_13optimize_frob_print_status(__pyx_t_7, __pyx_t_6);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-      /* "optimize_frob.pyx":481
+      /* "optimize_frob.pyx":483
  *             i_epoch
  *         )
  *         if verbose:             # <<<<<<<<<<<<<<
@@ -6219,7 +6219,7 @@ static PyObject *__pyx_pf_13optimize_frob_2frob_umap_uniformly(CYTHON_UNUSED PyO
     }
   }
 
-  /* "optimize_frob.pyx":441
+  /* "optimize_frob.pyx":443
  * 
  * 
  * def frob_umap_uniformly(             # <<<<<<<<<<<<<<
@@ -6260,7 +6260,7 @@ static PyObject *__pyx_pf_13optimize_frob_2frob_umap_uniformly(CYTHON_UNUSED PyO
   return __pyx_r;
 }
 
-/* "optimize_frob.pyx":489
+/* "optimize_frob.pyx":491
  * @cython.wraparound(False)
  * @cython.cdivision(True)
  * cdef _frob_pca(             # <<<<<<<<<<<<<<
@@ -6369,52 +6369,52 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
   __pyx_pybuffernd_forces.rcbuffer = &__pyx_pybuffer_forces;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 489, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 491, __pyx_L1_error)
   }
   __pyx_pybuffernd_head_embedding.diminfo[0].strides = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_head_embedding.diminfo[0].shape = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_head_embedding.diminfo[1].strides = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_head_embedding.diminfo[1].shape = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 489, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 491, __pyx_L1_error)
   }
   __pyx_pybuffernd_tail_embedding.diminfo[0].strides = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_tail_embedding.diminfo[0].shape = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_tail_embedding.diminfo[1].strides = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_tail_embedding.diminfo[1].shape = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_head, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 489, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_head, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 491, __pyx_L1_error)
   }
   __pyx_pybuffernd_head.diminfo[0].strides = __pyx_pybuffernd_head.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_head.diminfo[0].shape = __pyx_pybuffernd_head.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 489, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 491, __pyx_L1_error)
   }
   __pyx_pybuffernd_tail.diminfo[0].strides = __pyx_pybuffernd_tail.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_tail.diminfo[0].shape = __pyx_pybuffernd_tail.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_weights, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 489, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_weights, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 491, __pyx_L1_error)
   }
   __pyx_pybuffernd_weights.diminfo[0].strides = __pyx_pybuffernd_weights.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_weights.diminfo[0].shape = __pyx_pybuffernd_weights.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_forces.rcbuffer->pybuffer, (PyObject*)__pyx_v_forces, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 489, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_forces.rcbuffer->pybuffer, (PyObject*)__pyx_v_forces, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 491, __pyx_L1_error)
   }
   __pyx_pybuffernd_forces.diminfo[0].strides = __pyx_pybuffernd_forces.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_forces.diminfo[0].shape = __pyx_pybuffernd_forces.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_forces.diminfo[1].strides = __pyx_pybuffernd_forces.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_forces.diminfo[1].shape = __pyx_pybuffernd_forces.rcbuffer->pybuffer.shape[1];
 
-  /* "optimize_frob.pyx":511
+  /* "optimize_frob.pyx":513
  *         float dist_squared, Z
  * 
  *     step_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)             # <<<<<<<<<<<<<<
  *     y1 = <float*> malloc(sizeof(float) * dim)
  *     y2 = <float*> malloc(sizeof(float) * dim)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 511, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 513, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 511, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 513, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 511, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 513, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 511, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 513, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = PyList_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 511, __pyx_L1_error)
+  __pyx_t_4 = PyList_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 513, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_1);
   PyList_SET_ITEM(__pyx_t_4, 0, __pyx_t_1);
@@ -6422,26 +6422,26 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
   PyList_SET_ITEM(__pyx_t_4, 1, __pyx_t_3);
   __pyx_t_1 = 0;
   __pyx_t_3 = 0;
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 511, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 513, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4);
   __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 511, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 513, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 511, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 513, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float32); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 511, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float32); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 513, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 511, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 513, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 511, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 513, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 511, __pyx_L1_error)
+  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 513, __pyx_L1_error)
   __pyx_t_6 = ((PyArrayObject *)__pyx_t_5);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -6458,13 +6458,13 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
       __pyx_t_8 = __pyx_t_9 = __pyx_t_10 = 0;
     }
     __pyx_pybuffernd_step_forces.diminfo[0].strides = __pyx_pybuffernd_step_forces.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_step_forces.diminfo[0].shape = __pyx_pybuffernd_step_forces.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_step_forces.diminfo[1].strides = __pyx_pybuffernd_step_forces.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_step_forces.diminfo[1].shape = __pyx_pybuffernd_step_forces.rcbuffer->pybuffer.shape[1];
-    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 511, __pyx_L1_error)
+    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 513, __pyx_L1_error)
   }
   __pyx_t_6 = 0;
   __pyx_v_step_forces = ((PyArrayObject *)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "optimize_frob.pyx":512
+  /* "optimize_frob.pyx":514
  * 
  *     step_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
  *     y1 = <float*> malloc(sizeof(float) * dim)             # <<<<<<<<<<<<<<
@@ -6473,7 +6473,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
  */
   __pyx_v_y1 = ((float *)malloc(((sizeof(float)) * __pyx_v_dim)));
 
-  /* "optimize_frob.pyx":513
+  /* "optimize_frob.pyx":515
  *     step_forces = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
  *     y1 = <float*> malloc(sizeof(float) * dim)
  *     y2 = <float*> malloc(sizeof(float) * dim)             # <<<<<<<<<<<<<<
@@ -6482,7 +6482,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
  */
   __pyx_v_y2 = ((float *)malloc(((sizeof(float)) * __pyx_v_dim)));
 
-  /* "optimize_frob.pyx":515
+  /* "optimize_frob.pyx":517
  *     y2 = <float*> malloc(sizeof(float) * dim)
  * 
  *     cdef float mean_y_dist = 0.0             # <<<<<<<<<<<<<<
@@ -6491,7 +6491,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
  */
   __pyx_v_mean_y_dist = 0.0;
 
-  /* "optimize_frob.pyx":516
+  /* "optimize_frob.pyx":518
  * 
  *     cdef float mean_y_dist = 0.0
  *     cdef float grad = 0.0             # <<<<<<<<<<<<<<
@@ -6500,7 +6500,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
  */
   __pyx_v_grad = 0.0;
 
-  /* "optimize_frob.pyx":517
+  /* "optimize_frob.pyx":519
  *     cdef float mean_y_dist = 0.0
  *     cdef float grad = 0.0
  *     cdef float grad_d = 0.0             # <<<<<<<<<<<<<<
@@ -6509,7 +6509,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
  */
   __pyx_v_grad_d = 0.0;
 
-  /* "optimize_frob.pyx":518
+  /* "optimize_frob.pyx":520
  *     cdef float grad = 0.0
  *     cdef float grad_d = 0.0
  *     cdef int n_edges = int(head.shape[0])             # <<<<<<<<<<<<<<
@@ -6518,45 +6518,45 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
  */
   __pyx_v_n_edges = ((int)(__pyx_v_head->dimensions[0]));
 
-  /* "optimize_frob.pyx":519
+  /* "optimize_frob.pyx":521
  *     cdef float grad_d = 0.0
  *     cdef int n_edges = int(head.shape[0])
  *     y_dists = py_np.zeros([n_edges], dtype=py_np.float32)             # <<<<<<<<<<<<<<
  *     vecs = py_np.zeros([n_edges, dim], dtype=py_np.float32)
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_py_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 519, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_py_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 521, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_zeros); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 519, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_zeros); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 521, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_n_edges); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 519, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_n_edges); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 521, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 519, __pyx_L1_error)
+  __pyx_t_3 = PyList_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 521, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_5);
   PyList_SET_ITEM(__pyx_t_3, 0, __pyx_t_5);
   __pyx_t_5 = 0;
-  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 519, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 521, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_3);
   PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3);
   __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 519, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 521, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_py_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 519, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_py_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 521, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float32); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 519, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float32); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 521, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 519, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 521, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 519, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 521, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 519, __pyx_L1_error)
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 521, __pyx_L1_error)
   __pyx_t_11 = ((PyArrayObject *)__pyx_t_1);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -6573,29 +6573,29 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
       __pyx_t_10 = __pyx_t_9 = __pyx_t_8 = 0;
     }
     __pyx_pybuffernd_y_dists.diminfo[0].strides = __pyx_pybuffernd_y_dists.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_y_dists.diminfo[0].shape = __pyx_pybuffernd_y_dists.rcbuffer->pybuffer.shape[0];
-    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 519, __pyx_L1_error)
+    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 521, __pyx_L1_error)
   }
   __pyx_t_11 = 0;
   __pyx_v_y_dists = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "optimize_frob.pyx":520
+  /* "optimize_frob.pyx":522
  *     cdef int n_edges = int(head.shape[0])
  *     y_dists = py_np.zeros([n_edges], dtype=py_np.float32)
  *     vecs = py_np.zeros([n_edges, dim], dtype=py_np.float32)             # <<<<<<<<<<<<<<
  * 
  *     for edge in range(n_edges):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 520, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 522, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 520, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 522, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_n_edges); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 520, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_n_edges); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 522, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 520, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 522, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = PyList_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 520, __pyx_L1_error)
+  __pyx_t_4 = PyList_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 522, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_1);
   PyList_SET_ITEM(__pyx_t_4, 0, __pyx_t_1);
@@ -6603,26 +6603,26 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
   PyList_SET_ITEM(__pyx_t_4, 1, __pyx_t_5);
   __pyx_t_1 = 0;
   __pyx_t_5 = 0;
-  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 520, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 522, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_4);
   __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 520, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 522, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 520, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 522, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float32); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 520, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float32); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 522, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_2) < 0) __PYX_ERR(0, 520, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_2) < 0) __PYX_ERR(0, 522, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, __pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 520, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_5, __pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 522, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 520, __pyx_L1_error)
+  if (!(likely(((__pyx_t_2) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_2, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 522, __pyx_L1_error)
   __pyx_t_12 = ((PyArrayObject *)__pyx_t_2);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -6639,13 +6639,13 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
       __pyx_t_8 = __pyx_t_9 = __pyx_t_10 = 0;
     }
     __pyx_pybuffernd_vecs.diminfo[0].strides = __pyx_pybuffernd_vecs.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_vecs.diminfo[0].shape = __pyx_pybuffernd_vecs.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_vecs.diminfo[1].strides = __pyx_pybuffernd_vecs.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_vecs.diminfo[1].shape = __pyx_pybuffernd_vecs.rcbuffer->pybuffer.shape[1];
-    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 520, __pyx_L1_error)
+    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 522, __pyx_L1_error)
   }
   __pyx_t_12 = 0;
   __pyx_v_vecs = ((PyArrayObject *)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "optimize_frob.pyx":522
+  /* "optimize_frob.pyx":524
  *     vecs = py_np.zeros([n_edges, dim], dtype=py_np.float32)
  * 
  *     for edge in range(n_edges):             # <<<<<<<<<<<<<<
@@ -6657,7 +6657,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
   for (__pyx_t_14 = 0; __pyx_t_14 < __pyx_t_13; __pyx_t_14+=1) {
     __pyx_v_edge = __pyx_t_14;
 
-    /* "optimize_frob.pyx":523
+    /* "optimize_frob.pyx":525
  * 
  *     for edge in range(n_edges):
  *         j = head[edge]             # <<<<<<<<<<<<<<
@@ -6667,7 +6667,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
     __pyx_t_15 = __pyx_v_edge;
     __pyx_v_j = (*__Pyx_BufPtrStrided1d(__pyx_t_13optimize_frob_DTYPE_INT *, __pyx_pybuffernd_head.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_head.diminfo[0].strides));
 
-    /* "optimize_frob.pyx":524
+    /* "optimize_frob.pyx":526
  *     for edge in range(n_edges):
  *         j = head[edge]
  *         k = tail[edge]             # <<<<<<<<<<<<<<
@@ -6677,7 +6677,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
     __pyx_t_15 = __pyx_v_edge;
     __pyx_v_k = (*__Pyx_BufPtrStrided1d(__pyx_t_13optimize_frob_DTYPE_INT *, __pyx_pybuffernd_tail.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_tail.diminfo[0].strides));
 
-    /* "optimize_frob.pyx":525
+    /* "optimize_frob.pyx":527
  *         j = head[edge]
  *         k = tail[edge]
  *         for d in range(dim):             # <<<<<<<<<<<<<<
@@ -6689,7 +6689,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
     for (__pyx_t_18 = 0; __pyx_t_18 < __pyx_t_17; __pyx_t_18+=1) {
       __pyx_v_d = __pyx_t_18;
 
-      /* "optimize_frob.pyx":526
+      /* "optimize_frob.pyx":528
  *         k = tail[edge]
  *         for d in range(dim):
  *             y1[d] = head_embedding[j, d]             # <<<<<<<<<<<<<<
@@ -6700,7 +6700,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
       __pyx_t_19 = __pyx_v_d;
       (__pyx_v_y1[__pyx_v_d]) = (*__Pyx_BufPtrStrided2d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_head_embedding.diminfo[0].strides, __pyx_t_19, __pyx_pybuffernd_head_embedding.diminfo[1].strides));
 
-      /* "optimize_frob.pyx":527
+      /* "optimize_frob.pyx":529
  *         for d in range(dim):
  *             y1[d] = head_embedding[j, d]
  *             y2[d] = tail_embedding[k, d]             # <<<<<<<<<<<<<<
@@ -6711,7 +6711,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
       __pyx_t_15 = __pyx_v_d;
       (__pyx_v_y2[__pyx_v_d]) = (*__Pyx_BufPtrStrided2d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_tail_embedding.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_tail_embedding.diminfo[1].strides));
 
-      /* "optimize_frob.pyx":528
+      /* "optimize_frob.pyx":530
  *             y1[d] = head_embedding[j, d]
  *             y2[d] = tail_embedding[k, d]
  *             vecs[edge, d] = y1[d] - y2[d]             # <<<<<<<<<<<<<<
@@ -6723,7 +6723,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
       *__Pyx_BufPtrStrided2d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_vecs.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_vecs.diminfo[0].strides, __pyx_t_19, __pyx_pybuffernd_vecs.diminfo[1].strides) = ((__pyx_v_y1[__pyx_v_d]) - (__pyx_v_y2[__pyx_v_d]));
     }
 
-    /* "optimize_frob.pyx":529
+    /* "optimize_frob.pyx":531
  *             y2[d] = tail_embedding[k, d]
  *             vecs[edge, d] = y1[d] - y2[d]
  *         y_dists[edge] = sq_euc_dist(y1, y2, dim)             # <<<<<<<<<<<<<<
@@ -6734,7 +6734,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
     *__Pyx_BufPtrStrided1d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_y_dists.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_y_dists.diminfo[0].strides) = __pyx_f_13optimize_frob_sq_euc_dist(__pyx_v_y1, __pyx_v_y2, __pyx_v_dim);
   }
 
-  /* "optimize_frob.pyx":531
+  /* "optimize_frob.pyx":533
  *         y_dists[edge] = sq_euc_dist(y1, y2, dim)
  * 
  *     for edge in range(n_edges):             # <<<<<<<<<<<<<<
@@ -6746,7 +6746,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
   for (__pyx_t_14 = 0; __pyx_t_14 < __pyx_t_13; __pyx_t_14+=1) {
     __pyx_v_edge = __pyx_t_14;
 
-    /* "optimize_frob.pyx":532
+    /* "optimize_frob.pyx":534
  * 
  *     for edge in range(n_edges):
  *         mean_y_dist += y_dists[edge]             # <<<<<<<<<<<<<<
@@ -6757,7 +6757,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
     __pyx_v_mean_y_dist = (__pyx_v_mean_y_dist + (*__Pyx_BufPtrStrided1d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_y_dists.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_y_dists.diminfo[0].strides)));
   }
 
-  /* "optimize_frob.pyx":533
+  /* "optimize_frob.pyx":535
  *     for edge in range(n_edges):
  *         mean_y_dist += y_dists[edge]
  *     mean_y_dist /= n_edges             # <<<<<<<<<<<<<<
@@ -6766,7 +6766,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
  */
   __pyx_v_mean_y_dist = (__pyx_v_mean_y_dist / __pyx_v_n_edges);
 
-  /* "optimize_frob.pyx":534
+  /* "optimize_frob.pyx":536
  *         mean_y_dist += y_dists[edge]
  *     mean_y_dist /= n_edges
  *     for edge in range(n_edges):             # <<<<<<<<<<<<<<
@@ -6778,7 +6778,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
   for (__pyx_t_14 = 0; __pyx_t_14 < __pyx_t_13; __pyx_t_14+=1) {
     __pyx_v_edge = __pyx_t_14;
 
-    /* "optimize_frob.pyx":535
+    /* "optimize_frob.pyx":537
  *     mean_y_dist /= n_edges
  *     for edge in range(n_edges):
  *         y_dists[edge] = y_dists[edge] - mean_y_dist             # <<<<<<<<<<<<<<
@@ -6790,7 +6790,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
     *__Pyx_BufPtrStrided1d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_y_dists.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_y_dists.diminfo[0].strides) = ((*__Pyx_BufPtrStrided1d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_y_dists.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_y_dists.diminfo[0].strides)) - __pyx_v_mean_y_dist);
   }
 
-  /* "optimize_frob.pyx":537
+  /* "optimize_frob.pyx":539
  *         y_dists[edge] = y_dists[edge] - mean_y_dist
  * 
  *     for edge in range(n_edges):             # <<<<<<<<<<<<<<
@@ -6802,7 +6802,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
   for (__pyx_t_14 = 0; __pyx_t_14 < __pyx_t_13; __pyx_t_14+=1) {
     __pyx_v_edge = __pyx_t_14;
 
-    /* "optimize_frob.pyx":538
+    /* "optimize_frob.pyx":540
  * 
  *     for edge in range(n_edges):
  *         j = head[edge]             # <<<<<<<<<<<<<<
@@ -6812,7 +6812,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
     __pyx_t_19 = __pyx_v_edge;
     __pyx_v_j = (*__Pyx_BufPtrStrided1d(__pyx_t_13optimize_frob_DTYPE_INT *, __pyx_pybuffernd_head.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_head.diminfo[0].strides));
 
-    /* "optimize_frob.pyx":539
+    /* "optimize_frob.pyx":541
  *     for edge in range(n_edges):
  *         j = head[edge]
  *         k = tail[edge]             # <<<<<<<<<<<<<<
@@ -6822,7 +6822,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
     __pyx_t_19 = __pyx_v_edge;
     __pyx_v_k = (*__Pyx_BufPtrStrided1d(__pyx_t_13optimize_frob_DTYPE_INT *, __pyx_pybuffernd_tail.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_tail.diminfo[0].strides));
 
-    /* "optimize_frob.pyx":540
+    /* "optimize_frob.pyx":542
  *         j = head[edge]
  *         k = tail[edge]
  *         grad = weights[edge] - y_dists[edge]             # <<<<<<<<<<<<<<
@@ -6833,7 +6833,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
     __pyx_t_15 = __pyx_v_edge;
     __pyx_v_grad = ((*__Pyx_BufPtrStrided1d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_weights.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_weights.diminfo[0].strides)) - (*__Pyx_BufPtrStrided1d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_y_dists.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_y_dists.diminfo[0].strides)));
 
-    /* "optimize_frob.pyx":541
+    /* "optimize_frob.pyx":543
  *         k = tail[edge]
  *         grad = weights[edge] - y_dists[edge]
  *         for d in range(dim):             # <<<<<<<<<<<<<<
@@ -6845,7 +6845,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
     for (__pyx_t_18 = 0; __pyx_t_18 < __pyx_t_17; __pyx_t_18+=1) {
       __pyx_v_d = __pyx_t_18;
 
-      /* "optimize_frob.pyx":542
+      /* "optimize_frob.pyx":544
  *         grad = weights[edge] - y_dists[edge]
  *         for d in range(dim):
  *             grad_d = grad * vecs[edge, d]             # <<<<<<<<<<<<<<
@@ -6856,7 +6856,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
       __pyx_t_19 = __pyx_v_d;
       __pyx_v_grad_d = (__pyx_v_grad * (*__Pyx_BufPtrStrided2d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_vecs.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_vecs.diminfo[0].strides, __pyx_t_19, __pyx_pybuffernd_vecs.diminfo[1].strides)));
 
-      /* "optimize_frob.pyx":543
+      /* "optimize_frob.pyx":545
  *         for d in range(dim):
  *             grad_d = grad * vecs[edge, d]
  *             step_forces[j, d] += grad_d             # <<<<<<<<<<<<<<
@@ -6867,7 +6867,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
       __pyx_t_15 = __pyx_v_d;
       *__Pyx_BufPtrStrided2d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_step_forces.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_step_forces.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_step_forces.diminfo[1].strides) += __pyx_v_grad_d;
 
-      /* "optimize_frob.pyx":544
+      /* "optimize_frob.pyx":546
  *             grad_d = grad * vecs[edge, d]
  *             step_forces[j, d] += grad_d
  *             if sym_attraction:             # <<<<<<<<<<<<<<
@@ -6877,7 +6877,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
       __pyx_t_20 = (__pyx_v_sym_attraction != 0);
       if (__pyx_t_20) {
 
-        /* "optimize_frob.pyx":545
+        /* "optimize_frob.pyx":547
  *             step_forces[j, d] += grad_d
  *             if sym_attraction:
  *                 step_forces[k, d] -= grad_d             # <<<<<<<<<<<<<<
@@ -6888,7 +6888,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
         __pyx_t_19 = __pyx_v_d;
         *__Pyx_BufPtrStrided2d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_step_forces.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_step_forces.diminfo[0].strides, __pyx_t_19, __pyx_pybuffernd_step_forces.diminfo[1].strides) -= __pyx_v_grad_d;
 
-        /* "optimize_frob.pyx":544
+        /* "optimize_frob.pyx":546
  *             grad_d = grad * vecs[edge, d]
  *             step_forces[j, d] += grad_d
  *             if sym_attraction:             # <<<<<<<<<<<<<<
@@ -6899,7 +6899,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
     }
   }
 
-  /* "optimize_frob.pyx":547
+  /* "optimize_frob.pyx":549
  *                 step_forces[k, d] -= grad_d
  * 
  *     for v in range(n_vertices):             # <<<<<<<<<<<<<<
@@ -6911,7 +6911,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
   for (__pyx_t_14 = 0; __pyx_t_14 < __pyx_t_13; __pyx_t_14+=1) {
     __pyx_v_v = __pyx_t_14;
 
-    /* "optimize_frob.pyx":548
+    /* "optimize_frob.pyx":550
  * 
  *     for v in range(n_vertices):
  *         for d in range(dim):             # <<<<<<<<<<<<<<
@@ -6923,7 +6923,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
     for (__pyx_t_18 = 0; __pyx_t_18 < __pyx_t_17; __pyx_t_18+=1) {
       __pyx_v_d = __pyx_t_18;
 
-      /* "optimize_frob.pyx":549
+      /* "optimize_frob.pyx":551
  *     for v in range(n_vertices):
  *         for d in range(dim):
  *             if momentum == 1:             # <<<<<<<<<<<<<<
@@ -6933,7 +6933,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
       __pyx_t_20 = ((__pyx_v_momentum == 1) != 0);
       if (__pyx_t_20) {
 
-        /* "optimize_frob.pyx":550
+        /* "optimize_frob.pyx":552
  *         for d in range(dim):
  *             if momentum == 1:
  *                 forces[v, d] = step_forces[v, d] * lr + 0.9 * forces[v, d]             # <<<<<<<<<<<<<<
@@ -6948,7 +6948,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
         __pyx_t_24 = __pyx_v_d;
         *__Pyx_BufPtrStrided2d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_23, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_24, __pyx_pybuffernd_forces.diminfo[1].strides) = (((*__Pyx_BufPtrStrided2d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_step_forces.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_step_forces.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_step_forces.diminfo[1].strides)) * __pyx_v_lr) + (0.9 * (*__Pyx_BufPtrStrided2d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_forces.rcbuffer->pybuffer.buf, __pyx_t_21, __pyx_pybuffernd_forces.diminfo[0].strides, __pyx_t_22, __pyx_pybuffernd_forces.diminfo[1].strides))));
 
-        /* "optimize_frob.pyx":549
+        /* "optimize_frob.pyx":551
  *     for v in range(n_vertices):
  *         for d in range(dim):
  *             if momentum == 1:             # <<<<<<<<<<<<<<
@@ -6958,7 +6958,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
         goto __pyx_L20;
       }
 
-      /* "optimize_frob.pyx":552
+      /* "optimize_frob.pyx":554
  *                 forces[v, d] = step_forces[v, d] * lr + 0.9 * forces[v, d]
  *             else:
  *                 forces[v, d] = step_forces[v, d] * lr             # <<<<<<<<<<<<<<
@@ -6974,7 +6974,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
       }
       __pyx_L20:;
 
-      /* "optimize_frob.pyx":554
+      /* "optimize_frob.pyx":556
  *                 forces[v, d] = step_forces[v, d] * lr
  * 
  *             head_embedding[v, d] += forces[v, d]             # <<<<<<<<<<<<<<
@@ -6989,7 +6989,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
     }
   }
 
-  /* "optimize_frob.pyx":489
+  /* "optimize_frob.pyx":491
  * @cython.wraparound(False)
  * @cython.cdivision(True)
  * cdef _frob_pca(             # <<<<<<<<<<<<<<
@@ -7042,7 +7042,7 @@ static PyObject *__pyx_f_13optimize_frob__frob_pca(CYTHON_UNUSED int __pyx_v_nor
   return __pyx_r;
 }
 
-/* "optimize_frob.pyx":561
+/* "optimize_frob.pyx":563
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def frob_pca(             # <<<<<<<<<<<<<<
@@ -7136,113 +7136,113 @@ static PyObject *__pyx_pw_13optimize_frob_5frob_pca(PyObject *__pyx_self, PyObje
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_sym_attraction)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 1); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 1); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_momentum)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 2); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 2); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 3); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 3); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 4); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 4); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 5); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 5); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 6); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 6); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  7:
         if (likely((values[7] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_weights)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 7); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 7); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  8:
         if (likely((values[8] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_forces)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 8); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 8); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  9:
         if (likely((values[9] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_gains)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 9); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 9); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 10:
         if (likely((values[10] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_epochs_per_sample)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 10); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 10); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 11:
         if (likely((values[11] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_a)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 11); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 11); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 12:
         if (likely((values[12] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_b)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 12); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 12); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 13:
         if (likely((values[13] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_dim)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 13); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 13); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 14:
         if (likely((values[14] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_initial_lr)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 14); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 14); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 15:
         if (likely((values[15] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_negative_sample_rate)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 15); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 15); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 16:
         if (likely((values[16] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_epochs)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 16); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 16); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 17:
         if (likely((values[17] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_vertices)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 17); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 17); __PYX_ERR(0, 563, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 18:
         if (likely((values[18] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_verbose)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 18); __PYX_ERR(0, 561, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, 18); __PYX_ERR(0, 563, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "frob_pca") < 0)) __PYX_ERR(0, 561, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "frob_pca") < 0)) __PYX_ERR(0, 563, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 19) {
       goto __pyx_L5_argtuple_error;
@@ -7267,9 +7267,9 @@ static PyObject *__pyx_pw_13optimize_frob_5frob_pca(PyObject *__pyx_self, PyObje
       values[17] = PyTuple_GET_ITEM(__pyx_args, 17);
       values[18] = PyTuple_GET_ITEM(__pyx_args, 18);
     }
-    __pyx_v_normalized = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 562, __pyx_L3_error)
-    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 563, __pyx_L3_error)
-    __pyx_v_momentum = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 564, __pyx_L3_error)
+    __pyx_v_normalized = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 564, __pyx_L3_error)
+    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 565, __pyx_L3_error)
+    __pyx_v_momentum = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 566, __pyx_L3_error)
     __pyx_v_head_embedding = ((PyArrayObject *)values[3]);
     __pyx_v_tail_embedding = ((PyArrayObject *)values[4]);
     __pyx_v_head = ((PyArrayObject *)values[5]);
@@ -7278,31 +7278,31 @@ static PyObject *__pyx_pw_13optimize_frob_5frob_pca(PyObject *__pyx_self, PyObje
     __pyx_v_forces = ((PyArrayObject *)values[8]);
     __pyx_v_gains = ((PyArrayObject *)values[9]);
     __pyx_v_epochs_per_sample = ((PyArrayObject *)values[10]);
-    __pyx_v_a = __pyx_PyFloat_AsFloat(values[11]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 573, __pyx_L3_error)
-    __pyx_v_b = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 574, __pyx_L3_error)
-    __pyx_v_dim = __Pyx_PyInt_As_int(values[13]); if (unlikely((__pyx_v_dim == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 575, __pyx_L3_error)
-    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 576, __pyx_L3_error)
-    __pyx_v_negative_sample_rate = __pyx_PyFloat_AsFloat(values[15]); if (unlikely((__pyx_v_negative_sample_rate == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 577, __pyx_L3_error)
-    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 578, __pyx_L3_error)
-    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[17]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 579, __pyx_L3_error)
-    __pyx_v_verbose = __Pyx_PyInt_As_int(values[18]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 580, __pyx_L3_error)
+    __pyx_v_a = __pyx_PyFloat_AsFloat(values[11]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 575, __pyx_L3_error)
+    __pyx_v_b = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 576, __pyx_L3_error)
+    __pyx_v_dim = __Pyx_PyInt_As_int(values[13]); if (unlikely((__pyx_v_dim == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 577, __pyx_L3_error)
+    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 578, __pyx_L3_error)
+    __pyx_v_negative_sample_rate = __pyx_PyFloat_AsFloat(values[15]); if (unlikely((__pyx_v_negative_sample_rate == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 579, __pyx_L3_error)
+    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 580, __pyx_L3_error)
+    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[17]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 581, __pyx_L3_error)
+    __pyx_v_verbose = __Pyx_PyInt_As_int(values[18]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 582, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 561, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("frob_pca", 1, 19, 19, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 563, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("optimize_frob.frob_pca", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head_embedding), __pyx_ptype_5numpy_ndarray, 1, "head_embedding", 0))) __PYX_ERR(0, 565, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail_embedding), __pyx_ptype_5numpy_ndarray, 1, "tail_embedding", 0))) __PYX_ERR(0, 566, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head), __pyx_ptype_5numpy_ndarray, 1, "head", 0))) __PYX_ERR(0, 567, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail), __pyx_ptype_5numpy_ndarray, 1, "tail", 0))) __PYX_ERR(0, 568, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_weights), __pyx_ptype_5numpy_ndarray, 1, "weights", 0))) __PYX_ERR(0, 569, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_forces), __pyx_ptype_5numpy_ndarray, 1, "forces", 0))) __PYX_ERR(0, 570, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_gains), __pyx_ptype_5numpy_ndarray, 1, "gains", 0))) __PYX_ERR(0, 571, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_epochs_per_sample), __pyx_ptype_5numpy_ndarray, 1, "epochs_per_sample", 0))) __PYX_ERR(0, 572, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head_embedding), __pyx_ptype_5numpy_ndarray, 1, "head_embedding", 0))) __PYX_ERR(0, 567, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail_embedding), __pyx_ptype_5numpy_ndarray, 1, "tail_embedding", 0))) __PYX_ERR(0, 568, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head), __pyx_ptype_5numpy_ndarray, 1, "head", 0))) __PYX_ERR(0, 569, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail), __pyx_ptype_5numpy_ndarray, 1, "tail", 0))) __PYX_ERR(0, 570, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_weights), __pyx_ptype_5numpy_ndarray, 1, "weights", 0))) __PYX_ERR(0, 571, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_forces), __pyx_ptype_5numpy_ndarray, 1, "forces", 0))) __PYX_ERR(0, 572, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_gains), __pyx_ptype_5numpy_ndarray, 1, "gains", 0))) __PYX_ERR(0, 573, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_epochs_per_sample), __pyx_ptype_5numpy_ndarray, 1, "epochs_per_sample", 0))) __PYX_ERR(0, 574, __pyx_L1_error)
   __pyx_r = __pyx_pf_13optimize_frob_4frob_pca(__pyx_self, __pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_momentum, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_head, __pyx_v_tail, __pyx_v_weights, __pyx_v_forces, __pyx_v_gains, __pyx_v_epochs_per_sample, __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_initial_lr, __pyx_v_negative_sample_rate, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_verbose);
 
   /* function exit code */
@@ -7387,46 +7387,46 @@ static PyObject *__pyx_pf_13optimize_frob_4frob_pca(CYTHON_UNUSED PyObject *__py
   __pyx_pybuffernd_epochs_per_sample.rcbuffer = &__pyx_pybuffer_epochs_per_sample;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 561, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 563, __pyx_L1_error)
   }
   __pyx_pybuffernd_head_embedding.diminfo[0].strides = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_head_embedding.diminfo[0].shape = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_head_embedding.diminfo[1].strides = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_head_embedding.diminfo[1].shape = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 561, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 563, __pyx_L1_error)
   }
   __pyx_pybuffernd_tail_embedding.diminfo[0].strides = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_tail_embedding.diminfo[0].shape = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_tail_embedding.diminfo[1].strides = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_tail_embedding.diminfo[1].shape = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_head, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 561, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_head, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 563, __pyx_L1_error)
   }
   __pyx_pybuffernd_head.diminfo[0].strides = __pyx_pybuffernd_head.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_head.diminfo[0].shape = __pyx_pybuffernd_head.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 561, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 563, __pyx_L1_error)
   }
   __pyx_pybuffernd_tail.diminfo[0].strides = __pyx_pybuffernd_tail.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_tail.diminfo[0].shape = __pyx_pybuffernd_tail.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_weights, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 561, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_weights, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 563, __pyx_L1_error)
   }
   __pyx_pybuffernd_weights.diminfo[0].strides = __pyx_pybuffernd_weights.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_weights.diminfo[0].shape = __pyx_pybuffernd_weights.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_forces.rcbuffer->pybuffer, (PyObject*)__pyx_v_forces, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 561, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_forces.rcbuffer->pybuffer, (PyObject*)__pyx_v_forces, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 563, __pyx_L1_error)
   }
   __pyx_pybuffernd_forces.diminfo[0].strides = __pyx_pybuffernd_forces.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_forces.diminfo[0].shape = __pyx_pybuffernd_forces.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_forces.diminfo[1].strides = __pyx_pybuffernd_forces.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_forces.diminfo[1].shape = __pyx_pybuffernd_forces.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_gains.rcbuffer->pybuffer, (PyObject*)__pyx_v_gains, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 561, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_gains.rcbuffer->pybuffer, (PyObject*)__pyx_v_gains, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 563, __pyx_L1_error)
   }
   __pyx_pybuffernd_gains.diminfo[0].strides = __pyx_pybuffernd_gains.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_gains.diminfo[0].shape = __pyx_pybuffernd_gains.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_gains.diminfo[1].strides = __pyx_pybuffernd_gains.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_gains.diminfo[1].shape = __pyx_pybuffernd_gains.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer, (PyObject*)__pyx_v_epochs_per_sample, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 561, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer, (PyObject*)__pyx_v_epochs_per_sample, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 563, __pyx_L1_error)
   }
   __pyx_pybuffernd_epochs_per_sample.diminfo[0].strides = __pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_epochs_per_sample.diminfo[0].shape = __pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer.shape[0];
 
-  /* "optimize_frob.pyx":582
+  /* "optimize_frob.pyx":584
  *     int verbose
  * ):
  *     cdef float mean_weight = 0.0             # <<<<<<<<<<<<<<
@@ -7435,7 +7435,7 @@ static PyObject *__pyx_pf_13optimize_frob_4frob_pca(CYTHON_UNUSED PyObject *__py
  */
   __pyx_v_mean_weight = 0.0;
 
-  /* "optimize_frob.pyx":583
+  /* "optimize_frob.pyx":585
  * ):
  *     cdef float mean_weight = 0.0
  *     for weight in weights:             # <<<<<<<<<<<<<<
@@ -7446,26 +7446,26 @@ static PyObject *__pyx_pf_13optimize_frob_4frob_pca(CYTHON_UNUSED PyObject *__py
     __pyx_t_1 = ((PyObject *)__pyx_v_weights); __Pyx_INCREF(__pyx_t_1); __pyx_t_2 = 0;
     __pyx_t_3 = NULL;
   } else {
-    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(((PyObject *)__pyx_v_weights)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 583, __pyx_L1_error)
+    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(((PyObject *)__pyx_v_weights)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 585, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 583, __pyx_L1_error)
+    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 585, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_3)) {
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 583, __pyx_L1_error)
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 585, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 583, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 585, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       } else {
         if (__pyx_t_2 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 583, __pyx_L1_error)
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 585, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 583, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 585, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       }
@@ -7475,7 +7475,7 @@ static PyObject *__pyx_pf_13optimize_frob_4frob_pca(CYTHON_UNUSED PyObject *__py
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 583, __pyx_L1_error)
+          else __PYX_ERR(0, 585, __pyx_L1_error)
         }
         break;
       }
@@ -7484,23 +7484,23 @@ static PyObject *__pyx_pf_13optimize_frob_4frob_pca(CYTHON_UNUSED PyObject *__py
     __Pyx_XDECREF_SET(__pyx_v_weight, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "optimize_frob.pyx":584
+    /* "optimize_frob.pyx":586
  *     cdef float mean_weight = 0.0
  *     for weight in weights:
  *         mean_weight += weight             # <<<<<<<<<<<<<<
  *     mean_weight /= int(weights.shape[0])
  *     for i, weight in enumerate(weights):
  */
-    __pyx_t_4 = PyFloat_FromDouble(__pyx_v_mean_weight); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 584, __pyx_L1_error)
+    __pyx_t_4 = PyFloat_FromDouble(__pyx_v_mean_weight); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 586, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = PyNumber_InPlaceAdd(__pyx_t_4, __pyx_v_weight); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 584, __pyx_L1_error)
+    __pyx_t_5 = PyNumber_InPlaceAdd(__pyx_t_4, __pyx_v_weight); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 586, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_6 = __pyx_PyFloat_AsFloat(__pyx_t_5); if (unlikely((__pyx_t_6 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 584, __pyx_L1_error)
+    __pyx_t_6 = __pyx_PyFloat_AsFloat(__pyx_t_5); if (unlikely((__pyx_t_6 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 586, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_v_mean_weight = __pyx_t_6;
 
-    /* "optimize_frob.pyx":583
+    /* "optimize_frob.pyx":585
  * ):
  *     cdef float mean_weight = 0.0
  *     for weight in weights:             # <<<<<<<<<<<<<<
@@ -7510,29 +7510,29 @@ static PyObject *__pyx_pf_13optimize_frob_4frob_pca(CYTHON_UNUSED PyObject *__py
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "optimize_frob.pyx":585
+  /* "optimize_frob.pyx":587
  *     for weight in weights:
  *         mean_weight += weight
  *     mean_weight /= int(weights.shape[0])             # <<<<<<<<<<<<<<
  *     for i, weight in enumerate(weights):
  *         weights[i] = weight - mean_weight
  */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_mean_weight); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 585, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_mean_weight); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 587, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = __Pyx_PyInt_From_Py_intptr_t((__pyx_v_weights->dimensions[0])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 585, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_From_Py_intptr_t((__pyx_v_weights->dimensions[0])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 587, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyInt_Type)), __pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 585, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_CallOneArg(((PyObject *)(&PyInt_Type)), __pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 587, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyNumber_InPlaceDivide(__pyx_t_1, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 585, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyNumber_InPlaceDivide(__pyx_t_1, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 587, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_6 = __pyx_PyFloat_AsFloat(__pyx_t_5); if (unlikely((__pyx_t_6 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 585, __pyx_L1_error)
+  __pyx_t_6 = __pyx_PyFloat_AsFloat(__pyx_t_5); if (unlikely((__pyx_t_6 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 587, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_mean_weight = __pyx_t_6;
 
-  /* "optimize_frob.pyx":586
+  /* "optimize_frob.pyx":588
  *         mean_weight += weight
  *     mean_weight /= int(weights.shape[0])
  *     for i, weight in enumerate(weights):             # <<<<<<<<<<<<<<
@@ -7545,26 +7545,26 @@ static PyObject *__pyx_pf_13optimize_frob_4frob_pca(CYTHON_UNUSED PyObject *__py
     __pyx_t_4 = ((PyObject *)__pyx_v_weights); __Pyx_INCREF(__pyx_t_4); __pyx_t_2 = 0;
     __pyx_t_3 = NULL;
   } else {
-    __pyx_t_2 = -1; __pyx_t_4 = PyObject_GetIter(((PyObject *)__pyx_v_weights)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 586, __pyx_L1_error)
+    __pyx_t_2 = -1; __pyx_t_4 = PyObject_GetIter(((PyObject *)__pyx_v_weights)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 588, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_3 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 586, __pyx_L1_error)
+    __pyx_t_3 = Py_TYPE(__pyx_t_4)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 588, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_3)) {
       if (likely(PyList_CheckExact(__pyx_t_4))) {
         if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_4)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_2); __Pyx_INCREF(__pyx_t_1); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 586, __pyx_L1_error)
+        __pyx_t_1 = PyList_GET_ITEM(__pyx_t_4, __pyx_t_2); __Pyx_INCREF(__pyx_t_1); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 588, __pyx_L1_error)
         #else
-        __pyx_t_1 = PySequence_ITEM(__pyx_t_4, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 586, __pyx_L1_error)
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_4, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 588, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         #endif
       } else {
         if (__pyx_t_2 >= PyTuple_GET_SIZE(__pyx_t_4)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_2); __Pyx_INCREF(__pyx_t_1); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 586, __pyx_L1_error)
+        __pyx_t_1 = PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_2); __Pyx_INCREF(__pyx_t_1); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 588, __pyx_L1_error)
         #else
-        __pyx_t_1 = PySequence_ITEM(__pyx_t_4, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 586, __pyx_L1_error)
+        __pyx_t_1 = PySequence_ITEM(__pyx_t_4, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 588, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         #endif
       }
@@ -7574,7 +7574,7 @@ static PyObject *__pyx_pf_13optimize_frob_4frob_pca(CYTHON_UNUSED PyObject *__py
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 586, __pyx_L1_error)
+          else __PYX_ERR(0, 588, __pyx_L1_error)
         }
         break;
       }
@@ -7584,28 +7584,28 @@ static PyObject *__pyx_pf_13optimize_frob_4frob_pca(CYTHON_UNUSED PyObject *__py
     __pyx_t_1 = 0;
     __Pyx_INCREF(__pyx_t_5);
     __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_5);
-    __pyx_t_1 = __Pyx_PyInt_AddObjC(__pyx_t_5, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 586, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyInt_AddObjC(__pyx_t_5, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 588, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5);
     __pyx_t_5 = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "optimize_frob.pyx":587
+    /* "optimize_frob.pyx":589
  *     mean_weight /= int(weights.shape[0])
  *     for i, weight in enumerate(weights):
  *         weights[i] = weight - mean_weight             # <<<<<<<<<<<<<<
  * 
  *     for i_epoch in range(n_epochs):
  */
-    __pyx_t_1 = PyFloat_FromDouble(__pyx_v_mean_weight); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 587, __pyx_L1_error)
+    __pyx_t_1 = PyFloat_FromDouble(__pyx_v_mean_weight); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 589, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_7 = PyNumber_Subtract(__pyx_v_weight, __pyx_t_1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 587, __pyx_L1_error)
+    __pyx_t_7 = PyNumber_Subtract(__pyx_v_weight, __pyx_t_1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 589, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (unlikely(PyObject_SetItem(((PyObject *)__pyx_v_weights), __pyx_v_i, __pyx_t_7) < 0)) __PYX_ERR(0, 587, __pyx_L1_error)
+    if (unlikely(PyObject_SetItem(((PyObject *)__pyx_v_weights), __pyx_v_i, __pyx_t_7) < 0)) __PYX_ERR(0, 589, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-    /* "optimize_frob.pyx":586
+    /* "optimize_frob.pyx":588
  *         mean_weight += weight
  *     mean_weight /= int(weights.shape[0])
  *     for i, weight in enumerate(weights):             # <<<<<<<<<<<<<<
@@ -7616,7 +7616,7 @@ static PyObject *__pyx_pf_13optimize_frob_4frob_pca(CYTHON_UNUSED PyObject *__py
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "optimize_frob.pyx":589
+  /* "optimize_frob.pyx":591
  *         weights[i] = weight - mean_weight
  * 
  *     for i_epoch in range(n_epochs):             # <<<<<<<<<<<<<<
@@ -7628,20 +7628,20 @@ static PyObject *__pyx_pf_13optimize_frob_4frob_pca(CYTHON_UNUSED PyObject *__py
   for (__pyx_t_10 = 0; __pyx_t_10 < __pyx_t_9; __pyx_t_10+=1) {
     __pyx_v_i_epoch = __pyx_t_10;
 
-    /* "optimize_frob.pyx":590
+    /* "optimize_frob.pyx":592
  * 
  *     for i_epoch in range(n_epochs):
  *         lr = get_lr(initial_lr, i_epoch, n_epochs)             # <<<<<<<<<<<<<<
  *         _frob_pca(
  *             normalized,
  */
-    __pyx_t_5 = PyFloat_FromDouble(__pyx_v_initial_lr); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 590, __pyx_L1_error)
+    __pyx_t_5 = PyFloat_FromDouble(__pyx_v_initial_lr); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 592, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_i_epoch); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 590, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_i_epoch); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 592, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_7 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 590, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 592, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_1 = PyFloat_FromDouble(__pyx_f_13optimize_frob_get_lr(__pyx_t_5, __pyx_t_4, __pyx_t_7)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 590, __pyx_L1_error)
+    __pyx_t_1 = PyFloat_FromDouble(__pyx_f_13optimize_frob_get_lr(__pyx_t_5, __pyx_t_4, __pyx_t_7)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 592, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -7649,27 +7649,27 @@ static PyObject *__pyx_pf_13optimize_frob_4frob_pca(CYTHON_UNUSED PyObject *__py
     __Pyx_XDECREF_SET(__pyx_v_lr, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "optimize_frob.pyx":602
+    /* "optimize_frob.pyx":604
  *             forces,
  *             dim,
  *             lr,             # <<<<<<<<<<<<<<
  *             n_vertices,
  *             i_epoch
  */
-    __pyx_t_6 = __pyx_PyFloat_AsFloat(__pyx_v_lr); if (unlikely((__pyx_t_6 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 602, __pyx_L1_error)
+    __pyx_t_6 = __pyx_PyFloat_AsFloat(__pyx_v_lr); if (unlikely((__pyx_t_6 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 604, __pyx_L1_error)
 
-    /* "optimize_frob.pyx":591
+    /* "optimize_frob.pyx":593
  *     for i_epoch in range(n_epochs):
  *         lr = get_lr(initial_lr, i_epoch, n_epochs)
  *         _frob_pca(             # <<<<<<<<<<<<<<
  *             normalized,
  *             sym_attraction,
  */
-    __pyx_t_1 = __pyx_f_13optimize_frob__frob_pca(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_momentum, ((PyArrayObject *)__pyx_v_head_embedding), ((PyArrayObject *)__pyx_v_tail_embedding), ((PyArrayObject *)__pyx_v_head), ((PyArrayObject *)__pyx_v_tail), ((PyArrayObject *)__pyx_v_weights), ((PyArrayObject *)__pyx_v_forces), __pyx_v_dim, __pyx_t_6, __pyx_v_n_vertices, __pyx_v_i_epoch); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 591, __pyx_L1_error)
+    __pyx_t_1 = __pyx_f_13optimize_frob__frob_pca(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_momentum, ((PyArrayObject *)__pyx_v_head_embedding), ((PyArrayObject *)__pyx_v_tail_embedding), ((PyArrayObject *)__pyx_v_head), ((PyArrayObject *)__pyx_v_tail), ((PyArrayObject *)__pyx_v_weights), ((PyArrayObject *)__pyx_v_forces), __pyx_v_dim, __pyx_t_6, __pyx_v_n_vertices, __pyx_v_i_epoch); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 593, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "optimize_frob.pyx":606
+    /* "optimize_frob.pyx":608
  *             i_epoch
  *         )
  *         if verbose:             # <<<<<<<<<<<<<<
@@ -7679,22 +7679,22 @@ static PyObject *__pyx_pf_13optimize_frob_4frob_pca(CYTHON_UNUSED PyObject *__py
     __pyx_t_11 = (__pyx_v_verbose != 0);
     if (__pyx_t_11) {
 
-      /* "optimize_frob.pyx":607
+      /* "optimize_frob.pyx":609
  *         )
  *         if verbose:
  *             print_status(i_epoch, n_epochs)             # <<<<<<<<<<<<<<
  * 
  * 
  */
-      __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_i_epoch); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 607, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_i_epoch); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 609, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_7 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 607, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 609, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_f_13optimize_frob_print_status(__pyx_t_1, __pyx_t_7);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-      /* "optimize_frob.pyx":606
+      /* "optimize_frob.pyx":608
  *             i_epoch
  *         )
  *         if verbose:             # <<<<<<<<<<<<<<
@@ -7704,7 +7704,7 @@ static PyObject *__pyx_pf_13optimize_frob_4frob_pca(CYTHON_UNUSED PyObject *__py
     }
   }
 
-  /* "optimize_frob.pyx":561
+  /* "optimize_frob.pyx":563
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def frob_pca(             # <<<<<<<<<<<<<<
@@ -7754,7 +7754,7 @@ static PyObject *__pyx_pf_13optimize_frob_4frob_pca(CYTHON_UNUSED PyObject *__py
   return __pyx_r;
 }
 
-/* "optimize_frob.pyx":613
+/* "optimize_frob.pyx":615
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def cy_optimize_frob(             # <<<<<<<<<<<<<<
@@ -7845,91 +7845,91 @@ static PyObject *__pyx_pw_13optimize_frob_7cy_optimize_frob(PyObject *__pyx_self
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_normalized)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 1); __PYX_ERR(0, 613, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 1); __PYX_ERR(0, 615, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_sym_attraction)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 2); __PYX_ERR(0, 613, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 2); __PYX_ERR(0, 615, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_momentum)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 3); __PYX_ERR(0, 613, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 3); __PYX_ERR(0, 615, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_py_head_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 4); __PYX_ERR(0, 613, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 4); __PYX_ERR(0, 615, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_py_tail_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 5); __PYX_ERR(0, 613, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 5); __PYX_ERR(0, 615, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_py_head)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 6); __PYX_ERR(0, 613, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 6); __PYX_ERR(0, 615, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  7:
         if (likely((values[7] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_py_tail)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 7); __PYX_ERR(0, 613, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 7); __PYX_ERR(0, 615, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  8:
         if (likely((values[8] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_py_weights)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 8); __PYX_ERR(0, 613, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 8); __PYX_ERR(0, 615, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  9:
         if (likely((values[9] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_epochs)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 9); __PYX_ERR(0, 613, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 9); __PYX_ERR(0, 615, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 10:
         if (likely((values[10] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_vertices)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 10); __PYX_ERR(0, 613, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 10); __PYX_ERR(0, 615, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 11:
         if (likely((values[11] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_epochs_per_sample)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 11); __PYX_ERR(0, 613, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 11); __PYX_ERR(0, 615, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 12:
         if (likely((values[12] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_a)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 12); __PYX_ERR(0, 613, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 12); __PYX_ERR(0, 615, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 13:
         if (likely((values[13] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_b)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 13); __PYX_ERR(0, 613, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 13); __PYX_ERR(0, 615, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 14:
         if (likely((values[14] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_initial_lr)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 14); __PYX_ERR(0, 613, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 14); __PYX_ERR(0, 615, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 15:
         if (likely((values[15] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_negative_sample_rate)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 15); __PYX_ERR(0, 613, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, 15); __PYX_ERR(0, 615, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 16:
@@ -7939,7 +7939,7 @@ static PyObject *__pyx_pw_13optimize_frob_7cy_optimize_frob(PyObject *__pyx_self
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, pos_args, "cy_optimize_frob") < 0)) __PYX_ERR(0, 613, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, pos_args, "cy_optimize_frob") < 0)) __PYX_ERR(0, 615, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -7966,26 +7966,26 @@ static PyObject *__pyx_pw_13optimize_frob_7cy_optimize_frob(PyObject *__pyx_self
       }
     }
     __pyx_v_optimize_method = ((PyObject*)values[0]);
-    __pyx_v_normalized = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 615, __pyx_L3_error)
-    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 616, __pyx_L3_error)
-    __pyx_v_momentum = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 617, __pyx_L3_error)
+    __pyx_v_normalized = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 617, __pyx_L3_error)
+    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 618, __pyx_L3_error)
+    __pyx_v_momentum = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 619, __pyx_L3_error)
     __pyx_v_py_head_embedding = ((PyArrayObject *)values[4]);
     __pyx_v_py_tail_embedding = ((PyArrayObject *)values[5]);
     __pyx_v_py_head = ((PyArrayObject *)values[6]);
     __pyx_v_py_tail = ((PyArrayObject *)values[7]);
     __pyx_v_py_weights = ((PyArrayObject *)values[8]);
-    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[9]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 623, __pyx_L3_error)
-    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[10]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 624, __pyx_L3_error)
+    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[9]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 625, __pyx_L3_error)
+    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[10]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 626, __pyx_L3_error)
     __pyx_v_epochs_per_sample = ((PyArrayObject *)values[11]);
-    __pyx_v_a = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 626, __pyx_L3_error)
-    __pyx_v_b = __pyx_PyFloat_AsFloat(values[13]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 627, __pyx_L3_error)
-    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 628, __pyx_L3_error)
-    __pyx_v_negative_sample_rate = __pyx_PyFloat_AsFloat(values[15]); if (unlikely((__pyx_v_negative_sample_rate == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 629, __pyx_L3_error)
+    __pyx_v_a = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 628, __pyx_L3_error)
+    __pyx_v_b = __pyx_PyFloat_AsFloat(values[13]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 629, __pyx_L3_error)
+    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 630, __pyx_L3_error)
+    __pyx_v_negative_sample_rate = __pyx_PyFloat_AsFloat(values[15]); if (unlikely((__pyx_v_negative_sample_rate == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 631, __pyx_L3_error)
     if (values[16]) {
-      __pyx_v_verbose = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 630, __pyx_L3_error)
+      __pyx_v_verbose = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 632, __pyx_L3_error)
     } else {
 
-      /* "optimize_frob.pyx":630
+      /* "optimize_frob.pyx":632
  *     float initial_lr,
  *     float negative_sample_rate,
  *     int verbose=True,             # <<<<<<<<<<<<<<
@@ -7997,23 +7997,23 @@ static PyObject *__pyx_pw_13optimize_frob_7cy_optimize_frob(PyObject *__pyx_self
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 613, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("cy_optimize_frob", 0, 16, 17, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 615, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
   __Pyx_AddTraceback("optimize_frob.cy_optimize_frob", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_optimize_method), (&PyString_Type), 1, "optimize_method", 1))) __PYX_ERR(0, 614, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_py_head_embedding), __pyx_ptype_5numpy_ndarray, 1, "py_head_embedding", 0))) __PYX_ERR(0, 618, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_py_tail_embedding), __pyx_ptype_5numpy_ndarray, 1, "py_tail_embedding", 0))) __PYX_ERR(0, 619, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_py_head), __pyx_ptype_5numpy_ndarray, 1, "py_head", 0))) __PYX_ERR(0, 620, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_py_tail), __pyx_ptype_5numpy_ndarray, 1, "py_tail", 0))) __PYX_ERR(0, 621, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_py_weights), __pyx_ptype_5numpy_ndarray, 1, "py_weights", 0))) __PYX_ERR(0, 622, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_epochs_per_sample), __pyx_ptype_5numpy_ndarray, 1, "epochs_per_sample", 0))) __PYX_ERR(0, 625, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_optimize_method), (&PyString_Type), 1, "optimize_method", 1))) __PYX_ERR(0, 616, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_py_head_embedding), __pyx_ptype_5numpy_ndarray, 1, "py_head_embedding", 0))) __PYX_ERR(0, 620, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_py_tail_embedding), __pyx_ptype_5numpy_ndarray, 1, "py_tail_embedding", 0))) __PYX_ERR(0, 621, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_py_head), __pyx_ptype_5numpy_ndarray, 1, "py_head", 0))) __PYX_ERR(0, 622, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_py_tail), __pyx_ptype_5numpy_ndarray, 1, "py_tail", 0))) __PYX_ERR(0, 623, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_py_weights), __pyx_ptype_5numpy_ndarray, 1, "py_weights", 0))) __PYX_ERR(0, 624, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_epochs_per_sample), __pyx_ptype_5numpy_ndarray, 1, "epochs_per_sample", 0))) __PYX_ERR(0, 627, __pyx_L1_error)
   __pyx_r = __pyx_pf_13optimize_frob_6cy_optimize_frob(__pyx_self, __pyx_v_optimize_method, __pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_momentum, __pyx_v_py_head_embedding, __pyx_v_py_tail_embedding, __pyx_v_py_head, __pyx_v_py_tail, __pyx_v_py_weights, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_epochs_per_sample, __pyx_v_a, __pyx_v_b, __pyx_v_initial_lr, __pyx_v_negative_sample_rate, __pyx_v_verbose, __pyx_v_kwargs);
 
-  /* "optimize_frob.pyx":613
+  /* "optimize_frob.pyx":615
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def cy_optimize_frob(             # <<<<<<<<<<<<<<
@@ -8123,36 +8123,36 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
   __pyx_pybuffernd_epochs_per_sample.rcbuffer = &__pyx_pybuffer_epochs_per_sample;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_py_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_py_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 613, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_py_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_py_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 615, __pyx_L1_error)
   }
   __pyx_pybuffernd_py_head_embedding.diminfo[0].strides = __pyx_pybuffernd_py_head_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_py_head_embedding.diminfo[0].shape = __pyx_pybuffernd_py_head_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_py_head_embedding.diminfo[1].strides = __pyx_pybuffernd_py_head_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_py_head_embedding.diminfo[1].shape = __pyx_pybuffernd_py_head_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_py_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_py_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 613, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_py_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_py_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 615, __pyx_L1_error)
   }
   __pyx_pybuffernd_py_tail_embedding.diminfo[0].strides = __pyx_pybuffernd_py_tail_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_py_tail_embedding.diminfo[0].shape = __pyx_pybuffernd_py_tail_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_py_tail_embedding.diminfo[1].strides = __pyx_pybuffernd_py_tail_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_py_tail_embedding.diminfo[1].shape = __pyx_pybuffernd_py_tail_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_py_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_py_head, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 613, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_py_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_py_head, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 615, __pyx_L1_error)
   }
   __pyx_pybuffernd_py_head.diminfo[0].strides = __pyx_pybuffernd_py_head.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_py_head.diminfo[0].shape = __pyx_pybuffernd_py_head.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_py_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_py_tail, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 613, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_py_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_py_tail, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_INT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 615, __pyx_L1_error)
   }
   __pyx_pybuffernd_py_tail.diminfo[0].strides = __pyx_pybuffernd_py_tail.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_py_tail.diminfo[0].shape = __pyx_pybuffernd_py_tail.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_py_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_py_weights, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 613, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_py_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_py_weights, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 615, __pyx_L1_error)
   }
   __pyx_pybuffernd_py_weights.diminfo[0].strides = __pyx_pybuffernd_py_weights.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_py_weights.diminfo[0].shape = __pyx_pybuffernd_py_weights.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer, (PyObject*)__pyx_v_epochs_per_sample, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 613, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer, (PyObject*)__pyx_v_epochs_per_sample, &__Pyx_TypeInfo_nn___pyx_t_13optimize_frob_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 615, __pyx_L1_error)
   }
   __pyx_pybuffernd_epochs_per_sample.diminfo[0].strides = __pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_epochs_per_sample.diminfo[0].shape = __pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer.shape[0];
 
-  /* "optimize_frob.pyx":639
+  /* "optimize_frob.pyx":641
  *         np.ndarray[DTYPE_FLOAT, ndim=2] gains
  * 
  *     dim = py_head_embedding.shape[1]             # <<<<<<<<<<<<<<
@@ -8161,23 +8161,23 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
  */
   __pyx_v_dim = (__pyx_v_py_head_embedding->dimensions[1]);
 
-  /* "optimize_frob.pyx":647
+  /* "optimize_frob.pyx":649
  *     # cdef int [:] head = py_head
  *     # cdef int [:] tail = py_tail
  *     forces = py_np.zeros([n_vertices, dim], py_np.float32)             # <<<<<<<<<<<<<<
  *     gains = py_np.ones([n_vertices, dim], py_np.float32)
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_py_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 647, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_py_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 649, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 647, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_zeros); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 649, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 647, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 649, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 647, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 649, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = PyList_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 647, __pyx_L1_error)
+  __pyx_t_5 = PyList_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 649, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_2);
   PyList_SET_ITEM(__pyx_t_5, 0, __pyx_t_2);
@@ -8185,9 +8185,9 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
   PyList_SET_ITEM(__pyx_t_5, 1, __pyx_t_4);
   __pyx_t_2 = 0;
   __pyx_t_4 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_py_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 647, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_py_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 649, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float32); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 647, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float32); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 649, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_4 = NULL;
@@ -8205,7 +8205,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_3)) {
     PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_t_5, __pyx_t_2};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 647, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 649, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -8215,7 +8215,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_3)) {
     PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_t_5, __pyx_t_2};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 647, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 649, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -8223,7 +8223,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
   } else
   #endif
   {
-    __pyx_t_7 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 647, __pyx_L1_error)
+    __pyx_t_7 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 649, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     if (__pyx_t_4) {
       __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_4); __pyx_t_4 = NULL;
@@ -8234,12 +8234,12 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
     PyTuple_SET_ITEM(__pyx_t_7, 1+__pyx_t_6, __pyx_t_2);
     __pyx_t_5 = 0;
     __pyx_t_2 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_7, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 647, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_7, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 649, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 647, __pyx_L1_error)
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 649, __pyx_L1_error)
   __pyx_t_8 = ((PyArrayObject *)__pyx_t_1);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -8256,29 +8256,29 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
       __pyx_t_9 = __pyx_t_10 = __pyx_t_11 = 0;
     }
     __pyx_pybuffernd_forces.diminfo[0].strides = __pyx_pybuffernd_forces.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_forces.diminfo[0].shape = __pyx_pybuffernd_forces.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_forces.diminfo[1].strides = __pyx_pybuffernd_forces.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_forces.diminfo[1].shape = __pyx_pybuffernd_forces.rcbuffer->pybuffer.shape[1];
-    if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 647, __pyx_L1_error)
+    if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 649, __pyx_L1_error)
   }
   __pyx_t_8 = 0;
   __pyx_v_forces = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "optimize_frob.pyx":648
+  /* "optimize_frob.pyx":650
  *     # cdef int [:] tail = py_tail
  *     forces = py_np.zeros([n_vertices, dim], py_np.float32)
  *     gains = py_np.ones([n_vertices, dim], py_np.float32)             # <<<<<<<<<<<<<<
  * 
  *     # Perform weight scaling on high-dimensional relationships
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_py_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 648, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_py_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 650, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_ones); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 648, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_ones); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 650, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 648, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 650, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 648, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 650, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_5 = PyList_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 648, __pyx_L1_error)
+  __pyx_t_5 = PyList_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 650, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_3);
   PyList_SET_ITEM(__pyx_t_5, 0, __pyx_t_3);
@@ -8286,9 +8286,9 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
   PyList_SET_ITEM(__pyx_t_5, 1, __pyx_t_2);
   __pyx_t_3 = 0;
   __pyx_t_2 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_py_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 648, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_py_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 650, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float32); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 648, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_float32); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 650, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -8306,7 +8306,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_7)) {
     PyObject *__pyx_temp[3] = {__pyx_t_2, __pyx_t_5, __pyx_t_3};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_7, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 648, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_7, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 650, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -8316,7 +8316,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_7)) {
     PyObject *__pyx_temp[3] = {__pyx_t_2, __pyx_t_5, __pyx_t_3};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_7, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 648, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_7, __pyx_temp+1-__pyx_t_6, 2+__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 650, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -8324,7 +8324,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
   } else
   #endif
   {
-    __pyx_t_4 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 648, __pyx_L1_error)
+    __pyx_t_4 = PyTuple_New(2+__pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 650, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     if (__pyx_t_2) {
       __Pyx_GIVEREF(__pyx_t_2); PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_2); __pyx_t_2 = NULL;
@@ -8335,12 +8335,12 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
     PyTuple_SET_ITEM(__pyx_t_4, 1+__pyx_t_6, __pyx_t_3);
     __pyx_t_5 = 0;
     __pyx_t_3 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_t_4, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 648, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_t_4, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 650, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   }
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 648, __pyx_L1_error)
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 650, __pyx_L1_error)
   __pyx_t_12 = ((PyArrayObject *)__pyx_t_1);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -8357,13 +8357,13 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
       __pyx_t_11 = __pyx_t_10 = __pyx_t_9 = 0;
     }
     __pyx_pybuffernd_gains.diminfo[0].strides = __pyx_pybuffernd_gains.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_gains.diminfo[0].shape = __pyx_pybuffernd_gains.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_gains.diminfo[1].strides = __pyx_pybuffernd_gains.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_gains.diminfo[1].shape = __pyx_pybuffernd_gains.rcbuffer->pybuffer.shape[1];
-    if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 648, __pyx_L1_error)
+    if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 650, __pyx_L1_error)
   }
   __pyx_t_12 = 0;
   __pyx_v_gains = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "optimize_frob.pyx":651
+  /* "optimize_frob.pyx":653
  * 
  *     # Perform weight scaling on high-dimensional relationships
  *     cdef float weight_sum = 0.0             # <<<<<<<<<<<<<<
@@ -8372,7 +8372,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
  */
   __pyx_v_weight_sum = 0.0;
 
-  /* "optimize_frob.pyx":652
+  /* "optimize_frob.pyx":654
  *     # Perform weight scaling on high-dimensional relationships
  *     cdef float weight_sum = 0.0
  *     if normalized:             # <<<<<<<<<<<<<<
@@ -8382,7 +8382,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
   __pyx_t_13 = (__pyx_v_normalized != 0);
   if (__pyx_t_13) {
 
-    /* "optimize_frob.pyx":653
+    /* "optimize_frob.pyx":655
  *     cdef float weight_sum = 0.0
  *     if normalized:
  *         for i in range(py_weights.shape[0]):             # <<<<<<<<<<<<<<
@@ -8394,7 +8394,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
     for (__pyx_t_16 = 0; __pyx_t_16 < __pyx_t_15; __pyx_t_16+=1) {
       __pyx_v_i = __pyx_t_16;
 
-      /* "optimize_frob.pyx":654
+      /* "optimize_frob.pyx":656
  *     if normalized:
  *         for i in range(py_weights.shape[0]):
  *             weight_sum = weight_sum + py_weights[i]             # <<<<<<<<<<<<<<
@@ -8405,7 +8405,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
       __pyx_v_weight_sum = (__pyx_v_weight_sum + (*__Pyx_BufPtrStrided1d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_py_weights.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_py_weights.diminfo[0].strides)));
     }
 
-    /* "optimize_frob.pyx":655
+    /* "optimize_frob.pyx":657
  *         for i in range(py_weights.shape[0]):
  *             weight_sum = weight_sum + py_weights[i]
  *         for i in range(py_weights.shape[0]):             # <<<<<<<<<<<<<<
@@ -8417,7 +8417,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
     for (__pyx_t_16 = 0; __pyx_t_16 < __pyx_t_15; __pyx_t_16+=1) {
       __pyx_v_i = __pyx_t_16;
 
-      /* "optimize_frob.pyx":656
+      /* "optimize_frob.pyx":658
  *             weight_sum = weight_sum + py_weights[i]
  *         for i in range(py_weights.shape[0]):
  *             py_weights[i] = py_weights[i] / weight_sum             # <<<<<<<<<<<<<<
@@ -8429,7 +8429,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
       *__Pyx_BufPtrStrided1d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_py_weights.rcbuffer->pybuffer.buf, __pyx_t_18, __pyx_pybuffernd_py_weights.diminfo[0].strides) = ((*__Pyx_BufPtrStrided1d(__pyx_t_13optimize_frob_DTYPE_FLOAT *, __pyx_pybuffernd_py_weights.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_py_weights.diminfo[0].strides)) / __pyx_v_weight_sum);
     }
 
-    /* "optimize_frob.pyx":657
+    /* "optimize_frob.pyx":659
  *         for i in range(py_weights.shape[0]):
  *             py_weights[i] = py_weights[i] / weight_sum
  *         initial_lr *= 2000000             # <<<<<<<<<<<<<<
@@ -8438,7 +8438,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
  */
     __pyx_v_initial_lr = (__pyx_v_initial_lr * 2000000.0);
 
-    /* "optimize_frob.pyx":652
+    /* "optimize_frob.pyx":654
  *     # Perform weight scaling on high-dimensional relationships
  *     cdef float weight_sum = 0.0
  *     if normalized:             # <<<<<<<<<<<<<<
@@ -8447,18 +8447,18 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
  */
   }
 
-  /* "optimize_frob.pyx":659
+  /* "optimize_frob.pyx":661
  *         initial_lr *= 2000000
  *     # FIXME
  *     if 'pca' in optimize_method:             # <<<<<<<<<<<<<<
  *         initial_lr = 0.0005
  * 
  */
-  __pyx_t_13 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_pca, __pyx_v_optimize_method, Py_EQ)); if (unlikely(__pyx_t_13 < 0)) __PYX_ERR(0, 659, __pyx_L1_error)
+  __pyx_t_13 = (__Pyx_PySequence_ContainsTF(__pyx_n_s_pca, __pyx_v_optimize_method, Py_EQ)); if (unlikely(__pyx_t_13 < 0)) __PYX_ERR(0, 661, __pyx_L1_error)
   __pyx_t_19 = (__pyx_t_13 != 0);
   if (__pyx_t_19) {
 
-    /* "optimize_frob.pyx":660
+    /* "optimize_frob.pyx":662
  *     # FIXME
  *     if 'pca' in optimize_method:
  *         initial_lr = 0.0005             # <<<<<<<<<<<<<<
@@ -8467,7 +8467,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
  */
     __pyx_v_initial_lr = 0.0005;
 
-    /* "optimize_frob.pyx":659
+    /* "optimize_frob.pyx":661
  *         initial_lr *= 2000000
  *     # FIXME
  *     if 'pca' in optimize_method:             # <<<<<<<<<<<<<<
@@ -8476,166 +8476,166 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
  */
   }
 
-  /* "optimize_frob.pyx":663
+  /* "optimize_frob.pyx":665
  * 
  *     optimize_dict = {
  *         'frob_umap_uniform': frob_umap_uniformly,             # <<<<<<<<<<<<<<
  *         'frob_pca': frob_pca,
  *         'frob_umap_sampling': frob_umap_sampling,
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 663, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 665, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_frob_umap_uniformly); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 663, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_frob_umap_uniformly); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 665, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_frob_umap_uniform, __pyx_t_7) < 0) __PYX_ERR(0, 663, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_frob_umap_uniform, __pyx_t_7) < 0) __PYX_ERR(0, 665, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "optimize_frob.pyx":664
+  /* "optimize_frob.pyx":666
  *     optimize_dict = {
  *         'frob_umap_uniform': frob_umap_uniformly,
  *         'frob_pca': frob_pca,             # <<<<<<<<<<<<<<
  *         'frob_umap_sampling': frob_umap_sampling,
  *     }
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_frob_pca); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 664, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_frob_pca); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 666, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_frob_pca, __pyx_t_7) < 0) __PYX_ERR(0, 663, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_frob_pca, __pyx_t_7) < 0) __PYX_ERR(0, 665, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "optimize_frob.pyx":665
+  /* "optimize_frob.pyx":667
  *         'frob_umap_uniform': frob_umap_uniformly,
  *         'frob_pca': frob_pca,
  *         'frob_umap_sampling': frob_umap_sampling,             # <<<<<<<<<<<<<<
  *     }
  *     optimize_fn = optimize_dict[optimize_method]
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_frob_umap_sampling); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 665, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_frob_umap_sampling); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 667, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_frob_umap_sampling, __pyx_t_7) < 0) __PYX_ERR(0, 663, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_frob_umap_sampling, __pyx_t_7) < 0) __PYX_ERR(0, 665, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __pyx_v_optimize_dict = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "optimize_frob.pyx":667
+  /* "optimize_frob.pyx":669
  *         'frob_umap_sampling': frob_umap_sampling,
  *     }
  *     optimize_fn = optimize_dict[optimize_method]             # <<<<<<<<<<<<<<
  * 
  *     optimize_fn(
  */
-  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_optimize_dict, __pyx_v_optimize_method); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 667, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItem(__pyx_v_optimize_dict, __pyx_v_optimize_method); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 669, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_optimize_fn = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "optimize_frob.pyx":670
+  /* "optimize_frob.pyx":672
  * 
  *     optimize_fn(
  *         normalized,             # <<<<<<<<<<<<<<
  *         sym_attraction,
  *         momentum,
  */
-  __pyx_t_7 = __Pyx_PyInt_From_int(__pyx_v_normalized); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 670, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyInt_From_int(__pyx_v_normalized); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 672, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
 
-  /* "optimize_frob.pyx":671
+  /* "optimize_frob.pyx":673
  *     optimize_fn(
  *         normalized,
  *         sym_attraction,             # <<<<<<<<<<<<<<
  *         momentum,
  *         py_head_embedding,
  */
-  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_sym_attraction); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 671, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_sym_attraction); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 673, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
 
-  /* "optimize_frob.pyx":672
+  /* "optimize_frob.pyx":674
  *         normalized,
  *         sym_attraction,
  *         momentum,             # <<<<<<<<<<<<<<
  *         py_head_embedding,
  *         py_tail_embedding,
  */
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_momentum); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 672, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_momentum); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 674, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
 
-  /* "optimize_frob.pyx":681
+  /* "optimize_frob.pyx":683
  *         gains,
  *         epochs_per_sample,
  *         a,             # <<<<<<<<<<<<<<
  *         b,
  *         dim,
  */
-  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_a); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 681, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_a); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 683, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
 
-  /* "optimize_frob.pyx":682
+  /* "optimize_frob.pyx":684
  *         epochs_per_sample,
  *         a,
  *         b,             # <<<<<<<<<<<<<<
  *         dim,
  *         initial_lr,
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_b); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 682, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_b); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 684, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
 
-  /* "optimize_frob.pyx":683
+  /* "optimize_frob.pyx":685
  *         a,
  *         b,
  *         dim,             # <<<<<<<<<<<<<<
  *         initial_lr,
  *         negative_sample_rate,
  */
-  __pyx_t_20 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 683, __pyx_L1_error)
+  __pyx_t_20 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 685, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_20);
 
-  /* "optimize_frob.pyx":684
+  /* "optimize_frob.pyx":686
  *         b,
  *         dim,
  *         initial_lr,             # <<<<<<<<<<<<<<
  *         negative_sample_rate,
  *         n_epochs,
  */
-  __pyx_t_21 = PyFloat_FromDouble(__pyx_v_initial_lr); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 684, __pyx_L1_error)
+  __pyx_t_21 = PyFloat_FromDouble(__pyx_v_initial_lr); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 686, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_21);
 
-  /* "optimize_frob.pyx":685
+  /* "optimize_frob.pyx":687
  *         dim,
  *         initial_lr,
  *         negative_sample_rate,             # <<<<<<<<<<<<<<
  *         n_epochs,
  *         n_vertices,
  */
-  __pyx_t_22 = PyFloat_FromDouble(__pyx_v_negative_sample_rate); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 685, __pyx_L1_error)
+  __pyx_t_22 = PyFloat_FromDouble(__pyx_v_negative_sample_rate); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 687, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_22);
 
-  /* "optimize_frob.pyx":686
+  /* "optimize_frob.pyx":688
  *         initial_lr,
  *         negative_sample_rate,
  *         n_epochs,             # <<<<<<<<<<<<<<
  *         n_vertices,
  *         verbose
  */
-  __pyx_t_23 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 686, __pyx_L1_error)
+  __pyx_t_23 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 688, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_23);
 
-  /* "optimize_frob.pyx":687
+  /* "optimize_frob.pyx":689
  *         negative_sample_rate,
  *         n_epochs,
  *         n_vertices,             # <<<<<<<<<<<<<<
  *         verbose
  *     )
  */
-  __pyx_t_24 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_24)) __PYX_ERR(0, 687, __pyx_L1_error)
+  __pyx_t_24 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_24)) __PYX_ERR(0, 689, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_24);
 
-  /* "optimize_frob.pyx":688
+  /* "optimize_frob.pyx":690
  *         n_epochs,
  *         n_vertices,
  *         verbose             # <<<<<<<<<<<<<<
  *     )
  * 
  */
-  __pyx_t_25 = __Pyx_PyInt_From_int(__pyx_v_verbose); if (unlikely(!__pyx_t_25)) __PYX_ERR(0, 688, __pyx_L1_error)
+  __pyx_t_25 = __Pyx_PyInt_From_int(__pyx_v_verbose); if (unlikely(!__pyx_t_25)) __PYX_ERR(0, 690, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_25);
   __Pyx_INCREF(__pyx_v_optimize_fn);
   __pyx_t_26 = __pyx_v_optimize_fn; __pyx_t_27 = NULL;
@@ -8653,7 +8653,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_26)) {
     PyObject *__pyx_temp[20] = {__pyx_t_27, __pyx_t_7, __pyx_t_4, __pyx_t_3, ((PyObject *)__pyx_v_py_head_embedding), ((PyObject *)__pyx_v_py_tail_embedding), ((PyObject *)__pyx_v_py_head), ((PyObject *)__pyx_v_py_tail), ((PyObject *)__pyx_v_py_weights), ((PyObject *)__pyx_v_forces), ((PyObject *)__pyx_v_gains), ((PyObject *)__pyx_v_epochs_per_sample), __pyx_t_5, __pyx_t_2, __pyx_t_20, __pyx_t_21, __pyx_t_22, __pyx_t_23, __pyx_t_24, __pyx_t_25};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_26, __pyx_temp+1-__pyx_t_6, 19+__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 669, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_26, __pyx_temp+1-__pyx_t_6, 19+__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 671, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_27); __pyx_t_27 = 0;
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -8672,7 +8672,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_26)) {
     PyObject *__pyx_temp[20] = {__pyx_t_27, __pyx_t_7, __pyx_t_4, __pyx_t_3, ((PyObject *)__pyx_v_py_head_embedding), ((PyObject *)__pyx_v_py_tail_embedding), ((PyObject *)__pyx_v_py_head), ((PyObject *)__pyx_v_py_tail), ((PyObject *)__pyx_v_py_weights), ((PyObject *)__pyx_v_forces), ((PyObject *)__pyx_v_gains), ((PyObject *)__pyx_v_epochs_per_sample), __pyx_t_5, __pyx_t_2, __pyx_t_20, __pyx_t_21, __pyx_t_22, __pyx_t_23, __pyx_t_24, __pyx_t_25};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_26, __pyx_temp+1-__pyx_t_6, 19+__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 669, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_26, __pyx_temp+1-__pyx_t_6, 19+__pyx_t_6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 671, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_27); __pyx_t_27 = 0;
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -8689,7 +8689,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
   } else
   #endif
   {
-    __pyx_t_28 = PyTuple_New(19+__pyx_t_6); if (unlikely(!__pyx_t_28)) __PYX_ERR(0, 669, __pyx_L1_error)
+    __pyx_t_28 = PyTuple_New(19+__pyx_t_6); if (unlikely(!__pyx_t_28)) __PYX_ERR(0, 671, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_28);
     if (__pyx_t_27) {
       __Pyx_GIVEREF(__pyx_t_27); PyTuple_SET_ITEM(__pyx_t_28, 0, __pyx_t_27); __pyx_t_27 = NULL;
@@ -8751,14 +8751,14 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
     __pyx_t_23 = 0;
     __pyx_t_24 = 0;
     __pyx_t_25 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_26, __pyx_t_28, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 669, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_26, __pyx_t_28, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 671, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_28); __pyx_t_28 = 0;
   }
   __Pyx_DECREF(__pyx_t_26); __pyx_t_26 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "optimize_frob.pyx":692
+  /* "optimize_frob.pyx":694
  * 
  *     # return py_np.asarray(head_embedding)
  *     return py_head_embedding             # <<<<<<<<<<<<<<
@@ -8769,7 +8769,7 @@ static PyObject *__pyx_pf_13optimize_frob_6cy_optimize_frob(CYTHON_UNUSED PyObje
   __pyx_r = ((PyObject *)__pyx_v_py_head_embedding);
   goto __pyx_L0;
 
-  /* "optimize_frob.pyx":613
+  /* "optimize_frob.pyx":615
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def cy_optimize_frob(             # <<<<<<<<<<<<<<
@@ -23604,7 +23604,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 27, __pyx_L1_error)
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 99, __pyx_L1_error)
-  __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(0, 586, __pyx_L1_error)
+  __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(0, 588, __pyx_L1_error)
   __pyx_builtin_ImportError = __Pyx_GetBuiltinName(__pyx_n_s_ImportError); if (!__pyx_builtin_ImportError) __PYX_ERR(1, 884, __pyx_L1_error)
   __pyx_builtin_MemoryError = __Pyx_GetBuiltinName(__pyx_n_s_MemoryError); if (!__pyx_builtin_MemoryError) __PYX_ERR(2, 148, __pyx_L1_error)
   __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(2, 2, __pyx_L1_error)
@@ -23845,53 +23845,53 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__22);
   __Pyx_GIVEREF(__pyx_tuple__22);
 
-  /* "optimize_frob.pyx":171
+  /* "optimize_frob.pyx":173
  * 
  * 
  * def frob_umap_sampling(             # <<<<<<<<<<<<<<
  *     int normalized,
  *     int sym_attraction,
  */
-  __pyx_tuple__23 = PyTuple_Pack(25, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_momentum, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_weights, __pyx_n_s_forces, __pyx_n_s_gains, __pyx_n_s_epochs_per_sample, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_dim, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_verbose, __pyx_n_s_pos_sample_steps, __pyx_n_s_i_edge, __pyx_n_s_sample_rate, __pyx_n_s_n_edges, __pyx_n_s_i_epoch, __pyx_n_s_lr); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 171, __pyx_L1_error)
+  __pyx_tuple__23 = PyTuple_Pack(25, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_momentum, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_weights, __pyx_n_s_forces, __pyx_n_s_gains, __pyx_n_s_epochs_per_sample, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_dim, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_verbose, __pyx_n_s_pos_sample_steps, __pyx_n_s_i_edge, __pyx_n_s_sample_rate, __pyx_n_s_n_edges, __pyx_n_s_i_epoch, __pyx_n_s_lr); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 173, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__23);
   __Pyx_GIVEREF(__pyx_tuple__23);
-  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(19, 0, 25, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_optimize_frob_pyx, __pyx_n_s_frob_umap_sampling, 171, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 171, __pyx_L1_error)
+  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(19, 0, 25, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_optimize_frob_pyx, __pyx_n_s_frob_umap_sampling, 173, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 173, __pyx_L1_error)
 
-  /* "optimize_frob.pyx":441
+  /* "optimize_frob.pyx":443
  * 
  * 
  * def frob_umap_uniformly(             # <<<<<<<<<<<<<<
  *     int normalized,
  *     int sym_attraction,
  */
-  __pyx_tuple__25 = PyTuple_Pack(21, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_momentum, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_weights, __pyx_n_s_forces, __pyx_n_s_gains, __pyx_n_s_epochs_per_sample, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_dim, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_verbose, __pyx_n_s_i_epoch, __pyx_n_s_lr); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 441, __pyx_L1_error)
+  __pyx_tuple__25 = PyTuple_Pack(21, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_momentum, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_weights, __pyx_n_s_forces, __pyx_n_s_gains, __pyx_n_s_epochs_per_sample, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_dim, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_verbose, __pyx_n_s_i_epoch, __pyx_n_s_lr); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 443, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__25);
   __Pyx_GIVEREF(__pyx_tuple__25);
-  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(19, 0, 21, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_optimize_frob_pyx, __pyx_n_s_frob_umap_uniformly, 441, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 441, __pyx_L1_error)
+  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(19, 0, 21, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_optimize_frob_pyx, __pyx_n_s_frob_umap_uniformly, 443, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 443, __pyx_L1_error)
 
-  /* "optimize_frob.pyx":561
+  /* "optimize_frob.pyx":563
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def frob_pca(             # <<<<<<<<<<<<<<
  *     int normalized,
  *     int sym_attraction,
  */
-  __pyx_tuple__27 = PyTuple_Pack(24, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_momentum, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_weights, __pyx_n_s_forces, __pyx_n_s_gains, __pyx_n_s_epochs_per_sample, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_dim, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_verbose, __pyx_n_s_mean_weight, __pyx_n_s_weight, __pyx_n_s_i, __pyx_n_s_i_epoch, __pyx_n_s_lr); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(0, 561, __pyx_L1_error)
+  __pyx_tuple__27 = PyTuple_Pack(24, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_momentum, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_weights, __pyx_n_s_forces, __pyx_n_s_gains, __pyx_n_s_epochs_per_sample, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_dim, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_verbose, __pyx_n_s_mean_weight, __pyx_n_s_weight, __pyx_n_s_i, __pyx_n_s_i_epoch, __pyx_n_s_lr); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(0, 563, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__27);
   __Pyx_GIVEREF(__pyx_tuple__27);
-  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(19, 0, 24, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__27, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_optimize_frob_pyx, __pyx_n_s_frob_pca, 561, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 561, __pyx_L1_error)
+  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(19, 0, 24, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__27, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_optimize_frob_pyx, __pyx_n_s_frob_pca, 563, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 563, __pyx_L1_error)
 
-  /* "optimize_frob.pyx":613
+  /* "optimize_frob.pyx":615
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def cy_optimize_frob(             # <<<<<<<<<<<<<<
  *     str optimize_method,
  *     int normalized,
  */
-  __pyx_tuple__29 = PyTuple_Pack(27, __pyx_n_s_optimize_method, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_momentum, __pyx_n_s_py_head_embedding, __pyx_n_s_py_tail_embedding, __pyx_n_s_py_head, __pyx_n_s_py_tail, __pyx_n_s_py_weights, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_epochs_per_sample, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_verbose, __pyx_n_s_kwargs, __pyx_n_s_dim, __pyx_n_s_i_epoch, __pyx_n_s_n_edges, __pyx_n_s_forces, __pyx_n_s_gains, __pyx_n_s_weight_sum, __pyx_n_s_i, __pyx_n_s_optimize_dict, __pyx_n_s_optimize_fn); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(0, 613, __pyx_L1_error)
+  __pyx_tuple__29 = PyTuple_Pack(27, __pyx_n_s_optimize_method, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_momentum, __pyx_n_s_py_head_embedding, __pyx_n_s_py_tail_embedding, __pyx_n_s_py_head, __pyx_n_s_py_tail, __pyx_n_s_py_weights, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_epochs_per_sample, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_verbose, __pyx_n_s_kwargs, __pyx_n_s_dim, __pyx_n_s_i_epoch, __pyx_n_s_n_edges, __pyx_n_s_forces, __pyx_n_s_gains, __pyx_n_s_weight_sum, __pyx_n_s_i, __pyx_n_s_optimize_dict, __pyx_n_s_optimize_fn); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(0, 615, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__29);
   __Pyx_GIVEREF(__pyx_tuple__29);
-  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(17, 0, 27, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARKEYWORDS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_optimize_frob_pyx, __pyx_n_s_cy_optimize_frob, 613, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 613, __pyx_L1_error)
+  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(17, 0, 27, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARKEYWORDS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_optimize_frob_pyx, __pyx_n_s_cy_optimize_frob, 615, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 615, __pyx_L1_error)
 
   /* "View.MemoryView":286
  *         return self.name
@@ -24380,52 +24380,52 @@ if (!__Pyx_RefNanny) {
  */
   __pyx_t_2 = __pyx_f_5numpy_import_array(); if (unlikely(__pyx_t_2 == ((int)-1))) __PYX_ERR(0, 13, __pyx_L1_error)
 
-  /* "optimize_frob.pyx":171
+  /* "optimize_frob.pyx":173
  * 
  * 
  * def frob_umap_sampling(             # <<<<<<<<<<<<<<
  *     int normalized,
  *     int sym_attraction,
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13optimize_frob_1frob_umap_sampling, NULL, __pyx_n_s_optimize_frob); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13optimize_frob_1frob_umap_sampling, NULL, __pyx_n_s_optimize_frob); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 173, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_frob_umap_sampling, __pyx_t_1) < 0) __PYX_ERR(0, 171, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_frob_umap_sampling, __pyx_t_1) < 0) __PYX_ERR(0, 173, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "optimize_frob.pyx":441
+  /* "optimize_frob.pyx":443
  * 
  * 
  * def frob_umap_uniformly(             # <<<<<<<<<<<<<<
  *     int normalized,
  *     int sym_attraction,
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13optimize_frob_3frob_umap_uniformly, NULL, __pyx_n_s_optimize_frob); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 441, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13optimize_frob_3frob_umap_uniformly, NULL, __pyx_n_s_optimize_frob); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 443, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_frob_umap_uniformly, __pyx_t_1) < 0) __PYX_ERR(0, 441, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_frob_umap_uniformly, __pyx_t_1) < 0) __PYX_ERR(0, 443, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "optimize_frob.pyx":561
+  /* "optimize_frob.pyx":563
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def frob_pca(             # <<<<<<<<<<<<<<
  *     int normalized,
  *     int sym_attraction,
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13optimize_frob_5frob_pca, NULL, __pyx_n_s_optimize_frob); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 561, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13optimize_frob_5frob_pca, NULL, __pyx_n_s_optimize_frob); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 563, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_frob_pca, __pyx_t_1) < 0) __PYX_ERR(0, 561, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_frob_pca, __pyx_t_1) < 0) __PYX_ERR(0, 563, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "optimize_frob.pyx":613
+  /* "optimize_frob.pyx":615
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def cy_optimize_frob(             # <<<<<<<<<<<<<<
  *     str optimize_method,
  *     int normalized,
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13optimize_frob_7cy_optimize_frob, NULL, __pyx_n_s_optimize_frob); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 613, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_13optimize_frob_7cy_optimize_frob, NULL, __pyx_n_s_optimize_frob); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 615, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_cy_optimize_frob, __pyx_t_1) < 0) __PYX_ERR(0, 613, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_cy_optimize_frob, __pyx_t_1) < 0) __PYX_ERR(0, 615, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "optimize_frob.pyx":1
