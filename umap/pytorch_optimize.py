@@ -235,14 +235,13 @@ def torch_optimize_frob(
     verbose=True,
     **kwargs
 ):
-    attr_forces = torch.zeros_like(head_embedding)
-    rep_forces = torch.zeros_like(head_embedding)
     n_edges = weights.shape[0]
+    dim = int(head_embedding.shape[1])
+    step_forces = torch.zeros([n_vertices, dim], dtype=torch.float32)
 
     # Gradient descent loop
     for i_epoch in range(n_epochs):
-        attr_forces *= 0
-        rep_forces *= 0
+        step_forces *= 0
 
         # Get points in low-dim whose high-dim analogs are nearest neighbors
         points = head_embedding[head]
@@ -260,19 +259,19 @@ def torch_optimize_frob(
 
         # Calculate attractive forces
         attr_grads = weights * Q1 * Q1
-        attr_grads = -1 * torch.unsqueeze(attr_grads, 1) * attr_vectors
-        attr_forces = attr_forces.index_add(0, head, attr_grads)
-        if sym_attraction:
-            attr_forces = attr_forces.index_add(0, tail, -1 * attr_grads)
+        attr_grads = torch.unsqueeze(attr_grads, 1) * attr_vectors
 
         # Calculate repulsive forces
         rep_grads = Q2 * Q2 * Q2
         rep_grads = torch.unsqueeze(rep_grads, 1) * rep_vectors
-        rep_forces = rep_forces.index_add(0, head, rep_grads)
+
+        step_forces = step_forces.index_add(0, head, rep_grads - attr_grads)
+        if sym_attraction:
+            step_forces = step_forces.index_add(0, tail, attr_grads)
 
         # Gradient descent
         lr = initial_lr * (1.0 - float(i_epoch) / n_epochs)
-        head_embedding += (attr_forces + rep_forces) * lr
+        head_embedding += step_forces * lr
 
         if verbose and i_epoch % int(n_epochs / 10) == 0:
             print("Completed ", i_epoch, " / ", n_epochs, "epochs")
