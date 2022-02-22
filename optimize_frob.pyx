@@ -69,6 +69,7 @@ cdef float neg_force(
 cdef void _frob_umap_sampling(
     int normalized,
     int sym_attraction,
+    int momentum,
     np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
     np.ndarray[DTYPE_INT, ndim=1] head,
@@ -129,7 +130,10 @@ cdef void _frob_umap_sampling(
             )
 
             for d in range(dim):
-                grad_d = attractive_force * (y1[d] - y2[d]) * weights[edge]
+                grad_d = attractive_force * (y1[d] - y2[d])
+                # FIXME early exaggeration
+                if i_epoch < 100:
+                    grad_d *= 4
                 # Attractive force has a negative scalar on it
                 #   in frobenius norm gradient
                 attractive_forces[j * dim + d] -= grad_d * lr
@@ -148,20 +152,21 @@ cdef void _frob_umap_sampling(
                 )
 
                 for d in range(dim):
-                    grad_d = repulsive_force * (y1[d] - y2[d]) * weights[edge]
+                    grad_d = repulsive_force * (y1[d] - y2[d])
                     repulsive_forces[j * dim + d] += grad_d * lr
 
     for v in range(n_vertices):
         for d in range(dim):
             grad_d = attractive_forces[v * dim + d] + repulsive_forces[v * dim + d]
 
-            if grad_d * forces[v, d] > 0.0:
-                gains[v, d] += 0.2
-            else:
-                gains[v, d] *= 0.8
-            grad_d *= gains[v, d]
+            # if grad_d * forces[v, d] > 0.0:
+            #     gains[v, d] += 0.2
+            # else:
+            #     gains[v, d] *= 0.8
+            # grad_d *= gains[v, d]
 
-            forces[v, d] = grad_d * lr
+            # FIXME inverse momentum
+            forces[v, d] = -1 * forces[v, d] * 0.3 + grad_d * lr
             head_embedding[v, d] += forces[v, d]
 
 
@@ -206,6 +211,7 @@ def frob_umap_sampling(
         _frob_umap_sampling(
             normalized,
             sym_attraction,
+            momentum,
             head_embedding,
             tail_embedding,
             head,
