@@ -1,7 +1,6 @@
 import numpy as py_np
 cimport numpy as np
 cimport cython
-from libcpp cimport bool
 from libc.stdio cimport printf
 from libc.math cimport sqrt, pow
 from libc.stdlib cimport rand
@@ -53,12 +52,17 @@ cdef float ang_dist(float* x, float* y, int dim):
         return 1
     return result / (sqrt(x_len * y_len))
 
-cdef float get_lr(initial_lr, i_epoch, n_epochs): 
+cdef float get_lr(float initial_lr, int i_epoch, int n_epochs): 
     return initial_lr * (1.0 - (float(i_epoch) / float(n_epochs)))
 
-cdef void print_status(i_epoch, n_epochs):
-    if i_epoch % int(n_epochs / 10) == 0:
-        print("Completed ", i_epoch, " / ", n_epochs, "epochs")
+cdef void print_status(int i_epoch, int n_epochs):
+    cdef int print_rate = n_epochs / 10
+    cdef int counter = 0
+    # Can't do python modulo in cython
+    while counter < i_epoch:
+        counter += print_rate
+    if i_epoch - counter == 0:
+        printf("Completed %d / %d epochs\n", i_epoch, n_epochs)
 
 ###################
 ##### KERNELS #####
@@ -268,7 +272,7 @@ def cy_umap_sampling(
     float negative_sample_rate,
     int n_epochs,
     int n_vertices,
-    bool verbose
+    int verbose
 ):
     cdef:
         np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
@@ -446,7 +450,7 @@ def cy_umap_uniformly(
     float negative_sample_rate,
     int n_epochs,
     int n_vertices,
-    bool verbose
+    int verbose
 ):
     for i_epoch in range(n_epochs):
         lr = get_lr(initial_lr, i_epoch, n_epochs)
@@ -615,11 +619,6 @@ cdef void calculate_barnes_hut(
         cell_metadata = qt.summarize(y1, cell_summaries, theta * theta)
         num_cells = cell_metadata // offset
 
-        # Instead of the for-loop over all cells, we can just pick a random one
-        # If you replace the for-loop with this line, though, you also
-        # need to remove the normalization by Z after the loop over vertices
-        # i_cell = rand() % num_cells
-
         # For each quadtree cell with respect to the current point
         for i_cell in range(num_cells):
             cell_dist = cell_summaries[i_cell * offset + dim]
@@ -688,7 +687,7 @@ def bh_wrapper(
     float negative_sample_rate,
     int n_epochs,
     int n_vertices,
-    bool verbose
+    int verbose
 ):
     """
     Wrapper to call barnes_hut optimization
@@ -742,7 +741,7 @@ def cy_optimize_layout(
     float b,
     float initial_lr,
     float negative_sample_rate,
-    bool verbose=True,
+    int verbose=True,
     **kwargs
 ):
     cdef:
