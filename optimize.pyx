@@ -171,13 +171,14 @@ cdef void repulsive_force_func(
             cell_size,
             average_weight
         )
-    tsne_repulsive_force(
-        rep_func_outputs,
-        dist_squared,
-        a,
-        b,
-        cell_size,
-    )
+    else:
+        tsne_repulsive_force(
+            rep_func_outputs,
+            dist_squared,
+            a,
+            b,
+            cell_size,
+        )
 
 
 @cython.boundscheck(False)
