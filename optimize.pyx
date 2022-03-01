@@ -366,55 +366,54 @@ cdef void get_kernels(
         float *rep_func_outputs
         float q_ij
 
-    # with parallel():
-    local_Z[0] = 0
-    y1 = <float*> malloc(sizeof(float) * dim)
-    y2 = <float*> malloc(sizeof(float) * dim)
-    rep_func_outputs = <float*> malloc(sizeof(float) * 2)
-    # for edge in prange(n_edges):
-    for edge in range(n_edges):
-        j = head[edge]
-        k = tail[edge]
-        for d in range(dim):
-            y1[d] = head_embedding[j, d]
-            y2[d] = tail_embedding[k, d]
-            attr_vecs[edge * dim + d] = y1[d] - y2[d]
-        dist_squared = sq_euc_dist(y1, y2, dim)
+    with parallel():
+        local_Z[0] = 0
+        y1 = <float*> malloc(sizeof(float) * dim)
+        y2 = <float*> malloc(sizeof(float) * dim)
+        rep_func_outputs = <float*> malloc(sizeof(float) * 2)
+        for edge in prange(n_edges):
+            j = head[edge]
+            k = tail[edge]
+            for d in range(dim):
+                y1[d] = head_embedding[j, d]
+                y2[d] = tail_embedding[k, d]
+                attr_vecs[edge * dim + d] = y1[d] - y2[d]
+            dist_squared = sq_euc_dist(y1, y2, dim)
 
-        # t-SNE early exaggeration
-        if i_epoch < 100:
-            weight_scalar = 4
-        else:
-            weight_scalar = 1
+            # t-SNE early exaggeration
+            if i_epoch < 100:
+                weight_scalar = 4
+            else:
+                weight_scalar = 1
 
-        attr_forces[edge] = attractive_force_func(
-            normalized,
-            dist_squared,
-            a,
-            b,
-            weights[edge] * weight_scalar
-        )
+            attr_forces[edge] = attractive_force_func(
+                normalized,
+                dist_squared,
+                a,
+                b,
+                weights[edge] * weight_scalar
+            )
 
-        k = rand() % n_vertices
-        for d in range(dim):
-            y2[d] = tail_embedding[k, d]
-            rep_vecs[edge * dim + d] = y1[d] - y2[d]
-        dist_squared = sq_euc_dist(y1, y2, dim)
-        repulsive_force_func(
-            rep_func_outputs,
-            normalized,
-            dist_squared,
-            a,
-            b,
-            cell_size=1.0,
-            average_weight=average_weight,
-        )
-        rep_forces[edge] = rep_func_outputs[0]
-        local_Z[0] += rep_func_outputs[1]
+            k = rand() % n_vertices
+            for d in range(dim):
+                y2[d] = tail_embedding[k, d]
+                rep_vecs[edge * dim + d] = y1[d] - y2[d]
+            dist_squared = sq_euc_dist(y1, y2, dim)
+            repulsive_force_func(
+                rep_func_outputs,
+                normalized,
+                dist_squared,
+                a,
+                b,
+                cell_size=1.0,
+                average_weight=average_weight,
+            )
+            rep_forces[edge] = rep_func_outputs[0]
+            local_Z[0] += rep_func_outputs[1]
 
-    free(rep_func_outputs)
-    free(y1)
-    free(y2)
+        free(rep_func_outputs)
+        free(y1)
+        free(y2)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -438,27 +437,25 @@ cdef void gather_gradients(
         int j, k, v, d, edge, index
         float force, grad_d
 
-    # with parallel():
-    # for v in prange(n_vertices):
-    for v in range(n_vertices):
-        for d in range(dim):
-            index = v * dim + d
-            local_attr_grads[index] = 0
-            local_rep_grads[index] = 0
+    with parallel():
+        for v in prange(n_vertices):
+            for d in range(dim):
+                index = v * dim + d
+                local_attr_grads[index] = 0
+                local_rep_grads[index] = 0
 
-    # for edge in prange(n_edges):
-    for edge in range(n_edges):
-        j = head[edge]
-        for d in range(dim):
-            grad_d = attr_forces[edge] * attr_vecs[edge * dim + d]
-            local_attr_grads[j * dim + d] += grad_d
-            if sym_attraction:
-                k = tail[edge]
-                local_attr_grads[k * dim + d] -= grad_d
+        for edge in prange(n_edges):
+            j = head[edge]
+            for d in range(dim):
+                grad_d = attr_forces[edge] * attr_vecs[edge * dim + d]
+                local_attr_grads[j * dim + d] += grad_d
+                if sym_attraction:
+                    k = tail[edge]
+                    local_attr_grads[k * dim + d] -= grad_d
 
-        for d in range(dim):
-            grad_d = rep_forces[edge] * rep_vecs[edge * dim + d]
-            local_rep_grads[j * dim + d] += grad_d / Z
+            for d in range(dim):
+                grad_d = rep_forces[edge] * rep_vecs[edge * dim + d]
+                local_rep_grads[j * dim + d] += grad_d / Z
 
 
 @cython.boundscheck(False)
@@ -516,72 +513,70 @@ cdef void _cy_umap_uniformly(
     cdef float grad_d = 0.0
     cdef float average_weight = get_avg_weight(weights)
 
-    # with nogil:
-    #     for v in prange(n_vertices):
-    for v in range(n_vertices):
-        for d in range(dim):
-            index = v * dim + d
-            all_attr_grads[index] = 0
-            all_rep_grads[index] = 0
+    with nogil:
+        for v in prange(n_vertices):
+            for d in range(dim):
+                index = v * dim + d
+                all_attr_grads[index] = 0
+                all_rep_grads[index] = 0
 
-    # with nogil:
-    get_kernels(
-        local_Z,
-        attr_forces,
-        rep_forces,
-        attr_vecs,
-        rep_vecs,
-        head,
-        tail,
-        head_embedding,
-        tail_embedding,
-        weights,
-        normalized,
-        n_vertices,
-        n_edges,
-        i_epoch,
-        dim,
-        a,
-        b,
-        average_weight
-    )
-    Z += local_Z[0]
-    free(local_Z)
-    if not normalized:
-        Z = 1
+    with nogil:
+        get_kernels(
+            local_Z,
+            attr_forces,
+            rep_forces,
+            attr_vecs,
+            rep_vecs,
+            head,
+            tail,
+            head_embedding,
+            tail_embedding,
+            weights,
+            normalized,
+            n_vertices,
+            n_edges,
+            i_epoch,
+            dim,
+            a,
+            b,
+            average_weight
+        )
+        Z += local_Z[0]
+        free(local_Z)
+        if not normalized:
+            Z = 1
 
-    gather_gradients(
-        local_attr_grads,
-        local_rep_grads,
-        head,
-        tail,
-        attr_forces,
-        rep_forces,
-        attr_vecs,
-        rep_vecs,
-        sym_attraction,
-        n_vertices,
-        n_edges,
-        dim,
-        Z
-    )
-    free(attr_forces)
-    free(rep_forces)
-    free(attr_vecs)
-    free(rep_vecs)
+        gather_gradients(
+            local_attr_grads,
+            local_rep_grads,
+            head,
+            tail,
+            attr_forces,
+            rep_forces,
+            attr_vecs,
+            rep_vecs,
+            sym_attraction,
+            n_vertices,
+            n_edges,
+            dim,
+            Z
+        )
+        free(attr_forces)
+        free(rep_forces)
+        free(attr_vecs)
+        free(rep_vecs)
 
-    # Need to collect thread-local forces into single gradient
-    #   before performing gradient descent
-    scalar = 4 * a * b
-    # with parallel():
-    # for v in prange(n_vertices):
-    for v in range(n_vertices):
-        for d in range(dim):
-            index = v * dim + d
-            all_attr_grads[index] += local_attr_grads[index] * scalar
-            all_rep_grads[index] += local_rep_grads[index] * scalar
-    free(local_attr_grads)
-    free(local_rep_grads)
+        # Need to collect thread-local forces into single gradient
+        #   before performing gradient descent
+        scalar = 4 * a * b
+        with parallel():
+            for v in prange(n_vertices):
+                for d in range(dim):
+                    index = v * dim + d
+                    all_attr_grads[index] += local_attr_grads[index] * scalar
+                    all_rep_grads[index] += local_rep_grads[index] * scalar
+        free(local_attr_grads)
+        free(local_rep_grads)
 
 
     for v in range(n_vertices):
