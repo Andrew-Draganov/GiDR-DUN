@@ -16,6 +16,8 @@ cdef extern from "fastpow.c" nogil:
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
 
+@cython.boundscheck(False)
+@cython.cdivision(True)
 cdef float sq_euc_dist(float* x, float* y, int dim) nogil:
     """ squared euclidean distance between x and y """
     cdef float result = 0.0
@@ -45,6 +47,8 @@ cdef float kernel_function(float dist_squared, float a, float b) nogil:
         return 1 / (1 + a * fastpow(dist_squared, b))
     return fastpow(dist_squared, b - 1) / (1 + a * fastpow(dist_squared, b))
 
+@cython.boundscheck(False)
+@cython.cdivision(True)
 cdef float pos_force(
     int normalized,
     float p,
@@ -56,6 +60,8 @@ cdef float pos_force(
         return Z * p * (q ** 2 + 2 * q ** 3)
     return p * q ** 2
 
+@cython.boundscheck(False)
+@cython.cdivision(True)
 cdef float neg_force(
     int normalized,
     float q,
@@ -101,8 +107,8 @@ cdef void _frob_umap_sampling(
         float dist_squared
         float *y1
         float *y2
-        float *attractive_forces
-        float *repulsive_forces
+        float *all_attr_grads
+        float *all_rep_grads
 
     if normalized:
         raise ValueError("Cannot perform frobenius umap sampling with normalization")
@@ -111,13 +117,13 @@ cdef void _frob_umap_sampling(
     with nogil, parallel():
         y1 = <float*> malloc(sizeof(float) * dim)
         y2 = <float*> malloc(sizeof(float) * dim)
-        attractive_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
-        repulsive_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
+        all_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
+        all_rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
         for v1 in prange(n_vertices):
             for d1 in range(dim):
                 index1 = v1 * dim + d1
-                attractive_forces[index1] = 0
-                repulsive_forces[index1] = 0
+                all_attr_grads[index1] = 0
+                all_rep_grads[index1] = 0
 
         for edge in prange(n_edges):
             if pos_sample_steps[edge * n_epochs + i_epoch]:
@@ -140,9 +146,9 @@ cdef void _frob_umap_sampling(
                     grad_d1 = attractive_force * (y1[d3] - y2[d3])
                     # Attractive force has a negative scalar on it
                     #   in frobenius norm gradient
-                    attractive_forces[j * dim + d3] -= grad_d1 * lr
+                    all_attr_grads[j * dim + d3] -= grad_d1 * lr
                     if sym_attraction:
-                        attractive_forces[k * dim + d3] += grad_d1 * lr
+                        all_attr_grads[k * dim + d3] += grad_d1 * lr
 
                 for p in range(int(negative_sample_rate)):
                     k = rand() % n_vertices
@@ -157,14 +163,14 @@ cdef void _frob_umap_sampling(
 
                     for d5 in range(dim):
                         grad_d2 = repulsive_force * (y1[d5] - y2[d5])
-                        repulsive_forces[j * dim + d5] += grad_d2 * lr
+                        all_rep_grads[j * dim + d5] += grad_d2 * lr
         free(y1)
         free(y2)
 
         for v2 in prange(n_vertices):
             for d6 in range(dim):
                 index2 = v2 * dim + d6
-                grad_d3 = attractive_forces[index2] + repulsive_forces[index2]
+                grad_d3 = all_attr_grads[index2] + all_rep_grads[index2]
 
                 if grad_d3 * forces[index2] > 0.0:
                     gains[index2] += 0.2
@@ -174,8 +180,8 @@ cdef void _frob_umap_sampling(
                 forces[index2] = momentum * forces[index2] * 0.3 + grad_d4 * lr
                 head_embedding[v2, d6] += forces[index2]
 
-        free(attractive_forces)
-        free(repulsive_forces)
+        free(all_attr_grads)
+        free(all_rep_grads)
 
 
 def frob_umap_sampling(
@@ -264,14 +270,15 @@ def frob_umap_sampling(
 @cython.wraparound(False)
 @cython.cdivision(True)
 cdef void get_kernels(
-    float *Q1,
-    float *Q2,
+    float *attr_forces,
+    float *rep_forces,
     float *attr_vecs,
     float *rep_vecs,
     int[:] head,
     int[:] tail,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
+    float[:] weights,
     int normalized,
     int n_vertices,
     int n_edges,
@@ -296,14 +303,23 @@ cdef void get_kernels(
                 y2[d] = tail_embedding[k, d]
                 attr_vecs[edge * dim + d] = y1[d] - y2[d]
             dist_squared = sq_euc_dist(y1, y2, dim)
-            Q1[edge] = kernel_function(dist_squared, a, b)
+            attr_forces[edge] = pos_force(
+                normalized,
+                weights[edge],
+                kernel_function(dist_squared, a, b),
+                0.0
+            )
 
             k = rand() % n_vertices
             for d in range(dim):
                 y2[d] = tail_embedding[k, d]
                 rep_vecs[edge * dim + d] = y1[d] - y2[d]
             dist_squared = sq_euc_dist(y1, y2, dim)
-            Q2[edge] = kernel_function(dist_squared, a, b)
+            rep_forces[edge] = neg_force(
+                normalized,
+                kernel_function(dist_squared, a, b),
+                0.0
+            )
 
         free(y1)
         free(y2)
@@ -312,46 +328,44 @@ cdef void get_kernels(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef void calc_forces(
-    float *local_attr_forces,
-    float *local_rep_forces,
+cdef void gather_gradients(
+    float *local_attr_grads,
+    float *local_rep_grads,
     int[:] head,
     int[:] tail,
-    float[:] weights,
-    float* Q1,
-    float* Q2,
+    float* attr_forces,
+    float* rep_forces,
     float* attr_vecs,
     float* rep_vecs,
-    int normalized,
     int sym_attraction,
     int n_vertices,
     int n_edges,
     int dim,
 ) nogil:
+    # FIXME FIXME - Don't have Z in this version
     cdef:
         int j, k, v, d, edge, index
-        float grad, grad_d
+        float force, grad_d
 
     with parallel():
         for v in prange(n_vertices):
             for d in range(dim):
                 index = v * dim + d
-                local_attr_forces[index] = 0
-                local_rep_forces[index] = 0
+                local_attr_grads[index] = 0
+                local_rep_grads[index] = 0
 
         for edge in prange(n_edges):
             j = head[edge]
-            k = tail[edge]
-            grad = pos_force(normalized, weights[edge], Q1[edge], 0.0)
             for d in range(dim):
-                grad_d = grad * attr_vecs[edge * dim + d]
-                local_attr_forces[j * dim + d] += grad_d
+                grad_d = attr_forces[edge] * attr_vecs[edge * dim + d]
+                local_attr_grads[j * dim + d] += grad_d
                 if sym_attraction:
-                    local_attr_forces[k * dim + d] -= grad_d
+                    k = tail[edge]
+                    local_attr_grads[k * dim + d] -= grad_d
 
-            grad = neg_force(normalized, Q2[edge], 0.0)
             for d in range(dim):
-                local_rep_forces[j * dim + d] += grad * rep_vecs[edge * dim + d]
+                grad_d = rep_forces[edge] * rep_vecs[edge * dim + d]
+                local_rep_grads[j * dim + d] += grad_d
 
 
 @cython.boundscheck(False)
@@ -377,45 +391,47 @@ cdef void _frob_umap_uniformly(
     cdef:
         int i, j, k, v, d, index, edge 
         float dist_squared, Z
-        float *local_attr_forces
-        float *local_rep_forces
-        float *attractive_forces
-        float *repulsive_forces
+        float *local_attr_grads
+        float *local_rep_grads
+        float *all_attr_grads
+        float *all_rep_grads
         float *attr_vecs
         float *rep_vecs
-        float *Q1
-        float *Q2
+        float *attr_forces
+        float *rep_forces
         float *forces
 
     cdef int n_edges = int(head.shape[0])
-    attractive_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
-    repulsive_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
+    all_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
+    all_rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
+    # FIXME FIXME - momentum gradient descent! Define forces outside main loop
     forces = <float*> malloc(sizeof(float) * n_vertices * dim)
-    Q1 = <float*> malloc(sizeof(float) * n_edges)
-    Q2 = <float*> malloc(sizeof(float) * n_edges)
+    attr_forces = <float*> malloc(sizeof(float) * n_edges)
+    rep_forces = <float*> malloc(sizeof(float) * n_edges)
     attr_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
     rep_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
-    local_attr_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
-    local_rep_forces = <float*> malloc(sizeof(float) * n_vertices * dim)
+    local_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
+    local_rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
     with nogil:
         for v in prange(n_vertices):
             for d in range(dim):
                 index = v * dim + d
-                attractive_forces[index] = 0
-                repulsive_forces[index] = 0
+                all_attr_grads[index] = 0
+                all_rep_grads[index] = 0
 
     cdef float grad = 0.0
     cdef float grad_d = 0.0
     with nogil:
         get_kernels(
-            Q1,
-            Q2,
+            attr_forces,
+            rep_forces,
             attr_vecs,
             rep_vecs,
             head,
             tail,
             head_embedding,
             tail_embedding,
+            weights,
             normalized,
             n_vertices,
             n_edges,
@@ -424,24 +440,22 @@ cdef void _frob_umap_uniformly(
             b
         )
 
-        calc_forces(
-            local_attr_forces,
-            local_rep_forces,
+        gather_gradients(
+            local_attr_grads,
+            local_rep_grads,
             head,
             tail,
-            weights,
-            Q1,
-            Q2,
+            attr_forces,
+            rep_forces,
             attr_vecs,
             rep_vecs,
-            normalized,
             sym_attraction,
             n_vertices,
             n_edges,
             dim,
         )
-        free(Q1)
-        free(Q2)
+        free(attr_forces)
+        free(rep_forces)
         free(attr_vecs)
         free(rep_vecs)
 
@@ -451,21 +465,21 @@ cdef void _frob_umap_uniformly(
             for v in prange(n_vertices):
                 for d in range(dim):
                     index = v * dim + d
-                    attractive_forces[index] += local_attr_forces[index]
-                    repulsive_forces[index] += local_rep_forces[index]
+                    all_attr_grads[index] += local_attr_grads[index]
+                    all_rep_grads[index] += local_rep_grads[index]
 
         with parallel():
             for v in prange(n_vertices):
                 for d in range(dim):
                     index = v * dim + d
-                    grad_d = repulsive_forces[index] - attractive_forces[index]
+                    grad_d = all_rep_grads[index] - all_attr_grads[index]
                     head_embedding[v, d] += grad_d * lr
-        free(local_attr_forces)
-        free(local_rep_forces)
+        free(local_attr_grads)
+        free(local_rep_grads)
 
     free(forces)
-    free(attractive_forces)
-    free(repulsive_forces)
+    free(all_attr_grads)
+    free(all_rep_grads)
 
 
 
