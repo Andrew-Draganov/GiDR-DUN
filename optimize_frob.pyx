@@ -36,6 +36,7 @@ cdef void print_status(int i_epoch, int n_epochs):
     cdef int print_rate = n_epochs / 10
     cdef int counter = 0
     # Can't do python modulo in cython
+    # FIXME -- can I use the `//` operator to get remainder and then multiply back?
     while counter < i_epoch:
         counter += print_rate
     if i_epoch - counter == 0:
