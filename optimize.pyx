@@ -207,8 +207,8 @@ cdef void _cy_umap_sampling(
         int i, j, k, n_neg_samples, edge, p
         # Can't reuse loop variables in a with nogil, parallel(): block
         int v1, v2
-        int d1, d2, d3, d4, d5, d6
-        float grad_d1, grad_d2, grad_d3, grad_d4
+        int d1, d2, d3, d4
+        float grad_d1, grad_d2
         float attractive_force, repulsive_force
         float dist_squared
         float *y1
