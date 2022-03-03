@@ -223,7 +223,7 @@ cdef void _cy_umap_sampling(
         y1 = <float*> malloc(sizeof(float) * dim)
         y2 = <float*> malloc(sizeof(float) * dim)
         rep_func_outputs = <float*> malloc(sizeof(float) * 2)
-        for i in range(epochs_per_sample.shape[0]):
+        for i in prange(epochs_per_sample.shape[0]):
             if epoch_of_next_sample[i] <= i_epoch:
                 # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
                 j = head[i]
@@ -244,7 +244,6 @@ cdef void _cy_umap_sampling(
 
                 for d2 in range(dim):
                     grad_d1 = clip(attractive_force * (y1[d2] - y2[d2]), -4, 4)
-                    # FIXME - check signs on attraction/repulsion
                     head_embedding[j, d2] -= grad_d1 * lr
                     # Need to perform attraction on both for stability if working not normalizing
                     if sym_attraction:
