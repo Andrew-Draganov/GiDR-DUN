@@ -187,109 +187,112 @@ cdef void repulsive_force_func(
 cdef void _cy_umap_sampling(
     int normalized,
     int sym_attraction,
-    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
-    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
-    np.ndarray[DTYPE_INT, ndim=1] head,
-    np.ndarray[DTYPE_INT, ndim=1] tail,
-    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
+    float[:, :] head_embedding,
+    float[:, :] tail_embedding,
+    int[:] head,
+    int[:] tail,
+    float[:] weights,
+    float[:] epochs_per_sample,
     float a,
     float b,
     int dim,
     int n_vertices,
     float lr,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample,
+    float[:] epochs_per_negative_sample,
+    float[:] epoch_of_next_negative_sample,
+    float[:] epoch_of_next_sample,
     int i_epoch,
 ):
     cdef:
-        int i, j, k, d, n_neg_samples
+        int i, j, k, n_neg_samples, edge, p
+        # Can't reuse loop variables in a with nogil, parallel(): block
+        int v1, v2
+        int d1, d2, d3, d4, d5, d6
+        float grad_d1, grad_d2, grad_d3, grad_d4
         float attractive_force, repulsive_force
         float dist_squared
         float *y1
         float *y2
         float *rep_func_outputs
 
-    # FIXME FIXME FIXME -- this version has weird localized clusters compared
-    # to numba version
-    y1 = <float*> malloc(sizeof(float) * dim)
-    y2 = <float*> malloc(sizeof(float) * dim)
-    rep_func_outputs = <float*> malloc(sizeof(float) * 2)
     cdef float grad_d = 0.0
     cdef (float, float) rep_outputs
     cdef int n_edges = int(epochs_per_sample.shape[0])
 
-    for i in range(epochs_per_sample.shape[0]):
-        if epoch_of_next_sample[i] <= i_epoch:
-            # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
-            j = head[i]
-            k = tail[i]
+    with nogil, parallel():
+        y1 = <float*> malloc(sizeof(float) * dim)
+        y2 = <float*> malloc(sizeof(float) * dim)
+        rep_func_outputs = <float*> malloc(sizeof(float) * 2)
+        for i in range(epochs_per_sample.shape[0]):
+            if epoch_of_next_sample[i] <= i_epoch:
+                # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
+                j = head[i]
+                k = tail[i]
 
-            for d in range(dim):
-                y1[d] = head_embedding[j, d]
-                y2[d] = tail_embedding[k, d]
-            # ANDREW - optimize positive force for each edge
-            dist_squared = sq_euc_dist(y1, y2, dim)
-            attractive_force = attractive_force_func(
-                normalized,
-                dist_squared,
-                a,
-                b,
-                1
-            )
-
-            for d in range(dim):
-                grad_d = clip(attractive_force * (y1[d] - y2[d]), -4, 4)
-                # FIXME - check signs on attraction/repulsion
-                head_embedding[j, d] -= grad_d * lr
-                # Need to perform attraction on both for stability if working not normalizing
-                if sym_attraction:
-                    head_embedding[k, d] += grad_d * lr
-
-            epoch_of_next_sample[i] += epochs_per_sample[i]
-
-            # ANDREW - Picks random vertices from ENTIRE graph and calculates repulsive forces
-            # FIXME - add random seed option
-            n_neg_samples = int(
-                (i_epoch - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
-            )
-            for p in range(n_neg_samples):
-                k = rand() % n_vertices
-                for d in range(dim):
-                    y2[d] = tail_embedding[k, d]
+                for d1 in range(dim):
+                    y1[d1] = head_embedding[j, d1]
+                    y2[d1] = tail_embedding[k, d1]
+                # ANDREW - optimize positive force for each edge
                 dist_squared = sq_euc_dist(y1, y2, dim)
-                repulsive_force_func(
-                    rep_func_outputs,
+                attractive_force = attractive_force_func(
                     normalized,
                     dist_squared,
                     a,
                     b,
-                    cell_size=1.0,
-                    average_weight=0, # Don't scale by weight since we sample according to weight distribution
+                    1
                 )
-                repulsive_force = rep_func_outputs[0]
 
-                for d in range(dim):
-                    grad_d = clip(repulsive_force * (y1[d] - y2[d]), -4, 4)
-                    head_embedding[j, d] += grad_d * lr
+                for d2 in range(dim):
+                    grad_d1 = clip(attractive_force * (y1[d2] - y2[d2]), -4, 4)
+                    # FIXME - check signs on attraction/repulsion
+                    head_embedding[j, d2] -= grad_d1 * lr
+                    # Need to perform attraction on both for stability if working not normalizing
+                    if sym_attraction:
+                        head_embedding[k, d2] += grad_d1 * lr
 
-            epoch_of_next_negative_sample[i] += (
-                n_neg_samples * epochs_per_negative_sample[i]
-            )
-    free(y1)
-    free(y2)
+                epoch_of_next_sample[i] += epochs_per_sample[i]
+
+                # ANDREW - Picks random vertices from ENTIRE graph and calculates repulsive forces
+                # FIXME - add random seed option
+                n_neg_samples = int(
+                    (i_epoch - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
+                )
+                for p in range(n_neg_samples):
+                    k = rand() % n_vertices
+                    for d3 in range(dim):
+                        y2[d3] = tail_embedding[k, d3]
+                    dist_squared = sq_euc_dist(y1, y2, dim)
+                    repulsive_force_func(
+                        rep_func_outputs,
+                        normalized,
+                        dist_squared,
+                        a,
+                        b,
+                        cell_size=1.0,
+                        average_weight=0, # Don't scale by weight since we sample according to weight distribution
+                    )
+                    repulsive_force = rep_func_outputs[0]
+
+                    for d4 in range(dim):
+                        grad_d2 = clip(repulsive_force * (y1[d4] - y2[d4]), -4, 4)
+                        head_embedding[j, d4] += grad_d2 * lr
+
+                epoch_of_next_negative_sample[i] += (
+                    n_neg_samples * epochs_per_negative_sample[i]
+                )
+        free(y1)
+        free(y2)
 
 def cy_umap_sampling(
     int normalized,
     int sym_attraction,
     int momentum,
-    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
-    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
-    np.ndarray[DTYPE_INT, ndim=1] head,
-    np.ndarray[DTYPE_INT, ndim=1] tail,
-    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
+    float[:, :] head_embedding,
+    float[:, :] tail_embedding,
+    int[:] head,
+    int[:] tail,
+    float[:] weights,
+    float[:] epochs_per_sample,
     float a,
     float b,
     int dim,
@@ -304,12 +307,15 @@ def cy_umap_sampling(
         np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample,
         np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample,
 
+    epochs_per_negative_sample = py_np.zeros_like(epochs_per_sample)
+    epoch_of_next_negative_sample = py_np.zeros_like(epochs_per_sample)
+    epoch_of_next_sample = py_np.zeros_like(epochs_per_sample)
     # ANDREW - perform negative samples x times more often
     #          by making the number of epochs between samples smaller
-    epochs_per_negative_sample = epochs_per_sample / negative_sample_rate
-    # Make copies of these two
-    epoch_of_next_negative_sample = py_np.ones_like(epochs_per_negative_sample) * epochs_per_negative_sample
-    epoch_of_next_sample = py_np.ones_like(epochs_per_sample) * epochs_per_sample
+    for i in range(weights.shape[0]):
+        epochs_per_negative_sample[i] = epochs_per_sample[i] / negative_sample_rate
+        epoch_of_next_negative_sample[i] = epochs_per_negative_sample[i]
+        epoch_of_next_sample[i] = epochs_per_sample[i]
 
     for i_epoch in range(n_epochs):
         lr = get_lr(initial_lr, i_epoch, n_epochs)
@@ -874,6 +880,11 @@ cdef void calculate_barnes_hut(
         Z += local_Z[0]
         if not normalized:
             Z = 1
+            # Dividing by n_vertices means we have the same one-to-one
+            #   relationship between attractive and repulsive forces
+            #   as in traditional UMAP
+            # FIXME - why does this create a perfect circle???
+            scalar /= n_vertices
 
         with parallel():
             for v in prange(n_vertices):
