@@ -11,66 +11,24 @@ from cython.view cimport array as cvarray
 np.import_array()
 
 cdef extern from "fastpow.c" nogil:
-    double fastpow "fastPow" (double, double)
+    float clip "clip" (float, float, float)
+cdef extern from "fastpow.c" nogil:
+    float sq_euc_dist "sq_euc_dist" (float*, float*, int)
+cdef extern from "fastpow.c" nogil:
+    float get_lr "get_lr" (float, int, int)
+cdef extern from "fastpow.c" nogil:
+    void print_status "print_status" (int, int)
+cdef extern from "fastpow.c" nogil:
+    float umap_repulsion_grad "umap_repulsion_grad" (float, float, float)
+cdef extern from "fastpow.c" nogil:
+    float kernel_function "kernel_function" (float, float, float)
+cdef extern from "fastpow.c" nogil:
+    float pos_force "pos_force" (int, float, float, float)
+cdef extern from "fastpow.c" nogil:
+    float neg_force "neg_force" (int, float, float)
 
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
-
-@cython.boundscheck(False)
-@cython.cdivision(True)
-cdef float sq_euc_dist(float* x, float* y, int dim) nogil:
-    """ squared euclidean distance between x and y """
-    cdef float result = 0.0
-    cdef float diff = 0
-    cdef int i
-    for i in range(dim):
-        diff = x[i] - y[i]
-        result += diff * diff
-
-    return result
-
-cdef float get_lr(float initial_lr, int i_epoch, int n_epochs): 
-    return initial_lr * (1.0 - (float(i_epoch) / float(n_epochs)))
-
-cdef void print_status(int i_epoch, int n_epochs):
-    cdef int print_rate = n_epochs / 10
-    cdef int counter = 0
-    # Can't do python modulo in cython
-    # FIXME -- can I use the `//` operator to get remainder and then multiply back?
-    while counter < i_epoch:
-        counter += print_rate
-    if i_epoch - counter == 0:
-        printf("Completed %d / %d epochs\n", i_epoch, n_epochs)
-
-@cython.cdivision(True)
-cdef float kernel_function(float dist_squared, float a, float b) nogil:
-    if b <= 1:
-        return 1 / (1 + a * fastpow(dist_squared, b))
-    return fastpow(dist_squared, b - 1) / (1 + a * fastpow(dist_squared, b))
-
-@cython.boundscheck(False)
-@cython.cdivision(True)
-cdef float pos_force(
-    int normalized,
-    float p,
-    float q,
-    float Z
-) nogil:
-    if normalized:
-        # FIXME - is it faster to get q^2 and then use that for q^3?
-        return Z * p * (q ** 2 + 2 * q ** 3)
-    return p * q ** 2
-
-@cython.boundscheck(False)
-@cython.cdivision(True)
-cdef float neg_force(
-    int normalized,
-    float q,
-    float Z
-) nogil:
-    if normalized:
-        return Z * (q ** 3 + 2 * q ** 4)
-    return q ** 3
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -84,7 +42,7 @@ cdef void _frob_umap_sampling(
     int[:] head,
     int[:] tail,
     float[:] weights,
-    float* forces,
+    float* all_updates,
     float* gains,
     float a,
     float b,
@@ -140,7 +98,7 @@ cdef void _frob_umap_sampling(
                     normalized,
                     weights[edge],
                     kernel_function(dist_squared, a, b),
-                    Z=1
+                    1
                 )
 
                 for d3 in range(dim):
@@ -159,7 +117,7 @@ cdef void _frob_umap_sampling(
                     repulsive_force = neg_force(
                         normalized,
                         kernel_function(dist_squared, a, b),
-                        Z=1
+                        1
                     )
 
                     for d5 in range(dim):
@@ -173,13 +131,13 @@ cdef void _frob_umap_sampling(
                 index2 = v2 * dim + d6
                 grad_d3 = all_attr_grads[index2] + all_rep_grads[index2]
 
-                if grad_d3 * forces[index2] > 0.0:
+                if grad_d3 * all_updates[index2] > 0.0:
                     gains[index2] += 0.2
                 else:
                     gains[index2] *= 0.8
                 grad_d4 = grad_d3 * gains[index2]
-                forces[index2] = momentum * forces[index2] * 0.3 + grad_d4 * lr
-                head_embedding[v2, d6] += forces[index2]
+                all_updates[index2] = momentum * all_updates[index2] * 0.3 + grad_d4 * lr
+                head_embedding[v2, d6] += all_updates[index2]
 
         free(all_attr_grads)
         free(all_rep_grads)
@@ -211,11 +169,11 @@ def frob_umap_sampling(
         int sample_rate, sample_bool, count
         int n_edges
         float lr
-        float* forces,
+        float* all_updates,
         float* gains,
 
     n_edges = int(epochs_per_sample.shape[0])
-    forces = <float*> malloc(sizeof(float) * n_vertices * dim)
+    all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
     gains = <float*> malloc(sizeof(float) * n_vertices * dim)
     pos_sample_steps = <int*> malloc(sizeof(int) * n_edges * n_epochs)
 
@@ -234,7 +192,7 @@ def frob_umap_sampling(
 
     for v in range(n_vertices):
         for d in range(dim):
-            forces[v * dim + d] = 0
+            all_updates[v * dim + d] = 0
             gains[v * dim + d] = 1
 
     for i_epoch in range(n_epochs):
@@ -248,7 +206,7 @@ def frob_umap_sampling(
             head,
             tail,
             weights,
-            forces,
+            all_updates,
             gains,
             a,
             b,
@@ -263,7 +221,7 @@ def frob_umap_sampling(
         if verbose:
             print_status(i_epoch, n_epochs)
 
-    free(forces)
+    free(all_updates)
     free(gains)
     free(pos_sample_steps)
 
@@ -400,13 +358,13 @@ cdef void _frob_umap_uniformly(
         float *rep_vecs
         float *attr_forces
         float *rep_forces
-        float *forces
+        float *all_updates
 
     cdef int n_edges = int(head.shape[0])
     all_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
     all_rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
     # FIXME FIXME - momentum gradient descent! Define forces outside main loop
-    forces = <float*> malloc(sizeof(float) * n_vertices * dim)
+    all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
     attr_forces = <float*> malloc(sizeof(float) * n_edges)
     rep_forces = <float*> malloc(sizeof(float) * n_edges)
     attr_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
@@ -478,7 +436,7 @@ cdef void _frob_umap_uniformly(
         free(local_attr_grads)
         free(local_rep_grads)
 
-    free(forces)
+    free(all_updates)
     free(all_attr_grads)
     free(all_rep_grads)
 
@@ -504,9 +462,9 @@ def frob_umap_uniformly(
     int verbose
 ):
     cdef:
-        float* forces,
+        float* all_updates,
         float* gains,
-    forces = <float*> malloc(sizeof(float) * n_vertices * dim)
+    all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
     gains = <float*> malloc(sizeof(float) * n_vertices * dim)
 
     for i_epoch in range(n_epochs):
@@ -531,7 +489,7 @@ def frob_umap_uniformly(
         if verbose:
             print_status(i_epoch, n_epochs)
 
-    free(forces)
+    free(all_updates)
     free(gains)
 
 

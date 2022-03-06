@@ -8,61 +8,29 @@ from libc.stdlib cimport malloc, free
 from cython.parallel cimport prange, parallel
 
 from sklearn.neighbors._quad_tree cimport _QuadTree
-
 np.import_array()
 
-cdef extern from "fastpow.c" nogil:
+cdef extern from "fastpow.h" nogil:
     double fastpow "fastPow" (double, double)
-cdef extern from "fastpow.c" nogil:
-    float fmax "my_fmax" (float, float)
-cdef extern from "fastpow.c" nogil:
-    float fmin "my_fmin" (float, float)
-cdef extern from "fastpow.c" nogil:
-    float fastsqrt "fastsqrt" (float)
+cdef extern from "fastpow.h" nogil:
+    float clip "clip" (float, float, float)
+cdef extern from "fastpow.h" nogil:
+    float sq_euc_dist "sq_euc_dist" (float*, float*, int)
+cdef extern from "fastpow.h" nogil:
+    float get_lr "get_lr" (float, int, int)
+cdef extern from "fastpow.h" nogil:
+    void print_status "print_status" (int, int)
+cdef extern from "fastpow.h" nogil:
+    float umap_repulsion_grad "umap_repulsion_grad" (float, float, float)
+cdef extern from "fastpow.h" nogil:
+    float kernel_function "kernel_function" (float, float, float)
+cdef extern from "fastpow.h" nogil:
+    float attractive_force_func "attractive_force_func" (int, float, float, float, float)
+cdef extern from "fastpow.h" nogil:
+    void repulsive_force_func "repulsive_force_func" (float*, int, float, float, float, float, float)
 
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
-
-cdef float clip(float val, float lower, float upper) nogil:
-    return fmax(lower, fmin(val, upper))
-
-cdef float sq_euc_dist(float* x, float* y, int dim) nogil:
-    """ squared euclidean distance between x and y """
-    cdef float result = 0.0
-    cdef float diff = 0
-    cdef int i
-    for i in range(dim):
-        diff = x[i] - y[i]
-        result += diff * diff
-
-    return result
-
-cdef float ang_dist(float* x, float* y, int dim):
-    """ cosine distance between vectors x and y """
-    cdef float result = 0.0
-    cdef float x_len  = 0.0
-    cdef float y_len  = 0.0
-    cdef float eps = 0.0001
-    cdef int i = 0
-    for i in range(dim):
-        result += x[i] * y[i]
-        x_len += x[i] * x[i]
-        y_len += y[i] * y[i]
-    if x_len < eps or y_len < eps:
-        return 1
-    return result / (sqrt(x_len * y_len))
-
-cdef float get_lr(float initial_lr, int i_epoch, int n_epochs): 
-    return initial_lr * (1.0 - (float(i_epoch) / float(n_epochs)))
-
-cdef void print_status(int i_epoch, int n_epochs):
-    cdef int print_rate = n_epochs / 10
-    cdef int counter = 0
-    # Can't do python modulo in cython
-    while counter < i_epoch:
-        counter += print_rate
-    if i_epoch - counter == 0:
-        printf("Completed %d / %d epochs\n", i_epoch, n_epochs)
 
 @cython.boundscheck(False)
 @cython.cdivision(True)
@@ -72,114 +40,6 @@ cdef float get_avg_weight(float[:] weights) nogil:
         average_weight += weights[i]
     average_weight /= float(weights.shape[0])
     return average_weight
-
-###################
-##### KERNELS #####
-###################
-
-@cython.cdivision(True)
-cdef float umap_attraction_grad(float dist_squared, float a, float b) nogil:
-    cdef float grad_scalar = 0.0
-    grad_scalar = 2.0 * a * b * fastpow(dist_squared, b - 1.0)
-    grad_scalar /= a * fastpow(dist_squared, b) + 1.0
-    return grad_scalar
-
-@cython.cdivision(True)
-cdef float umap_repulsion_grad(float dist_squared, float a, float b) nogil:
-    cdef float phi_ijZ = 0.0
-    phi_ijZ = 2.0 * b
-    phi_ijZ /= (0.001 + dist_squared) * (a * fastpow(dist_squared, b) + 1)
-    return phi_ijZ
-
-@cython.cdivision(True)
-cdef float kernel_function(float dist_squared, float a, float b) nogil:
-    if b <= 1:
-        return 1 / (1 + a * fastpow(dist_squared, b))
-    return fastpow(dist_squared, b - 1) / (1 + a * fastpow(dist_squared, b))
-
-###################
-##### WEIGHTS #####
-###################
-# FIXME - rename to normalized & unnormalized rather than umap & tsne
-cdef float* umap_repulsive_force(
-        float* rep_func_outputs,
-        float dist_squared,
-        float a,
-        float b,
-        float cell_size,
-        float average_weight,
-    ) nogil:
-    cdef:
-        float kernel, repulsive_force
-    # ANDREW - Using average_weight is a lame approximation
-    #        - Realistically, we should use the actual weight on
-    #          the edge e_{ik}, but the coo_matrix is not
-    #          indexable. So we assume the differences cancel out over
-    #          enough iterations
-    kernel = umap_repulsion_grad(dist_squared, a, b)
-    repulsive_force = cell_size * kernel * (1 - average_weight)
-
-    rep_func_outputs[0] = repulsive_force
-    rep_func_outputs[1] = 1 # Z is not gathered in unnormalized setting
-
-cdef void tsne_repulsive_force(
-        float* rep_func_outputs,
-        float dist_squared,
-        float a,
-        float b,
-        float cell_size,
-    ) nogil:
-    cdef:
-        float kernel, q_ij, repulsive_force
-
-    kernel = kernel_function(dist_squared, a, b)
-    q_ij = cell_size * kernel # Collect the q_ij's contributions into Z
-    repulsive_force = cell_size * kernel * kernel
-
-    rep_func_outputs[0] = repulsive_force
-    rep_func_outputs[1] = q_ij
-
-cdef float attractive_force_func(
-        int normalized,
-        float dist_squared,
-        float a,
-        float b,
-        float edge_weight
-    ) nogil:
-    if not normalized:
-        edge_force = umap_attraction_grad(dist_squared, a, b)
-    else:
-        edge_force = kernel_function(dist_squared, a, b)
-
-    return edge_force * edge_weight
-
-cdef void repulsive_force_func(
-        float* rep_func_outputs,
-        int normalized,
-        float dist_squared,
-        float a,
-        float b,
-        float cell_size,
-        float average_weight,
-    ) nogil:
-    if not normalized:
-        umap_repulsive_force(
-            rep_func_outputs,
-            dist_squared,
-            a,
-            b,
-            cell_size,
-            average_weight
-        )
-    else:
-        tsne_repulsive_force(
-            rep_func_outputs,
-            dist_squared,
-            a,
-            b,
-            cell_size,
-        )
-
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -205,7 +65,8 @@ cdef void _cy_umap_sampling(
 ):
     cdef:
         int i, j, k, n_neg_samples, edge, p
-        # Can't reuse loop variables in a with nogil, parallel(): block
+        # Can't reuse loop variables in a with nogil, parallel(): block,
+        #   so we create a new variable for each loop
         int v1, v2
         int d1, d2, d3, d4
         float grad_d1, grad_d2
@@ -216,7 +77,6 @@ cdef void _cy_umap_sampling(
         float *rep_func_outputs
 
     cdef float grad_d = 0.0
-    cdef (float, float) rep_outputs
     cdef int n_edges = int(epochs_per_sample.shape[0])
 
     with nogil, parallel():
@@ -232,7 +92,6 @@ cdef void _cy_umap_sampling(
                 for d1 in range(dim):
                     y1[d1] = head_embedding[j, d1]
                     y2[d1] = tail_embedding[k, d1]
-                # ANDREW - optimize positive force for each edge
                 dist_squared = sq_euc_dist(y1, y2, dim)
                 attractive_force = attractive_force_func(
                     normalized,
@@ -245,7 +104,6 @@ cdef void _cy_umap_sampling(
                 for d2 in range(dim):
                     grad_d1 = clip(attractive_force * (y1[d2] - y2[d2]), -4, 4)
                     head_embedding[j, d2] -= grad_d1 * lr
-                    # Need to perform attraction on both for stability if working not normalizing
                     if sym_attraction:
                         head_embedding[k, d2] += grad_d1 * lr
 
@@ -267,8 +125,8 @@ cdef void _cy_umap_sampling(
                         dist_squared,
                         a,
                         b,
-                        cell_size=1.0,
-                        average_weight=0, # Don't scale by weight since we sample according to weight distribution
+                        1.0,
+                        0, # Don't scale by weight since we sample according to weight distribution
                     )
                     repulsive_force = rep_func_outputs[0]
 
@@ -409,8 +267,8 @@ cdef void get_kernels(
                 dist_squared,
                 a,
                 b,
-                cell_size=1.0,
-                average_weight=average_weight,
+                1.0,
+                average_weight,
             )
             rep_forces[edge] = rep_func_outputs[0]
             local_Z[0] += rep_func_outputs[1]
@@ -442,6 +300,7 @@ cdef void gather_gradients(
         float force, grad_d
 
     with parallel():
+        # Fill allocated memory with zeros
         for v in prange(n_vertices):
             for d in range(dim):
                 index = v * dim + d
@@ -451,14 +310,14 @@ cdef void gather_gradients(
         for edge in prange(n_edges):
             j = head[edge]
             for d in range(dim):
-                grad_d = attr_forces[edge] * attr_vecs[edge * dim + d]
+                grad_d = clip(attr_forces[edge] * attr_vecs[edge * dim + d], -4, 4)
                 local_attr_grads[j * dim + d] += grad_d
                 if sym_attraction:
                     k = tail[edge]
                     local_attr_grads[k * dim + d] -= grad_d
 
             for d in range(dim):
-                grad_d = rep_forces[edge] * rep_vecs[edge * dim + d]
+                grad_d = clip(rep_forces[edge] * rep_vecs[edge * dim + d], -4, 4)
                 local_rep_grads[j * dim + d] += grad_d / Z
 
 
@@ -475,7 +334,7 @@ cdef void _cy_umap_uniformly(
     int[:] tail,
     float[:] weights,
     # FIXME - rename forces to all_grads
-    float* forces,
+    float* all_updates,
     float* gains,
     float a,
     float b,
@@ -589,15 +448,15 @@ cdef void _cy_umap_uniformly(
                 #   but get cython error "Cannot read reduction variable in loop body"
                 # So calculate it twice to avoid the error
 
-                if (all_rep_grads[index] - all_attr_grads[index]) * forces[index] > 0.0:
+                if (all_rep_grads[index] - all_attr_grads[index]) * all_updates[index] > 0.0:
                     gains[index] += 0.2
                 else:
                     gains[index] *= 0.8
                 gains[index] = clip(gains[index], 0.01, 100)
                 grad_d = (all_rep_grads[index] - all_attr_grads[index]) * gains[index]
 
-                forces[index] = grad_d * lr + momentum * 0.9 * forces[index]
-                head_embedding[v, d] += forces[index]
+                all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]
+                head_embedding[v, d] += all_updates[index]
 
     free(all_attr_grads)
     free(all_rep_grads)
@@ -624,14 +483,14 @@ def cy_umap_uniformly(
 ):
     cdef:
         int v, d, index
-        float *forces
+        float *all_updates
         float *gains
-    forces = <float*> malloc(sizeof(float) * n_vertices * dim)
+    all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
     gains = <float*> malloc(sizeof(float) * n_vertices * dim)
     for v in range(n_vertices):
         for d in range(dim):
             index = v * dim + d
-            forces[index] = 0
+            all_updates[index] = 0
             gains[index] = 1
 
     for i_epoch in range(n_epochs):
@@ -645,7 +504,7 @@ def cy_umap_uniformly(
             head,
             tail,
             weights,
-            forces,
+            all_updates,
             gains,
             a,
             b,
@@ -656,7 +515,7 @@ def cy_umap_uniformly(
         )
         if verbose:
             print_status(i_epoch, n_epochs)
-    free(forces)
+    free(all_updates)
     free(gains)
 
 
@@ -808,7 +667,7 @@ cdef void calculate_barnes_hut(
     int[:] head,
     int[:] tail,
     float[:] weights,
-    float* forces,
+    float* all_updates,
     float* gains,
     _QuadTree qt,
     float a,
@@ -896,7 +755,7 @@ cdef void calculate_barnes_hut(
             for v in prange(n_vertices):
                 for d in range(dim):
                     index = v * dim + d
-                    if (all_rep_grads[index] - all_attr_grads[index]) * forces[index] > 0.0:
+                    if (all_rep_grads[index] - all_attr_grads[index]) * all_updates[index] > 0.0:
                         gains[index] += 0.2
                     else:
                         gains[index] *= 0.8
@@ -904,11 +763,11 @@ cdef void calculate_barnes_hut(
                     grad_d = (all_rep_grads[index] - all_attr_grads[index]) * gains[index]
 
                     if momentum:
-                        forces[index] = grad_d * lr + 0.9 * forces[index]
+                        all_updates[index] = grad_d * lr + 0.9 * all_updates[index]
                     else:
-                        forces[index] = grad_d * lr
+                        all_updates[index] = grad_d * lr
 
-                    head_embedding[v, d] += forces[index]
+                    head_embedding[v, d] += all_updates[index]
 
     free(local_Z)
 
@@ -945,15 +804,15 @@ def bh_wrapper(
     """
     # Can only define cython quadtree in a cython function
     cdef:
-        float *forces
+        float *all_updates
         float *gains
     cdef _QuadTree qt = _QuadTree(dim, 1)
-    forces = <float*> malloc(sizeof(float) * n_vertices * dim)
+    all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
     gains = <float*> malloc(sizeof(float) * n_vertices * dim)
     for v in range(n_vertices):
         for d in range(dim):
             index = v * dim + d
-            forces[index] = 0
+            all_updates[index] = 0
             gains[index] = 1
 
     for i_epoch in range(n_epochs):
@@ -968,7 +827,7 @@ def bh_wrapper(
             head,
             tail,
             weights,
-            forces,
+            all_updates,
             gains,
             qt,
             a,
@@ -981,7 +840,7 @@ def bh_wrapper(
         if verbose:
             print_status(i_epoch, n_epochs)
 
-    free(forces)
+    free(all_updates)
     free(gains)
 
 @cython.cdivision(True)
