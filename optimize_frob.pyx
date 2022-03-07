@@ -2,30 +2,37 @@ import numpy as py_np
 cimport numpy as np
 cimport cython
 from libc.stdio cimport printf, fflush
-from libc.math cimport sqrt
 from libc.stdlib cimport rand
 from libc.stdlib cimport malloc, free
 from cython.parallel cimport prange, parallel, threadid
-from cython.view cimport array as cvarray
 
 np.import_array()
 
 cdef extern from "fastpow.c" nogil:
-    float clip "clip" (float, float, float)
+    float clip(float value, float lower, float upper)
 cdef extern from "fastpow.c" nogil:
-    float sq_euc_dist "sq_euc_dist" (float*, float*, int)
+    float sq_euc_dist(float* x, float* y, int dim)
 cdef extern from "fastpow.c" nogil:
-    float get_lr "get_lr" (float, int, int)
+    float get_lr(float initial_lr, int i_epoch, int n_epochs) 
 cdef extern from "fastpow.c" nogil:
-    void print_status "print_status" (int, int)
+    void print_status(int i_epoch, int n_epochs)
 cdef extern from "fastpow.c" nogil:
-    float umap_repulsion_grad "umap_repulsion_grad" (float, float, float)
+    float umap_repulsion_grad(float dist_squared, float a, float b)
 cdef extern from "fastpow.c" nogil:
-    float kernel_function "kernel_function" (float, float, float)
+    float kernel_function(float dist_squared, float a, float b)
 cdef extern from "fastpow.c" nogil:
-    float pos_force "pos_force" (int, float, float, float)
+    float pos_force(
+        int normalized,
+        float p,
+        float q,
+        float Z
+    )
 cdef extern from "fastpow.c" nogil:
-    float neg_force "neg_force" (int, float, float)
+    float neg_force(
+        int normalized,
+        float q,
+        float Z
+    )
 
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT

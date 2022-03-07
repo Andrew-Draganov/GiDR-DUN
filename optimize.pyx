@@ -2,7 +2,6 @@ import numpy as py_np
 cimport numpy as np
 cimport cython
 from libc.stdio cimport printf
-from libc.math cimport sqrt, pow
 from libc.stdlib cimport rand
 from libc.stdlib cimport malloc, free
 from cython.parallel cimport prange, parallel
@@ -10,24 +9,38 @@ from cython.parallel cimport prange, parallel
 from sklearn.neighbors._quad_tree cimport _QuadTree
 np.import_array()
 
-cdef extern from "fastpow.h" nogil:
-    double fastpow "fastPow" (double, double)
-cdef extern from "fastpow.h" nogil:
-    float clip "clip" (float, float, float)
-cdef extern from "fastpow.h" nogil:
-    float sq_euc_dist "sq_euc_dist" (float*, float*, int)
-cdef extern from "fastpow.h" nogil:
-    float get_lr "get_lr" (float, int, int)
-cdef extern from "fastpow.h" nogil:
-    void print_status "print_status" (int, int)
-cdef extern from "fastpow.h" nogil:
-    float umap_repulsion_grad "umap_repulsion_grad" (float, float, float)
-cdef extern from "fastpow.h" nogil:
-    float kernel_function "kernel_function" (float, float, float)
-cdef extern from "fastpow.h" nogil:
-    float attractive_force_func "attractive_force_func" (int, float, float, float, float)
-cdef extern from "fastpow.h" nogil:
-    void repulsive_force_func "repulsive_force_func" (float*, int, float, float, float, float, float)
+
+cdef extern from "fastpow.c" nogil:
+    float clip(float value, float lower, float upper)
+cdef extern from "fastpow.c" nogil:
+    float sq_euc_dist(float* x, float* y, int dim)
+cdef extern from "fastpow.c" nogil:
+    float get_lr(float initial_lr, int i_epoch, int n_epochs) 
+cdef extern from "fastpow.c" nogil:
+    void print_status(int i_epoch, int n_epochs)
+cdef extern from "fastpow.c" nogil:
+    float umap_repulsion_grad(float dist_squared, float a, float b)
+cdef extern from "fastpow.c" nogil:
+    float kernel_function(float dist_squared, float a, float b)
+cdef extern from "fastpow.c" nogil:
+    float attractive_force_func(
+            int normalized,
+            float dist_squared,
+            float a,
+            float b,
+            float edge_weight
+    )
+cdef extern from "fastpow.c" nogil:
+    void repulsive_force_func(
+            float* rep_func_outputs,
+            int normalized,
+            float dist_squared,
+            float a,
+            float b,
+            float cell_size,
+            float average_weight
+    )
+
 
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
@@ -333,7 +346,6 @@ cdef void _cy_umap_uniformly(
     int[:] head,
     int[:] tail,
     float[:] weights,
-    # FIXME - rename forces to all_grads
     float* all_updates,
     float* gains,
     float a,
