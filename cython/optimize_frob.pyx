@@ -8,26 +8,26 @@ from cython.parallel cimport prange, parallel, threadid
 
 np.import_array()
 
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     float clip(float value, float lower, float upper)
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     float sq_euc_dist(float* x, float* y, int dim)
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     float get_lr(float initial_lr, int i_epoch, int n_epochs) 
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     void print_status(int i_epoch, int n_epochs)
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     float umap_repulsion_grad(float dist_squared, float a, float b)
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     float kernel_function(float dist_squared, float a, float b)
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     float pos_force(
         int normalized,
         float p,
         float q,
         float Z
     )
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     float neg_force(
         int normalized,
         float q,

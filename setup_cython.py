@@ -9,7 +9,7 @@ os.environ['CXX']='/usr/local/Cellar/gcc/11.2.0_3/bin/g++-11'
 
 optimize = Extension(
     'optimize',
-    ['optimize.pyx'],
+    ['cython/optimize.pyx'],
     language=['c'],
 
     extra_compile_args=['-O3', '-march=native', '-ffast-math'],
@@ -19,7 +19,7 @@ optimize = Extension(
 
 optimize_frob = Extension(
     'optimize_frob',
-    ['optimize_frob.pyx'],
+    ['cython/optimize_frob.pyx'],
     language=['c'],
 
     extra_compile_args=['-O3', '-march=native', '-ffast-math'],

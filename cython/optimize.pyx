@@ -2,6 +2,7 @@ import numpy as py_np
 cimport numpy as np
 cimport cython
 from libc.stdio cimport printf
+from libc.math cimport sqrt
 from libc.stdlib cimport rand
 from libc.stdlib cimport malloc, free
 from cython.parallel cimport prange, parallel
@@ -9,20 +10,19 @@ from cython.parallel cimport prange, parallel
 from sklearn.neighbors._quad_tree cimport _QuadTree
 np.import_array()
 
-
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     float clip(float value, float lower, float upper)
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     float sq_euc_dist(float* x, float* y, int dim)
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     float get_lr(float initial_lr, int i_epoch, int n_epochs) 
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     void print_status(int i_epoch, int n_epochs)
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     float umap_repulsion_grad(float dist_squared, float a, float b)
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     float kernel_function(float dist_squared, float a, float b)
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     float attractive_force_func(
             int normalized,
             float dist_squared,
@@ -30,7 +30,7 @@ cdef extern from "fastpow.c" nogil:
             float b,
             float edge_weight
     )
-cdef extern from "fastpow.c" nogil:
+cdef extern from "cython_utils.c" nogil:
     void repulsive_force_func(
             float* rep_func_outputs,
             int normalized,
@@ -41,6 +41,20 @@ cdef extern from "fastpow.c" nogil:
             float average_weight
     )
 
+cdef float ang_dist(float* x, float* y, int dim):
+    """ cosine distance between vectors x and y """
+    cdef float result = 0.0
+    cdef float x_len  = 0.0
+    cdef float y_len  = 0.0
+    cdef float eps = 0.0001
+    cdef int i = 0
+    for i in range(dim):
+        result += x[i] * y[i]
+        x_len += x[i] * x[i]
+        y_len += y[i] * y[i]
+    if x_len < eps or y_len < eps:
+        return 1
+    return result / (sqrt(x_len * y_len))
 
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT

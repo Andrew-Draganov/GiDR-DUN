@@ -1,7 +1,6 @@
 // https://martin.ankerl.com/2007/10/04/optimized-pow-approximation-for-java-and-c-c/
 #include <stdio.h>
 #include <math.h>
-// #include "fastpow.h"
 static double fast_pow(double a, double b) {
     union {
         double d;

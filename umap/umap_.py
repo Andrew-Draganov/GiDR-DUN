@@ -1,4 +1,5 @@
-# Author: Leland McInnes <leland.mcinnes@gmail.com>
+# Originally written by Leland McInnes <leland.mcinnes@gmail.com>
+# Modified by Andrew Draganov <draganovandrew@gmail.com>
 #
 # License: BSD 3 clause
 from __future__ import print_function
