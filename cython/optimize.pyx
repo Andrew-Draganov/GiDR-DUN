@@ -375,7 +375,7 @@ def cy_umap_sampling(
 # ) nogil:
 #     cdef:
 #         int j, k, v, d, edge, index
-#         float force, grad_d
+#         float grad_d
 # 
 #     with parallel():
 #         # Fill allocated memory with zeros
@@ -461,48 +461,46 @@ cdef void _cy_umap_uniformly(
                 all_rep_grads[index] = 0
 
     with nogil:
-        with parallel():
-            get_kernels(
-                local_Z,
-                attr_forces,
-                rep_forces,
-                attr_vecs,
-                rep_vecs,
-                head,
-                tail,
-                head_embedding,
-                tail_embedding,
-                weights,
-                normalized,
-                n_vertices,
-                n_edges,
-                i_epoch,
-                dim,
-                a,
-                b,
-                average_weight
-            )
+        get_kernels(
+            local_Z,
+            attr_forces,
+            rep_forces,
+            attr_vecs,
+            rep_vecs,
+            head,
+            tail,
+            head_embedding,
+            tail_embedding,
+            weights,
+            normalized,
+            n_vertices,
+            n_edges,
+            i_epoch,
+            dim,
+            a,
+            b,
+            average_weight
+        )
         Z += local_Z[0]
         free(local_Z)
         if not normalized:
             Z = 1
 
-        with parallel():
-            gather_gradients(
-                local_attr_grads,
-                local_rep_grads,
-                head,
-                tail,
-                attr_forces,
-                rep_forces,
-                attr_vecs,
-                rep_vecs,
-                sym_attraction,
-                n_vertices,
-                n_edges,
-                dim,
-                Z
-            )
+        gather_gradients(
+            local_attr_grads,
+            local_rep_grads,
+            head,
+            tail,
+            attr_forces,
+            rep_forces,
+            attr_vecs,
+            rep_vecs,
+            sym_attraction,
+            n_vertices,
+            n_edges,
+            dim,
+            Z
+        )
         free(attr_forces)
         free(rep_forces)
         free(attr_vecs)
@@ -511,31 +509,31 @@ cdef void _cy_umap_uniformly(
         # Need to collect thread-local forces into single gradient
         #   before performing gradient descent
         scalar = 4 * a * b
-        with parallel():
-            for v in prange(n_vertices):
-                for d in range(dim):
-                    index = v * dim + d
-                    all_attr_grads[index] += local_attr_grads[index] * scalar
-                    all_rep_grads[index] += local_rep_grads[index] * scalar
-        free(local_attr_grads)
-        free(local_rep_grads)
+        # with parallel():
+        #     for v in prange(n_vertices):
+        #         for d in range(dim):
+        #             index = v * dim + d
+        #             all_attr_grads[index] += local_attr_grads[index] * scalar
+        #             all_rep_grads[index] += local_rep_grads[index] * scalar
 
-        for v in prange(n_vertices):
+        for v in range(n_vertices):
             for d in range(dim):
                 index = v * dim + d
                 # Would like to put rep_grads[i] - attr_grads[i] into variable
                 #   but get cython error "Cannot read reduction variable in loop body"
                 # So calculate it twice to avoid the error
 
-                if (all_rep_grads[index] - all_attr_grads[index]) * all_updates[index] > 0.0:
+                if (local_rep_grads[index] - local_attr_grads[index]) * all_updates[index] > 0.0:
                     gains[index] += 0.2
                 else:
                     gains[index] *= 0.8
                 gains[index] = clip(gains[index], 0.01, 100)
-                grad_d = (all_rep_grads[index] - all_attr_grads[index]) * gains[index]
+                grad_d = (local_rep_grads[index] - local_attr_grads[index]) * gains[index]
 
                 all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]
                 head_embedding[index] += all_updates[index]
+        free(local_attr_grads)
+        free(local_rep_grads)
 
     free(all_attr_grads)
     free(all_rep_grads)
@@ -571,6 +569,8 @@ def cy_umap_uniformly(
         float *_weights
 
     # FIXME - lame way to move from numpy to malloc and back
+
+    # Move from numpy to c pointer arrays
     n_edges = int(epochs_per_sample.shape[0])
     _head_embedding = <float*> malloc(sizeof(float) * n_vertices * dim)
     _tail_embedding = <float*> malloc(sizeof(float) * n_vertices * dim)
@@ -619,14 +619,10 @@ def cy_umap_uniformly(
         if verbose:
             print_status(i_epoch, n_epochs)
 
+    # Move from c pointer arrays back to cython memoryview/numpy format
     for v in range(n_vertices):
         for d in range(dim):
             head_embedding[v, d] = _head_embedding[v * dim + d]
-            tail_embedding[v, d] = _tail_embedding[v * dim + d]
-    for edge in range(n_edges):
-        head[edge] = _head[edge]
-        tail[edge] = _tail[edge]
-        weights[edge] = _weights[edge]
 
     free(_head_embedding)
     free(_tail_embedding)
@@ -635,6 +631,7 @@ def cy_umap_uniformly(
     free(_weights)
     free(all_updates)
     free(gains)
+    return head_embedding
 
 
 ##### BARNES-HUT CODE #####
@@ -961,6 +958,8 @@ def bh_wrapper(
     free(all_updates)
     free(gains)
 
+    return head_embedding
+
 @cython.cdivision(True)
 @cython.wraparound(False)
 @cython.boundscheck(False)
@@ -1004,7 +1003,7 @@ def cy_optimize_layout(
     }
     optimize_fn = optimize_dict[optimize_method]
 
-    optimize_fn(
+    head_embedding = optimize_fn(
         normalized,
         sym_attraction,
         momentum,
@@ -1023,5 +1022,9 @@ def cy_optimize_layout(
         n_vertices,
         verbose
     )
+    ret = py_np.zeros((n_vertices, dim))
+    for v in range(n_vertices):
+        for d in range(dim):
+            ret[v, d] = head_embedding[v, d]
 
-    return py_np.asarray(head_embedding)
+    return ret
