@@ -2,7 +2,7 @@ import time
 from tqdm import tqdm
 import numpy as np
 from tensorflow import keras as tfk
-import tensorflow_datasets as tfds
+#import tensorflow_datasets as tfds
 from umap_ import UniformUmap
 from distances import make_dist_plots, remove_diag
 import argparse

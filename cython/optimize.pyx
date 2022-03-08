@@ -41,6 +41,8 @@ cdef extern from "cython_utils.h" nogil:
             float average_weight
     )
 
+cdef extern from "algorithm.c":
+    void some_function()
 
 
 cdef extern from "optimize_funcs.c" nogil:
@@ -569,29 +571,31 @@ def cy_umap_uniformly(
             all_updates[index] = 0
             gains[index] = 1
 
-    for i_epoch in range(n_epochs):
-        lr = get_lr(initial_lr, i_epoch, n_epochs)
-        _cy_umap_uniformly(
-            normalized,
-            sym_attraction,
-            momentum,
-            _head_embedding,
-            _tail_embedding,
-            _head,
-            _tail,
-            _weights,
-            all_updates,
-            gains,
-            a,
-            b,
-            dim,
-            n_vertices,
-            lr,
-            i_epoch,
-            n_edges
-        )
-        if verbose:
-            print_status(i_epoch, n_epochs)
+    # for i_epoch in range(n_epochs):
+    #     lr = get_lr(initial_lr, i_epoch, n_epochs)
+    #     _cy_umap_uniformly(
+    #         normalized,
+    #         sym_attraction,
+    #         momentum,
+    #         _head_embedding,
+    #         _tail_embedding,
+    #         _head,
+    #         _tail,
+    #         _weights,
+    #         all_updates,
+    #         gains,
+    #         a,
+    #         b,
+    #         dim,
+    #         n_vertices,
+    #         lr,
+    #         i_epoch,
+    #         n_edges
+    #     )
+    #     if verbose:
+    #         print_status(i_epoch, n_epochs)
+
+    some_function()
 
     # Move from c pointer arrays back to cython memoryview/numpy format
     for v in range(n_vertices):
