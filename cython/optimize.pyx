@@ -44,8 +44,7 @@ cdef extern from "cython_utils.h" nogil:
 
 
 cdef extern from "optimize_funcs.c" nogil:
-    void get_kernels(
-        float *local_Z,
+    float get_kernels(
         float *attr_forces,
         float *rep_forces,
         float *attr_vecs,
@@ -67,8 +66,8 @@ cdef extern from "optimize_funcs.c" nogil:
 
 cdef extern from "optimize_funcs.c" nogil:
     void gather_gradients(
-        float *local_attr_grads,
-        float *local_rep_grads,
+        float *attr_grads,
+        float *rep_grads,
         int* head,
         int* tail,
         float* attr_forces,
@@ -423,10 +422,8 @@ cdef void _cy_umap_uniformly(
 ):
     cdef:
         int i, j, k, d, v, index, edge
-        float *all_attr_grads
-        float *all_rep_grads
-        float *local_attr_grads
-        float *local_rep_grads
+        float *attr_grads
+        float *rep_grads
 
         float *attr_vecs
         float *rep_vecs
@@ -434,20 +431,15 @@ cdef void _cy_umap_uniformly(
         float *rep_forces
 
         float Z
-        float *local_Z
         float scalar
 
-    Z = 0
-    local_Z = <float*> malloc(sizeof(float))
     attr_forces = <float*> malloc(sizeof(float) * n_edges)
     rep_forces = <float*> malloc(sizeof(float) * n_edges)
     attr_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
     rep_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
 
-    all_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
-    all_rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
-    local_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
-    local_rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
+    attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
+    rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
 
     cdef float grad = 0.0
     cdef float grad_d = 0.0
@@ -457,12 +449,11 @@ cdef void _cy_umap_uniformly(
         for v in prange(n_vertices):
             for d in range(dim):
                 index = v * dim + d
-                all_attr_grads[index] = 0
-                all_rep_grads[index] = 0
+                attr_grads[index] = 0
+                rep_grads[index] = 0
 
     with nogil:
-        get_kernels(
-            local_Z,
+        Z = get_kernels(
             attr_forces,
             rep_forces,
             attr_vecs,
@@ -481,14 +472,12 @@ cdef void _cy_umap_uniformly(
             b,
             average_weight
         )
-        Z += local_Z[0]
-        free(local_Z)
         if not normalized:
             Z = 1
 
         gather_gradients(
-            local_attr_grads,
-            local_rep_grads,
+            attr_grads,
+            rep_grads,
             head,
             tail,
             attr_forces,
@@ -506,16 +495,6 @@ cdef void _cy_umap_uniformly(
         free(attr_vecs)
         free(rep_vecs)
 
-        # Need to collect thread-local forces into single gradient
-        #   before performing gradient descent
-        scalar = 4 * a * b
-        # with parallel():
-        #     for v in prange(n_vertices):
-        #         for d in range(dim):
-        #             index = v * dim + d
-        #             all_attr_grads[index] += local_attr_grads[index] * scalar
-        #             all_rep_grads[index] += local_rep_grads[index] * scalar
-
         for v in range(n_vertices):
             for d in range(dim):
                 index = v * dim + d
@@ -523,20 +502,18 @@ cdef void _cy_umap_uniformly(
                 #   but get cython error "Cannot read reduction variable in loop body"
                 # So calculate it twice to avoid the error
 
-                if (local_rep_grads[index] - local_attr_grads[index]) * all_updates[index] > 0.0:
+                if (rep_grads[index] - attr_grads[index]) * all_updates[index] > 0.0:
                     gains[index] += 0.2
                 else:
                     gains[index] *= 0.8
                 gains[index] = clip(gains[index], 0.01, 100)
-                grad_d = (local_rep_grads[index] - local_attr_grads[index]) * gains[index]
+                grad_d = (rep_grads[index] - attr_grads[index]) * gains[index]
 
                 all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]
                 head_embedding[index] += all_updates[index]
-        free(local_attr_grads)
-        free(local_rep_grads)
 
-    free(all_attr_grads)
-    free(all_rep_grads)
+    free(attr_grads)
+    free(rep_grads)
 
 
 def cy_umap_uniformly(
