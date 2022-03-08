@@ -10,19 +10,19 @@ from cython.parallel cimport prange, parallel
 from sklearn.neighbors._quad_tree cimport _QuadTree
 np.import_array()
 
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "cython_utils.h" nogil:
     float clip(float value, float lower, float upper)
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "cython_utils.h" nogil:
     float sq_euc_dist(float* x, float* y, int dim)
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "cython_utils.h" nogil:
     float get_lr(float initial_lr, int i_epoch, int n_epochs) 
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "cython_utils.h" nogil:
     void print_status(int i_epoch, int n_epochs)
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "cython_utils.h" nogil:
     float umap_repulsion_grad(float dist_squared, float a, float b)
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "cython_utils.h" nogil:
     float kernel_function(float dist_squared, float a, float b)
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "cython_utils.h" nogil:
     float attractive_force_func(
             int normalized,
             float dist_squared,
@@ -30,7 +30,7 @@ cdef extern from "cython_utils.c" nogil:
             float b,
             float edge_weight
     )
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "cython_utils.h" nogil:
     void repulsive_force_func(
             float* rep_func_outputs,
             int normalized,
@@ -40,6 +40,48 @@ cdef extern from "cython_utils.c" nogil:
             float cell_size,
             float average_weight
     )
+
+
+
+cdef extern from "optimize_funcs.c" nogil:
+    void get_kernels(
+        float *local_Z,
+        float *attr_forces,
+        float *rep_forces,
+        float *attr_vecs,
+        float *rep_vecs,
+        int* head,
+        int* tail,
+        float* head_embedding,
+        float* tail_embedding,
+        float* weights,
+        int normalized,
+        int n_vertices,
+        int n_edges,
+        int i_epoch,
+        int dim,
+        float a,
+        float b,
+        float average_weight
+    )
+
+cdef extern from "optimize_funcs.c" nogil:
+    void gather_gradients(
+        float *local_attr_grads,
+        float *local_rep_grads,
+        int* head,
+        int* tail,
+        float* attr_forces,
+        float* rep_forces,
+        float* attr_vecs,
+        float* rep_vecs,
+        int sym_attraction,
+        int n_vertices,
+        int n_edges,
+        int dim,
+        float Z
+    )
+
 
 cdef float ang_dist(float* x, float* y, int dim):
     """ cosine distance between vectors x and y """
@@ -66,6 +108,15 @@ cdef float get_avg_weight(float[:] weights) nogil:
     for i in range(weights.shape[0]):
         average_weight += weights[i]
     average_weight /= float(weights.shape[0])
+    return average_weight
+
+@cython.boundscheck(False)
+@cython.cdivision(True)
+cdef float _get_avg_weight(float* weights, int n_edges) nogil:
+    cdef float average_weight = 0.0
+    for i in range(n_edges):
+        average_weight += weights[i]
+    average_weight /= float(n_edges)
     return average_weight
 
 @cython.boundscheck(False)
@@ -225,127 +276,127 @@ def cy_umap_sampling(
         if verbose:
             print_status(i_epoch, n_epochs)
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.cdivision(True)
-cdef void get_kernels(
-    float *local_Z,
-    float *attr_forces,
-    float *rep_forces,
-    float *attr_vecs,
-    float *rep_vecs,
-    int[:] head,
-    int[:] tail,
-    float[:, :] head_embedding,
-    float[:, :] tail_embedding,
-    float[:] weights,
-    int normalized,
-    int n_vertices,
-    int n_edges,
-    int i_epoch,
-    int dim,
-    float a,
-    float b,
-    float average_weight
-) nogil:
-    cdef:
-        int edge, j, k, d
-        float dist_squared, weight_scalar
-        float *y1
-        float *y2
-        float *rep_func_outputs
-
-    with parallel():
-        local_Z[0] = 0
-        y1 = <float*> malloc(sizeof(float) * dim)
-        y2 = <float*> malloc(sizeof(float) * dim)
-        rep_func_outputs = <float*> malloc(sizeof(float) * 2)
-        for edge in prange(n_edges):
-            j = head[edge]
-            k = tail[edge]
-            for d in range(dim):
-                y1[d] = head_embedding[j, d]
-                y2[d] = tail_embedding[k, d]
-                attr_vecs[edge * dim + d] = y1[d] - y2[d]
-            dist_squared = sq_euc_dist(y1, y2, dim)
-
-            # t-SNE early exaggeration
-            if i_epoch < 100:
-                weight_scalar = 4
-            else:
-                weight_scalar = 1
-
-            attr_forces[edge] = attractive_force_func(
-                normalized,
-                dist_squared,
-                a,
-                b,
-                weights[edge] * weight_scalar
-            )
-
-            k = rand() % n_vertices
-            for d in range(dim):
-                y2[d] = tail_embedding[k, d]
-                rep_vecs[edge * dim + d] = y1[d] - y2[d]
-            dist_squared = sq_euc_dist(y1, y2, dim)
-            repulsive_force_func(
-                rep_func_outputs,
-                normalized,
-                dist_squared,
-                a,
-                b,
-                1.0,
-                average_weight,
-            )
-            rep_forces[edge] = rep_func_outputs[0]
-            local_Z[0] += rep_func_outputs[1]
-
-        free(rep_func_outputs)
-        free(y1)
-        free(y2)
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.cdivision(True)
-cdef void gather_gradients(
-    float *local_attr_grads,
-    float *local_rep_grads,
-    int[:] head,
-    int[:] tail,
-    float* attr_forces,
-    float* rep_forces,
-    float* attr_vecs,
-    float* rep_vecs,
-    int sym_attraction,
-    int n_vertices,
-    int n_edges,
-    int dim,
-    float Z
-) nogil:
-    cdef:
-        int j, k, v, d, edge, index
-        float force, grad_d
-
-    with parallel():
-        # Fill allocated memory with zeros
-        for v in prange(n_vertices):
-            for d in range(dim):
-                index = v * dim + d
-                local_attr_grads[index] = 0
-                local_rep_grads[index] = 0
-
-        for edge in prange(n_edges):
-            j = head[edge]
-            for d in range(dim):
-                grad_d = clip(attr_forces[edge] * attr_vecs[edge * dim + d], -4, 4)
-                local_attr_grads[j * dim + d] += grad_d
-                if sym_attraction:
-                    k = tail[edge]
-                    local_attr_grads[k * dim + d] -= grad_d
-
-            for d in range(dim):
-                grad_d = clip(rep_forces[edge] * rep_vecs[edge * dim + d], -4, 4)
-                local_rep_grads[j * dim + d] += grad_d / Z
+# @cython.boundscheck(False)
+# @cython.wraparound(False)
+# @cython.cdivision(True)
+# cdef void get_kernels(
+#     float *local_Z,
+#     float *attr_forces,
+#     float *rep_forces,
+#     float *attr_vecs,
+#     float *rep_vecs,
+#     int[:] head,
+#     int[:] tail,
+#     float[:, :] head_embedding,
+#     float[:, :] tail_embedding,
+#     float[:] weights,
+#     int normalized,
+#     int n_vertices,
+#     int n_edges,
+#     int i_epoch,
+#     int dim,
+#     float a,
+#     float b,
+#     float average_weight
+# ) nogil:
+#     cdef:
+#         int edge, j, k, d
+#         float dist_squared, weight_scalar
+#         float *y1
+#         float *y2
+#         float *rep_func_outputs
+# 
+#     with parallel():
+#         local_Z[0] = 0
+#         y1 = <float*> malloc(sizeof(float) * dim)
+#         y2 = <float*> malloc(sizeof(float) * dim)
+#         rep_func_outputs = <float*> malloc(sizeof(float) * 2)
+#         for edge in prange(n_edges):
+#             j = head[edge]
+#             k = tail[edge]
+#             for d in range(dim):
+#                 y1[d] = head_embedding[j, d]
+#                 y2[d] = tail_embedding[k, d]
+#                 attr_vecs[edge * dim + d] = y1[d] - y2[d]
+#             dist_squared = sq_euc_dist(y1, y2, dim)
+# 
+#             # t-SNE early exaggeration
+#             if i_epoch < 100:
+#                 weight_scalar = 4
+#             else:
+#                 weight_scalar = 1
+# 
+#             attr_forces[edge] = attractive_force_func(
+#                 normalized,
+#                 dist_squared,
+#                 a,
+#                 b,
+#                 weights[edge] * weight_scalar
+#             )
+# 
+#             k = rand() % n_vertices
+#             for d in range(dim):
+#                 y2[d] = tail_embedding[k, d]
+#                 rep_vecs[edge * dim + d] = y1[d] - y2[d]
+#             dist_squared = sq_euc_dist(y1, y2, dim)
+#             repulsive_force_func(
+#                 rep_func_outputs,
+#                 normalized,
+#                 dist_squared,
+#                 a,
+#                 b,
+#                 1.0,
+#                 average_weight,
+#             )
+#             rep_forces[edge] = rep_func_outputs[0]
+#             local_Z[0] += rep_func_outputs[1]
+# 
+#         free(rep_func_outputs)
+#         free(y1)
+#         free(y2)
+# 
+# @cython.boundscheck(False)
+# @cython.wraparound(False)
+# @cython.cdivision(True)
+# cdef void gather_gradients(
+#     float *local_attr_grads,
+#     float *local_rep_grads,
+#     int[:] head,
+#     int[:] tail,
+#     float* attr_forces,
+#     float* rep_forces,
+#     float* attr_vecs,
+#     float* rep_vecs,
+#     int sym_attraction,
+#     int n_vertices,
+#     int n_edges,
+#     int dim,
+#     float Z
+# ) nogil:
+#     cdef:
+#         int j, k, v, d, edge, index
+#         float force, grad_d
+# 
+#     with parallel():
+#         # Fill allocated memory with zeros
+#         for v in prange(n_vertices):
+#             for d in range(dim):
+#                 index = v * dim + d
+#                 local_attr_grads[index] = 0
+#                 local_rep_grads[index] = 0
+# 
+#         for edge in prange(n_edges):
+#             j = head[edge]
+#             for d in range(dim):
+#                 grad_d = clip(attr_forces[edge] * attr_vecs[edge * dim + d], -4, 4)
+#                 local_attr_grads[j * dim + d] += grad_d
+#                 if sym_attraction:
+#                     k = tail[edge]
+#                     local_attr_grads[k * dim + d] -= grad_d
+# 
+#             for d in range(dim):
+#                 grad_d = clip(rep_forces[edge] * rep_vecs[edge * dim + d], -4, 4)
+#                 local_rep_grads[j * dim + d] += grad_d / Z
 
 
 @cython.boundscheck(False)
@@ -355,11 +406,11 @@ cdef void _cy_umap_uniformly(
     int normalized,
     int sym_attraction,
     int momentum,
-    float[:, :] head_embedding,
-    float[:, :] tail_embedding,
-    int[:] head,
-    int[:] tail,
-    float[:] weights,
+    float* head_embedding,
+    float* tail_embedding,
+    int* head,
+    int* tail,
+    float* weights,
     float* all_updates,
     float* gains,
     float a,
@@ -367,7 +418,8 @@ cdef void _cy_umap_uniformly(
     int dim,
     int n_vertices,
     float lr,
-    int i_epoch
+    int i_epoch,
+    int n_edges
 ):
     cdef:
         int i, j, k, d, v, index, edge
@@ -385,7 +437,6 @@ cdef void _cy_umap_uniformly(
         float *local_Z
         float scalar
 
-    cdef int n_edges = int(head.shape[0])
     Z = 0
     local_Z = <float*> malloc(sizeof(float))
     attr_forces = <float*> malloc(sizeof(float) * n_edges)
@@ -400,9 +451,9 @@ cdef void _cy_umap_uniformly(
 
     cdef float grad = 0.0
     cdef float grad_d = 0.0
-    cdef float average_weight = get_avg_weight(weights)
+    cdef float average_weight = _get_avg_weight(weights, n_edges)
 
-    with nogil:
+    with nogil, parallel():
         for v in prange(n_vertices):
             for d in range(dim):
                 index = v * dim + d
@@ -410,46 +461,48 @@ cdef void _cy_umap_uniformly(
                 all_rep_grads[index] = 0
 
     with nogil:
-        get_kernels(
-            local_Z,
-            attr_forces,
-            rep_forces,
-            attr_vecs,
-            rep_vecs,
-            head,
-            tail,
-            head_embedding,
-            tail_embedding,
-            weights,
-            normalized,
-            n_vertices,
-            n_edges,
-            i_epoch,
-            dim,
-            a,
-            b,
-            average_weight
-        )
+        with parallel():
+            get_kernels(
+                local_Z,
+                attr_forces,
+                rep_forces,
+                attr_vecs,
+                rep_vecs,
+                head,
+                tail,
+                head_embedding,
+                tail_embedding,
+                weights,
+                normalized,
+                n_vertices,
+                n_edges,
+                i_epoch,
+                dim,
+                a,
+                b,
+                average_weight
+            )
         Z += local_Z[0]
         free(local_Z)
         if not normalized:
             Z = 1
 
-        gather_gradients(
-            local_attr_grads,
-            local_rep_grads,
-            head,
-            tail,
-            attr_forces,
-            rep_forces,
-            attr_vecs,
-            rep_vecs,
-            sym_attraction,
-            n_vertices,
-            n_edges,
-            dim,
-            Z
-        )
+        with parallel():
+            gather_gradients(
+                local_attr_grads,
+                local_rep_grads,
+                head,
+                tail,
+                attr_forces,
+                rep_forces,
+                attr_vecs,
+                rep_vecs,
+                sym_attraction,
+                n_vertices,
+                n_edges,
+                dim,
+                Z
+            )
         free(attr_forces)
         free(rep_forces)
         free(attr_vecs)
@@ -482,7 +535,7 @@ cdef void _cy_umap_uniformly(
                 grad_d = (all_rep_grads[index] - all_attr_grads[index]) * gains[index]
 
                 all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]
-                head_embedding[v, d] += all_updates[index]
+                head_embedding[index] += all_updates[index]
 
     free(all_attr_grads)
     free(all_rep_grads)
@@ -508,9 +561,32 @@ def cy_umap_uniformly(
     int verbose
 ):
     cdef:
-        int v, d, index
+        int v, d, index, n_edges, edge
         float *all_updates
         float *gains
+        float *_head_embedding
+        float *_tail_embedding
+        int *_head
+        int *_tail
+        float *_weights
+
+    # FIXME - lame way to move from numpy to malloc and back
+    n_edges = int(epochs_per_sample.shape[0])
+    _head_embedding = <float*> malloc(sizeof(float) * n_vertices * dim)
+    _tail_embedding = <float*> malloc(sizeof(float) * n_vertices * dim)
+    _head = <int*> malloc(sizeof(int) * n_edges)
+    _tail = <int*> malloc(sizeof(int) * n_edges)
+    _weights = <float*> malloc(sizeof(float) * n_edges)
+
+    for v in range(n_vertices):
+        for d in range(dim):
+            _head_embedding[v * dim + d] = head_embedding[v, d]
+            _tail_embedding[v * dim + d] = tail_embedding[v, d]
+    for edge in range(n_edges):
+        _head[edge] = head[edge]
+        _tail[edge] = tail[edge]
+        _weights[edge] = weights[edge]
+
     all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
     gains = <float*> malloc(sizeof(float) * n_vertices * dim)
     for v in range(n_vertices):
@@ -525,11 +601,11 @@ def cy_umap_uniformly(
             normalized,
             sym_attraction,
             momentum,
-            head_embedding,
-            tail_embedding,
-            head,
-            tail,
-            weights,
+            _head_embedding,
+            _tail_embedding,
+            _head,
+            _tail,
+            _weights,
             all_updates,
             gains,
             a,
@@ -537,10 +613,26 @@ def cy_umap_uniformly(
             dim,
             n_vertices,
             lr,
-            i_epoch
+            i_epoch,
+            n_edges
         )
         if verbose:
             print_status(i_epoch, n_epochs)
+
+    for v in range(n_vertices):
+        for d in range(dim):
+            head_embedding[v, d] = _head_embedding[v * dim + d]
+            tail_embedding[v, d] = _tail_embedding[v * dim + d]
+    for edge in range(n_edges):
+        head[edge] = _head[edge]
+        tail[edge] = _tail[edge]
+        weights[edge] = _weights[edge]
+
+    free(_head_embedding)
+    free(_tail_embedding)
+    free(_head)
+    free(_tail)
+    free(_weights)
     free(all_updates)
     free(gains)
 

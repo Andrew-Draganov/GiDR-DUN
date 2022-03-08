@@ -508,11 +508,11 @@ def cy_optimize_frob(
     int normalized,
     int sym_attraction,
     int momentum,
-    np.ndarray[DTYPE_FLOAT, ndim=2] head_embedding,
-    np.ndarray[DTYPE_FLOAT, ndim=2] tail_embedding,
-    np.ndarray[DTYPE_INT, ndim=1] head,
-    np.ndarray[DTYPE_INT, ndim=1] tail,
-    np.ndarray[DTYPE_FLOAT, ndim=1] weights,
+    float[:, :] head_embedding,
+    float[:, :] tail_embedding,
+    int[:] head,
+    int[:] tail,
+    float[:] weights,
     int n_epochs,
     int n_vertices,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
@@ -528,11 +528,6 @@ def cy_optimize_frob(
         int n_edges
 
     dim = head_embedding.shape[1]
-    cdef float [:, :] _head_embedding = head_embedding
-    cdef float [:, :] _tail_embedding = tail_embedding
-    cdef float [:] _weights = weights
-    cdef int [:] _head = head
-    cdef int [:] _tail = tail
     # FIXME FIXME FIXME - revisit normalized version here
 
     optimize_dict = {
@@ -545,11 +540,11 @@ def cy_optimize_frob(
         normalized,
         sym_attraction,
         momentum,
-        _head_embedding,
-        _tail_embedding,
-        _head,
-        _tail,
-        _weights,
+        head_embedding,
+        tail_embedding,
+        head,
+        tail,
+        weights,
         epochs_per_sample,
         a,
         b,
