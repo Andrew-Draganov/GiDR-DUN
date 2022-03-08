@@ -41,7 +41,7 @@ cdef extern from "cython_utils.h" nogil:
             float average_weight
     )
 
-cdef extern from "algorithm.c":
+cdef extern from "algorithm.h":
     void some_function()
 
 
@@ -592,7 +592,7 @@ def cy_umap_uniformly(
     #         i_epoch,
     #         n_edges
     #     )
-    #     if verbose:
+    #    if verbose:
     #         print_status(i_epoch, n_epochs)
 
     some_function()
