@@ -36,13 +36,14 @@ from utils import (
     fast_knn_indices,
 )
 from pytorch_optimize import torch_optimize_layout
-from optimize import cy_optimize_layout
-from optimize_frob import cy_optimize_frob
+from optimize_gpu import cy_optimize_layout
+# from optimize import cy_optimize_layout
+# from optimize_frob import cy_optimize_frob
 from layouts import numba_optimize_layout
 from spectral import spectral_layout
-# from pynndescent import NNDescent
-from nndescent.pynndescent_ import NNDescent
-import nndescent.distances as pynnd_dist
+from pynndescent import NNDescent
+# from nndescent.pynndescent_ import NNDescent
+# import nndescent.distances as pynnd_dist
 
 locale.setlocale(locale.LC_NUMERIC, "C")
 
@@ -286,10 +287,10 @@ def nearest_neighbors(
         n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
         n_iters = max(5, int(round(np.log2(X.shape[0]))))
 
-        if euclidean:
-            distance_func = pynnd_dist.euclidean
-        else:
-            distance_func = pynnd_dist.cosine
+        # if euclidean:
+        #     distance_func = pynnd_dist.euclidean
+        # else:
+        #     distance_func = pynnd_dist.cosine
 
         knn_search_index = NNDescent(
             X,
