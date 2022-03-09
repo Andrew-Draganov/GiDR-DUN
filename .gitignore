@@ -9,6 +9,7 @@ tex/*.bbl
 tex/*.blg
 tex/*.log
 tex/*.out
+cython/optimize.cpp
 *.html
 *.c
 *.swp
