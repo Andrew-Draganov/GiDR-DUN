@@ -4641,6 +4641,7 @@ static void __pyx_f_12optimize_gpu__cy_umap_uniformly(int __pyx_v_normalized, in
   float *__pyx_v_attr_forces;
   float *__pyx_v_rep_forces;
   float __pyx_v_Z;
+  CYTHON_UNUSED float __pyx_v_grad;
   float __pyx_v_grad_d;
   float __pyx_v_average_weight;
   __Pyx_RefNannyDeclarations
@@ -4704,280 +4705,392 @@ static void __pyx_f_12optimize_gpu__cy_umap_uniformly(int __pyx_v_normalized, in
  *     attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
  * 
- *     cdef float grad_d = 0.0
+ *     cdef float grad = 0.0
  */
   __pyx_v_rep_grads = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
   /* "cython/optimize.pyx":447
  *     rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
  * 
+ *     cdef float grad = 0.0             # <<<<<<<<<<<<<<
+ *     cdef float grad_d = 0.0
+ *     cdef float average_weight = _get_avg_weight(weights, n_edges)
+ */
+  __pyx_v_grad = 0.0;
+
+  /* "cython/optimize.pyx":448
+ * 
+ *     cdef float grad = 0.0
  *     cdef float grad_d = 0.0             # <<<<<<<<<<<<<<
  *     cdef float average_weight = _get_avg_weight(weights, n_edges)
  * 
  */
   __pyx_v_grad_d = 0.0;
 
-  /* "cython/optimize.pyx":448
- * 
+  /* "cython/optimize.pyx":449
+ *     cdef float grad = 0.0
  *     cdef float grad_d = 0.0
  *     cdef float average_weight = _get_avg_weight(weights, n_edges)             # <<<<<<<<<<<<<<
  * 
- *     for v in range(n_vertices):
+ *     with nogil, parallel():
  */
   __pyx_v_average_weight = __pyx_f_12optimize_gpu__get_avg_weight(__pyx_v_weights, __pyx_v_n_edges);
 
-  /* "cython/optimize.pyx":450
+  /* "cython/optimize.pyx":451
  *     cdef float average_weight = _get_avg_weight(weights, n_edges)
  * 
- *     for v in range(n_vertices):             # <<<<<<<<<<<<<<
- *         for d in range(dim):
- *             index = v * dim + d
+ *     with nogil, parallel():             # <<<<<<<<<<<<<<
+ *         for v in prange(n_vertices):
+ *             for d in range(dim):
  */
-  __pyx_t_1 = __pyx_v_n_vertices;
-  __pyx_t_2 = __pyx_t_1;
-  for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
-    __pyx_v_v = __pyx_t_3;
+  {
+      #ifdef WITH_THREAD
+      PyThreadState *_save;
+      Py_UNBLOCK_THREADS
+      __Pyx_FastGIL_Remember();
+      #endif
+      /*try:*/ {
+        {
+            #if ((defined(__APPLE__) || defined(__OSX__)) && (defined(__GNUC__) && (__GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95)))))
+                #undef likely
+                #undef unlikely
+                #define likely(x)   (x)
+                #define unlikely(x) (x)
+            #endif
+            #ifdef _OPENMP
+            #pragma omp parallel  private(__pyx_t_1, __pyx_t_2, __pyx_t_3, __pyx_t_4, __pyx_t_5, __pyx_t_6)
+            #endif /* _OPENMP */
+            {
 
-    /* "cython/optimize.pyx":451
+                /* "cython/optimize.pyx":452
  * 
- *     for v in range(n_vertices):
- *         for d in range(dim):             # <<<<<<<<<<<<<<
- *             index = v * dim + d
- *             attr_grads[index] = 0
+ *     with nogil, parallel():
+ *         for v in prange(n_vertices):             # <<<<<<<<<<<<<<
+ *             for d in range(dim):
+ *                 index = v * dim + d
  */
-    __pyx_t_4 = __pyx_v_dim;
-    __pyx_t_5 = __pyx_t_4;
-    for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
-      __pyx_v_d = __pyx_t_6;
+                __pyx_t_1 = __pyx_v_n_vertices;
+                if ((1 == 0)) abort();
+                {
+                    __pyx_t_3 = (__pyx_t_1 - 0 + 1 - 1/abs(1)) / 1;
+                    if (__pyx_t_3 > 0)
+                    {
+                        #ifdef _OPENMP
+                        #pragma omp for lastprivate(__pyx_v_d) lastprivate(__pyx_v_index) firstprivate(__pyx_v_v) lastprivate(__pyx_v_v)
+                        #endif /* _OPENMP */
+                        for (__pyx_t_2 = 0; __pyx_t_2 < __pyx_t_3; __pyx_t_2++){
+                            {
+                                __pyx_v_v = (int)(0 + 1 * __pyx_t_2);
+                                /* Initialize private variables to invalid values */
+                                __pyx_v_d = ((int)0xbad0bad0);
+                                __pyx_v_index = ((int)0xbad0bad0);
 
-      /* "cython/optimize.pyx":452
- *     for v in range(n_vertices):
- *         for d in range(dim):
- *             index = v * dim + d             # <<<<<<<<<<<<<<
- *             attr_grads[index] = 0
- *             rep_grads[index] = 0
+                                /* "cython/optimize.pyx":453
+ *     with nogil, parallel():
+ *         for v in prange(n_vertices):
+ *             for d in range(dim):             # <<<<<<<<<<<<<<
+ *                 index = v * dim + d
+ *                 attr_grads[index] = 0
  */
-      __pyx_v_index = ((__pyx_v_v * __pyx_v_dim) + __pyx_v_d);
+                                __pyx_t_4 = __pyx_v_dim;
+                                __pyx_t_5 = __pyx_t_4;
+                                for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
+                                  __pyx_v_d = __pyx_t_6;
 
-      /* "cython/optimize.pyx":453
- *         for d in range(dim):
- *             index = v * dim + d
- *             attr_grads[index] = 0             # <<<<<<<<<<<<<<
- *             rep_grads[index] = 0
- * 
+                                  /* "cython/optimize.pyx":454
+ *         for v in prange(n_vertices):
+ *             for d in range(dim):
+ *                 index = v * dim + d             # <<<<<<<<<<<<<<
+ *                 attr_grads[index] = 0
+ *                 rep_grads[index] = 0
  */
-      (__pyx_v_attr_grads[__pyx_v_index]) = 0.0;
+                                  __pyx_v_index = ((__pyx_v_v * __pyx_v_dim) + __pyx_v_d);
 
-      /* "cython/optimize.pyx":454
- *             index = v * dim + d
- *             attr_grads[index] = 0
- *             rep_grads[index] = 0             # <<<<<<<<<<<<<<
- * 
- *     Z = get_kernels(
- */
-      (__pyx_v_rep_grads[__pyx_v_index]) = 0.0;
-    }
-  }
-
-  /* "cython/optimize.pyx":456
- *             rep_grads[index] = 0
- * 
- *     Z = get_kernels(             # <<<<<<<<<<<<<<
- *         attr_forces,
- *         rep_forces,
- */
-  __pyx_v_Z = get_kernels(__pyx_v_attr_forces, __pyx_v_rep_forces, __pyx_v_attr_vecs, __pyx_v_rep_vecs, __pyx_v_head, __pyx_v_tail, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_weights, __pyx_v_normalized, __pyx_v_n_vertices, __pyx_v_n_edges, __pyx_v_i_epoch, __pyx_v_dim, __pyx_v_a, __pyx_v_b, __pyx_v_average_weight);
-
-  /* "cython/optimize.pyx":475
- *         average_weight
- *     )
- *     if not normalized:             # <<<<<<<<<<<<<<
- *         Z = 1
- * 
- */
-  __pyx_t_7 = ((!(__pyx_v_normalized != 0)) != 0);
-  if (__pyx_t_7) {
-
-    /* "cython/optimize.pyx":476
- *     )
- *     if not normalized:
- *         Z = 1             # <<<<<<<<<<<<<<
- * 
- *     gather_gradients(
- */
-    __pyx_v_Z = 1.0;
-
-    /* "cython/optimize.pyx":475
- *         average_weight
- *     )
- *     if not normalized:             # <<<<<<<<<<<<<<
- *         Z = 1
+                                  /* "cython/optimize.pyx":455
+ *             for d in range(dim):
+ *                 index = v * dim + d
+ *                 attr_grads[index] = 0             # <<<<<<<<<<<<<<
+ *                 rep_grads[index] = 0
  * 
  */
-  }
+                                  (__pyx_v_attr_grads[__pyx_v_index]) = 0.0;
 
-  /* "cython/optimize.pyx":478
- *         Z = 1
+                                  /* "cython/optimize.pyx":456
+ *                 index = v * dim + d
+ *                 attr_grads[index] = 0
+ *                 rep_grads[index] = 0             # <<<<<<<<<<<<<<
  * 
- *     gather_gradients(             # <<<<<<<<<<<<<<
- *         attr_grads,
- *         rep_grads,
+ *     with nogil:
  */
-  gather_gradients(__pyx_v_attr_grads, __pyx_v_rep_grads, __pyx_v_head, __pyx_v_tail, __pyx_v_attr_forces, __pyx_v_rep_forces, __pyx_v_attr_vecs, __pyx_v_rep_vecs, __pyx_v_sym_attraction, __pyx_v_n_vertices, __pyx_v_n_edges, __pyx_v_dim, __pyx_v_Z);
-
-  /* "cython/optimize.pyx":493
- *         Z
- *     )
- *     free(attr_forces)             # <<<<<<<<<<<<<<
- *     free(rep_forces)
- *     free(attr_vecs)
- */
-  free(__pyx_v_attr_forces);
-
-  /* "cython/optimize.pyx":494
- *     )
- *     free(attr_forces)
- *     free(rep_forces)             # <<<<<<<<<<<<<<
- *     free(attr_vecs)
- *     free(rep_vecs)
- */
-  free(__pyx_v_rep_forces);
-
-  /* "cython/optimize.pyx":495
- *     free(attr_forces)
- *     free(rep_forces)
- *     free(attr_vecs)             # <<<<<<<<<<<<<<
- *     free(rep_vecs)
- * 
- */
-  free(__pyx_v_attr_vecs);
-
-  /* "cython/optimize.pyx":496
- *     free(rep_forces)
- *     free(attr_vecs)
- *     free(rep_vecs)             # <<<<<<<<<<<<<<
- * 
- *     for v in range(n_vertices):
- */
-  free(__pyx_v_rep_vecs);
-
-  /* "cython/optimize.pyx":498
- *     free(rep_vecs)
- * 
- *     for v in range(n_vertices):             # <<<<<<<<<<<<<<
- *         for d in range(dim):
- *             index = v * dim + d
- */
-  __pyx_t_1 = __pyx_v_n_vertices;
-  __pyx_t_2 = __pyx_t_1;
-  for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
-    __pyx_v_v = __pyx_t_3;
-
-    /* "cython/optimize.pyx":499
- * 
- *     for v in range(n_vertices):
- *         for d in range(dim):             # <<<<<<<<<<<<<<
- *             index = v * dim + d
- *             # Would like to put rep_grads[i] - attr_grads[i] into variable
- */
-    __pyx_t_4 = __pyx_v_dim;
-    __pyx_t_5 = __pyx_t_4;
-    for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
-      __pyx_v_d = __pyx_t_6;
-
-      /* "cython/optimize.pyx":500
- *     for v in range(n_vertices):
- *         for d in range(dim):
- *             index = v * dim + d             # <<<<<<<<<<<<<<
- *             # Would like to put rep_grads[i] - attr_grads[i] into variable
- *             #   but get cython error "Cannot read reduction variable in loop body"
- */
-      __pyx_v_index = ((__pyx_v_v * __pyx_v_dim) + __pyx_v_d);
-
-      /* "cython/optimize.pyx":505
- *             # So calculate it twice to avoid the error
- * 
- *             if (rep_grads[index] - attr_grads[index]) * all_updates[index] > 0.0:             # <<<<<<<<<<<<<<
- *                 gains[index] += 0.2
- *             else:
- */
-      __pyx_t_7 = (((((__pyx_v_rep_grads[__pyx_v_index]) - (__pyx_v_attr_grads[__pyx_v_index])) * (__pyx_v_all_updates[__pyx_v_index])) > 0.0) != 0);
-      if (__pyx_t_7) {
-
-        /* "cython/optimize.pyx":506
- * 
- *             if (rep_grads[index] - attr_grads[index]) * all_updates[index] > 0.0:
- *                 gains[index] += 0.2             # <<<<<<<<<<<<<<
- *             else:
- *                 gains[index] *= 0.8
- */
-        __pyx_t_8 = __pyx_v_index;
-        (__pyx_v_gains[__pyx_t_8]) = ((__pyx_v_gains[__pyx_t_8]) + 0.2);
-
-        /* "cython/optimize.pyx":505
- *             # So calculate it twice to avoid the error
- * 
- *             if (rep_grads[index] - attr_grads[index]) * all_updates[index] > 0.0:             # <<<<<<<<<<<<<<
- *                 gains[index] += 0.2
- *             else:
- */
-        goto __pyx_L12;
+                                  (__pyx_v_rep_grads[__pyx_v_index]) = 0.0;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        #if ((defined(__APPLE__) || defined(__OSX__)) && (defined(__GNUC__) && (__GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95)))))
+            #undef likely
+            #undef unlikely
+            #define likely(x)   __builtin_expect(!!(x), 1)
+            #define unlikely(x) __builtin_expect(!!(x), 0)
+        #endif
       }
 
-      /* "cython/optimize.pyx":508
- *                 gains[index] += 0.2
- *             else:
- *                 gains[index] *= 0.8             # <<<<<<<<<<<<<<
- *             gains[index] = clip(gains[index], 0.01, 100)
- *             grad_d = (rep_grads[index] - attr_grads[index]) * gains[index]
+      /* "cython/optimize.pyx":451
+ *     cdef float average_weight = _get_avg_weight(weights, n_edges)
+ * 
+ *     with nogil, parallel():             # <<<<<<<<<<<<<<
+ *         for v in prange(n_vertices):
+ *             for d in range(dim):
  */
-      /*else*/ {
-        __pyx_t_8 = __pyx_v_index;
-        (__pyx_v_gains[__pyx_t_8]) = ((__pyx_v_gains[__pyx_t_8]) * 0.8);
+      /*finally:*/ {
+        /*normal exit:*/{
+          #ifdef WITH_THREAD
+          __Pyx_FastGIL_Forget();
+          Py_BLOCK_THREADS
+          #endif
+          goto __pyx_L5;
+        }
+        __pyx_L5:;
       }
-      __pyx_L12:;
+  }
 
-      /* "cython/optimize.pyx":509
- *             else:
- *                 gains[index] *= 0.8
- *             gains[index] = clip(gains[index], 0.01, 100)             # <<<<<<<<<<<<<<
- *             grad_d = (rep_grads[index] - attr_grads[index]) * gains[index]
+  /* "cython/optimize.pyx":458
+ *                 rep_grads[index] = 0
+ * 
+ *     with nogil:             # <<<<<<<<<<<<<<
+ *         Z = get_kernels(
+ *             attr_forces,
+ */
+  {
+      #ifdef WITH_THREAD
+      PyThreadState *_save;
+      Py_UNBLOCK_THREADS
+      __Pyx_FastGIL_Remember();
+      #endif
+      /*try:*/ {
+
+        /* "cython/optimize.pyx":459
+ * 
+ *     with nogil:
+ *         Z = get_kernels(             # <<<<<<<<<<<<<<
+ *             attr_forces,
+ *             rep_forces,
+ */
+        __pyx_v_Z = get_kernels(__pyx_v_attr_forces, __pyx_v_rep_forces, __pyx_v_attr_vecs, __pyx_v_rep_vecs, __pyx_v_head, __pyx_v_tail, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_weights, __pyx_v_normalized, __pyx_v_n_vertices, __pyx_v_n_edges, __pyx_v_i_epoch, __pyx_v_dim, __pyx_v_a, __pyx_v_b, __pyx_v_average_weight);
+
+        /* "cython/optimize.pyx":478
+ *             average_weight
+ *         )
+ *         if not normalized:             # <<<<<<<<<<<<<<
+ *             Z = 1
  * 
  */
-      (__pyx_v_gains[__pyx_v_index]) = clip((__pyx_v_gains[__pyx_v_index]), 0.01, 100.0);
+        __pyx_t_7 = ((!(__pyx_v_normalized != 0)) != 0);
+        if (__pyx_t_7) {
 
-      /* "cython/optimize.pyx":510
- *                 gains[index] *= 0.8
- *             gains[index] = clip(gains[index], 0.01, 100)
- *             grad_d = (rep_grads[index] - attr_grads[index]) * gains[index]             # <<<<<<<<<<<<<<
+          /* "cython/optimize.pyx":479
+ *         )
+ *         if not normalized:
+ *             Z = 1             # <<<<<<<<<<<<<<
  * 
- *             all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]
+ *         gather_gradients(
  */
-      __pyx_v_grad_d = (((__pyx_v_rep_grads[__pyx_v_index]) - (__pyx_v_attr_grads[__pyx_v_index])) * (__pyx_v_gains[__pyx_v_index]));
+          __pyx_v_Z = 1.0;
 
-      /* "cython/optimize.pyx":512
- *             grad_d = (rep_grads[index] - attr_grads[index]) * gains[index]
- * 
- *             all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]             # <<<<<<<<<<<<<<
- *             head_embedding[index] += all_updates[index]
+          /* "cython/optimize.pyx":478
+ *             average_weight
+ *         )
+ *         if not normalized:             # <<<<<<<<<<<<<<
+ *             Z = 1
  * 
  */
-      (__pyx_v_all_updates[__pyx_v_index]) = ((__pyx_v_grad_d * __pyx_v_lr) + ((__pyx_v_momentum * 0.9) * (__pyx_v_all_updates[__pyx_v_index])));
+        }
 
-      /* "cython/optimize.pyx":513
+        /* "cython/optimize.pyx":481
+ *             Z = 1
  * 
- *             all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]
- *             head_embedding[index] += all_updates[index]             # <<<<<<<<<<<<<<
+ *         gather_gradients(             # <<<<<<<<<<<<<<
+ *             attr_grads,
+ *             rep_grads,
+ */
+        gather_gradients(__pyx_v_attr_grads, __pyx_v_rep_grads, __pyx_v_head, __pyx_v_tail, __pyx_v_attr_forces, __pyx_v_rep_forces, __pyx_v_attr_vecs, __pyx_v_rep_vecs, __pyx_v_sym_attraction, __pyx_v_n_vertices, __pyx_v_n_edges, __pyx_v_dim, __pyx_v_Z);
+
+        /* "cython/optimize.pyx":496
+ *             Z
+ *         )
+ *         free(attr_forces)             # <<<<<<<<<<<<<<
+ *         free(rep_forces)
+ *         free(attr_vecs)
+ */
+        free(__pyx_v_attr_forces);
+
+        /* "cython/optimize.pyx":497
+ *         )
+ *         free(attr_forces)
+ *         free(rep_forces)             # <<<<<<<<<<<<<<
+ *         free(attr_vecs)
+ *         free(rep_vecs)
+ */
+        free(__pyx_v_rep_forces);
+
+        /* "cython/optimize.pyx":498
+ *         free(attr_forces)
+ *         free(rep_forces)
+ *         free(attr_vecs)             # <<<<<<<<<<<<<<
+ *         free(rep_vecs)
+ * 
+ */
+        free(__pyx_v_attr_vecs);
+
+        /* "cython/optimize.pyx":499
+ *         free(rep_forces)
+ *         free(attr_vecs)
+ *         free(rep_vecs)             # <<<<<<<<<<<<<<
+ * 
+ *         for v in range(n_vertices):
+ */
+        free(__pyx_v_rep_vecs);
+
+        /* "cython/optimize.pyx":501
+ *         free(rep_vecs)
+ * 
+ *         for v in range(n_vertices):             # <<<<<<<<<<<<<<
+ *             for d in range(dim):
+ *                 index = v * dim + d
+ */
+        __pyx_t_3 = __pyx_v_n_vertices;
+        __pyx_t_2 = __pyx_t_3;
+        for (__pyx_t_1 = 0; __pyx_t_1 < __pyx_t_2; __pyx_t_1+=1) {
+          __pyx_v_v = __pyx_t_1;
+
+          /* "cython/optimize.pyx":502
+ * 
+ *         for v in range(n_vertices):
+ *             for d in range(dim):             # <<<<<<<<<<<<<<
+ *                 index = v * dim + d
+ *                 # Would like to put rep_grads[i] - attr_grads[i] into variable
+ */
+          __pyx_t_4 = __pyx_v_dim;
+          __pyx_t_5 = __pyx_t_4;
+          for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
+            __pyx_v_d = __pyx_t_6;
+
+            /* "cython/optimize.pyx":503
+ *         for v in range(n_vertices):
+ *             for d in range(dim):
+ *                 index = v * dim + d             # <<<<<<<<<<<<<<
+ *                 # Would like to put rep_grads[i] - attr_grads[i] into variable
+ *                 #   but get cython error "Cannot read reduction variable in loop body"
+ */
+            __pyx_v_index = ((__pyx_v_v * __pyx_v_dim) + __pyx_v_d);
+
+            /* "cython/optimize.pyx":508
+ *                 # So calculate it twice to avoid the error
+ * 
+ *                 if (rep_grads[index] - attr_grads[index]) * all_updates[index] > 0.0:             # <<<<<<<<<<<<<<
+ *                     gains[index] += 0.2
+ *                 else:
+ */
+            __pyx_t_7 = (((((__pyx_v_rep_grads[__pyx_v_index]) - (__pyx_v_attr_grads[__pyx_v_index])) * (__pyx_v_all_updates[__pyx_v_index])) > 0.0) != 0);
+            if (__pyx_t_7) {
+
+              /* "cython/optimize.pyx":509
+ * 
+ *                 if (rep_grads[index] - attr_grads[index]) * all_updates[index] > 0.0:
+ *                     gains[index] += 0.2             # <<<<<<<<<<<<<<
+ *                 else:
+ *                     gains[index] *= 0.8
+ */
+              __pyx_t_8 = __pyx_v_index;
+              (__pyx_v_gains[__pyx_t_8]) = ((__pyx_v_gains[__pyx_t_8]) + 0.2);
+
+              /* "cython/optimize.pyx":508
+ *                 # So calculate it twice to avoid the error
+ * 
+ *                 if (rep_grads[index] - attr_grads[index]) * all_updates[index] > 0.0:             # <<<<<<<<<<<<<<
+ *                     gains[index] += 0.2
+ *                 else:
+ */
+              goto __pyx_L28;
+            }
+
+            /* "cython/optimize.pyx":511
+ *                     gains[index] += 0.2
+ *                 else:
+ *                     gains[index] *= 0.8             # <<<<<<<<<<<<<<
+ *                 gains[index] = clip(gains[index], 0.01, 100)
+ *                 grad_d = (rep_grads[index] - attr_grads[index]) * gains[index]
+ */
+            /*else*/ {
+              __pyx_t_8 = __pyx_v_index;
+              (__pyx_v_gains[__pyx_t_8]) = ((__pyx_v_gains[__pyx_t_8]) * 0.8);
+            }
+            __pyx_L28:;
+
+            /* "cython/optimize.pyx":512
+ *                 else:
+ *                     gains[index] *= 0.8
+ *                 gains[index] = clip(gains[index], 0.01, 100)             # <<<<<<<<<<<<<<
+ *                 grad_d = (rep_grads[index] - attr_grads[index]) * gains[index]
+ * 
+ */
+            (__pyx_v_gains[__pyx_v_index]) = clip((__pyx_v_gains[__pyx_v_index]), 0.01, 100.0);
+
+            /* "cython/optimize.pyx":513
+ *                     gains[index] *= 0.8
+ *                 gains[index] = clip(gains[index], 0.01, 100)
+ *                 grad_d = (rep_grads[index] - attr_grads[index]) * gains[index]             # <<<<<<<<<<<<<<
+ * 
+ *                 all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]
+ */
+            __pyx_v_grad_d = (((__pyx_v_rep_grads[__pyx_v_index]) - (__pyx_v_attr_grads[__pyx_v_index])) * (__pyx_v_gains[__pyx_v_index]));
+
+            /* "cython/optimize.pyx":515
+ *                 grad_d = (rep_grads[index] - attr_grads[index]) * gains[index]
+ * 
+ *                 all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]             # <<<<<<<<<<<<<<
+ *                 head_embedding[index] += all_updates[index]
+ * 
+ */
+            (__pyx_v_all_updates[__pyx_v_index]) = ((__pyx_v_grad_d * __pyx_v_lr) + ((__pyx_v_momentum * 0.9) * (__pyx_v_all_updates[__pyx_v_index])));
+
+            /* "cython/optimize.pyx":516
+ * 
+ *                 all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]
+ *                 head_embedding[index] += all_updates[index]             # <<<<<<<<<<<<<<
  * 
  *     free(attr_grads)
  */
-      __pyx_t_8 = __pyx_v_index;
-      (__pyx_v_head_embedding[__pyx_t_8]) = ((__pyx_v_head_embedding[__pyx_t_8]) + (__pyx_v_all_updates[__pyx_v_index]));
-    }
+            __pyx_t_8 = __pyx_v_index;
+            (__pyx_v_head_embedding[__pyx_t_8]) = ((__pyx_v_head_embedding[__pyx_t_8]) + (__pyx_v_all_updates[__pyx_v_index]));
+          }
+        }
+      }
+
+      /* "cython/optimize.pyx":458
+ *                 rep_grads[index] = 0
+ * 
+ *     with nogil:             # <<<<<<<<<<<<<<
+ *         Z = get_kernels(
+ *             attr_forces,
+ */
+      /*finally:*/ {
+        /*normal exit:*/{
+          #ifdef WITH_THREAD
+          __Pyx_FastGIL_Forget();
+          Py_BLOCK_THREADS
+          #endif
+          goto __pyx_L22;
+        }
+        __pyx_L22:;
+      }
   }
 
-  /* "cython/optimize.pyx":515
- *             head_embedding[index] += all_updates[index]
+  /* "cython/optimize.pyx":518
+ *                 head_embedding[index] += all_updates[index]
  * 
  *     free(attr_grads)             # <<<<<<<<<<<<<<
  *     free(rep_grads)
@@ -4985,7 +5098,7 @@ static void __pyx_f_12optimize_gpu__cy_umap_uniformly(int __pyx_v_normalized, in
  */
   free(__pyx_v_attr_grads);
 
-  /* "cython/optimize.pyx":516
+  /* "cython/optimize.pyx":519
  * 
  *     free(attr_grads)
  *     free(rep_grads)             # <<<<<<<<<<<<<<
@@ -5006,7 +5119,7 @@ static void __pyx_f_12optimize_gpu__cy_umap_uniformly(int __pyx_v_normalized, in
   __Pyx_RefNannyFinishContext();
 }
 
-/* "cython/optimize.pyx":519
+/* "cython/optimize.pyx":522
  * 
  * 
  * def cy_umap_uniformly(             # <<<<<<<<<<<<<<
@@ -5094,101 +5207,101 @@ static PyObject *__pyx_pw_12optimize_gpu_3cy_umap_uniformly(PyObject *__pyx_self
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_sym_attraction)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 1); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 1); __PYX_ERR(0, 522, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_momentum)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 2); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 2); __PYX_ERR(0, 522, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 3); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 3); __PYX_ERR(0, 522, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 4); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 4); __PYX_ERR(0, 522, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 5); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 5); __PYX_ERR(0, 522, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 6); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 6); __PYX_ERR(0, 522, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  7:
         if (likely((values[7] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_weights)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 7); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 7); __PYX_ERR(0, 522, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  8:
         if (likely((values[8] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_epochs_per_sample)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 8); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 8); __PYX_ERR(0, 522, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  9:
         if (likely((values[9] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_a)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 9); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 9); __PYX_ERR(0, 522, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 10:
         if (likely((values[10] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_b)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 10); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 10); __PYX_ERR(0, 522, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 11:
         if (likely((values[11] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_dim)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 11); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 11); __PYX_ERR(0, 522, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 12:
         if (likely((values[12] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_initial_lr)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 12); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 12); __PYX_ERR(0, 522, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 13:
         if (likely((values[13] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_negative_sample_rate)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 13); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 13); __PYX_ERR(0, 522, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 14:
         if (likely((values[14] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_epochs)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 14); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 14); __PYX_ERR(0, 522, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 15:
         if (likely((values[15] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_vertices)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 15); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 15); __PYX_ERR(0, 522, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 16:
         if (likely((values[16] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_verbose)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 16); __PYX_ERR(0, 519, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, 16); __PYX_ERR(0, 522, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "cy_umap_uniformly") < 0)) __PYX_ERR(0, 519, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "cy_umap_uniformly") < 0)) __PYX_ERR(0, 522, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 17) {
       goto __pyx_L5_argtuple_error;
@@ -5211,33 +5324,33 @@ static PyObject *__pyx_pw_12optimize_gpu_3cy_umap_uniformly(PyObject *__pyx_self
       values[15] = PyTuple_GET_ITEM(__pyx_args, 15);
       values[16] = PyTuple_GET_ITEM(__pyx_args, 16);
     }
-    __pyx_v_normalized = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 520, __pyx_L3_error)
-    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 521, __pyx_L3_error)
-    __pyx_v_momentum = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 522, __pyx_L3_error)
-    __pyx_v_head_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[3], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head_embedding.memview)) __PYX_ERR(0, 523, __pyx_L3_error)
-    __pyx_v_tail_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail_embedding.memview)) __PYX_ERR(0, 524, __pyx_L3_error)
-    __pyx_v_head = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head.memview)) __PYX_ERR(0, 525, __pyx_L3_error)
-    __pyx_v_tail = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[6], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail.memview)) __PYX_ERR(0, 526, __pyx_L3_error)
-    __pyx_v_weights = __Pyx_PyObject_to_MemoryviewSlice_ds_float(values[7], PyBUF_WRITABLE); if (unlikely(!__pyx_v_weights.memview)) __PYX_ERR(0, 527, __pyx_L3_error)
+    __pyx_v_normalized = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 523, __pyx_L3_error)
+    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 524, __pyx_L3_error)
+    __pyx_v_momentum = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 525, __pyx_L3_error)
+    __pyx_v_head_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[3], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head_embedding.memview)) __PYX_ERR(0, 526, __pyx_L3_error)
+    __pyx_v_tail_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail_embedding.memview)) __PYX_ERR(0, 527, __pyx_L3_error)
+    __pyx_v_head = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head.memview)) __PYX_ERR(0, 528, __pyx_L3_error)
+    __pyx_v_tail = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[6], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail.memview)) __PYX_ERR(0, 529, __pyx_L3_error)
+    __pyx_v_weights = __Pyx_PyObject_to_MemoryviewSlice_ds_float(values[7], PyBUF_WRITABLE); if (unlikely(!__pyx_v_weights.memview)) __PYX_ERR(0, 530, __pyx_L3_error)
     __pyx_v_epochs_per_sample = ((PyArrayObject *)values[8]);
-    __pyx_v_a = __pyx_PyFloat_AsFloat(values[9]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 529, __pyx_L3_error)
-    __pyx_v_b = __pyx_PyFloat_AsFloat(values[10]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 530, __pyx_L3_error)
-    __pyx_v_dim = __Pyx_PyInt_As_int(values[11]); if (unlikely((__pyx_v_dim == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 531, __pyx_L3_error)
-    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 532, __pyx_L3_error)
-    __pyx_v_negative_sample_rate = __pyx_PyFloat_AsFloat(values[13]); if (unlikely((__pyx_v_negative_sample_rate == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 533, __pyx_L3_error)
-    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[14]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 534, __pyx_L3_error)
-    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[15]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 535, __pyx_L3_error)
-    __pyx_v_verbose = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 536, __pyx_L3_error)
+    __pyx_v_a = __pyx_PyFloat_AsFloat(values[9]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 532, __pyx_L3_error)
+    __pyx_v_b = __pyx_PyFloat_AsFloat(values[10]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 533, __pyx_L3_error)
+    __pyx_v_dim = __Pyx_PyInt_As_int(values[11]); if (unlikely((__pyx_v_dim == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 534, __pyx_L3_error)
+    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 535, __pyx_L3_error)
+    __pyx_v_negative_sample_rate = __pyx_PyFloat_AsFloat(values[13]); if (unlikely((__pyx_v_negative_sample_rate == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 536, __pyx_L3_error)
+    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[14]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 537, __pyx_L3_error)
+    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[15]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 538, __pyx_L3_error)
+    __pyx_v_verbose = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 539, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 519, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("cy_umap_uniformly", 1, 17, 17, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 522, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("optimize_gpu.cy_umap_uniformly", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_epochs_per_sample), __pyx_ptype_5numpy_ndarray, 1, "epochs_per_sample", 0))) __PYX_ERR(0, 528, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_epochs_per_sample), __pyx_ptype_5numpy_ndarray, 1, "epochs_per_sample", 0))) __PYX_ERR(0, 531, __pyx_L1_error)
   __pyx_r = __pyx_pf_12optimize_gpu_2cy_umap_uniformly(__pyx_self, __pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_momentum, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_head, __pyx_v_tail, __pyx_v_weights, __pyx_v_epochs_per_sample, __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_initial_lr, __pyx_v_negative_sample_rate, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_verbose);
 
   /* function exit code */
@@ -5287,11 +5400,11 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
   __pyx_pybuffernd_epochs_per_sample.rcbuffer = &__pyx_pybuffer_epochs_per_sample;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer, (PyObject*)__pyx_v_epochs_per_sample, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 519, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer, (PyObject*)__pyx_v_epochs_per_sample, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 522, __pyx_L1_error)
   }
   __pyx_pybuffernd_epochs_per_sample.diminfo[0].strides = __pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_epochs_per_sample.diminfo[0].shape = __pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer.shape[0];
 
-  /* "cython/optimize.pyx":551
+  /* "cython/optimize.pyx":554
  * 
  *     # Move from numpy to c pointer arrays
  *     n_edges = int(epochs_per_sample.shape[0])             # <<<<<<<<<<<<<<
@@ -5300,7 +5413,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
   __pyx_v_n_edges = ((int)(__pyx_v_epochs_per_sample->dimensions[0]));
 
-  /* "cython/optimize.pyx":552
+  /* "cython/optimize.pyx":555
  *     # Move from numpy to c pointer arrays
  *     n_edges = int(epochs_per_sample.shape[0])
  *     _head_embedding = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
@@ -5309,7 +5422,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
   __pyx_v__head_embedding = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
-  /* "cython/optimize.pyx":553
+  /* "cython/optimize.pyx":556
  *     n_edges = int(epochs_per_sample.shape[0])
  *     _head_embedding = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     _tail_embedding = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
@@ -5318,7 +5431,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
   __pyx_v__tail_embedding = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
-  /* "cython/optimize.pyx":554
+  /* "cython/optimize.pyx":557
  *     _head_embedding = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     _tail_embedding = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     _head = <int*> malloc(sizeof(int) * n_edges)             # <<<<<<<<<<<<<<
@@ -5327,7 +5440,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
   __pyx_v__head = ((int *)malloc(((sizeof(int)) * __pyx_v_n_edges)));
 
-  /* "cython/optimize.pyx":555
+  /* "cython/optimize.pyx":558
  *     _tail_embedding = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     _head = <int*> malloc(sizeof(int) * n_edges)
  *     _tail = <int*> malloc(sizeof(int) * n_edges)             # <<<<<<<<<<<<<<
@@ -5336,7 +5449,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
   __pyx_v__tail = ((int *)malloc(((sizeof(int)) * __pyx_v_n_edges)));
 
-  /* "cython/optimize.pyx":556
+  /* "cython/optimize.pyx":559
  *     _head = <int*> malloc(sizeof(int) * n_edges)
  *     _tail = <int*> malloc(sizeof(int) * n_edges)
  *     _weights = <float*> malloc(sizeof(float) * n_edges)             # <<<<<<<<<<<<<<
@@ -5345,7 +5458,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
   __pyx_v__weights = ((float *)malloc(((sizeof(float)) * __pyx_v_n_edges)));
 
-  /* "cython/optimize.pyx":558
+  /* "cython/optimize.pyx":561
  *     _weights = <float*> malloc(sizeof(float) * n_edges)
  * 
  *     for v in range(n_vertices):             # <<<<<<<<<<<<<<
@@ -5357,7 +5470,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_v = __pyx_t_3;
 
-    /* "cython/optimize.pyx":559
+    /* "cython/optimize.pyx":562
  * 
  *     for v in range(n_vertices):
  *         for d in range(dim):             # <<<<<<<<<<<<<<
@@ -5369,7 +5482,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
       __pyx_v_d = __pyx_t_6;
 
-      /* "cython/optimize.pyx":560
+      /* "cython/optimize.pyx":563
  *     for v in range(n_vertices):
  *         for d in range(dim):
  *             _head_embedding[v * dim + d] = head_embedding[v, d]             # <<<<<<<<<<<<<<
@@ -5389,11 +5502,11 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
       } else if (unlikely(__pyx_t_8 >= __pyx_v_head_embedding.shape[1])) __pyx_t_9 = 1;
       if (unlikely(__pyx_t_9 != -1)) {
         __Pyx_RaiseBufferIndexError(__pyx_t_9);
-        __PYX_ERR(0, 560, __pyx_L1_error)
+        __PYX_ERR(0, 563, __pyx_L1_error)
       }
       (__pyx_v__head_embedding[((__pyx_v_v * __pyx_v_dim) + __pyx_v_d)]) = (*((float *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_head_embedding.data + __pyx_t_7 * __pyx_v_head_embedding.strides[0]) ) + __pyx_t_8 * __pyx_v_head_embedding.strides[1]) )));
 
-      /* "cython/optimize.pyx":561
+      /* "cython/optimize.pyx":564
  *         for d in range(dim):
  *             _head_embedding[v * dim + d] = head_embedding[v, d]
  *             _tail_embedding[v * dim + d] = tail_embedding[v, d]             # <<<<<<<<<<<<<<
@@ -5413,13 +5526,13 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
       } else if (unlikely(__pyx_t_7 >= __pyx_v_tail_embedding.shape[1])) __pyx_t_9 = 1;
       if (unlikely(__pyx_t_9 != -1)) {
         __Pyx_RaiseBufferIndexError(__pyx_t_9);
-        __PYX_ERR(0, 561, __pyx_L1_error)
+        __PYX_ERR(0, 564, __pyx_L1_error)
       }
       (__pyx_v__tail_embedding[((__pyx_v_v * __pyx_v_dim) + __pyx_v_d)]) = (*((float *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_tail_embedding.data + __pyx_t_8 * __pyx_v_tail_embedding.strides[0]) ) + __pyx_t_7 * __pyx_v_tail_embedding.strides[1]) )));
     }
   }
 
-  /* "cython/optimize.pyx":562
+  /* "cython/optimize.pyx":565
  *             _head_embedding[v * dim + d] = head_embedding[v, d]
  *             _tail_embedding[v * dim + d] = tail_embedding[v, d]
  *     for edge in range(n_edges):             # <<<<<<<<<<<<<<
@@ -5431,7 +5544,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_edge = __pyx_t_3;
 
-    /* "cython/optimize.pyx":563
+    /* "cython/optimize.pyx":566
  *             _tail_embedding[v * dim + d] = tail_embedding[v, d]
  *     for edge in range(n_edges):
  *         _head[edge] = head[edge]             # <<<<<<<<<<<<<<
@@ -5446,11 +5559,11 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
     } else if (unlikely(__pyx_t_7 >= __pyx_v_head.shape[0])) __pyx_t_4 = 0;
     if (unlikely(__pyx_t_4 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_4);
-      __PYX_ERR(0, 563, __pyx_L1_error)
+      __PYX_ERR(0, 566, __pyx_L1_error)
     }
     (__pyx_v__head[__pyx_v_edge]) = (*((int *) ( /* dim=0 */ (__pyx_v_head.data + __pyx_t_7 * __pyx_v_head.strides[0]) )));
 
-    /* "cython/optimize.pyx":564
+    /* "cython/optimize.pyx":567
  *     for edge in range(n_edges):
  *         _head[edge] = head[edge]
  *         _tail[edge] = tail[edge]             # <<<<<<<<<<<<<<
@@ -5465,11 +5578,11 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
     } else if (unlikely(__pyx_t_7 >= __pyx_v_tail.shape[0])) __pyx_t_4 = 0;
     if (unlikely(__pyx_t_4 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_4);
-      __PYX_ERR(0, 564, __pyx_L1_error)
+      __PYX_ERR(0, 567, __pyx_L1_error)
     }
     (__pyx_v__tail[__pyx_v_edge]) = (*((int *) ( /* dim=0 */ (__pyx_v_tail.data + __pyx_t_7 * __pyx_v_tail.strides[0]) )));
 
-    /* "cython/optimize.pyx":565
+    /* "cython/optimize.pyx":568
  *         _head[edge] = head[edge]
  *         _tail[edge] = tail[edge]
  *         _weights[edge] = weights[edge]             # <<<<<<<<<<<<<<
@@ -5484,12 +5597,12 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
     } else if (unlikely(__pyx_t_7 >= __pyx_v_weights.shape[0])) __pyx_t_4 = 0;
     if (unlikely(__pyx_t_4 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_4);
-      __PYX_ERR(0, 565, __pyx_L1_error)
+      __PYX_ERR(0, 568, __pyx_L1_error)
     }
     (__pyx_v__weights[__pyx_v_edge]) = (*((float *) ( /* dim=0 */ (__pyx_v_weights.data + __pyx_t_7 * __pyx_v_weights.strides[0]) )));
   }
 
-  /* "cython/optimize.pyx":567
+  /* "cython/optimize.pyx":570
  *         _weights[edge] = weights[edge]
  * 
  *     all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
@@ -5498,7 +5611,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
   __pyx_v_all_updates = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
-  /* "cython/optimize.pyx":568
+  /* "cython/optimize.pyx":571
  * 
  *     all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     gains = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
@@ -5507,7 +5620,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
   __pyx_v_gains = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
-  /* "cython/optimize.pyx":569
+  /* "cython/optimize.pyx":572
  *     all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     gains = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     for v in range(n_vertices):             # <<<<<<<<<<<<<<
@@ -5519,7 +5632,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_v = __pyx_t_3;
 
-    /* "cython/optimize.pyx":570
+    /* "cython/optimize.pyx":573
  *     gains = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     for v in range(n_vertices):
  *         for d in range(dim):             # <<<<<<<<<<<<<<
@@ -5531,7 +5644,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
       __pyx_v_d = __pyx_t_6;
 
-      /* "cython/optimize.pyx":571
+      /* "cython/optimize.pyx":574
  *     for v in range(n_vertices):
  *         for d in range(dim):
  *             index = v * dim + d             # <<<<<<<<<<<<<<
@@ -5540,7 +5653,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
       __pyx_v_index = ((__pyx_v_v * __pyx_v_dim) + __pyx_v_d);
 
-      /* "cython/optimize.pyx":572
+      /* "cython/optimize.pyx":575
  *         for d in range(dim):
  *             index = v * dim + d
  *             all_updates[index] = 0             # <<<<<<<<<<<<<<
@@ -5549,7 +5662,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
       (__pyx_v_all_updates[__pyx_v_index]) = 0.0;
 
-      /* "cython/optimize.pyx":573
+      /* "cython/optimize.pyx":576
  *             index = v * dim + d
  *             all_updates[index] = 0
  *             gains[index] = 1             # <<<<<<<<<<<<<<
@@ -5560,7 +5673,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
     }
   }
 
-  /* "cython/optimize.pyx":575
+  /* "cython/optimize.pyx":578
  *             gains[index] = 1
  * 
  *     for i_epoch in range(n_epochs):             # <<<<<<<<<<<<<<
@@ -5572,7 +5685,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_i_epoch = __pyx_t_3;
 
-    /* "cython/optimize.pyx":598
+    /* "cython/optimize.pyx":601
  *         # if verbose:
  *         #     print_status(i_epoch, n_epochs)
  *         cf()             # <<<<<<<<<<<<<<
@@ -5582,7 +5695,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
     cf();
   }
 
-  /* "cython/optimize.pyx":601
+  /* "cython/optimize.pyx":604
  * 
  *     # Move from c pointer arrays back to cython memoryview/numpy format
  *     for v in range(n_vertices):             # <<<<<<<<<<<<<<
@@ -5594,7 +5707,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_v = __pyx_t_3;
 
-    /* "cython/optimize.pyx":602
+    /* "cython/optimize.pyx":605
  *     # Move from c pointer arrays back to cython memoryview/numpy format
  *     for v in range(n_vertices):
  *         for d in range(dim):             # <<<<<<<<<<<<<<
@@ -5606,7 +5719,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
       __pyx_v_d = __pyx_t_6;
 
-      /* "cython/optimize.pyx":603
+      /* "cython/optimize.pyx":606
  *     for v in range(n_vertices):
  *         for d in range(dim):
  *             head_embedding[v, d] = _head_embedding[v * dim + d]             # <<<<<<<<<<<<<<
@@ -5626,13 +5739,13 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
       } else if (unlikely(__pyx_t_8 >= __pyx_v_head_embedding.shape[1])) __pyx_t_9 = 1;
       if (unlikely(__pyx_t_9 != -1)) {
         __Pyx_RaiseBufferIndexError(__pyx_t_9);
-        __PYX_ERR(0, 603, __pyx_L1_error)
+        __PYX_ERR(0, 606, __pyx_L1_error)
       }
       *((float *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_head_embedding.data + __pyx_t_7 * __pyx_v_head_embedding.strides[0]) ) + __pyx_t_8 * __pyx_v_head_embedding.strides[1]) )) = (__pyx_v__head_embedding[((__pyx_v_v * __pyx_v_dim) + __pyx_v_d)]);
     }
   }
 
-  /* "cython/optimize.pyx":605
+  /* "cython/optimize.pyx":608
  *             head_embedding[v, d] = _head_embedding[v * dim + d]
  * 
  *     free(_head_embedding)             # <<<<<<<<<<<<<<
@@ -5641,7 +5754,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
   free(__pyx_v__head_embedding);
 
-  /* "cython/optimize.pyx":606
+  /* "cython/optimize.pyx":609
  * 
  *     free(_head_embedding)
  *     free(_tail_embedding)             # <<<<<<<<<<<<<<
@@ -5650,7 +5763,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
   free(__pyx_v__tail_embedding);
 
-  /* "cython/optimize.pyx":607
+  /* "cython/optimize.pyx":610
  *     free(_head_embedding)
  *     free(_tail_embedding)
  *     free(_head)             # <<<<<<<<<<<<<<
@@ -5659,7 +5772,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
   free(__pyx_v__head);
 
-  /* "cython/optimize.pyx":608
+  /* "cython/optimize.pyx":611
  *     free(_tail_embedding)
  *     free(_head)
  *     free(_tail)             # <<<<<<<<<<<<<<
@@ -5668,7 +5781,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
   free(__pyx_v__tail);
 
-  /* "cython/optimize.pyx":609
+  /* "cython/optimize.pyx":612
  *     free(_head)
  *     free(_tail)
  *     free(_weights)             # <<<<<<<<<<<<<<
@@ -5677,7 +5790,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
   free(__pyx_v__weights);
 
-  /* "cython/optimize.pyx":610
+  /* "cython/optimize.pyx":613
  *     free(_tail)
  *     free(_weights)
  *     free(all_updates)             # <<<<<<<<<<<<<<
@@ -5686,7 +5799,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
   free(__pyx_v_all_updates);
 
-  /* "cython/optimize.pyx":611
+  /* "cython/optimize.pyx":614
  *     free(_weights)
  *     free(all_updates)
  *     free(gains)             # <<<<<<<<<<<<<<
@@ -5695,7 +5808,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  */
   free(__pyx_v_gains);
 
-  /* "cython/optimize.pyx":612
+  /* "cython/optimize.pyx":615
  *     free(all_updates)
  *     free(gains)
  *     return head_embedding             # <<<<<<<<<<<<<<
@@ -5703,13 +5816,13 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_10 = __pyx_memoryview_fromslice(__pyx_v_head_embedding, 2, (PyObject *(*)(char *)) __pyx_memview_get_float, (int (*)(char *, PyObject *)) __pyx_memview_set_float, 0);; if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 612, __pyx_L1_error)
+  __pyx_t_10 = __pyx_memoryview_fromslice(__pyx_v_head_embedding, 2, (PyObject *(*)(char *)) __pyx_memview_get_float, (int (*)(char *, PyObject *)) __pyx_memview_set_float, 0);; if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 615, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
   __pyx_r = __pyx_t_10;
   __pyx_t_10 = 0;
   goto __pyx_L0;
 
-  /* "cython/optimize.pyx":519
+  /* "cython/optimize.pyx":522
  * 
  * 
  * def cy_umap_uniformly(             # <<<<<<<<<<<<<<
@@ -5742,7 +5855,7 @@ static PyObject *__pyx_pf_12optimize_gpu_2cy_umap_uniformly(CYTHON_UNUSED PyObje
   return __pyx_r;
 }
 
-/* "cython/optimize.pyx":620
+/* "cython/optimize.pyx":623
  * @cython.wraparound(False)
  * @cython.cdivision(True)
  * cdef void bh_collect_attr_grads(             # <<<<<<<<<<<<<<
@@ -5773,7 +5886,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
   int __pyx_t_9;
   int __pyx_t_10;
 
-  /* "cython/optimize.pyx":643
+  /* "cython/optimize.pyx":646
  *         float attr_force
  * 
  *     for v in range(n_vertices):             # <<<<<<<<<<<<<<
@@ -5785,7 +5898,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_v = __pyx_t_3;
 
-    /* "cython/optimize.pyx":644
+    /* "cython/optimize.pyx":647
  * 
  *     for v in range(n_vertices):
  *         for d in range(dim):             # <<<<<<<<<<<<<<
@@ -5797,7 +5910,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
       __pyx_v_d = __pyx_t_6;
 
-      /* "cython/optimize.pyx":645
+      /* "cython/optimize.pyx":648
  *     for v in range(n_vertices):
  *         for d in range(dim):
  *             local_attr_grads[v * dim + d] = 0             # <<<<<<<<<<<<<<
@@ -5808,7 +5921,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
     }
   }
 
-  /* "cython/optimize.pyx":647
+  /* "cython/optimize.pyx":650
  *             local_attr_grads[v * dim + d] = 0
  * 
  *     with parallel():             # <<<<<<<<<<<<<<
@@ -5830,7 +5943,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
           __pyx_v_y1 = ((float *)1);
           __pyx_v_y2 = ((float *)1);
 
-          /* "cython/optimize.pyx":648
+          /* "cython/optimize.pyx":651
  * 
  *     with parallel():
  *         y1 = <float*> malloc(sizeof(float) * dim)             # <<<<<<<<<<<<<<
@@ -5839,7 +5952,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
  */
           __pyx_v_y1 = ((float *)malloc(((sizeof(float)) * __pyx_v_dim)));
 
-          /* "cython/optimize.pyx":649
+          /* "cython/optimize.pyx":652
  *     with parallel():
  *         y1 = <float*> malloc(sizeof(float) * dim)
  *         y2 = <float*> malloc(sizeof(float) * dim)             # <<<<<<<<<<<<<<
@@ -5848,7 +5961,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
  */
           __pyx_v_y2 = ((float *)malloc(((sizeof(float)) * __pyx_v_dim)));
 
-          /* "cython/optimize.pyx":650
+          /* "cython/optimize.pyx":653
  *         y1 = <float*> malloc(sizeof(float) * dim)
  *         y2 = <float*> malloc(sizeof(float) * dim)
  *         for edge in prange(n_edges):             # <<<<<<<<<<<<<<
@@ -5876,7 +5989,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
                           __pyx_v_k = ((int)0xbad0bad0);
                           __pyx_v_weight_scalar = ((float)__PYX_NAN());
 
-                          /* "cython/optimize.pyx":651
+                          /* "cython/optimize.pyx":654
  *         y2 = <float*> malloc(sizeof(float) * dim)
  *         for edge in prange(n_edges):
  *             j = head[edge]             # <<<<<<<<<<<<<<
@@ -5886,7 +5999,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
                           __pyx_t_7 = __pyx_v_edge;
                           __pyx_v_j = (*((int *) ( /* dim=0 */ (__pyx_v_head.data + __pyx_t_7 * __pyx_v_head.strides[0]) )));
 
-                          /* "cython/optimize.pyx":652
+                          /* "cython/optimize.pyx":655
  *         for edge in prange(n_edges):
  *             j = head[edge]
  *             k = tail[edge]             # <<<<<<<<<<<<<<
@@ -5896,7 +6009,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
                           __pyx_t_7 = __pyx_v_edge;
                           __pyx_v_k = (*((int *) ( /* dim=0 */ (__pyx_v_tail.data + __pyx_t_7 * __pyx_v_tail.strides[0]) )));
 
-                          /* "cython/optimize.pyx":653
+                          /* "cython/optimize.pyx":656
  *             j = head[edge]
  *             k = tail[edge]
  *             for d in range(dim):             # <<<<<<<<<<<<<<
@@ -5908,7 +6021,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
                           for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
                             __pyx_v_d = __pyx_t_6;
 
-                            /* "cython/optimize.pyx":654
+                            /* "cython/optimize.pyx":657
  *             k = tail[edge]
  *             for d in range(dim):
  *                 y1[d] = head_embedding[j, d]             # <<<<<<<<<<<<<<
@@ -5919,7 +6032,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
                             __pyx_t_8 = __pyx_v_d;
                             (__pyx_v_y1[__pyx_v_d]) = (*((float *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_head_embedding.data + __pyx_t_7 * __pyx_v_head_embedding.strides[0]) ) + __pyx_t_8 * __pyx_v_head_embedding.strides[1]) )));
 
-                            /* "cython/optimize.pyx":655
+                            /* "cython/optimize.pyx":658
  *             for d in range(dim):
  *                 y1[d] = head_embedding[j, d]
  *                 y2[d] = tail_embedding[k, d]             # <<<<<<<<<<<<<<
@@ -5931,7 +6044,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
                             (__pyx_v_y2[__pyx_v_d]) = (*((float *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_tail_embedding.data + __pyx_t_8 * __pyx_v_tail_embedding.strides[0]) ) + __pyx_t_7 * __pyx_v_tail_embedding.strides[1]) )));
                           }
 
-                          /* "cython/optimize.pyx":656
+                          /* "cython/optimize.pyx":659
  *                 y1[d] = head_embedding[j, d]
  *                 y2[d] = tail_embedding[k, d]
  *             dist_squared = sq_euc_dist(y1, y2, dim)             # <<<<<<<<<<<<<<
@@ -5940,7 +6053,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
  */
                           __pyx_v_dist_squared = sq_euc_dist(__pyx_v_y1, __pyx_v_y2, __pyx_v_dim);
 
-                          /* "cython/optimize.pyx":659
+                          /* "cython/optimize.pyx":662
  * 
  *             # t-SNE early exaggeration
  *             if i_epoch < 100:             # <<<<<<<<<<<<<<
@@ -5950,7 +6063,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
                           __pyx_t_9 = ((__pyx_v_i_epoch < 0x64) != 0);
                           if (__pyx_t_9) {
 
-                            /* "cython/optimize.pyx":660
+                            /* "cython/optimize.pyx":663
  *             # t-SNE early exaggeration
  *             if i_epoch < 100:
  *                 weight_scalar = 4             # <<<<<<<<<<<<<<
@@ -5959,7 +6072,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
  */
                             __pyx_v_weight_scalar = 4.0;
 
-                            /* "cython/optimize.pyx":659
+                            /* "cython/optimize.pyx":662
  * 
  *             # t-SNE early exaggeration
  *             if i_epoch < 100:             # <<<<<<<<<<<<<<
@@ -5969,7 +6082,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
                             goto __pyx_L17;
                           }
 
-                          /* "cython/optimize.pyx":662
+                          /* "cython/optimize.pyx":665
  *                 weight_scalar = 4
  *             else:
  *                 weight_scalar = 1             # <<<<<<<<<<<<<<
@@ -5981,7 +6094,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
                           }
                           __pyx_L17:;
 
-                          /* "cython/optimize.pyx":669
+                          /* "cython/optimize.pyx":672
  *                 a,
  *                 b,
  *                 weights[edge] * weight_scalar             # <<<<<<<<<<<<<<
@@ -5990,7 +6103,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
  */
                           __pyx_t_7 = __pyx_v_edge;
 
-                          /* "cython/optimize.pyx":664
+                          /* "cython/optimize.pyx":667
  *                 weight_scalar = 1
  * 
  *             attr_force = attractive_force_func(             # <<<<<<<<<<<<<<
@@ -5999,7 +6112,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
  */
                           __pyx_v_attr_force = attractive_force_func(__pyx_v_normalized, __pyx_v_dist_squared, __pyx_v_a, __pyx_v_b, ((*((float *) ( /* dim=0 */ (__pyx_v_weights.data + __pyx_t_7 * __pyx_v_weights.strides[0]) ))) * __pyx_v_weight_scalar));
 
-                          /* "cython/optimize.pyx":672
+                          /* "cython/optimize.pyx":675
  *             )
  * 
  *             for d in range(dim):             # <<<<<<<<<<<<<<
@@ -6011,7 +6124,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
                           for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
                             __pyx_v_d = __pyx_t_6;
 
-                            /* "cython/optimize.pyx":673
+                            /* "cython/optimize.pyx":676
  * 
  *             for d in range(dim):
  *                 grad_d = attr_force * (y1[d] - y2[d])             # <<<<<<<<<<<<<<
@@ -6020,7 +6133,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
  */
                             __pyx_v_grad_d = (__pyx_v_attr_force * ((__pyx_v_y1[__pyx_v_d]) - (__pyx_v_y2[__pyx_v_d])));
 
-                            /* "cython/optimize.pyx":674
+                            /* "cython/optimize.pyx":677
  *             for d in range(dim):
  *                 grad_d = attr_force * (y1[d] - y2[d])
  *                 local_attr_grads[j * dim + d] += grad_d             # <<<<<<<<<<<<<<
@@ -6030,7 +6143,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
                             __pyx_t_10 = ((__pyx_v_j * __pyx_v_dim) + __pyx_v_d);
                             (__pyx_v_local_attr_grads[__pyx_t_10]) = ((__pyx_v_local_attr_grads[__pyx_t_10]) + __pyx_v_grad_d);
 
-                            /* "cython/optimize.pyx":675
+                            /* "cython/optimize.pyx":678
  *                 grad_d = attr_force * (y1[d] - y2[d])
  *                 local_attr_grads[j * dim + d] += grad_d
  *                 if sym_attraction:             # <<<<<<<<<<<<<<
@@ -6040,7 +6153,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
                             __pyx_t_9 = (__pyx_v_sym_attraction != 0);
                             if (__pyx_t_9) {
 
-                              /* "cython/optimize.pyx":676
+                              /* "cython/optimize.pyx":679
  *                 local_attr_grads[j * dim + d] += grad_d
  *                 if sym_attraction:
  *                     local_attr_grads[k * dim + d] -= grad_d             # <<<<<<<<<<<<<<
@@ -6050,7 +6163,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
                               __pyx_t_10 = ((__pyx_v_k * __pyx_v_dim) + __pyx_v_d);
                               (__pyx_v_local_attr_grads[__pyx_t_10]) = ((__pyx_v_local_attr_grads[__pyx_t_10]) - __pyx_v_grad_d);
 
-                              /* "cython/optimize.pyx":675
+                              /* "cython/optimize.pyx":678
  *                 grad_d = attr_force * (y1[d] - y2[d])
  *                 local_attr_grads[j * dim + d] += grad_d
  *                 if sym_attraction:             # <<<<<<<<<<<<<<
@@ -6064,7 +6177,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
               }
           }
 
-          /* "cython/optimize.pyx":677
+          /* "cython/optimize.pyx":680
  *                 if sym_attraction:
  *                     local_attr_grads[k * dim + d] -= grad_d
  *         free(y1)             # <<<<<<<<<<<<<<
@@ -6073,7 +6186,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
  */
           free(__pyx_v_y1);
 
-          /* "cython/optimize.pyx":678
+          /* "cython/optimize.pyx":681
  *                     local_attr_grads[k * dim + d] -= grad_d
  *         free(y1)
  *         free(y2)             # <<<<<<<<<<<<<<
@@ -6090,7 +6203,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
       #define unlikely(x) __builtin_expect(!!(x), 0)
   #endif
 
-  /* "cython/optimize.pyx":620
+  /* "cython/optimize.pyx":623
  * @cython.wraparound(False)
  * @cython.cdivision(True)
  * cdef void bh_collect_attr_grads(             # <<<<<<<<<<<<<<
@@ -6101,7 +6214,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_attr_grads(float *__pyx_v_local_at
   /* function exit code */
 }
 
-/* "cython/optimize.pyx":683
+/* "cython/optimize.pyx":686
  * @cython.wraparound(False)
  * @cython.cdivision(True)
  * cdef void bh_collect_rep_grads(             # <<<<<<<<<<<<<<
@@ -6139,7 +6252,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
   int __pyx_t_13;
   int __pyx_t_14;
 
-  /* "cython/optimize.pyx":699
+  /* "cython/optimize.pyx":702
  *         int num_cells, dim_index
  *         long cell_metadata
  *         float theta = 0.5             # <<<<<<<<<<<<<<
@@ -6148,7 +6261,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
  */
   __pyx_v_theta = 0.5;
 
-  /* "cython/optimize.pyx":700
+  /* "cython/optimize.pyx":703
  *         long cell_metadata
  *         float theta = 0.5
  *         long offset = dim + 2             # <<<<<<<<<<<<<<
@@ -6157,7 +6270,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
  */
   __pyx_v_offset = (__pyx_v_dim + 2);
 
-  /* "cython/optimize.pyx":706
+  /* "cython/optimize.pyx":709
  *         float *y1
  * 
  *     for v in range(n_vertices):             # <<<<<<<<<<<<<<
@@ -6169,7 +6282,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_v = __pyx_t_3;
 
-    /* "cython/optimize.pyx":707
+    /* "cython/optimize.pyx":710
  * 
  *     for v in range(n_vertices):
  *         for d in range(dim):             # <<<<<<<<<<<<<<
@@ -6181,7 +6294,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
       __pyx_v_d = __pyx_t_6;
 
-      /* "cython/optimize.pyx":708
+      /* "cython/optimize.pyx":711
  *     for v in range(n_vertices):
  *         for d in range(dim):
  *             local_rep_grads[v * dim + d] = 0             # <<<<<<<<<<<<<<
@@ -6192,7 +6305,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
     }
   }
 
-  /* "cython/optimize.pyx":710
+  /* "cython/optimize.pyx":713
  *             local_rep_grads[v * dim + d] = 0
  * 
  *     local_Z[0] = 0             # <<<<<<<<<<<<<<
@@ -6201,7 +6314,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
  */
   (__pyx_v_local_Z[0]) = 0.0;
 
-  /* "cython/optimize.pyx":711
+  /* "cython/optimize.pyx":714
  * 
  *     local_Z[0] = 0
  *     with parallel():             # <<<<<<<<<<<<<<
@@ -6224,7 +6337,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
           __pyx_v_rep_func_outputs = ((float *)1);
           __pyx_v_y1 = ((float *)1);
 
-          /* "cython/optimize.pyx":712
+          /* "cython/optimize.pyx":715
  *     local_Z[0] = 0
  *     with parallel():
  *         cell_summaries = <float*> malloc(sizeof(float) * n_vertices * offset)             # <<<<<<<<<<<<<<
@@ -6233,7 +6346,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
  */
           __pyx_v_cell_summaries = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_offset)));
 
-          /* "cython/optimize.pyx":713
+          /* "cython/optimize.pyx":716
  *     with parallel():
  *         cell_summaries = <float*> malloc(sizeof(float) * n_vertices * offset)
  *         rep_func_outputs = <float*> malloc(sizeof(float) * 2)             # <<<<<<<<<<<<<<
@@ -6242,7 +6355,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
  */
           __pyx_v_rep_func_outputs = ((float *)malloc(((sizeof(float)) * 2)));
 
-          /* "cython/optimize.pyx":714
+          /* "cython/optimize.pyx":717
  *         cell_summaries = <float*> malloc(sizeof(float) * n_vertices * offset)
  *         rep_func_outputs = <float*> malloc(sizeof(float) * 2)
  *         y1 = <float*> malloc(sizeof(float) * dim)             # <<<<<<<<<<<<<<
@@ -6251,7 +6364,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
  */
           __pyx_v_y1 = ((float *)malloc(((sizeof(float)) * __pyx_v_dim)));
 
-          /* "cython/optimize.pyx":715
+          /* "cython/optimize.pyx":718
  *         rep_func_outputs = <float*> malloc(sizeof(float) * 2)
  *         y1 = <float*> malloc(sizeof(float) * dim)
  *         for v in prange(n_vertices):             # <<<<<<<<<<<<<<
@@ -6280,7 +6393,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
                           __pyx_v_i_cell = ((int)0xbad0bad0);
                           __pyx_v_num_cells = ((int)0xbad0bad0);
 
-                          /* "cython/optimize.pyx":717
+                          /* "cython/optimize.pyx":720
  *         for v in prange(n_vertices):
  *             # Get necessary data regarding current point and the quadtree cells
  *             for d in range(dim):             # <<<<<<<<<<<<<<
@@ -6292,7 +6405,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
                           for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
                             __pyx_v_d = __pyx_t_6;
 
-                            /* "cython/optimize.pyx":718
+                            /* "cython/optimize.pyx":721
  *             # Get necessary data regarding current point and the quadtree cells
  *             for d in range(dim):
  *                 y1[d] = head_embedding[v, d]             # <<<<<<<<<<<<<<
@@ -6304,7 +6417,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
                             (__pyx_v_y1[__pyx_v_d]) = (*((float *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_head_embedding.data + __pyx_t_7 * __pyx_v_head_embedding.strides[0]) ) + __pyx_t_8 * __pyx_v_head_embedding.strides[1]) )));
                           }
 
-                          /* "cython/optimize.pyx":719
+                          /* "cython/optimize.pyx":722
  *             for d in range(dim):
  *                 y1[d] = head_embedding[v, d]
  *             cell_metadata = qt.summarize(y1, cell_summaries, theta * theta)             # <<<<<<<<<<<<<<
@@ -6316,7 +6429,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
                           __pyx_t_9 = ((struct __pyx_vtabstruct_7sklearn_9neighbors_10_quad_tree__QuadTree *)__pyx_v_qt->__pyx_vtab)->summarize(__pyx_v_qt, __pyx_v_y1, __pyx_v_cell_summaries, &__pyx_t_10); 
                           __pyx_v_cell_metadata = __pyx_t_9;
 
-                          /* "cython/optimize.pyx":720
+                          /* "cython/optimize.pyx":723
  *                 y1[d] = head_embedding[v, d]
  *             cell_metadata = qt.summarize(y1, cell_summaries, theta * theta)
  *             num_cells = cell_metadata // offset             # <<<<<<<<<<<<<<
@@ -6325,7 +6438,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
  */
                           __pyx_v_num_cells = (__pyx_v_cell_metadata / __pyx_v_offset);
 
-                          /* "cython/optimize.pyx":723
+                          /* "cython/optimize.pyx":726
  * 
  *             # For each quadtree cell with respect to the current point
  *             for i_cell in range(num_cells):             # <<<<<<<<<<<<<<
@@ -6337,7 +6450,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
                           for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
                             __pyx_v_i_cell = __pyx_t_6;
 
-                            /* "cython/optimize.pyx":724
+                            /* "cython/optimize.pyx":727
  *             # For each quadtree cell with respect to the current point
  *             for i_cell in range(num_cells):
  *                 cell_dist = cell_summaries[i_cell * offset + dim]             # <<<<<<<<<<<<<<
@@ -6346,7 +6459,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
  */
                             __pyx_v_cell_dist = (__pyx_v_cell_summaries[((__pyx_v_i_cell * __pyx_v_offset) + __pyx_v_dim)]);
 
-                            /* "cython/optimize.pyx":725
+                            /* "cython/optimize.pyx":728
  *             for i_cell in range(num_cells):
  *                 cell_dist = cell_summaries[i_cell * offset + dim]
  *                 cell_size = cell_summaries[i_cell * offset + dim + 1]             # <<<<<<<<<<<<<<
@@ -6355,7 +6468,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
  */
                             __pyx_v_cell_size = (__pyx_v_cell_summaries[(((__pyx_v_i_cell * __pyx_v_offset) + __pyx_v_dim) + 1)]);
 
-                            /* "cython/optimize.pyx":731
+                            /* "cython/optimize.pyx":734
  *                 # if cell_size < 3:
  *                 #     continue
  *                 repulsive_force_func(             # <<<<<<<<<<<<<<
@@ -6364,7 +6477,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
  */
                             repulsive_force_func(__pyx_v_rep_func_outputs, __pyx_v_normalized, __pyx_v_cell_dist, __pyx_v_a, __pyx_v_b, __pyx_v_cell_size, __pyx_v_average_weight);
 
-                            /* "cython/optimize.pyx":740
+                            /* "cython/optimize.pyx":743
  *                     average_weight,
  *                 )
  *                 local_Z[0] += rep_func_outputs[1]             # <<<<<<<<<<<<<<
@@ -6374,7 +6487,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
                             __pyx_t_9 = 0;
                             (__pyx_v_local_Z[__pyx_t_9]) = ((__pyx_v_local_Z[__pyx_t_9]) + (__pyx_v_rep_func_outputs[1]));
 
-                            /* "cython/optimize.pyx":742
+                            /* "cython/optimize.pyx":745
  *                 local_Z[0] += rep_func_outputs[1]
  * 
  *                 for d in range(dim):             # <<<<<<<<<<<<<<
@@ -6386,7 +6499,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
                             for (__pyx_t_13 = 0; __pyx_t_13 < __pyx_t_12; __pyx_t_13+=1) {
                               __pyx_v_d = __pyx_t_13;
 
-                              /* "cython/optimize.pyx":743
+                              /* "cython/optimize.pyx":746
  * 
  *                 for d in range(dim):
  *                     dim_index = i_cell * offset + d             # <<<<<<<<<<<<<<
@@ -6395,7 +6508,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
  */
                               __pyx_v_dim_index = ((__pyx_v_i_cell * __pyx_v_offset) + __pyx_v_d);
 
-                              /* "cython/optimize.pyx":744
+                              /* "cython/optimize.pyx":747
  *                 for d in range(dim):
  *                     dim_index = i_cell * offset + d
  *                     grad_d = rep_func_outputs[0] * cell_summaries[dim_index]             # <<<<<<<<<<<<<<
@@ -6404,7 +6517,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
  */
                               __pyx_v_grad_d = ((__pyx_v_rep_func_outputs[0]) * (__pyx_v_cell_summaries[__pyx_v_dim_index]));
 
-                              /* "cython/optimize.pyx":745
+                              /* "cython/optimize.pyx":748
  *                     dim_index = i_cell * offset + d
  *                     grad_d = rep_func_outputs[0] * cell_summaries[dim_index]
  *                     local_rep_grads[v * dim + d] += grad_d             # <<<<<<<<<<<<<<
@@ -6420,7 +6533,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
               }
           }
 
-          /* "cython/optimize.pyx":747
+          /* "cython/optimize.pyx":750
  *                     local_rep_grads[v * dim + d] += grad_d
  * 
  *         free(cell_summaries)             # <<<<<<<<<<<<<<
@@ -6429,7 +6542,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
  */
           free(__pyx_v_cell_summaries);
 
-          /* "cython/optimize.pyx":748
+          /* "cython/optimize.pyx":751
  * 
  *         free(cell_summaries)
  *         free(y1)             # <<<<<<<<<<<<<<
@@ -6438,7 +6551,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
  */
           free(__pyx_v_y1);
 
-          /* "cython/optimize.pyx":749
+          /* "cython/optimize.pyx":752
  *         free(cell_summaries)
  *         free(y1)
  *         free(rep_func_outputs)             # <<<<<<<<<<<<<<
@@ -6455,7 +6568,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
       #define unlikely(x) __builtin_expect(!!(x), 0)
   #endif
 
-  /* "cython/optimize.pyx":683
+  /* "cython/optimize.pyx":686
  * @cython.wraparound(False)
  * @cython.cdivision(True)
  * cdef void bh_collect_rep_grads(             # <<<<<<<<<<<<<<
@@ -6466,7 +6579,7 @@ static void __pyx_f_12optimize_gpu_bh_collect_rep_grads(float *__pyx_v_local_Z, 
   /* function exit code */
 }
 
-/* "cython/optimize.pyx":754
+/* "cython/optimize.pyx":757
  * @cython.wraparound(False)
  * @cython.cdivision(True)
  * cdef void calculate_barnes_hut(             # <<<<<<<<<<<<<<
@@ -6502,7 +6615,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
   Py_ssize_t __pyx_t_10;
   __Pyx_RefNannySetupContext("calculate_barnes_hut", 0);
 
-  /* "cython/optimize.pyx":776
+  /* "cython/optimize.pyx":779
  *         int i, j, k, l, num_cells, d, i_cell, v
  *         float grad_scalar, dist_squared, grad_d, Z
  *         float theta = 0.5             # <<<<<<<<<<<<<<
@@ -6511,7 +6624,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
   __pyx_v_theta = 0.5;
 
-  /* "cython/optimize.pyx":784
+  /* "cython/optimize.pyx":787
  *         float *local_Z
  * 
  *     cdef int n_edges = int(head.shape[0])             # <<<<<<<<<<<<<<
@@ -6520,7 +6633,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
   __pyx_v_n_edges = ((int)(__pyx_v_head.shape[0]));
 
-  /* "cython/optimize.pyx":785
+  /* "cython/optimize.pyx":788
  * 
  *     cdef int n_edges = int(head.shape[0])
  *     cdef float scalar = 4 * a * b             # <<<<<<<<<<<<<<
@@ -6529,7 +6642,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
   __pyx_v_scalar = ((4.0 * __pyx_v_a) * __pyx_v_b);
 
-  /* "cython/optimize.pyx":786
+  /* "cython/optimize.pyx":789
  *     cdef int n_edges = int(head.shape[0])
  *     cdef float scalar = 4 * a * b
  *     cdef float average_weight = get_avg_weight(weights)             # <<<<<<<<<<<<<<
@@ -6538,7 +6651,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
   __pyx_v_average_weight = __pyx_f_12optimize_gpu_get_avg_weight(__pyx_v_weights);
 
-  /* "cython/optimize.pyx":789
+  /* "cython/optimize.pyx":792
  * 
  *     # Allocte memory for data structures
  *     all_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
@@ -6547,7 +6660,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
   __pyx_v_all_attr_grads = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
-  /* "cython/optimize.pyx":790
+  /* "cython/optimize.pyx":793
  *     # Allocte memory for data structures
  *     all_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     all_rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
@@ -6556,7 +6669,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
   __pyx_v_all_rep_grads = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
-  /* "cython/optimize.pyx":791
+  /* "cython/optimize.pyx":794
  *     all_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     all_rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     local_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
@@ -6565,7 +6678,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
   __pyx_v_local_attr_grads = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
-  /* "cython/optimize.pyx":792
+  /* "cython/optimize.pyx":795
  *     all_rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     local_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     local_rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
@@ -6574,7 +6687,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
   __pyx_v_local_rep_grads = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
-  /* "cython/optimize.pyx":793
+  /* "cython/optimize.pyx":796
  *     local_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     local_rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     local_Z = <float*> malloc(sizeof(float))             # <<<<<<<<<<<<<<
@@ -6583,7 +6696,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
   __pyx_v_local_Z = ((float *)malloc((sizeof(float))));
 
-  /* "cython/optimize.pyx":794
+  /* "cython/optimize.pyx":797
  *     local_rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     local_Z = <float*> malloc(sizeof(float))
  *     for v in range(n_vertices):             # <<<<<<<<<<<<<<
@@ -6595,7 +6708,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
   for (__pyx_t_3 = 0; __pyx_t_3 < __pyx_t_2; __pyx_t_3+=1) {
     __pyx_v_v = __pyx_t_3;
 
-    /* "cython/optimize.pyx":795
+    /* "cython/optimize.pyx":798
  *     local_Z = <float*> malloc(sizeof(float))
  *     for v in range(n_vertices):
  *         for d in range(dim):             # <<<<<<<<<<<<<<
@@ -6607,7 +6720,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
     for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
       __pyx_v_d = __pyx_t_6;
 
-      /* "cython/optimize.pyx":796
+      /* "cython/optimize.pyx":799
  *     for v in range(n_vertices):
  *         for d in range(dim):
  *             index = v * dim + d             # <<<<<<<<<<<<<<
@@ -6616,7 +6729,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
       __pyx_v_index = ((__pyx_v_v * __pyx_v_dim) + __pyx_v_d);
 
-      /* "cython/optimize.pyx":797
+      /* "cython/optimize.pyx":800
  *         for d in range(dim):
  *             index = v * dim + d
  *             all_attr_grads[index] = 0             # <<<<<<<<<<<<<<
@@ -6625,7 +6738,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
       (__pyx_v_all_attr_grads[__pyx_v_index]) = 0.0;
 
-      /* "cython/optimize.pyx":798
+      /* "cython/optimize.pyx":801
  *             index = v * dim + d
  *             all_attr_grads[index] = 0
  *             all_rep_grads[index] = 0             # <<<<<<<<<<<<<<
@@ -6636,7 +6749,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
     }
   }
 
-  /* "cython/optimize.pyx":800
+  /* "cython/optimize.pyx":803
  *             all_rep_grads[index] = 0
  * 
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -6651,7 +6764,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
       #endif
       /*try:*/ {
 
-        /* "cython/optimize.pyx":801
+        /* "cython/optimize.pyx":804
  * 
  *     with nogil:
  *         Z = 0             # <<<<<<<<<<<<<<
@@ -6660,7 +6773,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
         __pyx_v_Z = 0.0;
 
-        /* "cython/optimize.pyx":802
+        /* "cython/optimize.pyx":805
  *     with nogil:
  *         Z = 0
  *         bh_collect_attr_grads(             # <<<<<<<<<<<<<<
@@ -6669,7 +6782,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
         __pyx_f_12optimize_gpu_bh_collect_attr_grads(__pyx_v_local_attr_grads, __pyx_v_head, __pyx_v_tail, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_weights, __pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_n_vertices, __pyx_v_n_edges, __pyx_v_i_epoch, __pyx_v_dim, __pyx_v_a, __pyx_v_b);
 
-        /* "cython/optimize.pyx":819
+        /* "cython/optimize.pyx":822
  *         )
  * 
  *         bh_collect_rep_grads(             # <<<<<<<<<<<<<<
@@ -6678,7 +6791,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
         __pyx_f_12optimize_gpu_bh_collect_rep_grads(__pyx_v_local_Z, __pyx_v_local_rep_grads, __pyx_v_head_embedding, __pyx_v_qt, __pyx_v_normalized, __pyx_v_n_vertices, __pyx_v_dim, __pyx_v_a, __pyx_v_b, __pyx_v_average_weight);
 
-        /* "cython/optimize.pyx":831
+        /* "cython/optimize.pyx":834
  *             average_weight
  *         )
  *         Z += local_Z[0]             # <<<<<<<<<<<<<<
@@ -6687,7 +6800,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
         __pyx_v_Z = (__pyx_v_Z + (__pyx_v_local_Z[0]));
 
-        /* "cython/optimize.pyx":832
+        /* "cython/optimize.pyx":835
  *         )
  *         Z += local_Z[0]
  *         if not normalized:             # <<<<<<<<<<<<<<
@@ -6697,7 +6810,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
         __pyx_t_7 = ((!(__pyx_v_normalized != 0)) != 0);
         if (__pyx_t_7) {
 
-          /* "cython/optimize.pyx":833
+          /* "cython/optimize.pyx":836
  *         Z += local_Z[0]
  *         if not normalized:
  *             Z = 1             # <<<<<<<<<<<<<<
@@ -6706,7 +6819,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
           __pyx_v_Z = 1.0;
 
-          /* "cython/optimize.pyx":838
+          /* "cython/optimize.pyx":841
  *             #   as in traditional UMAP
  *             # FIXME - why does this create a perfect circle???
  *             scalar /= n_vertices             # <<<<<<<<<<<<<<
@@ -6715,7 +6828,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
           __pyx_v_scalar = (__pyx_v_scalar / __pyx_v_n_vertices);
 
-          /* "cython/optimize.pyx":832
+          /* "cython/optimize.pyx":835
  *         )
  *         Z += local_Z[0]
  *         if not normalized:             # <<<<<<<<<<<<<<
@@ -6724,7 +6837,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
         }
 
-        /* "cython/optimize.pyx":840
+        /* "cython/optimize.pyx":843
  *             scalar /= n_vertices
  * 
  *         with parallel():             # <<<<<<<<<<<<<<
@@ -6743,7 +6856,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
             #endif /* _OPENMP */
             {
 
-                /* "cython/optimize.pyx":841
+                /* "cython/optimize.pyx":844
  * 
  *         with parallel():
  *             for v in prange(n_vertices):             # <<<<<<<<<<<<<<
@@ -6766,7 +6879,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
                                 __pyx_v_d = ((int)0xbad0bad0);
                                 __pyx_v_index = ((long)0xbad0bad0);
 
-                                /* "cython/optimize.pyx":842
+                                /* "cython/optimize.pyx":845
  *         with parallel():
  *             for v in prange(n_vertices):
  *                 for d in range(dim):             # <<<<<<<<<<<<<<
@@ -6778,7 +6891,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
                                 for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
                                   __pyx_v_d = __pyx_t_6;
 
-                                  /* "cython/optimize.pyx":843
+                                  /* "cython/optimize.pyx":846
  *             for v in prange(n_vertices):
  *                 for d in range(dim):
  *                     index = v * dim + d             # <<<<<<<<<<<<<<
@@ -6787,7 +6900,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
                                   __pyx_v_index = ((__pyx_v_v * __pyx_v_dim) + __pyx_v_d);
 
-                                  /* "cython/optimize.pyx":844
+                                  /* "cython/optimize.pyx":847
  *                 for d in range(dim):
  *                     index = v * dim + d
  *                     all_attr_grads[index] += local_attr_grads[index] * scalar             # <<<<<<<<<<<<<<
@@ -6797,7 +6910,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
                                   __pyx_t_8 = __pyx_v_index;
                                   (__pyx_v_all_attr_grads[__pyx_t_8]) = ((__pyx_v_all_attr_grads[__pyx_t_8]) + ((__pyx_v_local_attr_grads[__pyx_v_index]) * __pyx_v_scalar));
 
-                                  /* "cython/optimize.pyx":845
+                                  /* "cython/optimize.pyx":848
  *                     index = v * dim + d
  *                     all_attr_grads[index] += local_attr_grads[index] * scalar
  *                     all_rep_grads[index] += local_rep_grads[index] * scalar / Z             # <<<<<<<<<<<<<<
@@ -6820,7 +6933,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
             #define unlikely(x) __builtin_expect(!!(x), 0)
         #endif
 
-        /* "cython/optimize.pyx":847
+        /* "cython/optimize.pyx":850
  *                     all_rep_grads[index] += local_rep_grads[index] * scalar / Z
  * 
  *         with parallel():             # <<<<<<<<<<<<<<
@@ -6839,7 +6952,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
             #endif /* _OPENMP */
             {
 
-                /* "cython/optimize.pyx":848
+                /* "cython/optimize.pyx":851
  * 
  *         with parallel():
  *             for v in prange(n_vertices):             # <<<<<<<<<<<<<<
@@ -6863,7 +6976,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
                                 __pyx_v_grad_d = ((float)__PYX_NAN());
                                 __pyx_v_index = ((long)0xbad0bad0);
 
-                                /* "cython/optimize.pyx":849
+                                /* "cython/optimize.pyx":852
  *         with parallel():
  *             for v in prange(n_vertices):
  *                 for d in range(dim):             # <<<<<<<<<<<<<<
@@ -6875,7 +6988,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
                                 for (__pyx_t_6 = 0; __pyx_t_6 < __pyx_t_5; __pyx_t_6+=1) {
                                   __pyx_v_d = __pyx_t_6;
 
-                                  /* "cython/optimize.pyx":850
+                                  /* "cython/optimize.pyx":853
  *             for v in prange(n_vertices):
  *                 for d in range(dim):
  *                     index = v * dim + d             # <<<<<<<<<<<<<<
@@ -6884,7 +6997,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
                                   __pyx_v_index = ((__pyx_v_v * __pyx_v_dim) + __pyx_v_d);
 
-                                  /* "cython/optimize.pyx":851
+                                  /* "cython/optimize.pyx":854
  *                 for d in range(dim):
  *                     index = v * dim + d
  *                     if (all_rep_grads[index] - all_attr_grads[index]) * all_updates[index] > 0.0:             # <<<<<<<<<<<<<<
@@ -6894,7 +7007,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
                                   __pyx_t_7 = (((((__pyx_v_all_rep_grads[__pyx_v_index]) - (__pyx_v_all_attr_grads[__pyx_v_index])) * (__pyx_v_all_updates[__pyx_v_index])) > 0.0) != 0);
                                   if (__pyx_t_7) {
 
-                                    /* "cython/optimize.pyx":852
+                                    /* "cython/optimize.pyx":855
  *                     index = v * dim + d
  *                     if (all_rep_grads[index] - all_attr_grads[index]) * all_updates[index] > 0.0:
  *                         gains[index] += 0.2             # <<<<<<<<<<<<<<
@@ -6904,7 +7017,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
                                     __pyx_t_8 = __pyx_v_index;
                                     (__pyx_v_gains[__pyx_t_8]) = ((__pyx_v_gains[__pyx_t_8]) + 0.2);
 
-                                    /* "cython/optimize.pyx":851
+                                    /* "cython/optimize.pyx":854
  *                 for d in range(dim):
  *                     index = v * dim + d
  *                     if (all_rep_grads[index] - all_attr_grads[index]) * all_updates[index] > 0.0:             # <<<<<<<<<<<<<<
@@ -6914,7 +7027,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
                                     goto __pyx_L35;
                                   }
 
-                                  /* "cython/optimize.pyx":854
+                                  /* "cython/optimize.pyx":857
  *                         gains[index] += 0.2
  *                     else:
  *                         gains[index] *= 0.8             # <<<<<<<<<<<<<<
@@ -6927,7 +7040,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
                                   }
                                   __pyx_L35:;
 
-                                  /* "cython/optimize.pyx":855
+                                  /* "cython/optimize.pyx":858
  *                     else:
  *                         gains[index] *= 0.8
  *                     gains[index] = clip(gains[index], 0.01, 1000)             # <<<<<<<<<<<<<<
@@ -6936,7 +7049,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
                                   (__pyx_v_gains[__pyx_v_index]) = clip((__pyx_v_gains[__pyx_v_index]), 0.01, 1000.0);
 
-                                  /* "cython/optimize.pyx":856
+                                  /* "cython/optimize.pyx":859
  *                         gains[index] *= 0.8
  *                     gains[index] = clip(gains[index], 0.01, 1000)
  *                     grad_d = (all_rep_grads[index] - all_attr_grads[index]) * gains[index]             # <<<<<<<<<<<<<<
@@ -6945,7 +7058,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
                                   __pyx_v_grad_d = (((__pyx_v_all_rep_grads[__pyx_v_index]) - (__pyx_v_all_attr_grads[__pyx_v_index])) * (__pyx_v_gains[__pyx_v_index]));
 
-                                  /* "cython/optimize.pyx":858
+                                  /* "cython/optimize.pyx":861
  *                     grad_d = (all_rep_grads[index] - all_attr_grads[index]) * gains[index]
  * 
  *                     if momentum:             # <<<<<<<<<<<<<<
@@ -6955,7 +7068,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
                                   __pyx_t_7 = (__pyx_v_momentum != 0);
                                   if (__pyx_t_7) {
 
-                                    /* "cython/optimize.pyx":859
+                                    /* "cython/optimize.pyx":862
  * 
  *                     if momentum:
  *                         all_updates[index] = grad_d * lr + 0.9 * all_updates[index]             # <<<<<<<<<<<<<<
@@ -6964,7 +7077,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
                                     (__pyx_v_all_updates[__pyx_v_index]) = ((__pyx_v_grad_d * __pyx_v_lr) + (0.9 * (__pyx_v_all_updates[__pyx_v_index])));
 
-                                    /* "cython/optimize.pyx":858
+                                    /* "cython/optimize.pyx":861
  *                     grad_d = (all_rep_grads[index] - all_attr_grads[index]) * gains[index]
  * 
  *                     if momentum:             # <<<<<<<<<<<<<<
@@ -6974,7 +7087,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
                                     goto __pyx_L36;
                                   }
 
-                                  /* "cython/optimize.pyx":861
+                                  /* "cython/optimize.pyx":864
  *                         all_updates[index] = grad_d * lr + 0.9 * all_updates[index]
  *                     else:
  *                         all_updates[index] = grad_d * lr             # <<<<<<<<<<<<<<
@@ -6986,7 +7099,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
                                   }
                                   __pyx_L36:;
 
-                                  /* "cython/optimize.pyx":863
+                                  /* "cython/optimize.pyx":866
  *                         all_updates[index] = grad_d * lr
  * 
  *                     head_embedding[v, d] += all_updates[index]             # <<<<<<<<<<<<<<
@@ -7011,7 +7124,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
         #endif
       }
 
-      /* "cython/optimize.pyx":800
+      /* "cython/optimize.pyx":803
  *             all_rep_grads[index] = 0
  * 
  *     with nogil:             # <<<<<<<<<<<<<<
@@ -7030,7 +7143,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
       }
   }
 
-  /* "cython/optimize.pyx":865
+  /* "cython/optimize.pyx":868
  *                     head_embedding[v, d] += all_updates[index]
  * 
  *     free(local_Z)             # <<<<<<<<<<<<<<
@@ -7039,7 +7152,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
   free(__pyx_v_local_Z);
 
-  /* "cython/optimize.pyx":867
+  /* "cython/optimize.pyx":870
  *     free(local_Z)
  * 
  *     free(local_attr_grads)             # <<<<<<<<<<<<<<
@@ -7048,7 +7161,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
   free(__pyx_v_local_attr_grads);
 
-  /* "cython/optimize.pyx":868
+  /* "cython/optimize.pyx":871
  * 
  *     free(local_attr_grads)
  *     free(local_rep_grads)             # <<<<<<<<<<<<<<
@@ -7057,7 +7170,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
   free(__pyx_v_local_rep_grads);
 
-  /* "cython/optimize.pyx":870
+  /* "cython/optimize.pyx":873
  *     free(local_rep_grads)
  * 
  *     free(all_attr_grads)             # <<<<<<<<<<<<<<
@@ -7066,7 +7179,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
   free(__pyx_v_all_attr_grads);
 
-  /* "cython/optimize.pyx":871
+  /* "cython/optimize.pyx":874
  * 
  *     free(all_attr_grads)
  *     free(all_rep_grads)             # <<<<<<<<<<<<<<
@@ -7075,7 +7188,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
  */
   free(__pyx_v_all_rep_grads);
 
-  /* "cython/optimize.pyx":754
+  /* "cython/optimize.pyx":757
  * @cython.wraparound(False)
  * @cython.cdivision(True)
  * cdef void calculate_barnes_hut(             # <<<<<<<<<<<<<<
@@ -7087,7 +7200,7 @@ static void __pyx_f_12optimize_gpu_calculate_barnes_hut(int __pyx_v_normalized, 
   __Pyx_RefNannyFinishContext();
 }
 
-/* "cython/optimize.pyx":874
+/* "cython/optimize.pyx":877
  * 
  * 
  * def bh_wrapper(             # <<<<<<<<<<<<<<
@@ -7176,101 +7289,101 @@ static PyObject *__pyx_pw_12optimize_gpu_5bh_wrapper(PyObject *__pyx_self, PyObj
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_sym_attraction)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 1); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 1); __PYX_ERR(0, 877, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_momentum)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 2); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 2); __PYX_ERR(0, 877, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 3); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 3); __PYX_ERR(0, 877, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 4); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 4); __PYX_ERR(0, 877, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 5); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 5); __PYX_ERR(0, 877, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 6); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 6); __PYX_ERR(0, 877, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  7:
         if (likely((values[7] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_weights)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 7); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 7); __PYX_ERR(0, 877, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  8:
         if (likely((values[8] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_epochs_per_sample)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 8); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 8); __PYX_ERR(0, 877, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  9:
         if (likely((values[9] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_a)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 9); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 9); __PYX_ERR(0, 877, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 10:
         if (likely((values[10] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_b)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 10); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 10); __PYX_ERR(0, 877, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 11:
         if (likely((values[11] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_dim)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 11); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 11); __PYX_ERR(0, 877, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 12:
         if (likely((values[12] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_initial_lr)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 12); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 12); __PYX_ERR(0, 877, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 13:
         if (likely((values[13] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_negative_sample_rate)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 13); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 13); __PYX_ERR(0, 877, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 14:
         if (likely((values[14] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_epochs)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 14); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 14); __PYX_ERR(0, 877, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 15:
         if (likely((values[15] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_vertices)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 15); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 15); __PYX_ERR(0, 877, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 16:
         if (likely((values[16] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_verbose)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 16); __PYX_ERR(0, 874, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, 16); __PYX_ERR(0, 877, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "bh_wrapper") < 0)) __PYX_ERR(0, 874, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "bh_wrapper") < 0)) __PYX_ERR(0, 877, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 17) {
       goto __pyx_L5_argtuple_error;
@@ -7293,33 +7406,33 @@ static PyObject *__pyx_pw_12optimize_gpu_5bh_wrapper(PyObject *__pyx_self, PyObj
       values[15] = PyTuple_GET_ITEM(__pyx_args, 15);
       values[16] = PyTuple_GET_ITEM(__pyx_args, 16);
     }
-    __pyx_v_normalized = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 875, __pyx_L3_error)
-    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 876, __pyx_L3_error)
-    __pyx_v_momentum = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 877, __pyx_L3_error)
-    __pyx_v_head_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[3], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head_embedding.memview)) __PYX_ERR(0, 878, __pyx_L3_error)
-    __pyx_v_tail_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail_embedding.memview)) __PYX_ERR(0, 879, __pyx_L3_error)
-    __pyx_v_head = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head.memview)) __PYX_ERR(0, 880, __pyx_L3_error)
-    __pyx_v_tail = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[6], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail.memview)) __PYX_ERR(0, 881, __pyx_L3_error)
-    __pyx_v_weights = __Pyx_PyObject_to_MemoryviewSlice_ds_float(values[7], PyBUF_WRITABLE); if (unlikely(!__pyx_v_weights.memview)) __PYX_ERR(0, 882, __pyx_L3_error)
+    __pyx_v_normalized = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 878, __pyx_L3_error)
+    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 879, __pyx_L3_error)
+    __pyx_v_momentum = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 880, __pyx_L3_error)
+    __pyx_v_head_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[3], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head_embedding.memview)) __PYX_ERR(0, 881, __pyx_L3_error)
+    __pyx_v_tail_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail_embedding.memview)) __PYX_ERR(0, 882, __pyx_L3_error)
+    __pyx_v_head = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head.memview)) __PYX_ERR(0, 883, __pyx_L3_error)
+    __pyx_v_tail = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[6], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail.memview)) __PYX_ERR(0, 884, __pyx_L3_error)
+    __pyx_v_weights = __Pyx_PyObject_to_MemoryviewSlice_ds_float(values[7], PyBUF_WRITABLE); if (unlikely(!__pyx_v_weights.memview)) __PYX_ERR(0, 885, __pyx_L3_error)
     __pyx_v_epochs_per_sample = ((PyArrayObject *)values[8]);
-    __pyx_v_a = __pyx_PyFloat_AsFloat(values[9]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 884, __pyx_L3_error)
-    __pyx_v_b = __pyx_PyFloat_AsFloat(values[10]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 885, __pyx_L3_error)
-    __pyx_v_dim = __Pyx_PyInt_As_int(values[11]); if (unlikely((__pyx_v_dim == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 886, __pyx_L3_error)
-    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 887, __pyx_L3_error)
-    __pyx_v_negative_sample_rate = __pyx_PyFloat_AsFloat(values[13]); if (unlikely((__pyx_v_negative_sample_rate == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 888, __pyx_L3_error)
-    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[14]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 889, __pyx_L3_error)
-    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[15]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 890, __pyx_L3_error)
-    __pyx_v_verbose = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 891, __pyx_L3_error)
+    __pyx_v_a = __pyx_PyFloat_AsFloat(values[9]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 887, __pyx_L3_error)
+    __pyx_v_b = __pyx_PyFloat_AsFloat(values[10]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 888, __pyx_L3_error)
+    __pyx_v_dim = __Pyx_PyInt_As_int(values[11]); if (unlikely((__pyx_v_dim == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 889, __pyx_L3_error)
+    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 890, __pyx_L3_error)
+    __pyx_v_negative_sample_rate = __pyx_PyFloat_AsFloat(values[13]); if (unlikely((__pyx_v_negative_sample_rate == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 891, __pyx_L3_error)
+    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[14]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 892, __pyx_L3_error)
+    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[15]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 893, __pyx_L3_error)
+    __pyx_v_verbose = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 894, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 874, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("bh_wrapper", 1, 17, 17, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 877, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("optimize_gpu.bh_wrapper", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_epochs_per_sample), __pyx_ptype_5numpy_ndarray, 1, "epochs_per_sample", 0))) __PYX_ERR(0, 883, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_epochs_per_sample), __pyx_ptype_5numpy_ndarray, 1, "epochs_per_sample", 0))) __PYX_ERR(0, 886, __pyx_L1_error)
   __pyx_r = __pyx_pf_12optimize_gpu_4bh_wrapper(__pyx_self, __pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_momentum, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_head, __pyx_v_tail, __pyx_v_weights, __pyx_v_epochs_per_sample, __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_initial_lr, __pyx_v_negative_sample_rate, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_verbose);
 
   /* function exit code */
@@ -7368,20 +7481,20 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
   __pyx_pybuffernd_epochs_per_sample.rcbuffer = &__pyx_pybuffer_epochs_per_sample;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer, (PyObject*)__pyx_v_epochs_per_sample, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 874, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer, (PyObject*)__pyx_v_epochs_per_sample, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 877, __pyx_L1_error)
   }
   __pyx_pybuffernd_epochs_per_sample.diminfo[0].strides = __pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_epochs_per_sample.diminfo[0].shape = __pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer.shape[0];
 
-  /* "cython/optimize.pyx":902
+  /* "cython/optimize.pyx":905
  *         float *all_updates
  *         float *gains
  *     cdef _QuadTree qt = _QuadTree(dim, 1)             # <<<<<<<<<<<<<<
  *     all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     gains = <float*> malloc(sizeof(float) * n_vertices * dim)
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 902, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 905, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 902, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 905, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
@@ -7389,13 +7502,13 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
   __Pyx_GIVEREF(__pyx_int_1);
   PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_int_1);
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_7sklearn_9neighbors_10_quad_tree__QuadTree), __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 902, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_7sklearn_9neighbors_10_quad_tree__QuadTree), __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 905, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_qt = ((struct __pyx_obj_7sklearn_9neighbors_10_quad_tree__QuadTree *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "cython/optimize.pyx":903
+  /* "cython/optimize.pyx":906
  *         float *gains
  *     cdef _QuadTree qt = _QuadTree(dim, 1)
  *     all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
@@ -7404,7 +7517,7 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
  */
   __pyx_v_all_updates = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
-  /* "cython/optimize.pyx":904
+  /* "cython/optimize.pyx":907
  *     cdef _QuadTree qt = _QuadTree(dim, 1)
  *     all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     gains = <float*> malloc(sizeof(float) * n_vertices * dim)             # <<<<<<<<<<<<<<
@@ -7413,25 +7526,25 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
  */
   __pyx_v_gains = ((float *)malloc((((sizeof(float)) * __pyx_v_n_vertices) * __pyx_v_dim)));
 
-  /* "cython/optimize.pyx":905
+  /* "cython/optimize.pyx":908
  *     all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     gains = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     for v in range(n_vertices):             # <<<<<<<<<<<<<<
  *         for d in range(dim):
  *             index = v * dim + d
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 905, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 908, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_range, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 905, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_range, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 908, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (likely(PyList_CheckExact(__pyx_t_2)) || PyTuple_CheckExact(__pyx_t_2)) {
     __pyx_t_1 = __pyx_t_2; __Pyx_INCREF(__pyx_t_1); __pyx_t_3 = 0;
     __pyx_t_4 = NULL;
   } else {
-    __pyx_t_3 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 905, __pyx_L1_error)
+    __pyx_t_3 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 908, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_4 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 905, __pyx_L1_error)
+    __pyx_t_4 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 908, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   for (;;) {
@@ -7439,17 +7552,17 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_3 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_2); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 905, __pyx_L1_error)
+        __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_2); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 908, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 905, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 908, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       } else {
         if (__pyx_t_3 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_2); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 905, __pyx_L1_error)
+        __pyx_t_2 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_2); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 908, __pyx_L1_error)
         #else
-        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 905, __pyx_L1_error)
+        __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 908, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_2);
         #endif
       }
@@ -7459,7 +7572,7 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 905, __pyx_L1_error)
+          else __PYX_ERR(0, 908, __pyx_L1_error)
         }
         break;
       }
@@ -7468,25 +7581,25 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
     __Pyx_XDECREF_SET(__pyx_v_v, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "cython/optimize.pyx":906
+    /* "cython/optimize.pyx":909
  *     gains = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     for v in range(n_vertices):
  *         for d in range(dim):             # <<<<<<<<<<<<<<
  *             index = v * dim + d
  *             all_updates[index] = 0
  */
-    __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 906, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 909, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_5 = __Pyx_PyObject_CallOneArg(__pyx_builtin_range, __pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 906, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_CallOneArg(__pyx_builtin_range, __pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 909, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     if (likely(PyList_CheckExact(__pyx_t_5)) || PyTuple_CheckExact(__pyx_t_5)) {
       __pyx_t_2 = __pyx_t_5; __Pyx_INCREF(__pyx_t_2); __pyx_t_6 = 0;
       __pyx_t_7 = NULL;
     } else {
-      __pyx_t_6 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 906, __pyx_L1_error)
+      __pyx_t_6 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 909, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_7 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 906, __pyx_L1_error)
+      __pyx_t_7 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 909, __pyx_L1_error)
     }
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     for (;;) {
@@ -7494,17 +7607,17 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
         if (likely(PyList_CheckExact(__pyx_t_2))) {
           if (__pyx_t_6 >= PyList_GET_SIZE(__pyx_t_2)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_5 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_6); __Pyx_INCREF(__pyx_t_5); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 906, __pyx_L1_error)
+          __pyx_t_5 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_6); __Pyx_INCREF(__pyx_t_5); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 909, __pyx_L1_error)
           #else
-          __pyx_t_5 = PySequence_ITEM(__pyx_t_2, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 906, __pyx_L1_error)
+          __pyx_t_5 = PySequence_ITEM(__pyx_t_2, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 909, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_5);
           #endif
         } else {
           if (__pyx_t_6 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_6); __Pyx_INCREF(__pyx_t_5); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 906, __pyx_L1_error)
+          __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_6); __Pyx_INCREF(__pyx_t_5); __pyx_t_6++; if (unlikely(0 < 0)) __PYX_ERR(0, 909, __pyx_L1_error)
           #else
-          __pyx_t_5 = PySequence_ITEM(__pyx_t_2, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 906, __pyx_L1_error)
+          __pyx_t_5 = PySequence_ITEM(__pyx_t_2, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 909, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_5);
           #endif
         }
@@ -7514,7 +7627,7 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
             if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-            else __PYX_ERR(0, 906, __pyx_L1_error)
+            else __PYX_ERR(0, 909, __pyx_L1_error)
           }
           break;
         }
@@ -7523,45 +7636,45 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
       __Pyx_XDECREF_SET(__pyx_v_d, __pyx_t_5);
       __pyx_t_5 = 0;
 
-      /* "cython/optimize.pyx":907
+      /* "cython/optimize.pyx":910
  *     for v in range(n_vertices):
  *         for d in range(dim):
  *             index = v * dim + d             # <<<<<<<<<<<<<<
  *             all_updates[index] = 0
  *             gains[index] = 1
  */
-      __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 907, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 910, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_8 = PyNumber_Multiply(__pyx_v_v, __pyx_t_5); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 907, __pyx_L1_error)
+      __pyx_t_8 = PyNumber_Multiply(__pyx_v_v, __pyx_t_5); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 910, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __pyx_t_5 = PyNumber_Add(__pyx_t_8, __pyx_v_d); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 907, __pyx_L1_error)
+      __pyx_t_5 = PyNumber_Add(__pyx_t_8, __pyx_v_d); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 910, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
       __Pyx_XDECREF_SET(__pyx_v_index, __pyx_t_5);
       __pyx_t_5 = 0;
 
-      /* "cython/optimize.pyx":908
+      /* "cython/optimize.pyx":911
  *         for d in range(dim):
  *             index = v * dim + d
  *             all_updates[index] = 0             # <<<<<<<<<<<<<<
  *             gains[index] = 1
  * 
  */
-      __pyx_t_9 = __Pyx_PyIndex_AsSsize_t(__pyx_v_index); if (unlikely((__pyx_t_9 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 908, __pyx_L1_error)
+      __pyx_t_9 = __Pyx_PyIndex_AsSsize_t(__pyx_v_index); if (unlikely((__pyx_t_9 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 911, __pyx_L1_error)
       (__pyx_v_all_updates[__pyx_t_9]) = 0.0;
 
-      /* "cython/optimize.pyx":909
+      /* "cython/optimize.pyx":912
  *             index = v * dim + d
  *             all_updates[index] = 0
  *             gains[index] = 1             # <<<<<<<<<<<<<<
  * 
  *     for i_epoch in range(n_epochs):
  */
-      __pyx_t_9 = __Pyx_PyIndex_AsSsize_t(__pyx_v_index); if (unlikely((__pyx_t_9 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 909, __pyx_L1_error)
+      __pyx_t_9 = __Pyx_PyIndex_AsSsize_t(__pyx_v_index); if (unlikely((__pyx_t_9 == (Py_ssize_t)-1) && PyErr_Occurred())) __PYX_ERR(0, 912, __pyx_L1_error)
       (__pyx_v_gains[__pyx_t_9]) = 1.0;
 
-      /* "cython/optimize.pyx":906
+      /* "cython/optimize.pyx":909
  *     gains = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     for v in range(n_vertices):
  *         for d in range(dim):             # <<<<<<<<<<<<<<
@@ -7571,7 +7684,7 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
     }
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "cython/optimize.pyx":905
+    /* "cython/optimize.pyx":908
  *     all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     gains = <float*> malloc(sizeof(float) * n_vertices * dim)
  *     for v in range(n_vertices):             # <<<<<<<<<<<<<<
@@ -7581,7 +7694,7 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "cython/optimize.pyx":911
+  /* "cython/optimize.pyx":914
  *             gains[index] = 1
  * 
  *     for i_epoch in range(n_epochs):             # <<<<<<<<<<<<<<
@@ -7593,16 +7706,16 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
   for (__pyx_t_12 = 0; __pyx_t_12 < __pyx_t_11; __pyx_t_12+=1) {
     __pyx_v_i_epoch = __pyx_t_12;
 
-    /* "cython/optimize.pyx":912
+    /* "cython/optimize.pyx":915
  * 
  *     for i_epoch in range(n_epochs):
  *         qt.build_tree(head_embedding)             # <<<<<<<<<<<<<<
  *         lr = get_lr(initial_lr, i_epoch, n_epochs)
  *         calculate_barnes_hut(
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_qt), __pyx_n_s_build_tree); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 912, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_qt), __pyx_n_s_build_tree); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 915, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_5 = __pyx_memoryview_fromslice(__pyx_v_head_embedding, 2, (PyObject *(*)(char *)) __pyx_memview_get_float, (int (*)(char *, PyObject *)) __pyx_memview_set_float, 0);; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 912, __pyx_L1_error)
+    __pyx_t_5 = __pyx_memoryview_fromslice(__pyx_v_head_embedding, 2, (PyObject *(*)(char *)) __pyx_memview_get_float, (int (*)(char *, PyObject *)) __pyx_memview_set_float, 0);; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 915, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_t_8 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -7617,33 +7730,33 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
     __pyx_t_1 = (__pyx_t_8) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_8, __pyx_t_5) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_5);
     __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 912, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 915, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "cython/optimize.pyx":913
+    /* "cython/optimize.pyx":916
  *     for i_epoch in range(n_epochs):
  *         qt.build_tree(head_embedding)
  *         lr = get_lr(initial_lr, i_epoch, n_epochs)             # <<<<<<<<<<<<<<
  *         calculate_barnes_hut(
  *             normalized,
  */
-    __pyx_t_1 = PyFloat_FromDouble(get_lr(__pyx_v_initial_lr, __pyx_v_i_epoch, __pyx_v_n_epochs)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 913, __pyx_L1_error)
+    __pyx_t_1 = PyFloat_FromDouble(get_lr(__pyx_v_initial_lr, __pyx_v_i_epoch, __pyx_v_n_epochs)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 916, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_lr, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "cython/optimize.pyx":930
+    /* "cython/optimize.pyx":933
  *             dim,
  *             n_vertices,
  *             lr,             # <<<<<<<<<<<<<<
  *             i_epoch
  *         )
  */
-    __pyx_t_13 = __pyx_PyFloat_AsFloat(__pyx_v_lr); if (unlikely((__pyx_t_13 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 930, __pyx_L1_error)
+    __pyx_t_13 = __pyx_PyFloat_AsFloat(__pyx_v_lr); if (unlikely((__pyx_t_13 == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 933, __pyx_L1_error)
 
-    /* "cython/optimize.pyx":914
+    /* "cython/optimize.pyx":917
  *         qt.build_tree(head_embedding)
  *         lr = get_lr(initial_lr, i_epoch, n_epochs)
  *         calculate_barnes_hut(             # <<<<<<<<<<<<<<
@@ -7652,7 +7765,7 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
  */
     __pyx_f_12optimize_gpu_calculate_barnes_hut(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_momentum, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_head, __pyx_v_tail, __pyx_v_weights, __pyx_v_all_updates, __pyx_v_gains, __pyx_v_qt, __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_n_vertices, __pyx_t_13, __pyx_v_i_epoch);
 
-    /* "cython/optimize.pyx":933
+    /* "cython/optimize.pyx":936
  *             i_epoch
  *         )
  *         if verbose:             # <<<<<<<<<<<<<<
@@ -7662,7 +7775,7 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
     __pyx_t_14 = (__pyx_v_verbose != 0);
     if (__pyx_t_14) {
 
-      /* "cython/optimize.pyx":934
+      /* "cython/optimize.pyx":937
  *         )
  *         if verbose:
  *             print_status(i_epoch, n_epochs)             # <<<<<<<<<<<<<<
@@ -7671,7 +7784,7 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
  */
       print_status(__pyx_v_i_epoch, __pyx_v_n_epochs);
 
-      /* "cython/optimize.pyx":933
+      /* "cython/optimize.pyx":936
  *             i_epoch
  *         )
  *         if verbose:             # <<<<<<<<<<<<<<
@@ -7681,7 +7794,7 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
     }
   }
 
-  /* "cython/optimize.pyx":936
+  /* "cython/optimize.pyx":939
  *             print_status(i_epoch, n_epochs)
  * 
  *     free(all_updates)             # <<<<<<<<<<<<<<
@@ -7690,7 +7803,7 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
  */
   free(__pyx_v_all_updates);
 
-  /* "cython/optimize.pyx":937
+  /* "cython/optimize.pyx":940
  * 
  *     free(all_updates)
  *     free(gains)             # <<<<<<<<<<<<<<
@@ -7699,7 +7812,7 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
  */
   free(__pyx_v_gains);
 
-  /* "cython/optimize.pyx":939
+  /* "cython/optimize.pyx":942
  *     free(gains)
  * 
  *     return head_embedding             # <<<<<<<<<<<<<<
@@ -7707,13 +7820,13 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
  * @cython.cdivision(True)
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_memoryview_fromslice(__pyx_v_head_embedding, 2, (PyObject *(*)(char *)) __pyx_memview_get_float, (int (*)(char *, PyObject *)) __pyx_memview_set_float, 0);; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 939, __pyx_L1_error)
+  __pyx_t_1 = __pyx_memoryview_fromslice(__pyx_v_head_embedding, 2, (PyObject *(*)(char *)) __pyx_memview_get_float, (int (*)(char *, PyObject *)) __pyx_memview_set_float, 0);; if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 942, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "cython/optimize.pyx":874
+  /* "cython/optimize.pyx":877
  * 
  * 
  * def bh_wrapper(             # <<<<<<<<<<<<<<
@@ -7754,7 +7867,7 @@ static PyObject *__pyx_pf_12optimize_gpu_4bh_wrapper(CYTHON_UNUSED PyObject *__p
   return __pyx_r;
 }
 
-/* "cython/optimize.pyx":944
+/* "cython/optimize.pyx":947
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def cy_optimize_layout(             # <<<<<<<<<<<<<<
@@ -7845,91 +7958,91 @@ static PyObject *__pyx_pw_12optimize_gpu_7cy_optimize_layout(PyObject *__pyx_sel
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_normalized)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 1); __PYX_ERR(0, 944, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 1); __PYX_ERR(0, 947, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_sym_attraction)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 2); __PYX_ERR(0, 944, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 2); __PYX_ERR(0, 947, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_momentum)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 3); __PYX_ERR(0, 944, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 3); __PYX_ERR(0, 947, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 4); __PYX_ERR(0, 944, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 4); __PYX_ERR(0, 947, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 5); __PYX_ERR(0, 944, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 5); __PYX_ERR(0, 947, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 6); __PYX_ERR(0, 944, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 6); __PYX_ERR(0, 947, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  7:
         if (likely((values[7] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 7); __PYX_ERR(0, 944, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 7); __PYX_ERR(0, 947, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  8:
         if (likely((values[8] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_weights)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 8); __PYX_ERR(0, 944, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 8); __PYX_ERR(0, 947, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  9:
         if (likely((values[9] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_epochs)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 9); __PYX_ERR(0, 944, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 9); __PYX_ERR(0, 947, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 10:
         if (likely((values[10] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_vertices)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 10); __PYX_ERR(0, 944, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 10); __PYX_ERR(0, 947, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 11:
         if (likely((values[11] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_epochs_per_sample)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 11); __PYX_ERR(0, 944, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 11); __PYX_ERR(0, 947, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 12:
         if (likely((values[12] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_a)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 12); __PYX_ERR(0, 944, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 12); __PYX_ERR(0, 947, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 13:
         if (likely((values[13] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_b)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 13); __PYX_ERR(0, 944, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 13); __PYX_ERR(0, 947, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 14:
         if (likely((values[14] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_initial_lr)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 14); __PYX_ERR(0, 944, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 14); __PYX_ERR(0, 947, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 15:
         if (likely((values[15] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_negative_sample_rate)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 15); __PYX_ERR(0, 944, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, 15); __PYX_ERR(0, 947, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 16:
@@ -7939,7 +8052,7 @@ static PyObject *__pyx_pw_12optimize_gpu_7cy_optimize_layout(PyObject *__pyx_sel
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, pos_args, "cy_optimize_layout") < 0)) __PYX_ERR(0, 944, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, pos_args, "cy_optimize_layout") < 0)) __PYX_ERR(0, 947, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -7966,26 +8079,26 @@ static PyObject *__pyx_pw_12optimize_gpu_7cy_optimize_layout(PyObject *__pyx_sel
       }
     }
     __pyx_v_optimize_method = ((PyObject*)values[0]);
-    __pyx_v_normalized = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 946, __pyx_L3_error)
-    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 947, __pyx_L3_error)
-    __pyx_v_momentum = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 948, __pyx_L3_error)
-    __pyx_v_head_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head_embedding.memview)) __PYX_ERR(0, 949, __pyx_L3_error)
-    __pyx_v_tail_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail_embedding.memview)) __PYX_ERR(0, 950, __pyx_L3_error)
-    __pyx_v_head = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[6], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head.memview)) __PYX_ERR(0, 951, __pyx_L3_error)
-    __pyx_v_tail = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[7], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail.memview)) __PYX_ERR(0, 952, __pyx_L3_error)
-    __pyx_v_weights = __Pyx_PyObject_to_MemoryviewSlice_ds_float(values[8], PyBUF_WRITABLE); if (unlikely(!__pyx_v_weights.memview)) __PYX_ERR(0, 953, __pyx_L3_error)
-    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[9]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 954, __pyx_L3_error)
-    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[10]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 955, __pyx_L3_error)
+    __pyx_v_normalized = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 949, __pyx_L3_error)
+    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 950, __pyx_L3_error)
+    __pyx_v_momentum = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 951, __pyx_L3_error)
+    __pyx_v_head_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[4], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head_embedding.memview)) __PYX_ERR(0, 952, __pyx_L3_error)
+    __pyx_v_tail_embedding = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(values[5], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail_embedding.memview)) __PYX_ERR(0, 953, __pyx_L3_error)
+    __pyx_v_head = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[6], PyBUF_WRITABLE); if (unlikely(!__pyx_v_head.memview)) __PYX_ERR(0, 954, __pyx_L3_error)
+    __pyx_v_tail = __Pyx_PyObject_to_MemoryviewSlice_ds_int(values[7], PyBUF_WRITABLE); if (unlikely(!__pyx_v_tail.memview)) __PYX_ERR(0, 955, __pyx_L3_error)
+    __pyx_v_weights = __Pyx_PyObject_to_MemoryviewSlice_ds_float(values[8], PyBUF_WRITABLE); if (unlikely(!__pyx_v_weights.memview)) __PYX_ERR(0, 956, __pyx_L3_error)
+    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[9]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 957, __pyx_L3_error)
+    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[10]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 958, __pyx_L3_error)
     __pyx_v_epochs_per_sample = ((PyArrayObject *)values[11]);
-    __pyx_v_a = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 957, __pyx_L3_error)
-    __pyx_v_b = __pyx_PyFloat_AsFloat(values[13]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 958, __pyx_L3_error)
-    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 959, __pyx_L3_error)
-    __pyx_v_negative_sample_rate = __pyx_PyFloat_AsFloat(values[15]); if (unlikely((__pyx_v_negative_sample_rate == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 960, __pyx_L3_error)
+    __pyx_v_a = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 960, __pyx_L3_error)
+    __pyx_v_b = __pyx_PyFloat_AsFloat(values[13]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 961, __pyx_L3_error)
+    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 962, __pyx_L3_error)
+    __pyx_v_negative_sample_rate = __pyx_PyFloat_AsFloat(values[15]); if (unlikely((__pyx_v_negative_sample_rate == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 963, __pyx_L3_error)
     if (values[16]) {
-      __pyx_v_verbose = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 961, __pyx_L3_error)
+      __pyx_v_verbose = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 964, __pyx_L3_error)
     } else {
 
-      /* "cython/optimize.pyx":961
+      /* "cython/optimize.pyx":964
  *     float initial_lr,
  *     float negative_sample_rate,
  *     int verbose=True,             # <<<<<<<<<<<<<<
@@ -7997,18 +8110,18 @@ static PyObject *__pyx_pw_12optimize_gpu_7cy_optimize_layout(PyObject *__pyx_sel
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 944, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("cy_optimize_layout", 0, 16, 17, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 947, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
   __Pyx_AddTraceback("optimize_gpu.cy_optimize_layout", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_optimize_method), (&PyString_Type), 1, "optimize_method", 1))) __PYX_ERR(0, 945, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_epochs_per_sample), __pyx_ptype_5numpy_ndarray, 1, "epochs_per_sample", 0))) __PYX_ERR(0, 956, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_optimize_method), (&PyString_Type), 1, "optimize_method", 1))) __PYX_ERR(0, 948, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_epochs_per_sample), __pyx_ptype_5numpy_ndarray, 1, "epochs_per_sample", 0))) __PYX_ERR(0, 959, __pyx_L1_error)
   __pyx_r = __pyx_pf_12optimize_gpu_6cy_optimize_layout(__pyx_self, __pyx_v_optimize_method, __pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_momentum, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_head, __pyx_v_tail, __pyx_v_weights, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_epochs_per_sample, __pyx_v_a, __pyx_v_b, __pyx_v_initial_lr, __pyx_v_negative_sample_rate, __pyx_v_verbose, __pyx_v_kwargs);
 
-  /* "cython/optimize.pyx":944
+  /* "cython/optimize.pyx":947
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def cy_optimize_layout(             # <<<<<<<<<<<<<<
@@ -8082,11 +8195,11 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
   __pyx_pybuffernd_epochs_per_sample.rcbuffer = &__pyx_pybuffer_epochs_per_sample;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer, (PyObject*)__pyx_v_epochs_per_sample, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 944, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer, (PyObject*)__pyx_v_epochs_per_sample, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 947, __pyx_L1_error)
   }
   __pyx_pybuffernd_epochs_per_sample.diminfo[0].strides = __pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_epochs_per_sample.diminfo[0].shape = __pyx_pybuffernd_epochs_per_sample.rcbuffer->pybuffer.shape[0];
 
-  /* "cython/optimize.pyx":966
+  /* "cython/optimize.pyx":969
  *     cdef:
  *         int i_epoch, n_edges
  *         cdef int dim = head_embedding.shape[1]             # <<<<<<<<<<<<<<
@@ -8095,7 +8208,7 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
  */
   __pyx_v_dim = (__pyx_v_head_embedding.shape[1]);
 
-  /* "cython/optimize.pyx":969
+  /* "cython/optimize.pyx":972
  * 
  *     # Perform weight scaling on high-dimensional relationships
  *     cdef float weight_sum = 0.0             # <<<<<<<<<<<<<<
@@ -8104,7 +8217,7 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
  */
   __pyx_v_weight_sum = 0.0;
 
-  /* "cython/optimize.pyx":970
+  /* "cython/optimize.pyx":973
  *     # Perform weight scaling on high-dimensional relationships
  *     cdef float weight_sum = 0.0
  *     if normalized:             # <<<<<<<<<<<<<<
@@ -8114,7 +8227,7 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
   __pyx_t_1 = (__pyx_v_normalized != 0);
   if (__pyx_t_1) {
 
-    /* "cython/optimize.pyx":971
+    /* "cython/optimize.pyx":974
  *     cdef float weight_sum = 0.0
  *     if normalized:
  *         for i in range(weights.shape[0]):             # <<<<<<<<<<<<<<
@@ -8126,7 +8239,7 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
     for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
       __pyx_v_i = __pyx_t_4;
 
-      /* "cython/optimize.pyx":972
+      /* "cython/optimize.pyx":975
  *     if normalized:
  *         for i in range(weights.shape[0]):
  *             weight_sum += weights[i]             # <<<<<<<<<<<<<<
@@ -8137,7 +8250,7 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
       __pyx_v_weight_sum = (__pyx_v_weight_sum + (*((float *) ( /* dim=0 */ (__pyx_v_weights.data + __pyx_t_5 * __pyx_v_weights.strides[0]) ))));
     }
 
-    /* "cython/optimize.pyx":973
+    /* "cython/optimize.pyx":976
  *         for i in range(weights.shape[0]):
  *             weight_sum += weights[i]
  *         for i in range(weights.shape[0]):             # <<<<<<<<<<<<<<
@@ -8149,7 +8262,7 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
     for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
       __pyx_v_i = __pyx_t_4;
 
-      /* "cython/optimize.pyx":974
+      /* "cython/optimize.pyx":977
  *             weight_sum += weights[i]
  *         for i in range(weights.shape[0]):
  *             weights[i] /= weight_sum             # <<<<<<<<<<<<<<
@@ -8160,7 +8273,7 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
       *((float *) ( /* dim=0 */ (__pyx_v_weights.data + __pyx_t_5 * __pyx_v_weights.strides[0]) )) /= __pyx_v_weight_sum;
     }
 
-    /* "cython/optimize.pyx":975
+    /* "cython/optimize.pyx":978
  *         for i in range(weights.shape[0]):
  *             weights[i] /= weight_sum
  *         initial_lr *= 200             # <<<<<<<<<<<<<<
@@ -8169,7 +8282,7 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
  */
     __pyx_v_initial_lr = (__pyx_v_initial_lr * 200.0);
 
-    /* "cython/optimize.pyx":970
+    /* "cython/optimize.pyx":973
  *     # Perform weight scaling on high-dimensional relationships
  *     cdef float weight_sum = 0.0
  *     if normalized:             # <<<<<<<<<<<<<<
@@ -8178,216 +8291,216 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
  */
   }
 
-  /* "cython/optimize.pyx":978
+  /* "cython/optimize.pyx":981
  * 
  *     optimize_dict = {
  *         'cy_umap_uniform': cy_umap_uniformly,             # <<<<<<<<<<<<<<
  *         'cy_umap_sampling': cy_umap_sampling,
  *         'cy_barnes_hut': bh_wrapper
  */
-  __pyx_t_6 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 978, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 981, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_cy_umap_uniformly); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 978, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_cy_umap_uniformly); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 981, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_cy_umap_uniform, __pyx_t_7) < 0) __PYX_ERR(0, 978, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_cy_umap_uniform, __pyx_t_7) < 0) __PYX_ERR(0, 981, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "cython/optimize.pyx":979
+  /* "cython/optimize.pyx":982
  *     optimize_dict = {
  *         'cy_umap_uniform': cy_umap_uniformly,
  *         'cy_umap_sampling': cy_umap_sampling,             # <<<<<<<<<<<<<<
  *         'cy_barnes_hut': bh_wrapper
  *     }
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_cy_umap_sampling); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 979, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_cy_umap_sampling); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 982, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_cy_umap_sampling, __pyx_t_7) < 0) __PYX_ERR(0, 978, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_cy_umap_sampling, __pyx_t_7) < 0) __PYX_ERR(0, 981, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "cython/optimize.pyx":980
+  /* "cython/optimize.pyx":983
  *         'cy_umap_uniform': cy_umap_uniformly,
  *         'cy_umap_sampling': cy_umap_sampling,
  *         'cy_barnes_hut': bh_wrapper             # <<<<<<<<<<<<<<
  *     }
  *     optimize_fn = optimize_dict[optimize_method]
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_bh_wrapper); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 980, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_bh_wrapper); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 983, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_cy_barnes_hut, __pyx_t_7) < 0) __PYX_ERR(0, 978, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_6, __pyx_n_s_cy_barnes_hut, __pyx_t_7) < 0) __PYX_ERR(0, 981, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __pyx_v_optimize_dict = ((PyObject*)__pyx_t_6);
   __pyx_t_6 = 0;
 
-  /* "cython/optimize.pyx":982
+  /* "cython/optimize.pyx":985
  *         'cy_barnes_hut': bh_wrapper
  *     }
  *     optimize_fn = optimize_dict[optimize_method]             # <<<<<<<<<<<<<<
  * 
  *     head_embedding = optimize_fn(
  */
-  __pyx_t_6 = __Pyx_PyDict_GetItem(__pyx_v_optimize_dict, __pyx_v_optimize_method); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 982, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyDict_GetItem(__pyx_v_optimize_dict, __pyx_v_optimize_method); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 985, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __pyx_v_optimize_fn = __pyx_t_6;
   __pyx_t_6 = 0;
 
-  /* "cython/optimize.pyx":985
+  /* "cython/optimize.pyx":988
  * 
  *     head_embedding = optimize_fn(
  *         normalized,             # <<<<<<<<<<<<<<
  *         sym_attraction,
  *         momentum,
  */
-  __pyx_t_7 = __Pyx_PyInt_From_int(__pyx_v_normalized); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 985, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyInt_From_int(__pyx_v_normalized); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 988, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
 
-  /* "cython/optimize.pyx":986
+  /* "cython/optimize.pyx":989
  *     head_embedding = optimize_fn(
  *         normalized,
  *         sym_attraction,             # <<<<<<<<<<<<<<
  *         momentum,
  *         head_embedding,
  */
-  __pyx_t_8 = __Pyx_PyInt_From_int(__pyx_v_sym_attraction); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 986, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyInt_From_int(__pyx_v_sym_attraction); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 989, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
 
-  /* "cython/optimize.pyx":987
+  /* "cython/optimize.pyx":990
  *         normalized,
  *         sym_attraction,
  *         momentum,             # <<<<<<<<<<<<<<
  *         head_embedding,
  *         tail_embedding,
  */
-  __pyx_t_9 = __Pyx_PyInt_From_int(__pyx_v_momentum); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 987, __pyx_L1_error)
+  __pyx_t_9 = __Pyx_PyInt_From_int(__pyx_v_momentum); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 990, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
 
-  /* "cython/optimize.pyx":988
+  /* "cython/optimize.pyx":991
  *         sym_attraction,
  *         momentum,
  *         head_embedding,             # <<<<<<<<<<<<<<
  *         tail_embedding,
  *         head,
  */
-  __pyx_t_10 = __pyx_memoryview_fromslice(__pyx_v_head_embedding, 2, (PyObject *(*)(char *)) __pyx_memview_get_float, (int (*)(char *, PyObject *)) __pyx_memview_set_float, 0);; if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 988, __pyx_L1_error)
+  __pyx_t_10 = __pyx_memoryview_fromslice(__pyx_v_head_embedding, 2, (PyObject *(*)(char *)) __pyx_memview_get_float, (int (*)(char *, PyObject *)) __pyx_memview_set_float, 0);; if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 991, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_10);
 
-  /* "cython/optimize.pyx":989
+  /* "cython/optimize.pyx":992
  *         momentum,
  *         head_embedding,
  *         tail_embedding,             # <<<<<<<<<<<<<<
  *         head,
  *         tail,
  */
-  __pyx_t_11 = __pyx_memoryview_fromslice(__pyx_v_tail_embedding, 2, (PyObject *(*)(char *)) __pyx_memview_get_float, (int (*)(char *, PyObject *)) __pyx_memview_set_float, 0);; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 989, __pyx_L1_error)
+  __pyx_t_11 = __pyx_memoryview_fromslice(__pyx_v_tail_embedding, 2, (PyObject *(*)(char *)) __pyx_memview_get_float, (int (*)(char *, PyObject *)) __pyx_memview_set_float, 0);; if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 992, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
 
-  /* "cython/optimize.pyx":990
+  /* "cython/optimize.pyx":993
  *         head_embedding,
  *         tail_embedding,
  *         head,             # <<<<<<<<<<<<<<
  *         tail,
  *         weights,
  */
-  __pyx_t_12 = __pyx_memoryview_fromslice(__pyx_v_head, 1, (PyObject *(*)(char *)) __pyx_memview_get_int, (int (*)(char *, PyObject *)) __pyx_memview_set_int, 0);; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 990, __pyx_L1_error)
+  __pyx_t_12 = __pyx_memoryview_fromslice(__pyx_v_head, 1, (PyObject *(*)(char *)) __pyx_memview_get_int, (int (*)(char *, PyObject *)) __pyx_memview_set_int, 0);; if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 993, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_12);
 
-  /* "cython/optimize.pyx":991
+  /* "cython/optimize.pyx":994
  *         tail_embedding,
  *         head,
  *         tail,             # <<<<<<<<<<<<<<
  *         weights,
  *         epochs_per_sample,
  */
-  __pyx_t_13 = __pyx_memoryview_fromslice(__pyx_v_tail, 1, (PyObject *(*)(char *)) __pyx_memview_get_int, (int (*)(char *, PyObject *)) __pyx_memview_set_int, 0);; if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 991, __pyx_L1_error)
+  __pyx_t_13 = __pyx_memoryview_fromslice(__pyx_v_tail, 1, (PyObject *(*)(char *)) __pyx_memview_get_int, (int (*)(char *, PyObject *)) __pyx_memview_set_int, 0);; if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 994, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_13);
 
-  /* "cython/optimize.pyx":992
+  /* "cython/optimize.pyx":995
  *         head,
  *         tail,
  *         weights,             # <<<<<<<<<<<<<<
  *         epochs_per_sample,
  *         a,
  */
-  __pyx_t_14 = __pyx_memoryview_fromslice(__pyx_v_weights, 1, (PyObject *(*)(char *)) __pyx_memview_get_float, (int (*)(char *, PyObject *)) __pyx_memview_set_float, 0);; if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 992, __pyx_L1_error)
+  __pyx_t_14 = __pyx_memoryview_fromslice(__pyx_v_weights, 1, (PyObject *(*)(char *)) __pyx_memview_get_float, (int (*)(char *, PyObject *)) __pyx_memview_set_float, 0);; if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 995, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_14);
 
-  /* "cython/optimize.pyx":994
+  /* "cython/optimize.pyx":997
  *         weights,
  *         epochs_per_sample,
  *         a,             # <<<<<<<<<<<<<<
  *         b,
  *         dim,
  */
-  __pyx_t_15 = PyFloat_FromDouble(__pyx_v_a); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 994, __pyx_L1_error)
+  __pyx_t_15 = PyFloat_FromDouble(__pyx_v_a); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 997, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_15);
 
-  /* "cython/optimize.pyx":995
+  /* "cython/optimize.pyx":998
  *         epochs_per_sample,
  *         a,
  *         b,             # <<<<<<<<<<<<<<
  *         dim,
  *         initial_lr,
  */
-  __pyx_t_16 = PyFloat_FromDouble(__pyx_v_b); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 995, __pyx_L1_error)
+  __pyx_t_16 = PyFloat_FromDouble(__pyx_v_b); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 998, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_16);
 
-  /* "cython/optimize.pyx":996
+  /* "cython/optimize.pyx":999
  *         a,
  *         b,
  *         dim,             # <<<<<<<<<<<<<<
  *         initial_lr,
  *         negative_sample_rate,
  */
-  __pyx_t_17 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 996, __pyx_L1_error)
+  __pyx_t_17 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 999, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_17);
 
-  /* "cython/optimize.pyx":997
+  /* "cython/optimize.pyx":1000
  *         b,
  *         dim,
  *         initial_lr,             # <<<<<<<<<<<<<<
  *         negative_sample_rate,
  *         n_epochs,
  */
-  __pyx_t_18 = PyFloat_FromDouble(__pyx_v_initial_lr); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 997, __pyx_L1_error)
+  __pyx_t_18 = PyFloat_FromDouble(__pyx_v_initial_lr); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 1000, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_18);
 
-  /* "cython/optimize.pyx":998
+  /* "cython/optimize.pyx":1001
  *         dim,
  *         initial_lr,
  *         negative_sample_rate,             # <<<<<<<<<<<<<<
  *         n_epochs,
  *         n_vertices,
  */
-  __pyx_t_19 = PyFloat_FromDouble(__pyx_v_negative_sample_rate); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 998, __pyx_L1_error)
+  __pyx_t_19 = PyFloat_FromDouble(__pyx_v_negative_sample_rate); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 1001, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_19);
 
-  /* "cython/optimize.pyx":999
+  /* "cython/optimize.pyx":1002
  *         initial_lr,
  *         negative_sample_rate,
  *         n_epochs,             # <<<<<<<<<<<<<<
  *         n_vertices,
  *         verbose
  */
-  __pyx_t_20 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 999, __pyx_L1_error)
+  __pyx_t_20 = __Pyx_PyInt_From_int(__pyx_v_n_epochs); if (unlikely(!__pyx_t_20)) __PYX_ERR(0, 1002, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_20);
 
-  /* "cython/optimize.pyx":1000
+  /* "cython/optimize.pyx":1003
  *         negative_sample_rate,
  *         n_epochs,
  *         n_vertices,             # <<<<<<<<<<<<<<
  *         verbose
  *     )
  */
-  __pyx_t_21 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 1000, __pyx_L1_error)
+  __pyx_t_21 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 1003, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_21);
 
-  /* "cython/optimize.pyx":1001
+  /* "cython/optimize.pyx":1004
  *         n_epochs,
  *         n_vertices,
  *         verbose             # <<<<<<<<<<<<<<
  *     )
  *     ret = py_np.zeros((n_vertices, dim))
  */
-  __pyx_t_22 = __Pyx_PyInt_From_int(__pyx_v_verbose); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1001, __pyx_L1_error)
+  __pyx_t_22 = __Pyx_PyInt_From_int(__pyx_v_verbose); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1004, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_22);
   __Pyx_INCREF(__pyx_v_optimize_fn);
   __pyx_t_23 = __pyx_v_optimize_fn; __pyx_t_24 = NULL;
@@ -8405,7 +8518,7 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_23)) {
     PyObject *__pyx_temp[18] = {__pyx_t_24, __pyx_t_7, __pyx_t_8, __pyx_t_9, __pyx_t_10, __pyx_t_11, __pyx_t_12, __pyx_t_13, __pyx_t_14, ((PyObject *)__pyx_v_epochs_per_sample), __pyx_t_15, __pyx_t_16, __pyx_t_17, __pyx_t_18, __pyx_t_19, __pyx_t_20, __pyx_t_21, __pyx_t_22};
-    __pyx_t_6 = __Pyx_PyFunction_FastCall(__pyx_t_23, __pyx_temp+1-__pyx_t_25, 17+__pyx_t_25); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 984, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyFunction_FastCall(__pyx_t_23, __pyx_temp+1-__pyx_t_25, 17+__pyx_t_25); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 987, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_24); __pyx_t_24 = 0;
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -8429,7 +8542,7 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_23)) {
     PyObject *__pyx_temp[18] = {__pyx_t_24, __pyx_t_7, __pyx_t_8, __pyx_t_9, __pyx_t_10, __pyx_t_11, __pyx_t_12, __pyx_t_13, __pyx_t_14, ((PyObject *)__pyx_v_epochs_per_sample), __pyx_t_15, __pyx_t_16, __pyx_t_17, __pyx_t_18, __pyx_t_19, __pyx_t_20, __pyx_t_21, __pyx_t_22};
-    __pyx_t_6 = __Pyx_PyCFunction_FastCall(__pyx_t_23, __pyx_temp+1-__pyx_t_25, 17+__pyx_t_25); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 984, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyCFunction_FastCall(__pyx_t_23, __pyx_temp+1-__pyx_t_25, 17+__pyx_t_25); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 987, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_24); __pyx_t_24 = 0;
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -8451,7 +8564,7 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
   } else
   #endif
   {
-    __pyx_t_26 = PyTuple_New(17+__pyx_t_25); if (unlikely(!__pyx_t_26)) __PYX_ERR(0, 984, __pyx_L1_error)
+    __pyx_t_26 = PyTuple_New(17+__pyx_t_25); if (unlikely(!__pyx_t_26)) __PYX_ERR(0, 987, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_26);
     if (__pyx_t_24) {
       __Pyx_GIVEREF(__pyx_t_24); PyTuple_SET_ITEM(__pyx_t_26, 0, __pyx_t_24); __pyx_t_24 = NULL;
@@ -8507,43 +8620,43 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
     __pyx_t_20 = 0;
     __pyx_t_21 = 0;
     __pyx_t_22 = 0;
-    __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_23, __pyx_t_26, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 984, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_23, __pyx_t_26, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 987, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_26); __pyx_t_26 = 0;
   }
   __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
 
-  /* "cython/optimize.pyx":984
+  /* "cython/optimize.pyx":987
  *     optimize_fn = optimize_dict[optimize_method]
  * 
  *     head_embedding = optimize_fn(             # <<<<<<<<<<<<<<
  *         normalized,
  *         sym_attraction,
  */
-  __pyx_t_27 = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(__pyx_t_6, PyBUF_WRITABLE); if (unlikely(!__pyx_t_27.memview)) __PYX_ERR(0, 984, __pyx_L1_error)
+  __pyx_t_27 = __Pyx_PyObject_to_MemoryviewSlice_dsds_float(__pyx_t_6, PyBUF_WRITABLE); if (unlikely(!__pyx_t_27.memview)) __PYX_ERR(0, 987, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __PYX_XDEC_MEMVIEW(&__pyx_v_head_embedding, 1);
   __pyx_v_head_embedding = __pyx_t_27;
   __pyx_t_27.memview = NULL;
   __pyx_t_27.data = NULL;
 
-  /* "cython/optimize.pyx":1003
+  /* "cython/optimize.pyx":1006
  *         verbose
  *     )
  *     ret = py_np.zeros((n_vertices, dim))             # <<<<<<<<<<<<<<
  *     for v in range(n_vertices):
  *         for d in range(dim):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_23, __pyx_n_s_py_np); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1003, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_23, __pyx_n_s_py_np); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1006, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_23);
-  __pyx_t_26 = __Pyx_PyObject_GetAttrStr(__pyx_t_23, __pyx_n_s_zeros); if (unlikely(!__pyx_t_26)) __PYX_ERR(0, 1003, __pyx_L1_error)
+  __pyx_t_26 = __Pyx_PyObject_GetAttrStr(__pyx_t_23, __pyx_n_s_zeros); if (unlikely(!__pyx_t_26)) __PYX_ERR(0, 1006, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_26);
   __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
-  __pyx_t_23 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1003, __pyx_L1_error)
+  __pyx_t_23 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 1006, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_23);
-  __pyx_t_22 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1003, __pyx_L1_error)
+  __pyx_t_22 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1006, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_22);
-  __pyx_t_21 = PyTuple_New(2); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 1003, __pyx_L1_error)
+  __pyx_t_21 = PyTuple_New(2); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 1006, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_21);
   __Pyx_GIVEREF(__pyx_t_23);
   PyTuple_SET_ITEM(__pyx_t_21, 0, __pyx_t_23);
@@ -8564,13 +8677,13 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
   __pyx_t_6 = (__pyx_t_22) ? __Pyx_PyObject_Call2Args(__pyx_t_26, __pyx_t_22, __pyx_t_21) : __Pyx_PyObject_CallOneArg(__pyx_t_26, __pyx_t_21);
   __Pyx_XDECREF(__pyx_t_22); __pyx_t_22 = 0;
   __Pyx_DECREF(__pyx_t_21); __pyx_t_21 = 0;
-  if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1003, __pyx_L1_error)
+  if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1006, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_26); __pyx_t_26 = 0;
   __pyx_v_ret = __pyx_t_6;
   __pyx_t_6 = 0;
 
-  /* "cython/optimize.pyx":1004
+  /* "cython/optimize.pyx":1007
  *     )
  *     ret = py_np.zeros((n_vertices, dim))
  *     for v in range(n_vertices):             # <<<<<<<<<<<<<<
@@ -8582,7 +8695,7 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
   for (__pyx_t_29 = 0; __pyx_t_29 < __pyx_t_28; __pyx_t_29+=1) {
     __pyx_v_v = __pyx_t_29;
 
-    /* "cython/optimize.pyx":1005
+    /* "cython/optimize.pyx":1008
  *     ret = py_np.zeros((n_vertices, dim))
  *     for v in range(n_vertices):
  *         for d in range(dim):             # <<<<<<<<<<<<<<
@@ -8594,7 +8707,7 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
     for (__pyx_t_32 = 0; __pyx_t_32 < __pyx_t_31; __pyx_t_32+=1) {
       __pyx_v_d = __pyx_t_32;
 
-      /* "cython/optimize.pyx":1006
+      /* "cython/optimize.pyx":1009
  *     for v in range(n_vertices):
  *         for d in range(dim):
  *             ret[v, d] = head_embedding[v, d]             # <<<<<<<<<<<<<<
@@ -8603,13 +8716,13 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
  */
       __pyx_t_5 = __pyx_v_v;
       __pyx_t_33 = __pyx_v_d;
-      __pyx_t_6 = PyFloat_FromDouble((*((float *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_head_embedding.data + __pyx_t_5 * __pyx_v_head_embedding.strides[0]) ) + __pyx_t_33 * __pyx_v_head_embedding.strides[1]) )))); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1006, __pyx_L1_error)
+      __pyx_t_6 = PyFloat_FromDouble((*((float *) ( /* dim=1 */ (( /* dim=0 */ (__pyx_v_head_embedding.data + __pyx_t_5 * __pyx_v_head_embedding.strides[0]) ) + __pyx_t_33 * __pyx_v_head_embedding.strides[1]) )))); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1009, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_26 = __Pyx_PyInt_From_int(__pyx_v_v); if (unlikely(!__pyx_t_26)) __PYX_ERR(0, 1006, __pyx_L1_error)
+      __pyx_t_26 = __Pyx_PyInt_From_int(__pyx_v_v); if (unlikely(!__pyx_t_26)) __PYX_ERR(0, 1009, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_26);
-      __pyx_t_21 = __Pyx_PyInt_From_int(__pyx_v_d); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 1006, __pyx_L1_error)
+      __pyx_t_21 = __Pyx_PyInt_From_int(__pyx_v_d); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 1009, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_21);
-      __pyx_t_22 = PyTuple_New(2); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1006, __pyx_L1_error)
+      __pyx_t_22 = PyTuple_New(2); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 1009, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_22);
       __Pyx_GIVEREF(__pyx_t_26);
       PyTuple_SET_ITEM(__pyx_t_22, 0, __pyx_t_26);
@@ -8617,13 +8730,13 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
       PyTuple_SET_ITEM(__pyx_t_22, 1, __pyx_t_21);
       __pyx_t_26 = 0;
       __pyx_t_21 = 0;
-      if (unlikely(PyObject_SetItem(__pyx_v_ret, __pyx_t_22, __pyx_t_6) < 0)) __PYX_ERR(0, 1006, __pyx_L1_error)
+      if (unlikely(PyObject_SetItem(__pyx_v_ret, __pyx_t_22, __pyx_t_6) < 0)) __PYX_ERR(0, 1009, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     }
   }
 
-  /* "cython/optimize.pyx":1008
+  /* "cython/optimize.pyx":1011
  *             ret[v, d] = head_embedding[v, d]
  * 
  *     return ret             # <<<<<<<<<<<<<<
@@ -8633,7 +8746,7 @@ static PyObject *__pyx_pf_12optimize_gpu_6cy_optimize_layout(CYTHON_UNUSED PyObj
   __pyx_r = __pyx_v_ret;
   goto __pyx_L0;
 
-  /* "cython/optimize.pyx":944
+  /* "cython/optimize.pyx":947
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def cy_optimize_layout(             # <<<<<<<<<<<<<<
@@ -23888,41 +24001,41 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__21);
   __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(17, 0, 23, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__21, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cython_optimize_pyx, __pyx_n_s_cy_umap_sampling, 223, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(0, 223, __pyx_L1_error)
 
-  /* "cython/optimize.pyx":519
+  /* "cython/optimize.pyx":522
  * 
  * 
  * def cy_umap_uniformly(             # <<<<<<<<<<<<<<
  *     int normalized,
  *     int sym_attraction,
  */
-  __pyx_tuple__23 = PyTuple_Pack(30, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_momentum, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_weights, __pyx_n_s_epochs_per_sample, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_dim, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_verbose, __pyx_n_s_v, __pyx_n_s_d, __pyx_n_s_index, __pyx_n_s_n_edges, __pyx_n_s_edge, __pyx_n_s_all_updates, __pyx_n_s_gains, __pyx_n_s_head_embedding_2, __pyx_n_s_tail_embedding_2, __pyx_n_s_head_2, __pyx_n_s_tail_2, __pyx_n_s_weights_2, __pyx_n_s_i_epoch); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 519, __pyx_L1_error)
+  __pyx_tuple__23 = PyTuple_Pack(30, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_momentum, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_weights, __pyx_n_s_epochs_per_sample, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_dim, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_verbose, __pyx_n_s_v, __pyx_n_s_d, __pyx_n_s_index, __pyx_n_s_n_edges, __pyx_n_s_edge, __pyx_n_s_all_updates, __pyx_n_s_gains, __pyx_n_s_head_embedding_2, __pyx_n_s_tail_embedding_2, __pyx_n_s_head_2, __pyx_n_s_tail_2, __pyx_n_s_weights_2, __pyx_n_s_i_epoch); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 522, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__23);
   __Pyx_GIVEREF(__pyx_tuple__23);
-  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(17, 0, 30, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cython_optimize_pyx, __pyx_n_s_cy_umap_uniformly, 519, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 519, __pyx_L1_error)
+  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(17, 0, 30, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__23, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cython_optimize_pyx, __pyx_n_s_cy_umap_uniformly, 522, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 522, __pyx_L1_error)
 
-  /* "cython/optimize.pyx":874
+  /* "cython/optimize.pyx":877
  * 
  * 
  * def bh_wrapper(             # <<<<<<<<<<<<<<
  *     int normalized,
  *     int sym_attraction,
  */
-  __pyx_tuple__25 = PyTuple_Pack(25, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_momentum, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_weights, __pyx_n_s_epochs_per_sample, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_dim, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_verbose, __pyx_n_s_all_updates, __pyx_n_s_gains, __pyx_n_s_qt, __pyx_n_s_v, __pyx_n_s_d, __pyx_n_s_index, __pyx_n_s_i_epoch, __pyx_n_s_lr); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 874, __pyx_L1_error)
+  __pyx_tuple__25 = PyTuple_Pack(25, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_momentum, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_weights, __pyx_n_s_epochs_per_sample, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_dim, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_verbose, __pyx_n_s_all_updates, __pyx_n_s_gains, __pyx_n_s_qt, __pyx_n_s_v, __pyx_n_s_d, __pyx_n_s_index, __pyx_n_s_i_epoch, __pyx_n_s_lr); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 877, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__25);
   __Pyx_GIVEREF(__pyx_tuple__25);
-  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(17, 0, 25, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cython_optimize_pyx, __pyx_n_s_bh_wrapper, 874, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 874, __pyx_L1_error)
+  __pyx_codeobj__26 = (PyObject*)__Pyx_PyCode_New(17, 0, 25, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cython_optimize_pyx, __pyx_n_s_bh_wrapper, 877, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__26)) __PYX_ERR(0, 877, __pyx_L1_error)
 
-  /* "cython/optimize.pyx":944
+  /* "cython/optimize.pyx":947
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def cy_optimize_layout(             # <<<<<<<<<<<<<<
  *     str optimize_method,
  *     int normalized,
  */
-  __pyx_tuple__27 = PyTuple_Pack(28, __pyx_n_s_optimize_method, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_momentum, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_weights, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_epochs_per_sample, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_verbose, __pyx_n_s_kwargs, __pyx_n_s_i_epoch, __pyx_n_s_n_edges, __pyx_n_s_dim, __pyx_n_s_weight_sum, __pyx_n_s_i, __pyx_n_s_optimize_dict, __pyx_n_s_optimize_fn, __pyx_n_s_ret, __pyx_n_s_v, __pyx_n_s_d); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(0, 944, __pyx_L1_error)
+  __pyx_tuple__27 = PyTuple_Pack(28, __pyx_n_s_optimize_method, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_momentum, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_weights, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_epochs_per_sample, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_verbose, __pyx_n_s_kwargs, __pyx_n_s_i_epoch, __pyx_n_s_n_edges, __pyx_n_s_dim, __pyx_n_s_weight_sum, __pyx_n_s_i, __pyx_n_s_optimize_dict, __pyx_n_s_optimize_fn, __pyx_n_s_ret, __pyx_n_s_v, __pyx_n_s_d); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(0, 947, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__27);
   __Pyx_GIVEREF(__pyx_tuple__27);
-  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(17, 0, 28, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARKEYWORDS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__27, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cython_optimize_pyx, __pyx_n_s_cy_optimize_layout, 944, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 944, __pyx_L1_error)
+  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(17, 0, 28, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARKEYWORDS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__27, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cython_optimize_pyx, __pyx_n_s_cy_optimize_layout, 947, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 947, __pyx_L1_error)
 
   /* "View.MemoryView":286
  *         return self.name
@@ -24442,40 +24555,40 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_cy_umap_sampling, __pyx_t_1) < 0) __PYX_ERR(0, 223, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "cython/optimize.pyx":519
+  /* "cython/optimize.pyx":522
  * 
  * 
  * def cy_umap_uniformly(             # <<<<<<<<<<<<<<
  *     int normalized,
  *     int sym_attraction,
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12optimize_gpu_3cy_umap_uniformly, NULL, __pyx_n_s_optimize_gpu); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 519, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12optimize_gpu_3cy_umap_uniformly, NULL, __pyx_n_s_optimize_gpu); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 522, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_cy_umap_uniformly, __pyx_t_1) < 0) __PYX_ERR(0, 519, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_cy_umap_uniformly, __pyx_t_1) < 0) __PYX_ERR(0, 522, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "cython/optimize.pyx":874
+  /* "cython/optimize.pyx":877
  * 
  * 
  * def bh_wrapper(             # <<<<<<<<<<<<<<
  *     int normalized,
  *     int sym_attraction,
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12optimize_gpu_5bh_wrapper, NULL, __pyx_n_s_optimize_gpu); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 874, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12optimize_gpu_5bh_wrapper, NULL, __pyx_n_s_optimize_gpu); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 877, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_bh_wrapper, __pyx_t_1) < 0) __PYX_ERR(0, 874, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_bh_wrapper, __pyx_t_1) < 0) __PYX_ERR(0, 877, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "cython/optimize.pyx":944
+  /* "cython/optimize.pyx":947
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def cy_optimize_layout(             # <<<<<<<<<<<<<<
  *     str optimize_method,
  *     int normalized,
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12optimize_gpu_7cy_optimize_layout, NULL, __pyx_n_s_optimize_gpu); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 944, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12optimize_gpu_7cy_optimize_layout, NULL, __pyx_n_s_optimize_gpu); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 947, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_cy_optimize_layout, __pyx_t_1) < 0) __PYX_ERR(0, 944, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_cy_optimize_layout, __pyx_t_1) < 0) __PYX_ERR(0, 947, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "cython/optimize.pyx":1

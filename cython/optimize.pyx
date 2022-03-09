@@ -46,7 +46,6 @@ cdef extern from "cython_utils.h" nogil:
 cdef extern from "gpu_dim_reduction_wrapper.c":
     void cf()
 
-
 cdef extern from "optimize_funcs.c" nogil:
     float get_kernels(
         float *attr_forces,
