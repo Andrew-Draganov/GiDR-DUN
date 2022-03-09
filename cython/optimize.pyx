@@ -444,73 +444,76 @@ cdef void _cy_umap_uniformly(
     attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
     rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
 
+    cdef float grad = 0.0
     cdef float grad_d = 0.0
     cdef float average_weight = _get_avg_weight(weights, n_edges)
 
-    for v in range(n_vertices):
-        for d in range(dim):
-            index = v * dim + d
-            attr_grads[index] = 0
-            rep_grads[index] = 0
+    with nogil, parallel():
+        for v in prange(n_vertices):
+            for d in range(dim):
+                index = v * dim + d
+                attr_grads[index] = 0
+                rep_grads[index] = 0
 
-    Z = get_kernels(
-        attr_forces,
-        rep_forces,
-        attr_vecs,
-        rep_vecs,
-        head,
-        tail,
-        head_embedding,
-        tail_embedding,
-        weights,
-        normalized,
-        n_vertices,
-        n_edges,
-        i_epoch,
-        dim,
-        a,
-        b,
-        average_weight
-    )
-    if not normalized:
-        Z = 1
+    with nogil:
+        Z = get_kernels(
+            attr_forces,
+            rep_forces,
+            attr_vecs,
+            rep_vecs,
+            head,
+            tail,
+            head_embedding,
+            tail_embedding,
+            weights,
+            normalized,
+            n_vertices,
+            n_edges,
+            i_epoch,
+            dim,
+            a,
+            b,
+            average_weight
+        )
+        if not normalized:
+            Z = 1
 
-    gather_gradients(
-        attr_grads,
-        rep_grads,
-        head,
-        tail,
-        attr_forces,
-        rep_forces,
-        attr_vecs,
-        rep_vecs,
-        sym_attraction,
-        n_vertices,
-        n_edges,
-        dim,
-        Z
-    )
-    free(attr_forces)
-    free(rep_forces)
-    free(attr_vecs)
-    free(rep_vecs)
+        gather_gradients(
+            attr_grads,
+            rep_grads,
+            head,
+            tail,
+            attr_forces,
+            rep_forces,
+            attr_vecs,
+            rep_vecs,
+            sym_attraction,
+            n_vertices,
+            n_edges,
+            dim,
+            Z
+        )
+        free(attr_forces)
+        free(rep_forces)
+        free(attr_vecs)
+        free(rep_vecs)
 
-    for v in range(n_vertices):
-        for d in range(dim):
-            index = v * dim + d
-            # Would like to put rep_grads[i] - attr_grads[i] into variable
-            #   but get cython error "Cannot read reduction variable in loop body"
-            # So calculate it twice to avoid the error
+        for v in range(n_vertices):
+            for d in range(dim):
+                index = v * dim + d
+                # Would like to put rep_grads[i] - attr_grads[i] into variable
+                #   but get cython error "Cannot read reduction variable in loop body"
+                # So calculate it twice to avoid the error
 
-            if (rep_grads[index] - attr_grads[index]) * all_updates[index] > 0.0:
-                gains[index] += 0.2
-            else:
-                gains[index] *= 0.8
-            gains[index] = clip(gains[index], 0.01, 100)
-            grad_d = (rep_grads[index] - attr_grads[index]) * gains[index]
+                if (rep_grads[index] - attr_grads[index]) * all_updates[index] > 0.0:
+                    gains[index] += 0.2
+                else:
+                    gains[index] *= 0.8
+                gains[index] = clip(gains[index], 0.01, 100)
+                grad_d = (rep_grads[index] - attr_grads[index]) * gains[index]
 
-            all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]
-            head_embedding[index] += all_updates[index]
+                all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]
+                head_embedding[index] += all_updates[index]
 
     free(attr_grads)
     free(rep_grads)
