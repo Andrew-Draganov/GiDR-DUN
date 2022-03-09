@@ -1,0 +1,8 @@
+
+
+#ifndef UMAP_EXAMPLE_TEST_OBJECT_H
+#define UMAP_EXAMPLE_TEST_OBJECT_H
+
+void of();
+
+#endif //UMAP_EXAMPLE_TEST_OBJECT_H

@@ -36,8 +36,9 @@ from utils import (
     fast_knn_indices,
 )
 from pytorch_optimize import torch_optimize_layout
-from optimize import cy_optimize_layout
-#from optimize_frob import cy_optimize_frob
+from optimize_gpu import cy_optimize_layout
+# from optimize import cy_optimize_layout
+# from optimize_frob import cy_optimize_frob
 from layouts import numba_optimize_layout
 from spectral import spectral_layout
 from pynndescent import NNDescent
