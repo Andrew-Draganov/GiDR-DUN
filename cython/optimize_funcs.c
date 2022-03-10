@@ -210,7 +210,7 @@ static void full_single_epoch(
     for(int v=0; v<n_vertices; v++){
         for(d=0; d<dim; d++){
             index = v * dim + d;
-            grad_d = rep_grads[index] / Z + attr_grads[index];
+            grad_d = (rep_grads[index] / Z + attr_grads[index]) * 4 * a * b;
 
             if(grad_d * all_updates[index] > 0.0)
                 gains[index] += 0.2;
