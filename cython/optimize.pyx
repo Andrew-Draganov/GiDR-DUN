@@ -43,47 +43,51 @@ cdef extern from "cython_utils.h" nogil:
     )
 
 
-cdef extern from "gpu_dim_reduction_wrapper.c":
-    void cf()
-
+# cdef extern from "gpu_dim_reduction_wrapper.c":
+#     void cf()
+# 
 cdef extern from "optimize_funcs.c" nogil:
-    float get_kernels(
-        float *attr_forces,
-        float *rep_forces,
-        float *attr_vecs,
-        float *rep_vecs,
-        int* head,
-        int* tail,
+    void simple_single_epoch(
+        int normalized,
+        int sym_attraction,
+        int momentum,
         float* head_embedding,
         float* tail_embedding,
-        float* weights,
-        int normalized,
-        int n_vertices,
-        int n_edges,
-        int i_epoch,
-        int dim,
-        float a,
-        float b,
-        float average_weight
-    )
-
-cdef extern from "optimize_funcs.c" nogil:
-    void gather_gradients(
-        float *attr_grads,
-        float *rep_grads,
         int* head,
         int* tail,
-        float* attr_forces,
-        float* rep_forces,
-        float* attr_vecs,
-        float* rep_vecs,
-        int sym_attraction,
-        int n_vertices,
-        int n_edges,
+        float* weights,
+        long* neighbor_counts,
+        float* all_updates,
+        float* gains,
+        float a,
+        float b,
         int dim,
-        float Z
+        int n_vertices,
+        float lr,
+        int i_epoch,
+        int n_edges
     )
-
+cdef extern from "optimize_funcs.c" nogil:
+    void full_single_epoch(
+        int normalized,
+        int sym_attraction,
+        int momentum,
+        float* head_embedding,
+        float* tail_embedding,
+        int* head,
+        int* tail,
+        float* weights,
+        long* neighbor_counts,
+        float* all_updates,
+        float* gains,
+        float a,
+        float b,
+        int dim,
+        int n_vertices,
+        float lr,
+        int i_epoch,
+        int n_edges
+    )
 
 cdef float ang_dist(float* x, float* y, int dim):
     """ cosine distance between vectors x and y """
@@ -229,6 +233,7 @@ def cy_umap_sampling(
     int[:] head,
     int[:] tail,
     float[:] weights,
+    long[:] neighbor_counts,
     float[:] epochs_per_sample,
     float a,
     float b,
@@ -523,11 +528,12 @@ def cy_umap_uniformly(
     int normalized,
     int sym_attraction,
     int momentum,
-    float[:, :] head_embedding,
-    float[:, :] tail_embedding,
-    int[:] head,
-    int[:] tail,
-    float[:] weights,
+    np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] head_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] tail_embedding,
+    np.ndarray[int, ndim=1, mode='c'] head,
+    np.ndarray[int, ndim=1, mode='c'] tail,
+    np.ndarray[DTYPE_FLOAT, ndim=1, mode='c'] weights,
+    np.ndarray[long, ndim=1, mode='c'] neighbor_counts,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     float a,
     float b,
@@ -539,33 +545,10 @@ def cy_umap_uniformly(
     int verbose
 ):
     cdef:
-        int v, d, index, n_edges, edge
+        int v, d, index, edge, current_point, next_point
+        int n_edges = int(epochs_per_sample.shape[0])
         float *all_updates
         float *gains
-        float *_head_embedding
-        float *_tail_embedding
-        int *_head
-        int *_tail
-        float *_weights
-
-    # FIXME - lame way to move from numpy to malloc and back
-
-    # Move from numpy to c pointer arrays
-    n_edges = int(epochs_per_sample.shape[0])
-    _head_embedding = <float*> malloc(sizeof(float) * n_vertices * dim)
-    _tail_embedding = <float*> malloc(sizeof(float) * n_vertices * dim)
-    _head = <int*> malloc(sizeof(int) * n_edges)
-    _tail = <int*> malloc(sizeof(int) * n_edges)
-    _weights = <float*> malloc(sizeof(float) * n_edges)
-
-    for v in range(n_vertices):
-        for d in range(dim):
-            _head_embedding[v * dim + d] = head_embedding[v, d]
-            _tail_embedding[v * dim + d] = tail_embedding[v, d]
-    for edge in range(n_edges):
-        _head[edge] = head[edge]
-        _tail[edge] = tail[edge]
-        _weights[edge] = weights[edge]
 
     all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
     gains = <float*> malloc(sizeof(float) * n_vertices * dim)
@@ -576,40 +559,30 @@ def cy_umap_uniformly(
             gains[index] = 1
 
     for i_epoch in range(n_epochs):
-        # lr = get_lr(initial_lr, i_epoch, n_epochs)
-        # _cy_umap_uniformly(
-        #     normalized,
-        #     sym_attraction,
-        #     momentum,
-        #     _head_embedding,
-        #     _tail_embedding,
-        #     _head,
-        #     _tail,
-        #     _weights,
-        #     all_updates,
-        #     gains,
-        #     a,
-        #     b,
-        #     dim,
-        #     n_vertices,
-        #     lr,
-        #     i_epoch,
-        #     n_edges
-        # )
-        # if verbose:
-        #     print_status(i_epoch, n_epochs)
-        cf()
+        lr = get_lr(initial_lr, i_epoch, n_epochs)
+        simple_single_epoch(
+            normalized,
+            sym_attraction,
+            momentum,
+            &head_embedding[0, 0], # Move from numpy to c pointer arrays
+            &tail_embedding[0, 0],
+            &head[0],
+            &tail[0],
+            &weights[0],
+            &neighbor_counts[0],
+            all_updates,
+            gains,
+            a,
+            b,
+            dim,
+            n_vertices,
+            lr,
+            i_epoch,
+            n_edges
+        )
+        if verbose:
+            print_status(i_epoch, n_epochs)
 
-    # Move from c pointer arrays back to cython memoryview/numpy format
-    for v in range(n_vertices):
-        for d in range(dim):
-            head_embedding[v, d] = _head_embedding[v * dim + d]
-
-    free(_head_embedding)
-    free(_tail_embedding)
-    free(_head)
-    free(_tail)
-    free(_weights)
     free(all_updates)
     free(gains)
     return head_embedding
@@ -883,6 +856,7 @@ def bh_wrapper(
     int[:] head,
     int[:] tail,
     float[:] weights,
+    long[:] neighbor_counts,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     float a,
     float b,
@@ -949,11 +923,12 @@ def cy_optimize_layout(
     int normalized,
     int sym_attraction,
     int momentum,
-    float[:, :] head_embedding,
-    float[:, :] tail_embedding,
-    int[:] head,
-    int[:] tail,
-    float[:] weights,
+    np.ndarray[DTYPE_INT, ndim=1, mode='c'] head,
+    np.ndarray[DTYPE_INT, ndim=1, mode='c'] tail,
+    np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] head_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] tail_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=1, mode='c'] weights,
+    np.ndarray[long, ndim=1, mode='c'] neighbor_counts,
     int n_epochs,
     int n_vertices,
     np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
@@ -993,6 +968,7 @@ def cy_optimize_layout(
         head,
         tail,
         weights,
+        neighbor_counts,
         epochs_per_sample,
         a,
         b,
@@ -1003,9 +979,5 @@ def cy_optimize_layout(
         n_vertices,
         verbose
     )
-    ret = py_np.zeros((n_vertices, dim))
-    for v in range(n_vertices):
-        for d in range(dim):
-            ret[v, d] = head_embedding[v, d]
 
-    return ret
+    return head_embedding

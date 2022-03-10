@@ -22,6 +22,7 @@ except ImportError:
     from sklearn.externals import joblib
 
 import numpy as np
+import scipy
 import scipy.sparse
 from scipy.sparse import tril as sparse_tril, triu as sparse_triu
 import scipy.sparse.csgraph
@@ -36,14 +37,14 @@ from utils import (
     fast_knn_indices,
 )
 from pytorch_optimize import torch_optimize_layout
-from optimize_gpu import cy_optimize_layout
-# from optimize import cy_optimize_layout
-# from optimize_frob import cy_optimize_frob
+# from optimize_gpu import cy_optimize_layout
+from optimize import cy_optimize_layout
+from optimize_frob import cy_optimize_frob
 from layouts import numba_optimize_layout
 from spectral import spectral_layout
-from pynndescent import NNDescent
-# from nndescent.pynndescent_ import NNDescent
-# import nndescent.distances as pynnd_dist
+# from pynndescent import NNDescent
+from nndescent.pynndescent_ import NNDescent
+import nndescent.distances as pynnd_dist
 
 locale.setlocale(locale.LC_NUMERIC, "C")
 
@@ -53,19 +54,6 @@ INT32_MAX = np.iinfo(np.int32).max - 1
 SMOOTH_K_TOLERANCE = 1e-5
 MIN_K_DIST_SCALE = 1e-3
 NPY_INFINITY = np.inf
-
-def flatten_iter(container):
-    for i in container:
-        if isinstance(i, (list, tuple)):
-            for j in flatten_iter(i):
-                yield j
-        else:
-            yield i
-
-
-def flattened(container):
-    return tuple(flatten_iter(container))
-
 
 def breadth_first_search(adjmat, start, min_vertices):
     explored = []
@@ -578,6 +566,30 @@ def make_epochs_per_sample(weights, n_epochs):
     result[n_samples > 0] = float(n_epochs) / n_samples[n_samples > 0]
     return result
 
+def standardize_neighbors(graph):
+    """
+    FIXME
+    """
+    data = graph.data
+    head = graph.row
+    tail = graph.col
+    min_neighbors = np.min(np.unique(tail, return_counts=True)[1])
+    new_head, new_tail, new_data = [], [], []
+    current_point = 0
+    counter = 0
+    for edge in range(head.shape[0]):
+        if tail[edge] > current_point:
+            current_point = tail[edge]
+            counter = 0
+        if counter < min_neighbors:
+            new_head.append(head[edge])
+            new_tail.append(tail[edge])
+            new_data.append(data[edge])
+            counter += 1
+    return scipy.sparse.coo_matrix(
+        (new_data, (new_head, new_tail)),
+        shape=graph.shape
+    )
 
 def simplicial_set_embedding(
     optimize_method,
@@ -731,12 +743,15 @@ def simplicial_set_embedding(
             else:
                 embedding = init_data
 
+    # FIXME FIXME -- add option to do this or not do this
+    # graph = standardize_neighbors(graph)
 
     # ANDREW - head and tail here represent the indices of nodes that have edges in high-dim
     #        - So for each edge e_{ij}, head is low-dim embedding of point i and tail
     #          is low-dim embedding of point j
     head = graph.row
     tail = graph.col
+    neighbor_counts = np.unique(tail, return_counts=True)[1]
 
     # ANDREW - get number of epochs that we will optimize this EDGE for
     epochs_per_sample = make_epochs_per_sample(graph.data, n_epochs)
@@ -751,6 +766,8 @@ def simplicial_set_embedding(
     rng_state = random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
 
     print('optimizing layout...')
+    # FIXME FIXME -- need to make sure that all numpy matrices are in
+    #   'c' format!
     embedding = _optimize_layout_euclidean(
         optimize_method,
         normalized,
@@ -762,6 +779,7 @@ def simplicial_set_embedding(
         head,
         tail,
         graph.data,
+        neighbor_counts,
         n_epochs,
         n_vertices,
         epochs_per_sample,
@@ -787,6 +805,7 @@ def _optimize_layout_euclidean(
         head,
         tail,
         weights,
+        neighbor_counts,
         n_epochs,
         n_vertices,
         epochs_per_sample,
@@ -810,6 +829,7 @@ def _optimize_layout_euclidean(
         'head': head,
         'tail': tail,
         'weights': weights,
+        'neighbor_counts': neighbor_counts,
         'n_epochs': n_epochs,
         'n_vertices': n_vertices,
         'epochs_per_sample': epochs_per_sample,
@@ -1200,44 +1220,6 @@ class UniformUmap(BaseEstimator):
         if self.n_jobs < -1 or self.n_jobs == 0:
             raise ValueError("n_jobs must be a postive integer, or -1 (for all cores)")
 
-
-    def _populate_combined_params(self, *models):
-        self.n_neighbors = flattened([m.n_neighbors for m in models])
-        self.metric = flattened([m.metric for m in models])
-        self.output_metric = flattened([m.output_metric for m in models])
-
-        self.n_epochs = flattened(
-            [m.n_epochs if m.n_epochs is not None else -1 for m in models]
-        )
-        if all([x == -1 for x in self.n_epochs]):
-            self.n_epochs = None
-
-        self.init = flattened([m.init for m in models])
-        self.n_components = flattened([m.n_components for m in models])
-        self.learning_rate = flattened([m.learning_rate for m in models])
-
-        self.spread = flattened([m.spread for m in models])
-        self.min_dist = flattened([m.min_dist for m in models])
-        self.low_memory = flattened([m.low_memory for m in models])
-        self.local_connectivity = flattened([m.local_connectivity for m in models])
-        self.negative_sample_rate = flattened([m.negative_sample_rate for m in models])
-        self.random_state = flattened([m.random_state for m in models])
-        self.transform_queue_size = flattened([m.transform_queue_size for m in models])
-        self.target_n_neighbors = flattened([m.target_n_neighbors for m in models])
-        self.target_metric = flattened([m.target_metric for m in models])
-        self.target_weight = flattened([m.target_weight for m in models])
-        self.transform_seed = flattened([m.transform_seed for m in models])
-        self.force_approximation_algorithm = flattened(
-            [m.force_approximation_algorithm for m in models]
-        )
-        self.verbose = flattened([m.verbose for m in models])
-        self.unique = flattened([m.unique for m in models])
-
-        self.a = flattened([m.a for m in models])
-        self.b = flattened([m.b for m in models])
-
-        self._a = flattened([m._a for m in models])
-        self._b = flattened([m._b for m in models])
 
     def fit(self, X):
         """Fit X into an embedded space.

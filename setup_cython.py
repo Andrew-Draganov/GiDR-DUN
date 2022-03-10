@@ -23,7 +23,7 @@ optimize = Extension(
         include_dirs=[numpy.get_include()]
     )
 
-optimize = Extension(
+optimize_frob = Extension(
     'optimize_frob',
     ['cython/optimize_frob.pyx'],
     language=['c'],
@@ -34,6 +34,6 @@ optimize = Extension(
 )
 CySetup(
     name='cython_dim_reduction',
-    # ext_modules=cythonize([optimize, optimize_frob])
-    ext_modules=cythonize([optimize_gpu])
+    ext_modules=cythonize([optimize, optimize_frob])
+    # ext_modules=cythonize([optimize_gpu])
 )
