@@ -406,122 +406,122 @@ def cy_umap_sampling(
 #                 local_rep_grads[j * dim + d] += grad_d / Z
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.cdivision(True)
-cdef void _cy_umap_uniformly(
-    int normalized,
-    int sym_attraction,
-    int momentum,
-    float* head_embedding,
-    float* tail_embedding,
-    int* head,
-    int* tail,
-    float* weights,
-    float* all_updates,
-    float* gains,
-    float a,
-    float b,
-    int dim,
-    int n_vertices,
-    float lr,
-    int i_epoch,
-    int n_edges
-):
-    cdef:
-        int i, j, k, d, v, index, edge
-        float *attr_grads
-        float *rep_grads
-
-        float *attr_vecs
-        float *rep_vecs
-        float *attr_forces
-        float *rep_forces
-
-        float Z
-        float scalar
-
-    attr_forces = <float*> malloc(sizeof(float) * n_edges)
-    rep_forces = <float*> malloc(sizeof(float) * n_edges)
-    attr_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
-    rep_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
-
-    attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
-    rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
-
-    cdef float grad = 0.0
-    cdef float grad_d = 0.0
-    cdef float average_weight = _get_avg_weight(weights, n_edges)
-
-    with nogil, parallel():
-        for v in prange(n_vertices):
-            for d in range(dim):
-                index = v * dim + d
-                attr_grads[index] = 0
-                rep_grads[index] = 0
-
-    with nogil:
-        Z = get_kernels(
-            attr_forces,
-            rep_forces,
-            attr_vecs,
-            rep_vecs,
-            head,
-            tail,
-            head_embedding,
-            tail_embedding,
-            weights,
-            normalized,
-            n_vertices,
-            n_edges,
-            i_epoch,
-            dim,
-            a,
-            b,
-            average_weight
-        )
-        if not normalized:
-            Z = 1
-
-        gather_gradients(
-            attr_grads,
-            rep_grads,
-            head,
-            tail,
-            attr_forces,
-            rep_forces,
-            attr_vecs,
-            rep_vecs,
-            sym_attraction,
-            n_vertices,
-            n_edges,
-            dim,
-            Z
-        )
-        free(attr_forces)
-        free(rep_forces)
-        free(attr_vecs)
-        free(rep_vecs)
-
-        for v in range(n_vertices):
-            for d in range(dim):
-                index = v * dim + d
-                # Would like to put rep_grads[i] - attr_grads[i] into variable
-                #   but get cython error "Cannot read reduction variable in loop body"
-                # So calculate it twice to avoid the error
-
-                if (rep_grads[index] - attr_grads[index]) * all_updates[index] > 0.0:
-                    gains[index] += 0.2
-                else:
-                    gains[index] *= 0.8
-                gains[index] = clip(gains[index], 0.01, 100)
-                grad_d = (rep_grads[index] - attr_grads[index]) * gains[index]
-
-                all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]
-                head_embedding[index] += all_updates[index]
-
-    free(attr_grads)
-    free(rep_grads)
+# @cython.boundscheck(False)
+# @cython.wraparound(False)
+# @cython.cdivision(True)
+# cdef void _cy_umap_uniformly(
+#     int normalized,
+#     int sym_attraction,
+#     int momentum,
+#     float* head_embedding,
+#     float* tail_embedding,
+#     int* head,
+#     int* tail,
+#     float* weights,
+#     float* all_updates,
+#     float* gains,
+#     float a,
+#     float b,
+#     int dim,
+#     int n_vertices,
+#     float lr,
+#     int i_epoch,
+#     int n_edges
+# ):
+#     cdef:
+#         int i, j, k, d, v, index, edge
+#         float *attr_grads
+#         float *rep_grads
+# 
+#         float *attr_vecs
+#         float *rep_vecs
+#         float *attr_forces
+#         float *rep_forces
+# 
+#         float Z
+#         float scalar
+# 
+#     attr_forces = <float*> malloc(sizeof(float) * n_edges)
+#     rep_forces = <float*> malloc(sizeof(float) * n_edges)
+#     attr_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
+#     rep_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
+# 
+#     attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
+#     rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
+# 
+#     cdef float grad = 0.0
+#     cdef float grad_d = 0.0
+#     cdef float average_weight = _get_avg_weight(weights, n_edges)
+# 
+#     with nogil, parallel():
+#         for v in prange(n_vertices):
+#             for d in range(dim):
+#                 index = v * dim + d
+#                 attr_grads[index] = 0
+#                 rep_grads[index] = 0
+# 
+#     with nogil:
+#         Z = get_kernels(
+#             attr_forces,
+#             rep_forces,
+#             attr_vecs,
+#             rep_vecs,
+#             head,
+#             tail,
+#             head_embedding,
+#             tail_embedding,
+#             weights,
+#             normalized,
+#             n_vertices,
+#             n_edges,
+#             i_epoch,
+#             dim,
+#             a,
+#             b,
+#             average_weight
+#         )
+#         if not normalized:
+#             Z = 1
+# 
+#         gather_gradients(
+#             attr_grads,
+#             rep_grads,
+#             head,
+#             tail,
+#             attr_forces,
+#             rep_forces,
+#             attr_vecs,
+#             rep_vecs,
+#             sym_attraction,
+#             n_vertices,
+#             n_edges,
+#             dim,
+#             Z
+#         )
+#         free(attr_forces)
+#         free(rep_forces)
+#         free(attr_vecs)
+#         free(rep_vecs)
+# 
+#         for v in range(n_vertices):
+#             for d in range(dim):
+#                 index = v * dim + d
+#                 # Would like to put rep_grads[i] - attr_grads[i] into variable
+#                 #   but get cython error "Cannot read reduction variable in loop body"
+#                 # So calculate it twice to avoid the error
+# 
+#                 if (rep_grads[index] - attr_grads[index]) * all_updates[index] > 0.0:
+#                     gains[index] += 0.2
+#                 else:
+#                     gains[index] *= 0.8
+#                 gains[index] = clip(gains[index], 0.01, 100)
+#                 grad_d = (rep_grads[index] - attr_grads[index]) * gains[index]
+# 
+#                 all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]
+#                 head_embedding[index] += all_updates[index]
+# 
+#     free(attr_grads)
+#     free(rep_grads)
 
 
 def cy_umap_uniformly(
@@ -547,20 +547,15 @@ def cy_umap_uniformly(
     cdef:
         int v, d, index, edge, current_point, next_point
         int n_edges = int(epochs_per_sample.shape[0])
-        float *all_updates
-        float *gains
+        np.ndarray[DTYPE_FLOAT, ndim=2] all_updates
+        np.ndarray[DTYPE_FLOAT, ndim=2] gains
 
-    all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
-    gains = <float*> malloc(sizeof(float) * n_vertices * dim)
-    for v in range(n_vertices):
-        for d in range(dim):
-            index = v * dim + d
-            all_updates[index] = 0
-            gains[index] = 1
+    all_updates = py_np.zeros([n_vertices, dim], dtype=py_np.float32, order='c')
+    gains = py_np.ones([n_vertices, dim], dtype=py_np.float32, order='c')
 
     for i_epoch in range(n_epochs):
         lr = get_lr(initial_lr, i_epoch, n_epochs)
-        simple_single_epoch(
+        full_single_epoch(
             normalized,
             sym_attraction,
             momentum,
@@ -570,8 +565,8 @@ def cy_umap_uniformly(
             &tail[0],
             &weights[0],
             &neighbor_counts[0],
-            all_updates,
-            gains,
+            &all_updates[0, 0],
+            &gains[0, 0],
             a,
             b,
             dim,
@@ -582,10 +577,6 @@ def cy_umap_uniformly(
         )
         if verbose:
             print_status(i_epoch, n_epochs)
-
-    free(all_updates)
-    free(gains)
-    return head_embedding
 
 
 ##### BARNES-HUT CODE #####
@@ -959,7 +950,7 @@ def cy_optimize_layout(
     }
     optimize_fn = optimize_dict[optimize_method]
 
-    head_embedding = optimize_fn(
+    optimize_fn(
         normalized,
         sym_attraction,
         momentum,

@@ -126,7 +126,7 @@ static void repulsive_force_func(
         float cell_size,
         float average_weight
 ){
-    if(normalized == 1)
+    if(normalized)
         norm_rep_force(
             rep_func_outputs,
             dist_squared,

@@ -3,8 +3,9 @@ from distutils.core import Extension
 from Cython.Build import cythonize, build_ext
 import numpy
 
-# os.environ['CC']='/usr/local/Cellar/gcc/11.2.0_3/bin/gcc-11'
-# os.environ['CXX']='/usr/local/Cellar/gcc/11.2.0_3/bin/g++-11'
+import os
+os.environ['CC']='/usr/local/Cellar/gcc/11.2.0_3/bin/gcc-11'
+os.environ['CXX']='/usr/local/Cellar/gcc/11.2.0_3/bin/g++-11'
 
 optimize_gpu = Extension(
     'optimize_gpu',

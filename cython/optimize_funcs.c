@@ -127,7 +127,7 @@ static void full_single_epoch(
     //       but is very, very close
     //
     int j, k, d, index;
-    float dist_squared, weight_scalar, grad_d, force;
+    float dist_squared, weight_scalar, grad_d, force, force_d;
     float *y1;
     float *y2;
     float *rep_func_outputs;
@@ -147,31 +147,45 @@ static void full_single_epoch(
         }
     }
 
+    float average_weight = 0.0;
+    for(int i=0; i < n_edges; i++)
+        average_weight += weights[i];
+    average_weight /= n_edges;
+
     int edge = 0;
     for(int v=0; v<n_vertices; v++){
         for(int nbr=0; nbr<neighbor_counts[v]; nbr++){
+            // Calculate attractive gradiants
             j = head[edge];
             for(d=0; d<dim; d++){
                 y1[d] = tail_embedding[v * dim + d];
                 y2[d] = head_embedding[j * dim + d];
             }
             dist_squared = sq_euc_dist(y1, y2, dim);
+            
+            if(i_epoch < 100)
+                weight_scalar = 4;
+            else
+                weight_scalar = 1;
 
             force = attractive_force_func(
                     normalized,
                     dist_squared,
                     a,
                     b,
-                    weights[edge]
+                    weights[edge] * weight_scalar
             );
             for(d=0; d<dim; d++){
-                attr_grads[v * dim + d] -= force * (y1[d] - y2[d]);
+                force_d = force * (y1[d] - y2[d]);
+                attr_grads[v * dim + d] -= force_d;
+                // Math for if(sym_attraction==1){ Apply attraction both ways }
+                attr_grads[j * dim + d] += force_d * sym_attraction;
             }
 
+            // Calculate repulsive gradiants
             k = rand() % n_vertices;
-            for(d=0; d<dim; d++){
+            for(d=0; d<dim; d++)
                 y2[d] = head_embedding[k * dim + d];
-            }
             dist_squared = sq_euc_dist(y1, y2, dim);
             repulsive_force_func(
                     rep_func_outputs,
@@ -180,24 +194,23 @@ static void full_single_epoch(
                     a,
                     b,
                     1.0,
-                    0.3 // FIXME -- make avg_weight
+                    average_weight
             );
             force = rep_func_outputs[0];
             Z += rep_func_outputs[1]; // Z needs to get synchronized if parallel
-            for(d=0; d<dim; d++){
+            for(d=0; d<dim; d++)
                 rep_grads[v * dim + d] += force * (y1[d] - y2[d]);
-            }
 
             edge++;
         }
     }
-    if(normalized == 1)
-        Z = 1;
+    // Math for "if(normalized==0){Z = 1;}
+    Z = Z * normalized + (1 - normalized);
 
     for(int v=0; v<n_vertices; v++){
         for(d=0; d<dim; d++){
             index = v * dim + d;
-            grad_d = rep_grads[index] / Z - attr_grads[index];
+            grad_d = rep_grads[index] / Z + attr_grads[index];
 
             if(grad_d * all_updates[index] > 0.0)
                 gains[index] += 0.2;
@@ -206,7 +219,8 @@ static void full_single_epoch(
             gains[index] = clip(gains[index], 0.01, 100);
             grad_d *= gains[index];
 
-            all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index];
+            all_updates[index] *= (float)momentum * 0.9;
+            all_updates[index] += grad_d * lr;
             head_embedding[index] += all_updates[index];
         }
     }
