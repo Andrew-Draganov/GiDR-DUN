@@ -162,7 +162,7 @@ static void full_single_epoch(
                 y2[d] = head_embedding[j * dim + d];
             }
             dist_squared = sq_euc_dist(y1, y2, dim);
-            
+
             if(i_epoch < 100)
                 weight_scalar = 4;
             else

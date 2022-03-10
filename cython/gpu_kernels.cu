@@ -151,6 +151,30 @@ float norm_rep_force(
 //    rep_func_outputs[1] = q_ij;
 }
 
+
+__device__
+float norm_rep_force(
+//        float* rep_func_outputs,
+        float *d_Z,
+        int i_thread,
+        float dist_squared,
+        float a,
+        float b,
+        float cell_size
+) {
+    float kernel, q_ij, repulsive_force;
+
+    kernel = kernel_function(dist_squared, a, b);
+
+    q_ij = cell_size * kernel; // Collect the q_ij's contributions into Z
+    d_Z[i_thread] += q_ij;
+
+    repulsive_force = cell_size * kernel * kernel;
+    return repulsive_force;
+//    rep_func_outputs[0] = repulsive_force;
+//    rep_func_outputs[1] = q_ij;
+}
+
 __device__
 float umap_repulsion_grad(float dist_squared, float a, float b) {
     float phi_ijZ = 0.0;
@@ -210,6 +234,39 @@ float repulsive_force_func(
         );
 }
 
+__device__
+float repulsive_force_func(
+//        float* rep_func_outputs,
+        float *d_Z,
+        int i_thread,
+        int normalized,
+        float dist_squared,
+        float a,
+        float b,
+        float cell_size,
+        float average_weight
+) {
+    if (normalized)
+        return norm_rep_force(
+//                rep_func_outputs,
+                d_Z,
+                i_thread,
+                dist_squared,
+                a,
+                b,
+                cell_size
+        );
+    else
+        return unnorm_rep_force(
+//                rep_func_outputs,
+                dist_squared,
+                a,
+                b,
+                cell_size,
+                average_weight
+        );
+}
+
 // for any k
 __global__
 void
@@ -219,11 +276,8 @@ compute_grads(int normalized, float *d_grads, float *d_weights, int n, int *d_N,
 
     for (int i_point = threadIdx.x + blockIdx.x * blockDim.x; i_point < n; i_point += blockDim.x * gridDim.x) {
         for (int i_edge = get_start(d_neighbor_ends, i_point); i_edge < get_end(d_neighbor_ends, i_point); i_edge++) {
+
             int j = d_N[i_edge];
-
-//            float attr = q(sqrd_dist(d_D_embed, dims_embed, i, j));
-//            attr = attr * attr * d_weight[l];
-
             float dist_squared = sqrd_dist(d_D_embed, dims_embed, i_point, j);
             float attr = attractive_force_func(
                     normalized,
@@ -233,15 +287,7 @@ compute_grads(int normalized, float *d_grads, float *d_weights, int n, int *d_N,
                     d_weights[i_edge]
             );
 
-            for (int h = 0; h < dims_embed; h++) {
-                d_grads[i_point * dims_embed + h] -=
-                        attr * (d_D_embed[i_point * dims_embed + h] - d_D_embed[j * dims_embed + h]);
-            }
-
             int g = curand(&d_random[id]) % n;//random int
-//            float rep = q(sqrd_dist(d_D_embed, dims_embed, i_point, g));
-//            rep = rep * rep * rep;
-
             dist_squared = sqrd_dist(d_D_embed, dims_embed, i_point, g);
             float rep = repulsive_force_func(
 //                    rep_func_outputs,
@@ -253,11 +299,57 @@ compute_grads(int normalized, float *d_grads, float *d_weights, int n, int *d_N,
                     0.3 // FIXME -- make avg_weight
             );
 
-
             for (int h = 0; h < dims_embed; h++) {
                 d_grads[i_point * dims_embed + h] +=
+                        rep * (d_D_embed[i_point * dims_embed + h] - d_D_embed[g * dims_embed + h]) -
+                        attr * (d_D_embed[i_point * dims_embed + h] - d_D_embed[j * dims_embed + h]);
+            }
+        }
+    }
+}
+
+
+__global__
+void
+compute_grads_full(int normalized, float *d_rep_grads, float *d_attr_grads, float *d_weights, int n, int *d_N,
+                   int *d_neighbor_ends, float *d_D_embed, float *d_Z, float a, float b, int dims_embed,
+                   curandState *d_random, float sym_attraction, float weight_scalar, float average_weight) {
+    int i_thread = threadIdx.x + blockDim.x * blockIdx.x;
+
+    for (int i_point = threadIdx.x + blockIdx.x * blockDim.x; i_point < n; i_point += blockDim.x * gridDim.x) {
+        for (int i_edge = get_start(d_neighbor_ends, i_point); i_edge < get_end(d_neighbor_ends, i_point); i_edge++) {
+
+            int j_point = d_N[i_edge];
+            float dist_squared = sqrd_dist(d_D_embed, dims_embed, i_point, j_point);
+            float attr = attractive_force_func(
+                    normalized,
+                    dist_squared,
+                    a,
+                    b,
+                    d_weights[i_edge] * weight_scalar
+            );
+
+            int g = curand(&d_random[i_thread]) % n;//random int
+            dist_squared = sqrd_dist(d_D_embed, dims_embed, i_point, g);
+            float rep = repulsive_force_func(
+//                    rep_func_outputs,
+                    d_Z,
+                    i_thread,
+                    normalized,
+                    dist_squared,
+                    a,
+                    b,
+                    1.0,
+                    average_weight
+            );
+
+            for (int h = 0; h < dims_embed; h++) {
+                d_rep_grads[i_point * dims_embed + h] +=
                         rep * (d_D_embed[i_point * dims_embed + h] - d_D_embed[g * dims_embed + h]);
 
+                float force = attr * (d_D_embed[i_point * dims_embed + h] - d_D_embed[j_point * dims_embed + h]);
+                d_attr_grads[i_point * dims_embed + h] -= force;
+                d_attr_grads[j_point * dims_embed + h] += force * sym_attraction;
             }
         }
     }
@@ -296,6 +388,36 @@ void apply_grads(float *d_D_embed, float *d_grads, int n, int dims_embed, float 
     for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < n; i += blockDim.x * gridDim.x) {
         for (int h = 0; h < dims_embed; h++) {
             d_D_embed[i * dims_embed + h] += lr * d_grads[i * dims_embed + h];
+        }
+    }
+}
+
+__device__
+float clip(float val, float lower, float upper) {
+    return fmax(lower, fmin(val, upper));
+}
+
+__global__
+void
+apply_grads_full(float *d_Z, float *d_D_embed, float *d_rep_grads, float *d_attr_grads, float *d_all_grads,
+                 float *d_gains,
+                 int n, int dims_embed, float lr, float a, float b, float momentum) {
+    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < n; i += blockDim.x * gridDim.x) {
+        for (int h = 0; h < dims_embed; h++) {
+            int index = i * dims_embed + h;
+            float grad = (d_rep_grads[index] / d_Z[0] + d_attr_grads[index]) * 4 * a * b;
+
+            if (grad * d_all_grads[index] > 0.0)
+                d_gains[index] += 0.2;
+            else
+                d_gains[index] *= 0.8;
+            d_gains[index] = clip(d_gains[index], 0.01, 100);
+            grad *= d_gains[index];
+
+            d_all_grads[index] *= (float) momentum * 0.9;
+            d_all_grads[index] += grad * lr;
+
+            d_D_embed[index] += d_all_grads[index];
         }
     }
 }
@@ -446,6 +568,157 @@ void gpu_umap_2(int normalized, // unused
     cudaFree(d_random);
 }
 
+__global__
+void reduced_sum_fix(float *d_tmp, int n_edges) {
+    extern __shared__ float s_tmp[];
+    int i_thread = threadIdx.x + blockIdx.x * blockDim.x;
+    int tid = threadIdx.x;
+    s_tmp[tid] = 0;
+    for (int s = 0; s < n_edges; s += gridDim.x * blockDim.x) {
+        if (i_thread + s < n_edges) {
+            s_tmp[tid] += d_tmp[i_thread + s];
+        }
+    }
+    d_tmp[i_thread] = s_tmp[tid];
+}
+
+__global__
+void reduced_sum(float *d_Z) {
+
+    extern __shared__ float s_Z[];
+
+    int i_thread = threadIdx.x + blockIdx.x * (blockDim.x * 2);
+    int tid = threadIdx.x;
+
+    int n_active_threads = blockDim.x;
+
+    s_Z[tid] = d_Z[i_thread] + d_Z[i_thread + blockDim.x];
+    __syncthreads();
+
+    for (int n_active_threads = blockDim.x / 2; n_active_threads > 0; n_active_threads >>= 1) {
+        if (tid < n_active_threads) {
+            s_Z[tid] += s_Z[tid + n_active_threads];
+            __syncthreads();
+        }
+    }
+
+    if (tid == 0) d_Z[blockIdx.x] = s_Z[0];
+}
+
+void gpu_umap_full(int normalized, // unused
+                   int sym_attraction, // unused
+                   int momentum, // unused
+                   float *h_D_embed, //head_embedding,
+                   float *h_D_embed_other, //tail_embedding,
+                   int *h_N, //head,
+                   int *tail, // im not using this
+                   float *h_weights,//weights,
+                   long *h_neighbor_counts, //neighbor_counts,
+                   float *all_updates, // unused
+                   float *gains, // unused
+                   float a, // unused
+                   float b, // unused
+                   int dims_embed, //dim,
+                   int n_vertices,
+                   float init_lr,
+                   int n_epochs,
+                   int n_edges
+) {
+    int number_of_blocks_scalar = 16;//16 can be replace with something smaller then BLOCK_SIZE
+    int number_of_threads_in_total = BLOCK_SIZE * 2 * number_of_blocks_scalar;
+
+    //allocated and copy memory to the gpu
+    float *d_D_embed = copy_H_to_D(h_D_embed, n_vertices * dims_embed);
+    int *d_N = copy_H_to_D(h_N, n_edges);
+    long *d_neighbor_counts_long = copy_H_to_D(h_neighbor_counts, n_vertices);
+    int *d_neighbor_counts = gpu_malloc_int(n_vertices);
+    int *d_neighbor_ends = gpu_malloc_int_zero(n_vertices);
+    float *d_weights = copy_H_to_D(h_weights, n_edges);
+    float *d_rep_grads = gpu_malloc_float(n_vertices * dims_embed);
+    float *d_attr_grads = gpu_malloc_float(n_vertices * dims_embed);
+    float *d_all_grads = gpu_malloc_float_zero(n_vertices * dims_embed);
+    float *d_gains = gpu_malloc_float(n_vertices * dims_embed);
+    gpu_set_all(d_gains, n_vertices * dims_embed, 1.);
+    float *d_Z = gpu_malloc_float(number_of_threads_in_total);
+
+    float *d_tmp_weights = gpu_malloc_float(max(n_edges, number_of_threads_in_total));
+    copy_D_to_D(d_tmp_weights, d_weights, n_edges);
+
+
+    int number_of_threads = min(n_vertices, number_of_threads_in_total);
+    int number_of_blocks = number_of_threads / BLOCK_SIZE;
+    if (number_of_threads % BLOCK_SIZE) number_of_blocks++;
+
+    int number_of_blocks_half = (number_of_threads_in_total / 2) / BLOCK_SIZE;
+    if ((number_of_threads_in_total / 2) % BLOCK_SIZE) number_of_blocks_half++;
+
+
+    //random
+    curandState *d_random;
+    cudaMalloc((void **) &d_random, number_of_threads * sizeof(curandState));
+    init_random << < number_of_blocks, BLOCK_SIZE >> > (d_random);
+
+    convert<<<number_of_blocks, BLOCK_SIZE>>>(d_neighbor_counts, d_neighbor_counts_long, n_vertices);
+    inclusive_scan(d_neighbor_counts, d_neighbor_ends, n_vertices);
+
+    reduced_sum_fix<<<number_of_blocks_half, BLOCK_SIZE, BLOCK_SIZE * sizeof(float)>>>(d_tmp_weights, n_edges);
+    reduced_sum<<<number_of_blocks_half, BLOCK_SIZE, BLOCK_SIZE * sizeof(float)>>>(d_tmp_weights);
+    reduced_sum<<<1, number_of_blocks_half, number_of_blocks_scalar * sizeof(float)>>>(d_tmp_weights);
+    float average_weight = copy_last_D_to_H(d_tmp_weights, 1) / ((float) n_edges);
+
+    printf("\n\nParams:\n");
+    printf("- average_weight: %f\n", average_weight);
+    printf("- momentum: %d\n", momentum);
+    printf("- sym_attraction: %d\n", sym_attraction);
+    printf("\n\n");
+
+    for (int i_epoch = 0; i_epoch < n_epochs; i_epoch++) {
+        float lr = get_lr(init_lr, i_epoch, n_epochs);
+        cudaMemset(d_rep_grads, 0, n_vertices * dims_embed * sizeof(float));
+        cudaMemset(d_attr_grads, 0, n_vertices * dims_embed * sizeof(float));
+        cudaMemset(d_Z, 0, number_of_threads_in_total * sizeof(float));
+
+        float weight_scalar;
+        if (i_epoch < 100)
+            weight_scalar = 4;
+        else
+            weight_scalar = 1;
+
+        compute_grads_full << < number_of_blocks, BLOCK_SIZE >> >
+        (normalized, d_rep_grads, d_attr_grads, d_weights, n_vertices, d_N, d_neighbor_ends, d_D_embed, d_Z,
+                a, b, dims_embed, d_random, sym_attraction, weight_scalar, average_weight);
+
+        if (normalized) {
+            reduced_sum<<<number_of_blocks_half, BLOCK_SIZE, BLOCK_SIZE * sizeof(float)>>>(d_Z);
+            reduced_sum<<<1, number_of_blocks_scalar, number_of_blocks_scalar * sizeof(float)>>>(d_Z);
+        } else {
+            gpu_set_all(d_Z, 1, 1.);
+        }
+
+        apply_grads_full << < number_of_blocks, BLOCK_SIZE >> >
+        (d_Z, d_D_embed, d_rep_grads, d_attr_grads, d_all_grads, d_gains, n_vertices, dims_embed, lr, a, b, momentum);
+
+
+        if ((i_epoch + 1) % 50 == 0) {
+            printf("Epoch %d/%d\n", i_epoch + 1, n_epochs);
+        }
+
+    }
+
+    //copy back and delete
+    cudaMemcpy(h_D_embed, d_D_embed, n_vertices * dims_embed * sizeof(float), cudaMemcpyDeviceToHost);
+    cudaFree(d_D_embed);
+    cudaFree(d_N);
+    cudaFree(d_neighbor_counts);
+    cudaFree(d_weights);
+    cudaFree(d_rep_grads);
+    cudaFree(d_attr_grads);
+    cudaFree(d_all_grads);
+    cudaFree(d_gains);
+    cudaFree(d_random);
+}
+
+
 void gpu_umap(
         int normalized,
         int sym_attraction,
@@ -470,7 +743,7 @@ void gpu_umap(
 //    gpu_umap_2(normalized, n_vertices, head_embedding, dim, head, neighbor_counts, n_edges / n_vertices, weights,
 //               n_epochs,
 //               initial_lr, 1);
-    gpu_umap_2(
+    gpu_umap_full(
             normalized, // unused
             sym_attraction, // unused
             momentum, // unused
