@@ -34,6 +34,6 @@ optimize_frob = Extension(
 )
 CySetup(
     name='cython_dim_reduction',
-    ext_modules=cythonize([optimize, optimize_frob])
-    # ext_modules=cythonize([optimize_gpu])
+    # ext_modules=cythonize([optimize, optimize_frob])
+    ext_modules=cythonize([optimize_gpu])
 )
