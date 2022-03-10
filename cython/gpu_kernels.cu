@@ -182,7 +182,7 @@ float get_lr(float initial_lr, int i_epoch, int n_epochs) {
     return initial_lr * (1.0 - (((float) i_epoch) / ((float) n_epochs)));
 }
 
-void gpu_umap(int n, float *h_D_embed, int dims_embed, int *h_N, int k, float *h_P, int epochs,
+void gpu_umap_old(int n, float *h_D_embed, int dims_embed, int *h_N, int k, float *h_P, int epochs,
               float init_lr, int neg_samples) {
 
     //allocated and copy memory to the gpu
@@ -252,4 +252,26 @@ gpu_umap_head_tail(int n_edges, int n_vertices, float *h_D_embed, int dims_embed
     cudaFree(d_P);
     cudaFree(d_grads);
     cudaFree(d_random);
+}
+
+void gpu_umap(
+        int normalized,
+        int sym_attraction,
+        int momentum,
+        float *head_embedding,
+        float *tail_embedding,
+        int *head,
+        int *tail,
+        float *weights,
+        long *neighbor_counts,
+        float *all_updates,
+        float *gains,
+        float a,
+        float b,
+        int dim,
+        int n_vertices,
+        float initial_lr,
+        int n_edges
+) {
+    printf("hey from GPU code!\n");
 }
