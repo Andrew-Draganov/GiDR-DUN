@@ -28,7 +28,8 @@ void gpu_umap_wrap(
         int dim,
         int n_vertices,
         float initial_lr,
-        int n_edges
+        int n_edges,
+        int n_epochs
 );
 
 #endif //UMAP_EXAMPLE_TEST_OBJECT_H

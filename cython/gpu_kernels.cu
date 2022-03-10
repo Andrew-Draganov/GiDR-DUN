@@ -271,7 +271,9 @@ void gpu_umap(
         int dim,
         int n_vertices,
         float initial_lr,
-        int n_edges
+        int n_edges,
+        int n_epochs
 ) {
-    printf("hey from GPU code!\n");
+//    gpu_umap_old(n_vertices, head_embedding, dim, tail,n_edges/n_vertices, weights, int epochs,
+//            initial_lr, int neg_samples);
 }

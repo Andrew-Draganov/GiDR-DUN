@@ -65,7 +65,8 @@ cdef extern from "gpu_dim_reduction_wrapper.c":
         int dim,
         int n_vertices,
         float initial_lr,
-        int n_edges
+        int n_edges,
+        int n_epochs
     )
 
 cdef extern from "optimize_funcs.c" nogil:
@@ -624,7 +625,8 @@ def cy_umap_uniformly(
         dim,
         n_vertices,
         initial_lr,
-        n_edges
+        n_edges,
+        n_epochs
     )
 
     free(all_updates)
