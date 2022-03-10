@@ -44,8 +44,27 @@ cdef extern from "cython_utils.h" nogil:
 
 
 # cdef extern from "gpu_dim_reduction_wrapper.c":
-#     void cf()
-# 
+#     void gpu_umap_wrapper(
+#         int normalized,
+#         int sym_attraction,
+#         int momentum,
+#         float* head_embedding,
+#         float* tail_embedding,
+#         int* head,
+#         int* tail,
+#         float* weights,
+#         long* neighbor_counts,
+#         float* all_updates,
+#         float* gains,
+#         float a,
+#         float b,
+#         int dim,
+#         int n_vertices,
+#         float initial_lr,
+#         int n_edges,
+#         int n_epochs
+#     )
+
 cdef extern from "optimize_funcs.c" nogil:
     void simple_single_epoch(
         int normalized,
@@ -67,6 +86,7 @@ cdef extern from "optimize_funcs.c" nogil:
         int i_epoch,
         int n_edges
     )
+
 cdef extern from "optimize_funcs.c" nogil:
     void full_single_epoch(
         int normalized,
@@ -432,34 +452,31 @@ def cy_umap_sampling(
 #         int i, j, k, d, v, index, edge
 #         float *attr_grads
 #         float *rep_grads
-# 
 #         float *attr_vecs
 #         float *rep_vecs
 #         float *attr_forces
 #         float *rep_forces
-# 
 #         float Z
 #         float scalar
-# 
 #     attr_forces = <float*> malloc(sizeof(float) * n_edges)
 #     rep_forces = <float*> malloc(sizeof(float) * n_edges)
 #     attr_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
 #     rep_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
-# 
+#
 #     attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
 #     rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
-# 
+#
 #     cdef float grad = 0.0
 #     cdef float grad_d = 0.0
 #     cdef float average_weight = _get_avg_weight(weights, n_edges)
-# 
+#
 #     with nogil, parallel():
 #         for v in prange(n_vertices):
 #             for d in range(dim):
 #                 index = v * dim + d
 #                 attr_grads[index] = 0
 #                 rep_grads[index] = 0
-# 
+#
 #     with nogil:
 #         Z = get_kernels(
 #             attr_forces,
@@ -482,7 +499,7 @@ def cy_umap_sampling(
 #         )
 #         if not normalized:
 #             Z = 1
-# 
+#
 #         gather_gradients(
 #             attr_grads,
 #             rep_grads,
@@ -502,24 +519,24 @@ def cy_umap_sampling(
 #         free(rep_forces)
 #         free(attr_vecs)
 #         free(rep_vecs)
-# 
+#
 #         for v in range(n_vertices):
 #             for d in range(dim):
 #                 index = v * dim + d
 #                 # Would like to put rep_grads[i] - attr_grads[i] into variable
 #                 #   but get cython error "Cannot read reduction variable in loop body"
 #                 # So calculate it twice to avoid the error
-# 
+#
 #                 if (rep_grads[index] - attr_grads[index]) * all_updates[index] > 0.0:
 #                     gains[index] += 0.2
 #                 else:
 #                     gains[index] *= 0.8
 #                 gains[index] = clip(gains[index], 0.01, 100)
 #                 grad_d = (rep_grads[index] - attr_grads[index]) * gains[index]
-# 
+#
 #                 all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]
 #                 head_embedding[index] += all_updates[index]
-# 
+#
 #     free(attr_grads)
 #     free(rep_grads)
 
@@ -577,6 +594,26 @@ def cy_umap_uniformly(
         )
         if verbose:
             print_status(i_epoch, n_epochs)
+    # gpu_umap_wrapper(
+    #     normalized,
+    #     sym_attraction,
+    #     momentum,
+    #     &head_embedding[0, 0], # Move from numpy to c pointer arrays
+    #     &tail_embedding[0, 0],
+    #     &head[0],
+    #     &tail[0],
+    #     &weights[0],
+    #     &neighbor_counts[0],
+    #     all_updates,
+    #     gains,
+    #     a,
+    #     b,
+    #     dim,
+    #     n_vertices,
+    #     initial_lr,
+    #     n_edges,
+    #     n_epochs
+    # )
 
 
 ##### BARNES-HUT CODE #####

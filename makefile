@@ -6,7 +6,7 @@ run: #this is working :D
 	python setup_cython.py install #https://stavshamir.github.io/python/making-your-c-library-callable-from-python-by-wrapping-it-with-cython/
 	#
 	# Running...
-	python umap/dim_reduce_dataset.py --optimize-method cy_umap_uniform --num-points 6000
+	python umap/dim_reduce_dataset.py --optimize-method cy_umap_uniform --num-points 60000
 
 #clean:
 #	rm *.so *.o test.c
