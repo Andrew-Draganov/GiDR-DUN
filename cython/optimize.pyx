@@ -43,27 +43,27 @@ cdef extern from "cython_utils.h" nogil:
     )
 
 
-# cdef extern from "gpu_dim_reduction_wrapper.c":
-#     void gpu_umap_wrapper(
-#         int normalized,
-#         int sym_attraction,
-#         int momentum,
-#         float* head_embedding,
-#         float* tail_embedding,
-#         int* head,
-#         int* tail,
-#         float* weights,
-#         long* neighbor_counts,
-#         float* all_updates,
-#         float* gains,
-#         float a,
-#         float b,
-#         int dim,
-#         int n_vertices,
-#         float initial_lr,
-#         int n_edges,
-#         int n_epochs
-#     )
+cdef extern from "gpu_dim_reduction_wrapper.c":
+    void gpu_umap_wrapper(
+        int normalized,
+        int sym_attraction,
+        int momentum,
+        float* head_embedding,
+        float* tail_embedding,
+        int* head,
+        int* tail,
+        float* weights,
+        long* neighbor_counts,
+        float* all_updates,
+        float* gains,
+        float a,
+        float b,
+        int dim,
+        int n_vertices,
+        float initial_lr,
+        int n_edges,
+        int n_epochs
+    )
 
 cdef extern from "optimize_funcs.c" nogil:
     void simple_single_epoch(
@@ -570,50 +570,50 @@ def cy_umap_uniformly(
     all_updates = py_np.zeros([n_vertices, dim], dtype=py_np.float32, order='c')
     gains = py_np.ones([n_vertices, dim], dtype=py_np.float32, order='c')
 
-    for i_epoch in range(n_epochs):
-        lr = get_lr(initial_lr, i_epoch, n_epochs)
-        full_single_epoch(
-            normalized,
-            sym_attraction,
-            momentum,
-            &head_embedding[0, 0], # Move from numpy to c pointer arrays
-            &tail_embedding[0, 0],
-            &head[0],
-            &tail[0],
-            &weights[0],
-            &neighbor_counts[0],
-            &all_updates[0, 0],
-            &gains[0, 0],
-            a,
-            b,
-            dim,
-            n_vertices,
-            lr,
-            i_epoch,
-            n_edges
-        )
-        if verbose:
-            print_status(i_epoch, n_epochs)
-    # gpu_umap_wrapper(
-    #     normalized,
-    #     sym_attraction,
-    #     momentum,
-    #     &head_embedding[0, 0], # Move from numpy to c pointer arrays
-    #     &tail_embedding[0, 0],
-    #     &head[0],
-    #     &tail[0],
-    #     &weights[0],
-    #     &neighbor_counts[0],
-    #     all_updates,
-    #     gains,
-    #     a,
-    #     b,
-    #     dim,
-    #     n_vertices,
-    #     initial_lr,
-    #     n_edges,
-    #     n_epochs
-    # )
+    # for i_epoch in range(n_epochs):
+    #     lr = get_lr(initial_lr, i_epoch, n_epochs)
+    #     full_single_epoch(
+    #         normalized,
+    #         sym_attraction,
+    #         momentum,
+    #         &head_embedding[0, 0], # Move from numpy to c pointer arrays
+    #         &tail_embedding[0, 0],
+    #         &head[0],
+    #         &tail[0],
+    #         &weights[0],
+    #         &neighbor_counts[0],
+    #         &all_updates[0, 0],
+    #         &gains[0, 0],
+    #         a,
+    #         b,
+    #         dim,
+    #         n_vertices,
+    #         lr,
+    #         i_epoch,
+    #         n_edges
+    #     )
+    #     if verbose:
+    #         print_status(i_epoch, n_epochs)
+    gpu_umap_wrapper(
+        normalized,
+        sym_attraction,
+        momentum,
+        &head_embedding[0, 0], # Move from numpy to c pointer arrays
+        &tail_embedding[0, 0],
+        &head[0],
+        &tail[0],
+        &weights[0],
+        &neighbor_counts[0],
+        &all_updates[0, 0],
+        &gains[0, 0],
+        a,
+        b,
+        dim,
+        n_vertices,
+        initial_lr,
+        n_edges,
+        n_epochs
+    )
 
 
 ##### BARNES-HUT CODE #####
