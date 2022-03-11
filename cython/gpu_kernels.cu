@@ -399,13 +399,13 @@ float clip(float val, float lower, float upper) {
 
 __global__
 void
-apply_grads_full(float *d_Z, float *d_D_embed, float *d_rep_grads, float *d_attr_grads, float *d_all_grads,
+apply_grads_full(float Z, float *d_D_embed, float *d_rep_grads, float *d_attr_grads, float *d_all_grads,
                  float *d_gains,
                  int n, int dims_embed, float lr, float a, float b, float momentum) {
     for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < n; i += blockDim.x * gridDim.x) {
         for (int h = 0; h < dims_embed; h++) {
             int index = i * dims_embed + h;
-            float grad = (d_rep_grads[index] / d_Z[0] + d_attr_grads[index]) * 4 * a * b;
+            float grad = (d_rep_grads[index] / Z + d_attr_grads[index]) * 4 * a * b;
 
             if (grad * d_all_grads[index] > 0.0)
                 d_gains[index] += 0.2;
@@ -569,40 +569,52 @@ void gpu_umap_2(int normalized, // unused
 }
 
 __global__
-void reduced_sum_fix(float *d_tmp, int n_edges) {
+void reduced_sum_fix(float *d_out, float *d_in, int n) {
     extern __shared__ float s_tmp[];
     int i_thread = threadIdx.x + blockIdx.x * blockDim.x;
     int tid = threadIdx.x;
     s_tmp[tid] = 0;
-    for (int s = 0; s < n_edges; s += gridDim.x * blockDim.x) {
-        if (i_thread + s < n_edges) {
-            s_tmp[tid] += d_tmp[i_thread + s];
+    for (int s = 0; s < n; s += gridDim.x * blockDim.x) {
+        if (i_thread + s < n) {
+            s_tmp[tid] += d_in[i_thread + s];
         }
     }
-    d_tmp[i_thread] = s_tmp[tid];
+    d_out[i_thread] = s_tmp[tid];
 }
 
 __global__
-void reduced_sum(float *d_Z) {
+void reduced_sum(float *d_out, float *d_in, int n) {
 
-    extern __shared__ float s_Z[];
+    extern __shared__ float s_tmp[];
 
     int i_thread = threadIdx.x + blockIdx.x * (blockDim.x * 2);
     int tid = threadIdx.x;
 
     int n_active_threads = blockDim.x;
 
-    s_Z[tid] = d_Z[i_thread] + d_Z[i_thread + blockDim.x];
+    s_tmp[tid] = 0;
+    if (i_thread < n)
+        s_tmp[tid] += d_in[i_thread];
+    if (i_thread + blockDim.x < n)
+        s_tmp[tid] += d_in[i_thread + blockDim.x];
     __syncthreads();
 
     for (int n_active_threads = blockDim.x / 2; n_active_threads > 0; n_active_threads >>= 1) {
         if (tid < n_active_threads) {
-            s_Z[tid] += s_Z[tid + n_active_threads];
+            s_tmp[tid] += s_tmp[tid + n_active_threads];
             __syncthreads();
         }
     }
 
-    if (tid == 0) d_Z[blockIdx.x] = s_Z[0];
+    if (tid == 0) d_out[blockIdx.x] = s_tmp[0];
+}
+
+float mean(float *h_x, int n) {
+    float x = 0;
+    for (int i = 0; i < n; i++) {
+        x += h_x[i];
+    }
+    return x / n;
 }
 
 void gpu_umap_full(int normalized, // unused
@@ -641,8 +653,10 @@ void gpu_umap_full(int normalized, // unused
     gpu_set_all(d_gains, n_vertices * dims_embed, 1.);
     float *d_Z = gpu_malloc_float(number_of_threads_in_total);
 
-    float *d_tmp_weights = gpu_malloc_float(max(n_edges, number_of_threads_in_total));
-    copy_D_to_D(d_tmp_weights, d_weights, n_edges);
+//    float *d_tmp_weights = gpu_malloc_float(max(n_edges, number_of_threads_in_total));
+//    copy_D_to_D(d_tmp_weights, d_weights, n_edges);
+    float *d_tmp_sum_1 = gpu_malloc_float(number_of_threads_in_total);
+    float *d_tmp_sum_2 = gpu_malloc_float(number_of_blocks_scalar);
 
 
     int number_of_threads = min(n_vertices, number_of_threads_in_total);
@@ -661,15 +675,22 @@ void gpu_umap_full(int normalized, // unused
     convert<<<number_of_blocks, BLOCK_SIZE>>>(d_neighbor_counts, d_neighbor_counts_long, n_vertices);
     inclusive_scan(d_neighbor_counts, d_neighbor_ends, n_vertices);
 
-    reduced_sum_fix<<<number_of_blocks_half, BLOCK_SIZE, BLOCK_SIZE * sizeof(float)>>>(d_tmp_weights, n_edges);
-    reduced_sum<<<number_of_blocks_half, BLOCK_SIZE, BLOCK_SIZE * sizeof(float)>>>(d_tmp_weights);
-    reduced_sum<<<1, number_of_blocks_half, number_of_blocks_scalar * sizeof(float)>>>(d_tmp_weights);
-    float average_weight = copy_last_D_to_H(d_tmp_weights, 1) / ((float) n_edges);
+    reduced_sum_fix<<<number_of_blocks_half * 2, BLOCK_SIZE, BLOCK_SIZE * sizeof(float)>>>
+            (d_tmp_sum_1, d_weights, n_edges);
+    reduced_sum<<<number_of_blocks_half, BLOCK_SIZE, BLOCK_SIZE * sizeof(float)>>>
+            (d_tmp_sum_2, d_tmp_sum_1, number_of_threads_in_total);
+    reduced_sum<<<1, number_of_blocks_scalar, number_of_blocks_scalar * sizeof(float)>>>
+            (d_tmp_sum_1, d_tmp_sum_2, number_of_blocks_scalar);
+    float average_weight = copy_last_D_to_H(d_tmp_sum_1, 1) / n_edges;
 
     printf("\n\nParams:\n");
-    printf("- average_weight: %f\n", average_weight);
+    printf("- CPU average_weight: %f\n", mean(h_weights, n_edges));
+    printf("- GPU average_weight: %f\n", average_weight);
     printf("- momentum: %d\n", momentum);
     printf("- sym_attraction: %d\n", sym_attraction);
+    printf("- number_of_blocks_scalar: %d\n", number_of_blocks_scalar);
+    printf("- number_of_blocks_half: %d\n", number_of_blocks_half);
+    printf("- number_of_blocks: %d\n", number_of_blocks);
     printf("\n\n");
 
     for (int i_epoch = 0; i_epoch < n_epochs; i_epoch++) {
@@ -688,15 +709,20 @@ void gpu_umap_full(int normalized, // unused
         (normalized, d_rep_grads, d_attr_grads, d_weights, n_vertices, d_N, d_neighbor_ends, d_D_embed, d_Z,
                 a, b, dims_embed, d_random, sym_attraction, weight_scalar, average_weight);
 
+        float Z = 0.;
         if (normalized) {
-            reduced_sum<<<number_of_blocks_half, BLOCK_SIZE, BLOCK_SIZE * sizeof(float)>>>(d_Z);
-            reduced_sum<<<1, number_of_blocks_scalar, number_of_blocks_scalar * sizeof(float)>>>(d_Z);
+            reduced_sum<<<number_of_blocks_half, BLOCK_SIZE, BLOCK_SIZE * sizeof(float)>>>
+                    (d_tmp_sum_1, d_Z, number_of_threads_in_total);
+            reduced_sum<<<1, number_of_blocks_scalar, number_of_blocks_scalar * sizeof(float)>>>
+                    (d_tmp_sum_2, d_tmp_sum_1, number_of_blocks_scalar);
+            Z = copy_last_D_to_H(d_tmp_sum_2, 1);
         } else {
-            gpu_set_all(d_Z, 1, 1.);
+//            gpu_set_all(d_tmp_sum_2, 1, 1.);
+            Z = 1.;
         }
 
         apply_grads_full << < number_of_blocks, BLOCK_SIZE >> >
-        (d_Z, d_D_embed, d_rep_grads, d_attr_grads, d_all_grads, d_gains, n_vertices, dims_embed, lr, a, b, momentum);
+        (Z, d_D_embed, d_rep_grads, d_attr_grads, d_all_grads, d_gains, n_vertices, dims_embed, lr, a, b, momentum);
 
 
         if ((i_epoch + 1) % 50 == 0) {
