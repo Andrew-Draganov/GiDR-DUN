@@ -39,7 +39,7 @@ void gpuf() {
 /// https://github.com/rapidsai/cuml/blob/branch-22.04/cpp/src/umap/runner.cuh
 
 __device__
-float sqrd_dist(float *d_D, int dims, int i, int j) {
+float sqrd_dist(const float *__restrict__ d_D, const int dims, const int i, const int j) {
     float distance = 0.;
     for (int l = 0; l < dims; l++) {
         float diff = d_D[i * dims + l] - d_D[j * dims + l];
@@ -89,12 +89,12 @@ void init_random(curandState *d_random) {
 //}
 
 __device__
-int get_start(int *d_ends, int i) {
+int get_start(const int *d_ends, int i) {
     return i == 0 ? 0 : d_ends[i - 1];
 }
 
 __device__
-int get_end(int *d_ends, int i) {
+int get_end(const int *d_ends, int i) {
     return d_ends[i];
 }
 
@@ -180,6 +180,7 @@ float norm_rep_force(
 
     q_ij = cell_size * kernel; // Collect the q_ij's contributions into Z
     d_Z[i_thread] += q_ij;
+//    atomicAdd(&d_Z[0], q_ij);
 
     repulsive_force = cell_size * kernel * kernel;
     return repulsive_force;
@@ -374,10 +375,12 @@ compute_grads_full(int normalized, float *d_rep_grads, float *d_attr_grads, floa
 
 __global__
 void
-compute_grads_full_shared_mem(int normalized, float *d_rep_grads, float *d_attr_grads, float *d_weights, int n,
-                              int *d_N,
-                              int *d_neighbor_ends, float *d_D_embed, float *d_Z, float a, float b, int dims_embed,
-                              curandState *d_random, float sym_attraction, float weight_scalar, float average_weight) {
+compute_grads_full_shared_mem(const int normalized, float *__restrict__ d_rep_grads, float *__restrict__ d_attr_grads,
+                              const float *__restrict__ d_weights, const int n, const int *__restrict__ d_N,
+                              const int *__restrict__ d_neighbor_ends, const float *__restrict__ d_D_embed,
+                              float *__restrict__ d_Z, const float a, const float b, const int dims_embed,
+                              curandState *__restrict__ d_random, const float sym_attraction, const float weight_scalar,
+                              const float average_weight) {
 
     extern __shared__ float s_rep_grads[];
     float *s_attr_grads = &s_rep_grads[blockDim.x * dims_embed];
@@ -430,14 +433,21 @@ compute_grads_full_shared_mem(int normalized, float *d_rep_grads, float *d_attr_
 //                d_attr_grads[j_point * dims_embed + h] +=
 //                s_attr_grads[tid * dims_embed + h] +=
 //                        force * sym_attraction;
-
-                atomicAdd(&d_attr_grads[j_point * dims_embed + h], force * sym_attraction);
+//                if (sym_attraction) {
+                atomicAdd(&d_attr_grads[j_point * dims_embed + h],
+                          force * sym_attraction); //changing this to i_point makes it 2x faster do to memory
+//                }
             }
         }
 
         for (int h = 0; h < dims_embed; h++) {
+
             atomicAdd(&d_rep_grads[i_point * dims_embed + h], s_rep_grads[tid * dims_embed + h]);
             atomicAdd(&d_attr_grads[i_point * dims_embed + h], s_attr_grads[tid * dims_embed + h]);
+
+//            d_rep_grads[i_point * dims_embed + h] += s_rep_grads[tid * dims_embed + h];
+//            d_attr_grads[i_point * dims_embed + h] += s_attr_grads[tid * dims_embed + h];
+
         }
     }
 }
@@ -794,7 +804,7 @@ void gpu_umap_full(int normalized, // unused
                    int n_edges
 ) {
     cudaDeviceSynchronize();
-    int number_of_blocks_scalar = 16;//16 can be replace with something smaller then BLOCK_SIZE
+    int number_of_blocks_scalar = 32;//16 can be replace with something smaller then BLOCK_SIZE
     int number_of_threads_in_total = BLOCK_SIZE * 2 * number_of_blocks_scalar;
 
     //allocated and copy memory to the gpu
@@ -857,8 +867,19 @@ void gpu_umap_full(int normalized, // unused
 //    cudaDeviceSynchronize();
 //    gpuErrchk(cudaPeekAtLastError());
 
+    gpu_set_all(d_tmp_sum_2, 1, 1.);
+
+//    cudaStream_t stream = 0;
+//    cudaStreamCreate(&stream);
+//    cudaGraph_t graph;
+//    cudaGraphExec_t instance;
+//    cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
+
     for (int i_epoch = 0; i_epoch < n_epochs; i_epoch++) {
         float lr = get_lr(init_lr, i_epoch, n_epochs);
+//        cudaMemsetAsync(d_rep_grads, 0, n_vertices * dims_embed * sizeof(float), stream);
+//        cudaMemsetAsync(d_attr_grads, 0, n_vertices * dims_embed * sizeof(float), stream);
+//        cudaMemsetAsync(d_Z, 0, number_of_threads_in_total * sizeof(float), stream);
         cudaMemset(d_rep_grads, 0, n_vertices * dims_embed * sizeof(float));
         cudaMemset(d_attr_grads, 0, n_vertices * dims_embed * sizeof(float));
         cudaMemset(d_Z, 0, number_of_threads_in_total * sizeof(float));
@@ -871,7 +892,8 @@ void gpu_umap_full(int normalized, // unused
         else
             weight_scalar = 1;
 
-        compute_grads_full_shared_mem << < number_of_blocks, BLOCK_SIZE, BLOCK_SIZE * dims_embed * 2 * sizeof(float)>> >
+        compute_grads_full_shared_mem << < number_of_blocks, BLOCK_SIZE, BLOCK_SIZE * dims_embed * 2 *
+                                                                         sizeof(float)>> >
 //        compute_grads_full << < number_of_blocks, BLOCK_SIZE>> >
         (normalized, d_rep_grads, d_attr_grads, d_weights, n_vertices, d_N, d_neighbor_ends, d_D_embed, d_Z,
                 a, b, dims_embed, d_random, sym_attraction, weight_scalar, average_weight);
@@ -884,15 +906,15 @@ void gpu_umap_full(int normalized, // unused
                     (d_tmp_sum_1, d_Z, number_of_threads_in_total);
             reduced_sum<<<1, number_of_blocks_scalar, number_of_blocks_scalar * sizeof(float)>>>
                     (d_tmp_sum_2, d_tmp_sum_1, number_of_blocks_scalar);
-            Z = copy_last_D_to_H(d_tmp_sum_2, 1);
+//            Z = copy_last_D_to_H(d_tmp_sum_2, 1);
 //            cudaDeviceSynchronize();
 //            gpuErrchk(cudaPeekAtLastError());
         } else {
-            gpu_set_all(d_tmp_sum_2, 1, 1.);
+//            gpu_set_all(d_tmp_sum_2, 1, 1.);
 //            Z = 1.;
         }
 
-        apply_grads_full << < number_of_blocks, BLOCK_SIZE >> >
+        apply_grads_full << < number_of_blocks, BLOCK_SIZE>> >
         (d_tmp_sum_2, d_D_embed, d_rep_grads, d_attr_grads, d_all_grads, d_gains, n_vertices, dims_embed, lr, a, b, momentum);
 
 //        cudaDeviceSynchronize();
@@ -903,6 +925,10 @@ void gpu_umap_full(int normalized, // unused
         }
 
     }
+//    cudaStreamEndCapture(stream, &graph);
+//    cudaGraphInstantiate(&instance, graph, NULL, NULL, 0);
+//    cudaGraphLaunch(instance, stream);
+//    cudaStreamSynchronize(stream);
 
     //copy back and delete
     cudaMemcpy(h_D_embed, d_D_embed, n_vertices * dims_embed * sizeof(float), cudaMemcpyDeviceToHost);
