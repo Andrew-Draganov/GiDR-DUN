@@ -13,3 +13,7 @@ run_tsne:
 
 #clean:
 #	rm *.so *.o test.c
+
+profile:
+	nvcc -o cython/profile cython/profiling_test.cpp cython/gpu_kernels.cu cython/GPU_utils.cu
+	nvprof ./cython/profile
