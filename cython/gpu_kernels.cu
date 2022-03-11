@@ -4,6 +4,18 @@
 #import "gpu_kernels.h"
 #import "GPU_utils.cuh"
 
+#define gpuErrchk(ans)                        \
+    {                                         \
+        gpuAssert((ans), __FILE__, __LINE__); \
+    }
+
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort = true) {
+    if (code != cudaSuccess) {
+        fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+        if (abort)
+            exit(code);
+    }
+}
 
 __global__
 void kernel() {
@@ -636,6 +648,7 @@ void gpu_umap_full(int normalized, // unused
                    int n_epochs,
                    int n_edges
 ) {
+    cudaDeviceSynchronize();
     int number_of_blocks_scalar = 16;//16 can be replace with something smaller then BLOCK_SIZE
     int number_of_threads_in_total = BLOCK_SIZE * 2 * number_of_blocks_scalar;
 
@@ -684,20 +697,27 @@ void gpu_umap_full(int normalized, // unused
     float average_weight = copy_last_D_to_H(d_tmp_sum_1, 1) / n_edges;
 
     printf("\n\nParams:\n");
-    printf("- CPU average_weight: %f\n", mean(h_weights, n_edges));
-    printf("- GPU average_weight: %f\n", average_weight);
+//    printf("- CPU average_weight: %f\n", mean(h_weights, n_edges));
+    printf("- average_weight: %f\n", average_weight);
     printf("- momentum: %d\n", momentum);
     printf("- sym_attraction: %d\n", sym_attraction);
+    printf("- normalized: %d\n", normalized);
+    printf("- a: %f\n", a);
+    printf("- b: %f\n", b);
     printf("- number_of_blocks_scalar: %d\n", number_of_blocks_scalar);
     printf("- number_of_blocks_half: %d\n", number_of_blocks_half);
     printf("- number_of_blocks: %d\n", number_of_blocks);
     printf("\n\n");
+    cudaDeviceSynchronize();
+    gpuErrchk(cudaPeekAtLastError());
 
     for (int i_epoch = 0; i_epoch < n_epochs; i_epoch++) {
         float lr = get_lr(init_lr, i_epoch, n_epochs);
         cudaMemset(d_rep_grads, 0, n_vertices * dims_embed * sizeof(float));
         cudaMemset(d_attr_grads, 0, n_vertices * dims_embed * sizeof(float));
         cudaMemset(d_Z, 0, number_of_threads_in_total * sizeof(float));
+        cudaDeviceSynchronize();
+        gpuErrchk(cudaPeekAtLastError());
 
         float weight_scalar;
         if (i_epoch < 100)
@@ -708,6 +728,8 @@ void gpu_umap_full(int normalized, // unused
         compute_grads_full << < number_of_blocks, BLOCK_SIZE >> >
         (normalized, d_rep_grads, d_attr_grads, d_weights, n_vertices, d_N, d_neighbor_ends, d_D_embed, d_Z,
                 a, b, dims_embed, d_random, sym_attraction, weight_scalar, average_weight);
+        cudaDeviceSynchronize();
+        gpuErrchk(cudaPeekAtLastError());
 
         float Z = 0.;
         if (normalized) {
@@ -716,6 +738,8 @@ void gpu_umap_full(int normalized, // unused
             reduced_sum<<<1, number_of_blocks_scalar, number_of_blocks_scalar * sizeof(float)>>>
                     (d_tmp_sum_2, d_tmp_sum_1, number_of_blocks_scalar);
             Z = copy_last_D_to_H(d_tmp_sum_2, 1);
+            cudaDeviceSynchronize();
+            gpuErrchk(cudaPeekAtLastError());
         } else {
 //            gpu_set_all(d_tmp_sum_2, 1, 1.);
             Z = 1.;
@@ -724,6 +748,8 @@ void gpu_umap_full(int normalized, // unused
         apply_grads_full << < number_of_blocks, BLOCK_SIZE >> >
         (Z, d_D_embed, d_rep_grads, d_attr_grads, d_all_grads, d_gains, n_vertices, dims_embed, lr, a, b, momentum);
 
+        cudaDeviceSynchronize();
+        gpuErrchk(cudaPeekAtLastError());
 
         if ((i_epoch + 1) % 50 == 0) {
             printf("Epoch %d/%d\n", i_epoch + 1, n_epochs);
@@ -733,15 +759,22 @@ void gpu_umap_full(int normalized, // unused
 
     //copy back and delete
     cudaMemcpy(h_D_embed, d_D_embed, n_vertices * dims_embed * sizeof(float), cudaMemcpyDeviceToHost);
+
     cudaFree(d_D_embed);
     cudaFree(d_N);
+    cudaFree(d_neighbor_counts_long);
     cudaFree(d_neighbor_counts);
+    cudaFree(d_neighbor_ends);
     cudaFree(d_weights);
     cudaFree(d_rep_grads);
     cudaFree(d_attr_grads);
     cudaFree(d_all_grads);
     cudaFree(d_gains);
     cudaFree(d_random);
+    cudaFree(d_Z);
+    cudaFree(d_tmp_sum_1);
+    cudaFree(d_tmp_sum_2);
+    cudaDeviceSynchronize();
 }
 
 
