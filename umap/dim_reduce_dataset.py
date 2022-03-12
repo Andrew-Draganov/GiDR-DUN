@@ -51,20 +51,12 @@ parser.add_argument(
 parser.add_argument(
     '--optimize-method',
     choices=[
-        'torch_sgd',
-        'torch_frob',
-        'torch',
-        'umap_sampling',
-        'umap_uniform',
-        'frob_umap_uniform',
-        'frob_pca',
-        'frob_umap_sampling',
-        'cy_barnes_hut',
-        'cy_umap_uniform',
-        'cy_umap_sampling',
+        'umap',
+        'tsne',
+        'uniform_umap',
     ],
-    default='cy_umap_uniform',
-    help='Which optimization algorithm to use'
+    default='uniform_umap',
+    help='Which embedding optimization algorithm to use'
 )
 parser.add_argument(
     '--normalized',
@@ -75,6 +67,11 @@ parser.add_argument(
     '--sym-attraction',
     action='store_true',
     help='Whether to attract along both ends of a nearest neighbor edge'
+)
+parser.add_argument(
+    '--frobenius',
+    action='store_true',
+    help='If true, calculate gradients with respect to frobenius norm rather than KL'
 )
 parser.add_argument(
     '--angular',
@@ -187,7 +184,6 @@ else:
     a, b = None, None
 
 if args.dr_algorithm == 'uniform_umap':
-    # FIXME - change my umap code to have a different name/constructor
     dr = UniformUmap(
             n_neighbors=args.n_neighbors,
             n_epochs=args.n_epochs,
@@ -199,6 +195,7 @@ if args.dr_algorithm == 'uniform_umap':
             negative_sample_rate=args.neg_sample_rate,
             normalized=int(args.normalized),
             sym_attraction=args.sym_attraction,
+            frob=args.frobenius,
             euclidean=not args.angular,
             momentum=args.momentum,
             batch_size=args.batch_size,

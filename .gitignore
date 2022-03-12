@@ -1,7 +1,8 @@
 *.png
 images/
-images.zip
+*.zip
 tex/*.bib
+tex/*.pdf
 tex/*.aux
 tex/*.aux
 tex/*.xml

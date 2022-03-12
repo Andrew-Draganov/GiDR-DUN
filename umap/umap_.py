@@ -35,10 +35,9 @@ from utils import (
     csr_unique,
     fast_knn_indices,
 )
-from pytorch_optimize import torch_optimize_layout
-from optimize import cy_optimize_layout
-from optimize_frob import cy_optimize_frob
-from layouts import numba_optimize_layout
+from uniform_umap_opt import uniform_umap_opt_wrapper
+from umap_opt import umap_opt_wrapper
+from tsne_opt import tsne_opt_wrapper
 from spectral import spectral_layout
 # from pynndescent import NNDescent
 from nndescent.pynndescent_ import NNDescent
@@ -582,6 +581,7 @@ def simplicial_set_embedding(
     optimize_method,
     normalized,
     sym_attraction,
+    frob,
     momentum,
     batch_size,
     data,
@@ -754,6 +754,7 @@ def simplicial_set_embedding(
         optimize_method,
         normalized,
         sym_attraction,
+        frob,
         momentum,
         batch_size,
         embedding,
@@ -779,6 +780,7 @@ def _optimize_layout_euclidean(
         optimize_method,
         normalized,
         sym_attraction,
+        frob,
         momentum,
         batch_size,
         head_embedding,
@@ -802,6 +804,7 @@ def _optimize_layout_euclidean(
         'optimize_method': optimize_method,
         'normalized': normalized,
         'sym_attraction': int(sym_attraction),
+        'frob': int(frob),
         'momentum': int(momentum),
         'batch_size': weights.shape[0] if batch_size == -1 else batch_size,
         'head_embedding': head_embedding,
@@ -820,15 +823,16 @@ def _optimize_layout_euclidean(
         'verbose': int(verbose)
     }
     start = time.time()
-    if 'cy' in optimize_method:
-        embedding = cy_optimize_layout(**args)
-    elif 'torch' in optimize_method:
-        embedding = torch_optimize_layout(**args)
-    elif 'frob' in optimize_method:
-        embedding = cy_optimize_frob(**args)
+    if optimize_method == 'umap':
+        embedding = umap_wrapper(**args)
+    elif optimize_method == 'tsne':
+        embedding = tsne_wrapper(**args)
+    elif optimize_method == 'uniform_umap':
+        embedding = uniform_umap_wrapper(**args)
     else:
-        embedding = numba_optimize_layout(**args)
+        raise ValueError("Optimization method is unsupported at the current time")
     end = time.time()
+    # FIXME -- make into logger output
     print('Optimization took {:.3f} seconds'.format(end - start))
     return embedding
 
@@ -1044,6 +1048,7 @@ class UniformUmap(BaseEstimator):
         optimize_method='umap_sampling',
         normalized=0,
         sym_attraction=True,
+        frob=False,
         momentum=False,
         batch_size=-1,
         euclidean=True,
@@ -1079,9 +1084,9 @@ class UniformUmap(BaseEstimator):
         self.tsne_symmetrization = tsne_symmetrization
         self.pseudo_distance = pseudo_distance
         self.optimize_method = optimize_method
-        self.pca = 'pca' in self.optimize_method
         self.normalized = normalized
         self.sym_attraction = sym_attraction
+        self.frob = frob
         self.euclidean = euclidean
         self.momentum = momentum
         self.batch_size = batch_size
@@ -1479,6 +1484,7 @@ class UniformUmap(BaseEstimator):
             self.optimize_method,
             self.normalized,
             self.sym_attraction,
+            self.frob,
             self.momentum,
             self.batch_size,
             X,
