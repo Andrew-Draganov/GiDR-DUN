@@ -12,7 +12,7 @@ optimize = Extension(
     ['cython/optimize.pyx'],
     language=['c'],
 
-    extra_compile_args=['-O3', '-march=native', '-ffast-math'],
+    extra_compile_args=['-fopenmp', '-O3', '-march=native', '-ffast-math'],
     extra_link_args=['-fopenmp'],
     include_dirs=[numpy.get_include()]
 )
@@ -22,7 +22,7 @@ optimize_frob = Extension(
     ['cython/optimize_frob.pyx'],
     language=['c'],
 
-    extra_compile_args=['-O3', '-march=native', '-ffast-math'],
+    extra_compile_args=['-fopenmp', '-O3', '-march=native', '-ffast-math'],
     extra_link_args=['-fopenmp'],
     include_dirs=[numpy.get_include()]
 )
