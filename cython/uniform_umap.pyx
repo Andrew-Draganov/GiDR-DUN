@@ -169,14 +169,14 @@ cdef void gather_gradients(
         for edge in prange(n_edges):
             j = head[edge]
             for d in range(dim):
-                grad_d = clip(attr_forces[edge] * attr_vecs[edge * dim + d], -1, 1)
+                grad_d = attr_forces[edge] * attr_vecs[edge * dim + d]
                 local_grads[j * dim + d] -= grad_d
                 if sym_attraction:
                     k = tail[edge]
                     local_grads[k * dim + d] += grad_d
 
             for d in range(dim):
-                grad_d = clip(rep_forces[edge] * rep_vecs[edge * dim + d], -1, 1)
+                grad_d = rep_forces[edge] * rep_vecs[edge * dim + d]
                 local_grads[j * dim + d] += grad_d / Z
 
 
@@ -299,7 +299,7 @@ cdef void _uniform_umap_epoch(
                     gains[index] += 0.2
                 else:
                     gains[index] *= 0.8
-                gains[index] = clip(gains[index], 0.01, 100)
+                gains[index] = clip(gains[index], 0.01, 1000)
                 grad_d = all_grads[index] * gains[index]
 
                 all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]

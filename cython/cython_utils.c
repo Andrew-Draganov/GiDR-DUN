@@ -101,6 +101,7 @@ static void norm_rep_force(
 
 static float attractive_force_func(
         int normalized,
+        int frob,
         float dist_squared,
         float a,
         float b,
@@ -118,6 +119,7 @@ static float attractive_force_func(
 static void repulsive_force_func(
         float* rep_func_outputs,
         int normalized,
+        int frob,
         float dist_squared,
         float a,
         float b,

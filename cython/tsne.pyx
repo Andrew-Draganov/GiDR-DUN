@@ -244,7 +244,8 @@ cdef void _tsne_epoch(
         float *local_Z
 
     cdef int n_edges = int(head.shape[0])
-    cdef float scalar = 4 * a * b
+    cdef float attr_scalar = 4 * a * b
+    cdef float rep_scalar = 4 * a * b
     cdef float average_weight = get_avg_weight(weights)
 
     # Allocte memory for data structures
@@ -299,14 +300,14 @@ cdef void _tsne_epoch(
             #   relationship between attractive and repulsive forces
             #   as in traditional UMAP
             # FIXME - why does this create a perfect circle???
-            scalar /= n_vertices
+            rep_scalar /= n_vertices
 
         with parallel():
             for v in prange(n_vertices):
                 for d in range(dim):
                     index = v * dim + d
-                    all_attr_grads[index] += local_attr_grads[index] * scalar
-                    all_rep_grads[index] += local_rep_grads[index] * scalar / Z
+                    all_attr_grads[index] += local_attr_grads[index] * attr_scalar
+                    all_rep_grads[index] += local_rep_grads[index] * rep_scalar / Z
 
         with parallel():
             for v in prange(n_vertices):
