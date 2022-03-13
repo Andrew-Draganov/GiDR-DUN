@@ -295,12 +295,12 @@ cdef void _uniform_umap_epoch(
             for d in range(dim):
                 index = v * dim + d
 
-                if all_grads[index] * all_updates[index] > 0.0:
-                    gains[index] += 0.2
-                else:
-                    gains[index] *= 0.8
-                gains[index] = clip(gains[index], 0.01, 1000)
-                grad_d = all_grads[index] * gains[index]
+                # if all_grads[index] * all_updates[index] > 0.0:
+                #     gains[index] += 0.2
+                # else:
+                #     gains[index] *= 0.8
+                # gains[index] = clip(gains[index], 0.01, 1000)
+                grad_d = clip(all_grads[index], -1, 1)
 
                 all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]
                 head_embedding[v, d] += all_updates[index]
