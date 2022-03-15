@@ -62,32 +62,26 @@ ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
 
 @cython.boundscheck(False)
-@cython.cdivision(True)
-cdef float get_avg_weight(float[:] weights) nogil:
-    cdef float average_weight = 0.0
-    for i in range(weights.shape[0]):
-        average_weight += weights[i]
-    average_weight /= float(weights.shape[0])
-    return average_weight
-
-@cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef void _umap_epoch(
+cdef void _frob_umap_sampling(
     int normalized,
     int sym_attraction,
     int frob,
+    int momentum,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
     int[:] tail,
     float[:] weights,
-    float[:] epochs_per_sample,
+    float* all_updates,
+    float* gains,
     float a,
     float b,
     int dim,
     int n_vertices,
     float lr,
+    float[:] epochs_per_sample,
     float[:] epochs_per_negative_sample,
     float[:] epoch_of_next_negative_sample,
     float[:] epoch_of_next_sample,
@@ -95,33 +89,44 @@ cdef void _umap_epoch(
 ):
     cdef:
         int i, j, k, n_neg_samples, edge, p
-        # Can't reuse loop variables in a with nogil, parallel(): block,
-        #   so we create a new variable for each loop
+        int index1, index2
+        # Can't reuse loop variables in a with nogil, parallel(): block
         int v1, v2
-        int d1, d2, d3, d4
-        float grad_d1, grad_d2
+        int d1, d2, d3, d4, d5, d6
+        float grad_d1, grad_d2, grad_d3, grad_d4
+        float align
         float attractive_force, repulsive_force
         float dist_squared
         float *y1
         float *y2
+        float *all_attr_grads
+        float *all_rep_grads
         float *rep_func_outputs
 
-    cdef float grad_d = 0.0
-    cdef int n_edges = int(epochs_per_sample.shape[0])
-
+    # FIXME FIXME -- normalized doesn't work here!
+    cdef float Z = 0
+    cdef int n_edges = int(head.shape[0])
+    all_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
+    all_rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
     with nogil, parallel():
+        rep_func_outputs = <float*> malloc(sizeof(float) * 2)
         y1 = <float*> malloc(sizeof(float) * dim)
         y2 = <float*> malloc(sizeof(float) * dim)
-        rep_func_outputs = <float*> malloc(sizeof(float) * 2)
-        for i in prange(epochs_per_sample.shape[0]):
-            if epoch_of_next_sample[i] <= i_epoch:
-                # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
-                j = head[i]
-                k = tail[i]
+        for v1 in prange(n_vertices):
+            for d1 in range(dim):
+                index1 = v1 * dim + d1
+                all_attr_grads[index1] = 0
+                all_rep_grads[index1] = 0
 
-                for d1 in range(dim):
-                    y1[d1] = head_embedding[j, d1]
-                    y2[d1] = tail_embedding[k, d1]
+        for edge in prange(n_edges):
+            if epoch_of_next_sample[edge] <= i_epoch:
+                # Gets one of the knn in HIGH-DIMENSIONAL SPACE relative to the sample point
+                j = head[edge]
+                k = tail[edge]
+
+                for d2 in range(dim):
+                    y1[d2] = head_embedding[j, d2]
+                    y2[d2] = tail_embedding[k, d2]
                 dist_squared = sq_euc_dist(y1, y2, dim)
                 attractive_force = attractive_force_func(
                     normalized,
@@ -129,26 +134,24 @@ cdef void _umap_epoch(
                     dist_squared,
                     a,
                     b,
-                    1
+                    1.0
                 )
 
-                for d2 in range(dim):
-                    grad_d1 = clip(attractive_force * (y1[d2] - y2[d2]), -4, 4)
-                    head_embedding[j, d2] -= grad_d1 * lr
+                for d3 in range(dim):
+                    grad_d1 = clip(attractive_force * (y1[d3] - y2[d3]), -4, 4)
+                    all_attr_grads[j * dim + d3] -= grad_d1
                     if sym_attraction:
-                        head_embedding[k, d2] += grad_d1 * lr
+                        all_attr_grads[k * dim + d3] += grad_d1
 
-                epoch_of_next_sample[i] += epochs_per_sample[i]
-
-                # ANDREW - Picks random vertices from ENTIRE graph and calculates repulsive forces
-                # FIXME - add random seed option
+                epoch_of_next_sample[edge] += epochs_per_sample[edge]
                 n_neg_samples = int(
-                    (i_epoch - epoch_of_next_negative_sample[i]) / epochs_per_negative_sample[i]
+                    (i_epoch - epoch_of_next_negative_sample[edge]) / epochs_per_negative_sample[edge]
                 )
+
                 for p in range(n_neg_samples):
                     k = rand() % n_vertices
-                    for d3 in range(dim):
-                        y2[d3] = tail_embedding[k, d3]
+                    for d4 in range(dim):
+                        y2[d4] = tail_embedding[k, d4]
                     dist_squared = sq_euc_dist(y1, y2, dim)
                     repulsive_force_func(
                         rep_func_outputs,
@@ -158,19 +161,37 @@ cdef void _umap_epoch(
                         a,
                         b,
                         1.0,
-                        0, # Don't scale by weight since we sample according to weight distribution
+                        0.0
                     )
                     repulsive_force = rep_func_outputs[0]
+                    Z += rep_func_outputs[1]
 
-                    for d4 in range(dim):
-                        grad_d2 = clip(repulsive_force * (y1[d4] - y2[d4]), -4, 4)
-                        head_embedding[j, d4] += grad_d2 * lr
+                    for d5 in range(dim):
+                        grad_d2 = clip(repulsive_force * (y1[d5] - y2[d5]), -4, 4)
+                        all_rep_grads[j * dim + d5] += grad_d2
 
-                epoch_of_next_negative_sample[i] += (
-                    n_neg_samples * epochs_per_negative_sample[i]
+                epoch_of_next_negative_sample[edge] += (
+                    n_neg_samples * epochs_per_negative_sample[edge]
                 )
+
         free(y1)
         free(y2)
+        free(rep_func_outputs)
+
+    if not normalized or Z == 0:
+        Z = 1
+
+    with nogil, parallel():
+        for v2 in prange(n_vertices):
+            for d6 in range(dim):
+                index2 = v2 * dim + d6
+                grad_d3 = (all_rep_grads[index2] / Z + all_attr_grads[index2]) * gains[index2]
+
+                head_embedding[v2, d6] += grad_d3 * lr
+
+    free(all_attr_grads)
+    free(all_rep_grads)
+
 
 cdef umap_optimize(
     int normalized,
@@ -193,9 +214,15 @@ cdef umap_optimize(
     int verbose
 ):
     cdef:
-        np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample,
-        np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample,
-        np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample,
+        int i
+        np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_negative_sample
+        np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_negative_sample
+        np.ndarray[DTYPE_FLOAT, ndim=1] epoch_of_next_sample
+        float *all_updates
+        float *gains
+
+    all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
+    gains = <float*> malloc(sizeof(float) * n_vertices * dim)
 
     epochs_per_negative_sample = py_np.zeros_like(epochs_per_sample)
     epoch_of_next_negative_sample = py_np.zeros_like(epochs_per_sample)
@@ -207,23 +234,31 @@ cdef umap_optimize(
         epoch_of_next_negative_sample[i] = epochs_per_negative_sample[i]
         epoch_of_next_sample[i] = epochs_per_sample[i]
 
+    for v in range(n_vertices):
+        for d in range(dim):
+            all_updates[v * dim + d] = 0
+            gains[v * dim + d] = 1
+
     for i_epoch in range(n_epochs):
         lr = get_lr(initial_lr, i_epoch, n_epochs)
-        _umap_epoch(
+        _frob_umap_sampling(
             normalized,
             sym_attraction,
             frob,
+            momentum,
             head_embedding,
             tail_embedding,
             head,
             tail,
             weights,
-            epochs_per_sample,
+            all_updates,
+            gains,
             a,
             b,
             dim,
             n_vertices,
             lr,
+            epochs_per_sample,
             epochs_per_negative_sample,
             epoch_of_next_negative_sample,
             epoch_of_next_sample,
@@ -231,6 +266,9 @@ cdef umap_optimize(
         )
         if verbose:
             print_status(i_epoch, n_epochs)
+
+    free(all_updates)
+    free(gains)
 
 
 @cython.cdivision(True)

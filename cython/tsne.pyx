@@ -23,6 +23,8 @@ cdef extern from "cython_utils.c" nogil:
 cdef extern from "cython_utils.c" nogil:
     float kernel_function(float dist_squared, float a, float b)
 cdef extern from "cython_utils.c" nogil:
+    float get_avg_weight(float* weights, int n_edges)
+cdef extern from "cython_utils.c" nogil:
     float attractive_force_func(
             int normalized,
             int frob,
@@ -60,16 +62,6 @@ cdef float ang_dist(float* x, float* y, int dim):
 
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
-
-@cython.boundscheck(False)
-@cython.cdivision(True)
-cdef float get_avg_weight(float[:] weights) nogil:
-    cdef float average_weight = 0.0
-    for i in range(weights.shape[0]):
-        average_weight += weights[i]
-    average_weight /= float(weights.shape[0])
-    return average_weight
-
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -246,7 +238,7 @@ cdef void _tsne_epoch(
     cdef int n_edges = int(head.shape[0])
     cdef float attr_scalar = 4 * a * b
     cdef float rep_scalar = 4 * a * b
-    cdef float average_weight = get_avg_weight(weights)
+    cdef float average_weight = get_avg_weight(&weights[0], n_edges)
 
     # Allocte memory for data structures
     all_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
@@ -299,8 +291,8 @@ cdef void _tsne_epoch(
             # Dividing by n_vertices means we have the same one-to-one
             #   relationship between attractive and repulsive forces
             #   as in traditional UMAP
-            # FIXME - why does this create a perfect circle???
             rep_scalar /= n_vertices
+        rep_scalar /= Z
 
         with parallel():
             for v in prange(n_vertices):

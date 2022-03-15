@@ -19,9 +19,7 @@ cdef extern from "cython_utils.c" nogil:
 cdef extern from "cython_utils.c" nogil:
     void print_status(int i_epoch, int n_epochs)
 cdef extern from "cython_utils.c" nogil:
-    float umap_repulsion_grad(float dist_squared, float a, float b)
-cdef extern from "cython_utils.c" nogil:
-    float kernel_function(float dist_squared, float a, float b)
+    float get_avg_weight(float* weights, int n_edges)
 cdef extern from "cython_utils.c" nogil:
     float attractive_force_func(
             int normalized,
@@ -45,15 +43,6 @@ cdef extern from "cython_utils.c" nogil:
 
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
-
-@cython.boundscheck(False)
-@cython.cdivision(True)
-cdef float get_avg_weight(float[:] weights) nogil:
-    cdef float average_weight = 0.0
-    for i in range(weights.shape[0]):
-        average_weight += weights[i]
-    average_weight /= float(weights.shape[0])
-    return average_weight
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -101,7 +90,7 @@ cdef void get_kernels(
             dist_squared = sq_euc_dist(y1, y2, dim)
 
             # t-SNE early exaggeration
-            if i_epoch < 100:
+            if normalized and i_epoch < 100:
                 weight_scalar = 4
             else:
                 weight_scalar = 1
@@ -205,18 +194,19 @@ cdef void _uniform_umap_epoch(
     cdef:
         int i, j, k, d, v, index, edge
         float *all_grads
-        float *local_grads
 
         float *attr_vecs
         float *rep_vecs
         float *attr_forces
         float *rep_forces
 
-        float Z = 0
         float *local_Z
-        float scalar
 
     cdef int n_edges = int(head.shape[0])
+    cdef float Z = 0
+    cdef float grad_d = 0.0
+    cdef float average_weight = get_avg_weight(&weights[0], n_edges)
+
     local_Z = <float*> malloc(sizeof(float))
     attr_forces = <float*> malloc(sizeof(float) * n_edges)
     rep_forces = <float*> malloc(sizeof(float) * n_edges)
@@ -224,10 +214,6 @@ cdef void _uniform_umap_epoch(
     rep_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
 
     all_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
-    local_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
-    cdef float grad_d = 0.0
-
-    cdef float average_weight = get_avg_weight(weights)
 
     with nogil:
         for v in prange(n_vertices):
@@ -259,11 +245,11 @@ cdef void _uniform_umap_epoch(
 
         Z += local_Z[0]
         free(local_Z)
-        if not normalized and not frob:
+        if not normalized:
             Z = 1
 
         gather_gradients(
-            local_grads,
+            all_grads,
             head,
             tail,
             attr_forces,
@@ -282,28 +268,20 @@ cdef void _uniform_umap_epoch(
         free(attr_vecs)
         free(rep_vecs)
 
-        # Need to collect thread-local forces into single gradient
-        #   before performing gradient descent
-        scalar = 4 * a * b
-        for v in range(n_vertices):
-            for d in range(dim):
-                index = v * dim + d
-                all_grads[index] += local_grads[index] * scalar
-        free(local_grads)
+        with parallel():
+            for v in prange(n_vertices):
+                for d in range(dim):
+                    index = v * dim + d
+                    if all_grads[index] * all_updates[index] > 0.0:
+                        gains[index] += 0.2
+                    else:
+                        gains[index] *= 0.8
+                    gains[index] = clip(gains[index], 0.01, 1000)
+                    grad_d = all_grads[index] * gains[index]
 
-        for v in prange(n_vertices):
-            for d in range(dim):
-                index = v * dim + d
-
-                # if all_grads[index] * all_updates[index] > 0.0:
-                #     gains[index] += 0.2
-                # else:
-                #     gains[index] *= 0.8
-                # gains[index] = clip(gains[index], 0.01, 1000)
-                grad_d = clip(all_grads[index], -1, 1)
-
-                all_updates[index] = grad_d * lr + momentum * 0.9 * all_updates[index]
-                head_embedding[v, d] += all_updates[index]
+                    all_updates[index] = grad_d * lr \
+                                       + momentum * 0.9 * all_updates[index]
+                    head_embedding[v, d] += all_updates[index]
 
     free(all_grads)
 
@@ -398,7 +376,7 @@ def uniform_umap_opt_wrapper(
             weight_sum += weights[i]
         for i in range(weights.shape[0]):
             weights[i] /= weight_sum
-        initial_lr *= 200
+        initial_lr *= 800
 
     uniform_umap_optimize(
         normalized,
