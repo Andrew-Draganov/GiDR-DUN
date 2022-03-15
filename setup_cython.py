@@ -1,7 +1,6 @@
 from distutils.core import setup as CySetup
 from distutils.core import Extension
 from Cython.Build import cythonize, build_ext
-import os
 import numpy
 
 # os.environ['CC']='/usr/local/Cellar/gcc/11.2.0_3/bin/gcc-11'
@@ -14,7 +13,9 @@ uniform_umap_build = Extension(
 
     extra_compile_args=['-fopenmp', '-O3', '-march=native', '-ffast-math'],
     extra_link_args=['-fopenmp'],
-    include_dirs=[numpy.get_include()]
+    include_dirs=[
+        numpy.get_include(),
+    ],
 )
 
 umap_build = Extension(

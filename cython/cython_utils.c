@@ -1,6 +1,8 @@
-// https://martin.ankerl.com/2007/10/04/optimized-pow-approximation-for-java-and-c-c/
 #include <stdio.h>
 #include <math.h>
+#include "cython_utils.h"
+
+// https://martin.ankerl.com/2007/10/04/optimized-pow-approximation-for-java-and-c-c/
 static double fast_pow(double a, double b) {
     union {
         double d;
@@ -126,7 +128,7 @@ static void repulsive_force_func(
         float cell_size,
         float average_weight
 ){
-    if(normalized == 1)
+    if(normalized)
         norm_rep_force(
             rep_func_outputs,
             dist_squared,

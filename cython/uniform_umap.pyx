@@ -19,10 +19,6 @@ cdef extern from "cython_utils.c" nogil:
 cdef extern from "cython_utils.c" nogil:
     void print_status(int i_epoch, int n_epochs)
 cdef extern from "cython_utils.c" nogil:
-    float umap_repulsion_grad(float dist_squared, float a, float b)
-cdef extern from "cython_utils.c" nogil:
-    float kernel_function(float dist_squared, float a, float b)
-cdef extern from "cython_utils.c" nogil:
     float attractive_force_func(
             int normalized,
             int frob,
@@ -42,6 +38,7 @@ cdef extern from "cython_utils.c" nogil:
             float cell_size,
             float average_weight
     )
+
 
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
@@ -313,11 +310,12 @@ cdef uniform_umap_optimize(
     int sym_attraction,
     int frob,
     int momentum,
-    float[:, :] head_embedding,
-    float[:, :] tail_embedding,
-    int[:] head,
-    int[:] tail,
-    float[:] weights,
+    np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] head_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] tail_embedding,
+    np.ndarray[int, ndim=1, mode='c'] head,
+    np.ndarray[int, ndim=1, mode='c'] tail,
+    np.ndarray[DTYPE_FLOAT, ndim=1, mode='c'] weights,
+    np.ndarray[long, ndim=1, mode='c'] neighbor_counts,
     float a,
     float b,
     int dim,
@@ -330,6 +328,7 @@ cdef uniform_umap_optimize(
         int v, d, index
         float *all_updates
         float *gains
+
     all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
     gains = <float*> malloc(sizeof(float) * n_vertices * dim)
     for v in range(n_vertices):
@@ -361,8 +360,10 @@ cdef uniform_umap_optimize(
         )
         if verbose:
             print_status(i_epoch, n_epochs)
+
     free(all_updates)
     free(gains)
+
 
 
 @cython.cdivision(True)
@@ -374,11 +375,17 @@ def uniform_umap_opt_wrapper(
     int sym_attraction,
     int frob,
     int momentum,
-    float[:, :] head_embedding,
-    float[:, :] tail_embedding,
-    int[:] head,
-    int[:] tail,
-    float[:] weights,
+    np.ndarray[DTYPE_INT, ndim=1, mode='c'] head,
+    np.ndarray[DTYPE_INT, ndim=1, mode='c'] tail,
+    np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] head_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] tail_embedding,
+    np.ndarray[DTYPE_FLOAT, ndim=1, mode='c'] weights,
+    np.ndarray[long, ndim=1, mode='c'] neighbor_counts,
+    # float[:, :] head_embedding,
+    # float[:, :] tail_embedding,
+    # int[:] head,
+    # int[:] tail,
+    # float[:] weights,
     int n_epochs,
     int n_vertices,
     float a,
@@ -410,6 +417,7 @@ def uniform_umap_opt_wrapper(
         head,
         tail,
         weights,
+        neighbor_counts,
         a,
         b,
         dim,
