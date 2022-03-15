@@ -35,7 +35,7 @@ cdef extern from "gpu_dim_reduction.cpp":
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
 
-cdef uniform_umap_optimize(
+cdef uniform_umap_gpu(
     int normalized,
     int sym_attraction,
     int frob,
@@ -88,8 +88,7 @@ cdef uniform_umap_optimize(
 @cython.cdivision(True)
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def uniform_umap_opt_wrapper(
-    str optimize_method,
+def gpu_opt_wrapper(
     int normalized,
     int sym_attraction,
     int frob,
@@ -121,7 +120,7 @@ def uniform_umap_opt_wrapper(
             weights[i] /= weight_sum
         initial_lr *= 200
 
-    uniform_umap_optimize(
+    uniform_umap_gpu(
         normalized,
         sym_attraction,
         frob,

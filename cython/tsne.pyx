@@ -23,6 +23,8 @@ cdef extern from "cython_utils.c" nogil:
 cdef extern from "cython_utils.c" nogil:
     float kernel_function(float dist_squared, float a, float b)
 cdef extern from "cython_utils.c" nogil:
+    float get_avg_weight(float* weights, int n_edges)
+cdef extern from "cython_utils.c" nogil:
     float attractive_force_func(
             int normalized,
             int frob,
@@ -62,16 +64,6 @@ ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
 
 @cython.boundscheck(False)
-@cython.cdivision(True)
-cdef float get_avg_weight(float[:] weights) nogil:
-    cdef float average_weight = 0.0
-    for i in range(weights.shape[0]):
-        average_weight += weights[i]
-    average_weight /= float(weights.shape[0])
-    return average_weight
-
-
-@cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
 cdef void collect_attr_grads(
@@ -84,6 +76,7 @@ cdef void collect_attr_grads(
     int normalized,
     int sym_attraction,
     int frob,
+    int num_threads,
     int n_vertices,
     int n_edges,
     int i_epoch,
@@ -102,7 +95,7 @@ cdef void collect_attr_grads(
         for d in range(dim):
             local_attr_grads[v * dim + d] = 0
 
-    with parallel():
+    with parallel(num_threads=num_threads):
         y1 = <float*> malloc(sizeof(float) * dim)
         y2 = <float*> malloc(sizeof(float) * dim)
         for edge in prange(n_edges):
@@ -146,6 +139,7 @@ cdef void collect_rep_grads(
     _QuadTree qt,
     int normalized,
     int frob,
+    int num_threads,
     int n_vertices,
     int dim,
     float a,
@@ -168,7 +162,7 @@ cdef void collect_rep_grads(
             local_rep_grads[v * dim + d] = 0
 
     local_Z[0] = 0
-    with parallel():
+    with parallel(num_threads=num_threads):
         cell_summaries = <float*> malloc(sizeof(float) * n_vertices * offset)
         rep_func_outputs = <float*> malloc(sizeof(float) * 2)
         y1 = <float*> malloc(sizeof(float) * dim)
@@ -216,6 +210,7 @@ cdef void _tsne_epoch(
     int normalized,
     int sym_attraction,
     int frob,
+    int num_threads,
     int momentum,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
@@ -246,7 +241,7 @@ cdef void _tsne_epoch(
     cdef int n_edges = int(head.shape[0])
     cdef float attr_scalar = 4 * a * b
     cdef float rep_scalar = 4 * a * b
-    cdef float average_weight = get_avg_weight(weights)
+    cdef float average_weight = get_avg_weight(&weights[0], n_edges)
 
     # Allocte memory for data structures
     all_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
@@ -272,6 +267,7 @@ cdef void _tsne_epoch(
             normalized,
             sym_attraction,
             frob,
+            num_threads,
             n_vertices,
             n_edges,
             i_epoch,
@@ -287,6 +283,7 @@ cdef void _tsne_epoch(
             qt,
             normalized,
             frob,
+            num_threads,
             n_vertices,
             dim,
             a,
@@ -299,17 +296,17 @@ cdef void _tsne_epoch(
             # Dividing by n_vertices means we have the same one-to-one
             #   relationship between attractive and repulsive forces
             #   as in traditional UMAP
-            # FIXME - why does this create a perfect circle???
             rep_scalar /= n_vertices
+        rep_scalar /= Z
 
-        with parallel():
+        with parallel(num_threads=num_threads):
             for v in prange(n_vertices):
                 for d in range(dim):
                     index = v * dim + d
                     all_attr_grads[index] += local_attr_grads[index] * attr_scalar
                     all_rep_grads[index] += local_rep_grads[index] * rep_scalar / Z
 
-        with parallel():
+        with parallel(num_threads=num_threads):
             for v in prange(n_vertices):
                 for d in range(dim):
                     index = v * dim + d
@@ -340,6 +337,7 @@ cdef tsne_optimize(
     int normalized,
     int sym_attraction,
     int frob,
+    int num_threads,
     int momentum,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
@@ -381,6 +379,7 @@ cdef tsne_optimize(
             normalized,
             sym_attraction,
             frob,
+            num_threads,
             momentum,
             head_embedding,
             tail_embedding,
@@ -411,6 +410,7 @@ def tsne_opt_wrapper(
     int normalized,
     int sym_attraction,
     int frob,
+    int num_threads,
     int momentum,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
@@ -444,6 +444,7 @@ def tsne_opt_wrapper(
         normalized,
         sym_attraction,
         frob,
+        num_threads,
         momentum,
         head_embedding,
         tail_embedding,

@@ -36,10 +36,6 @@ from utils import (
     csr_unique,
     fast_knn_indices,
 )
-# from uniform_umap_opt import uniform_umap_opt_wrapper
-from optimize_gpu import uniform_umap_opt_wrapper
-from umap_opt import umap_opt_wrapper
-from tsne_opt import tsne_opt_wrapper
 from spectral import spectral_layout
 # from pynndescent import NNDescent
 from nndescent.pynndescent_ import NNDescent
@@ -217,7 +213,7 @@ def nearest_neighbors(
     random_state,
     low_memory=True,
     use_pynndescent=True,
-    n_jobs=-1,
+    num_threads=-1,
     verbose=False,
 ):
     """Compute the ``n_neighbors`` nearest points for each data point in ``X``
@@ -287,7 +283,7 @@ def nearest_neighbors(
             # distance_func=distance_func,
             n_iters=n_iters,
             max_candidates=20,
-            n_jobs=n_jobs,
+            n_jobs=num_threads,
             verbose=verbose,
         )
         knn_indices, knn_dists = knn_search_index.neighbor_graph
@@ -590,6 +586,8 @@ def simplicial_set_embedding(
     normalized,
     sym_attraction,
     frob,
+    gpu,
+    num_threads,
     momentum,
     batch_size,
     data,
@@ -768,6 +766,8 @@ def simplicial_set_embedding(
         normalized,
         sym_attraction,
         frob,
+        gpu,
+        num_threads,
         momentum,
         batch_size,
         embedding,
@@ -795,6 +795,8 @@ def _optimize_layout_euclidean(
         normalized,
         sym_attraction,
         frob,
+        gpu,
+        num_threads,
         momentum,
         batch_size,
         head_embedding,
@@ -820,6 +822,7 @@ def _optimize_layout_euclidean(
         'normalized': normalized,
         'sym_attraction': int(sym_attraction),
         'frob': int(frob),
+        'num_threads': num_threads,
         'momentum': int(momentum),
         'batch_size': weights.shape[0] if batch_size == -1 else batch_size,
         'head_embedding': head_embedding,
@@ -839,14 +842,20 @@ def _optimize_layout_euclidean(
         'verbose': int(verbose)
     }
     start = time.time()
-    if optimize_method == 'umap':
-        embedding = umap_opt_wrapper(**args)
-    elif optimize_method == 'tsne':
-        embedding = tsne_opt_wrapper(**args)
-    elif optimize_method == 'uniform_umap':
-        embedding = uniform_umap_opt_wrapper(**args)
+    if gpu:
+        if optimize_method != 'uniform_umap':
+            raise ValueError('GPU optimization can only be performed in the uniform umap setting')
+        from optimize_gpu import gpu_opt_wrapper as optimizer
     else:
-        raise ValueError("Optimization method is unsupported at the current time")
+        if optimize_method == 'umap':
+            from umap_opt import umap_opt_wrapper as optimizer
+        elif optimize_method == 'tsne':
+            from tsne_opt import tsne_opt_wrapper as optimizer
+        elif optimize_method == 'uniform_umap':
+            from uniform_umap_opt import uniform_umap_opt_wrapper as optimizer
+        else:
+            raise ValueError("Optimization method is unsupported at the current time")
+    embedding = optimizer(**args)
     end = time.time()
     # FIXME -- make into logger output
     print('Optimization took {:.3f} seconds'.format(end - start))
@@ -1065,13 +1074,14 @@ class UniformUmap(BaseEstimator):
         normalized=0,
         sym_attraction=True,
         frob=False,
+        gpu=False,
         momentum=False,
         batch_size=-1,
         euclidean=True,
         min_dist=0.1,
         spread=1.0,
         low_memory=True,
-        n_jobs=-1,
+        num_threads=-1,
         local_connectivity=1.0,
         negative_sample_rate=5,
         transform_queue_size=4.0,
@@ -1103,6 +1113,7 @@ class UniformUmap(BaseEstimator):
         self.normalized = normalized
         self.sym_attraction = sym_attraction
         self.frob = frob
+        self.gpu = gpu
         self.euclidean = euclidean
         self.momentum = momentum
         self.batch_size = batch_size
@@ -1123,7 +1134,7 @@ class UniformUmap(BaseEstimator):
         self.verbose = verbose
         self.unique = unique
 
-        self.n_jobs = n_jobs
+        self.num_threads = num_threads
 
         self.a = a
         self.b = b
@@ -1217,8 +1228,8 @@ class UniformUmap(BaseEstimator):
                 "output_metric is neither callable nor a recognised string"
             )
 
-        if self.n_jobs < -1 or self.n_jobs == 0:
-            raise ValueError("n_jobs must be a postive integer, or -1 (for all cores)")
+        if self.num_threads < -1 or self.num_threads == 0:
+            raise ValueError("num_threads must be a postive integer, or -1 (for all cores)")
 
 
     def fit(self, X):
@@ -1256,8 +1267,10 @@ class UniformUmap(BaseEstimator):
             print(str(self))
 
         self._original_n_threads = numba.get_num_threads()
-        if self.n_jobs > 0 and self.n_jobs is not None:
-            numba.set_num_threads(self.n_jobs)
+        if self.num_threads > 0 and self.num_threads is not None:
+            numba.set_num_threads(self.num_threads)
+        else:
+            self.num_threads = self._original_n_threads
 
         index = list(range(X.shape[0]))
         inverse = list(range(X.shape[0]))
@@ -1390,7 +1403,7 @@ class UniformUmap(BaseEstimator):
                 random_state,
                 self.low_memory,
                 use_pynndescent=True,
-                n_jobs=self.n_jobs,
+                num_threads=self.num_threads,
                 verbose=self.verbose,
             )
 
@@ -1460,6 +1473,8 @@ class UniformUmap(BaseEstimator):
             self.normalized,
             self.sym_attraction,
             self.frob,
+            self.gpu,
+            self.num_threads,
             self.momentum,
             self.batch_size,
             X,
