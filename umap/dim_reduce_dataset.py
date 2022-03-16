@@ -2,7 +2,7 @@ import time
 from tqdm import tqdm
 import numpy as np
 from tensorflow import keras as tfk
-import tensorflow_datasets as tfds
+#import tensorflow_datasets as tfds
 from umap_ import UniformUmap
 from distances import make_dist_plots, remove_diag
 import argparse
@@ -48,6 +48,18 @@ parser.add_argument(
     action='store_true',
     help='If true, do NOT subtract rho\'s in the umap pseudo-distance metric'
 )
+parser.add_argument(
+    '--gpu',
+    action='store_true',
+    help='If true, runs optimization on the GPU. Requires that GPU setup has been performed.'
+)
+parser.add_argument(
+    '--num-threads',
+    type=int,
+    default=-1,
+    help='If running CPU optimization in parallel, specifies the number of threads used'
+)
+
 parser.add_argument(
     '--optimize-method',
     choices=[
@@ -196,6 +208,8 @@ if args.dr_algorithm == 'uniform_umap':
             normalized=int(args.normalized),
             sym_attraction=args.sym_attraction,
             frob=args.frobenius,
+            gpu=args.gpu,
+            num_threads=args.num_threads,
             euclidean=not args.angular,
             momentum=args.momentum,
             batch_size=args.batch_size,

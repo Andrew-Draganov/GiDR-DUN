@@ -9,7 +9,7 @@ setup(
     install_requires=[
         'cython',
         'matplotlib',
-        'numpy',
+        'numpy==1.21',
         'numba',
         'pynndescent',
         'sklearn',
