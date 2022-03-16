@@ -16,6 +16,7 @@ extern "C++" void gpuf();
 extern "C++" void gpu_umap(
         int normalized,
         int sym_attraction,
+        int frob,
         int momentum,
         float *head_embedding,
         float *tail_embedding,

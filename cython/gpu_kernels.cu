@@ -128,20 +128,57 @@ float kernel_function(float dist_squared, float a, float b) {
 }
 
 __device__
+float umap_attr_scalar(float dist_squared, float a, float b) {
+    float grad_scalar = 0.0;
+    grad_scalar = 2.0 * a * b * fast_pow(dist_squared, b - 1.0);
+    grad_scalar /= a * fast_pow(dist_squared, b) + 1.0;
+    return grad_scalar;
+}
+
+__device__
+float frob_attr_force(int normalized, float p, float q) {
+    if (normalized) {
+        // FIXME - is it faster to get q^2 and then use that for q^3?
+        // FIXME - took out a Z scalar from this
+        return p * (q * q + 2 * pow(q, 3));
+    }
+    return p * q * q;
+}
+
+__device__
+float kl_attr_force(float p, float q) {
+    return p * q;
+}
+
+__device__
 float attractive_force_func(
+        int frob,
         int normalized,
         float dist_squared,
         float a,
         float b,
         float edge_weight
 ) {
-    float edge_force;
-    if (normalized == 0)
-        edge_force = umap_attraction_grad(dist_squared, a, b);
-    else
-        edge_force = kernel_function(dist_squared, a, b);
+//    float edge_force;
+//    if (normalized == 0)
+//        edge_force = umap_attraction_grad(dist_squared, a, b);
+//    else
+//        edge_force = kernel_function(dist_squared, a, b);
+//
+//    return edge_force * edge_weight;
 
-    return edge_force * edge_weight;
+    float q;
+    if (normalized || frob)
+        q = kernel_function(dist_squared, a, b);
+    else
+        q = umap_attr_scalar(dist_squared, a, b);
+
+    if (frob)
+        return frob_attr_force(normalized, edge_weight, q);
+    else
+        return kl_attr_force(edge_weight, q);
+
+
 }
 
 __device__
@@ -248,10 +285,37 @@ float repulsive_force_func(
 }
 
 __device__
+float umap_rep_scalar(float dist_squared, float a, float b) {
+    float phi_ijZ = 0.0;
+    phi_ijZ = 2.0 * b;
+    phi_ijZ /= (0.001 + dist_squared) * (a * fast_pow(dist_squared, b) + 1);
+    return phi_ijZ;
+}
+
+__device__
+float frob_rep_force(int normalized, float q) {
+    if (normalized)
+        return pow(q, 3) + 2 * pow(q, 4);
+    return pow(q, 3);
+}
+
+__device__
+float kl_rep_force(int normalized, float q, float avg_weight) {
+    if (normalized)
+        return q * q;
+    // Realistically, we should use the actual weight on
+    //   the edge e_{ik}, but we have not gone through
+    //   and calculated this value for each weight. Instead,
+    //   we have only calculated them for the nearest neighbors.
+    return q * (1 - avg_weight);
+}
+
+__device__
 float repulsive_force_func(
 //        float* rep_func_outputs,
         float *d_Z,
         int i_thread,
+        int frob,
         int normalized,
         float dist_squared,
         float a,
@@ -259,25 +323,46 @@ float repulsive_force_func(
         float cell_size,
         float average_weight
 ) {
-    if (normalized)
-        return norm_rep_force(
-//                rep_func_outputs,
-                d_Z,
-                i_thread,
-                dist_squared,
-                a,
-                b,
-                cell_size
-        );
+//    if (normalized)
+//        return norm_rep_force(
+////                rep_func_outputs,
+//                d_Z,
+//                i_thread,
+//                dist_squared,
+//                a,
+//                b,
+//                cell_size
+//        );
+//    else
+//        return unnorm_rep_force(
+////                rep_func_outputs,
+//                dist_squared,
+//                a,
+//                b,
+//                cell_size,
+//                average_weight
+//        );
+
+
+    float q, result;
+    if (normalized || frob)
+        q = kernel_function(dist_squared, a, b);
     else
-        return unnorm_rep_force(
-//                rep_func_outputs,
-                dist_squared,
-                a,
-                b,
-                cell_size,
-                average_weight
-        );
+        q = umap_rep_scalar(dist_squared, a, b);
+
+    if (frob)
+        result = frob_rep_force(normalized, q);
+    else
+        result = kl_rep_force(normalized, q, average_weight);
+    result *= cell_size;
+
+    if (normalized)
+        d_Z[i_thread] += q * cell_size;
+//    else
+    // Do not collect Z in unnormalized case
+//        rep_func_outputs[1] = 0;
+
+    return result;
 }
 
 // for any k
@@ -293,6 +378,7 @@ compute_grads(int normalized, float *d_grads, float *d_weights, int n, int *d_N,
             int j = d_N[i_edge];
             float dist_squared = sqrd_dist(d_D_embed, dims_embed, i_point, j);
             float attr = attractive_force_func(
+                    0,//todo
                     normalized,
                     dist_squared,
                     a,
@@ -335,6 +421,7 @@ compute_grads_full(int normalized, float *d_rep_grads, float *d_attr_grads, floa
             int j_point = d_N[i_edge];
             float dist_squared = sqrd_dist(d_D_embed, dims_embed, i_point, j_point);
             float attr = attractive_force_func(
+                    0,//todo
                     normalized,
                     dist_squared,
                     a,
@@ -348,6 +435,7 @@ compute_grads_full(int normalized, float *d_rep_grads, float *d_attr_grads, floa
 //                    rep_func_outputs,
                     d_Z,
                     i_thread,
+                    0,//todo
                     normalized,
                     dist_squared,
                     a,
@@ -401,6 +489,7 @@ compute_grads_full_shared_mem(const int normalized, float *__restrict__ d_rep_gr
             int j_point = d_N[i_edge];
             float dist_squared = sqrd_dist(d_D_embed, dims_embed, i_point, j_point);
             float attr = attractive_force_func(
+                    0, //todo
                     normalized,
                     dist_squared,
                     a,
@@ -414,6 +503,7 @@ compute_grads_full_shared_mem(const int normalized, float *__restrict__ d_rep_gr
 //                    rep_func_outputs,
                     d_Z,
                     i_thread,
+                    0,//todo
                     normalized,
                     dist_squared,
                     a,
@@ -456,7 +546,8 @@ compute_grads_full_shared_mem(const int normalized, float *__restrict__ d_rep_gr
 
 __global__
 void
-compute_grads_full_shared_mem_N(const int normalized, float *__restrict__ d_rep_grads, float *__restrict__ d_attr_grads,
+compute_grads_full_shared_mem_N(const int frob, const int normalized, float *__restrict__ d_rep_grads,
+                                float *__restrict__ d_attr_grads,
                                 const float *__restrict__ d_weights, const int n, const int *__restrict__ d_N,
                                 const float *__restrict__ d_D_embed,
                                 float *__restrict__ d_Z, const float a, const float b, const int dims_embed,
@@ -485,6 +576,7 @@ compute_grads_full_shared_mem_N(const int normalized, float *__restrict__ d_rep_
 
             float dist_squared = sqrd_dist(d_D_embed, dims_embed, i_point, j_point);
             float attr = attractive_force_func(
+                    frob,
                     normalized,
                     dist_squared,
                     a,
@@ -498,6 +590,7 @@ compute_grads_full_shared_mem_N(const int normalized, float *__restrict__ d_rep_
 //                    rep_func_outputs,
                     d_Z,
                     i_thread,
+                    frob,
                     normalized,
                     dist_squared,
                     a,
@@ -965,7 +1058,7 @@ void compute_max(int *d_out, int *d_in, int n) {
 
 int gpu_max(int *d_in, int n) {
     int *d_out = gpu_malloc_int_zero(1);
-    compute_max<<<32,BLOCK_SIZE>>>(d_out, d_in, n);
+    compute_max<<<32, BLOCK_SIZE>>>(d_out, d_in, n);
     int m = copy_last_D_to_H(d_out, 1);
     cudaFree(d_out);
     return m;
@@ -987,6 +1080,7 @@ void pack_N(int *d_N_new, float *d_weights_new, int *d_N, float *d_weights, int 
 
 void gpu_umap_full_N(int normalized, // unused
                      int sym_attraction, // unused
+                     int frob,
                      int momentum, // unused
                      float *h_D_embed, //head_embedding,
                      float *h_D_embed_other, //tail_embedding,
@@ -1104,7 +1198,7 @@ void gpu_umap_full_N(int normalized, // unused
         compute_grads_full_shared_mem_N << < number_of_blocks, BLOCK_SIZE, BLOCK_SIZE * dims_embed * 2 *
                                                                            sizeof(float)>> >
 //        compute_grads_full << < number_of_blocks, BLOCK_SIZE>> >
-        (normalized, d_rep_grads, d_attr_grads, d_weights_new, n_vertices, d_N_new, d_D_embed, d_Z,
+        (frob, normalized, d_rep_grads, d_attr_grads, d_weights_new, n_vertices, d_N_new, d_D_embed, d_Z,
                 a, b, dims_embed, d_random, sym_attraction, weight_scalar, average_weight, k);
         cudaDeviceSynchronize();
         gpuErrchk(cudaPeekAtLastError());
@@ -1163,6 +1257,7 @@ void gpu_umap_full_N(int normalized, // unused
 void gpu_umap(
         int normalized,
         int sym_attraction,
+        int frob,
         int momentum,
         float *head_embedding,
         float *tail_embedding,
@@ -1187,6 +1282,7 @@ void gpu_umap(
     gpu_umap_full_N(
             normalized, // unused
             sym_attraction, // unused
+            frob,
             momentum, // unused
             head_embedding,
             tail_embedding,

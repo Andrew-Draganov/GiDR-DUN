@@ -14,6 +14,7 @@ void of();
 void gpu_umap_wrap(
         int normalized,
         int sym_attraction,
+        int frob,
         int momentum,
         float* head_embedding,
         float* tail_embedding,
