@@ -15,7 +15,7 @@ cdef extern from "cython_utils.c" nogil:
 cdef extern from "cython_utils.c" nogil:
     float sq_euc_dist(float* x, float* y, int dim)
 cdef extern from "cython_utils.c" nogil:
-    float get_lr(float initial_lr, int i_epoch, int n_epochs) 
+    float get_lr(float initial_lr, int i_epoch, int n_epochs, int amplify_grads) 
 cdef extern from "cython_utils.c" nogil:
     void print_status(int i_epoch, int n_epochs)
 cdef extern from "cython_utils.c" nogil:
@@ -69,7 +69,7 @@ cdef void _frob_umap_sampling(
     int sym_attraction,
     int frob,
     int num_threads,
-    int momentum,
+    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -95,7 +95,7 @@ cdef void _frob_umap_sampling(
         int v1, v2
         int d1, d2, d3, d4, d5, d6
         float grad_d1, grad_d2, grad_d3, grad_d4
-        float align
+        float weight_scalar = 1
         float attractive_force, repulsive_force
         float dist_squared
         float *y1
@@ -129,13 +129,18 @@ cdef void _frob_umap_sampling(
                     y1[d2] = head_embedding[j, d2]
                     y2[d2] = tail_embedding[k, d2]
                 dist_squared = sq_euc_dist(y1, y2, dim)
+
+                if amplify_grads and i_epoch < 250:
+                    weight_scalar = 4
+                else:
+                    weight_scalar = 1
                 attractive_force = attractive_force_func(
                     normalized,
                     frob,
                     dist_squared,
                     a,
                     b,
-                    1.0
+                    1.0 * weight_scalar
                 )
 
                 for d3 in range(dim):
@@ -199,7 +204,7 @@ cdef umap_optimize(
     int sym_attraction,
     int frob,
     int num_threads,
-    int momentum,
+    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -242,13 +247,13 @@ cdef umap_optimize(
             gains[v * dim + d] = 1
 
     for i_epoch in range(n_epochs):
-        lr = get_lr(initial_lr, i_epoch, n_epochs)
+        lr = get_lr(initial_lr, i_epoch, n_epochs, amplify_grads)
         _frob_umap_sampling(
             normalized,
             sym_attraction,
             frob,
             num_threads,
-            momentum,
+            amplify_grads,
             head_embedding,
             tail_embedding,
             head,
@@ -283,7 +288,7 @@ def umap_opt_wrapper(
     int sym_attraction,
     int frob,
     int num_threads,
-    int momentum,
+    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -317,7 +322,7 @@ def umap_opt_wrapper(
         sym_attraction,
         frob,
         num_threads,
-        momentum,
+        amplify_grads,
         head_embedding,
         tail_embedding,
         head,

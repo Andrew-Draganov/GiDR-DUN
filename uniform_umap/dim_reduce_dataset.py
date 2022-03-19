@@ -3,7 +3,7 @@ from tqdm import tqdm
 import numpy as np
 from tensorflow import keras as tfk
 #import tensorflow_datasets as tfds
-from umap_ import UniformUmap
+from uniform_umap_ import UniformUmap
 from distances import make_dist_plots, remove_diag
 import argparse
 from sklearn.manifold import TSNE
@@ -45,9 +45,9 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    '--ignore-umap-metric',
+    '--umap-metric',
     action='store_true',
-    help='If true, do NOT subtract rho\'s in the umap pseudo-distance metric'
+    help='If true, subtract rho\'s to calculate the umap pseudo-distance metric'
 )
 parser.add_argument(
     '--gpu',
@@ -92,9 +92,9 @@ parser.add_argument(
     help='When present, use cosine similarity metric on high-dimensional points'
 )
 parser.add_argument(
-    '--momentum',
+    '--amplify-grads',
     action='store_true',
-    help='Whether to perform mometnum gradient descent'
+    help='If true, perform momentum gradient descent, keep learning rate constant, and perform early-exaggeration'
 )
 parser.add_argument(
     '--kernel-choice',
@@ -123,8 +123,8 @@ parser.add_argument(
 parser.add_argument(
     '--neg-sample-rate',
     type=int,
-    default=15,
-    help='How many negative samples to use for each positive sample (in UMAP)'
+    default=1,
+    help='How many negative samples to use for each positive sample'
 )
 parser.add_argument(
     '--n-epochs',
@@ -202,17 +202,17 @@ if args.dr_algorithm == 'uniform_umap':
             n_epochs=args.n_epochs,
             random_state=12345, # Comment this out to turn on parallelization
             init=args.initialization,
-            pseudo_distance=(not args.ignore_umap_metric),
+            pseudo_distance=args.umap_metric,
             tsne_symmetrization=args.tsne_symmetrization,
             optimize_method=args.optimize_method,
             negative_sample_rate=args.neg_sample_rate,
             normalized=int(args.normalized),
-            sym_attraction=args.sym_attraction,
-            frob=args.frobenius,
-            gpu=args.gpu,
+            sym_attraction=int(args.sym_attraction),
+            frob=int(args.frobenius),
+            gpu=int(args.gpu),
             num_threads=args.num_threads,
             euclidean=not args.angular,
-            momentum=args.momentum,
+            amplify_grads=int(args.amplify_grads),
             batch_size=args.batch_size,
             a=a,
             b=b,

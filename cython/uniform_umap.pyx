@@ -15,7 +15,7 @@ cdef extern from "cython_utils.c" nogil:
 cdef extern from "cython_utils.c" nogil:
     float sq_euc_dist(float* x, float* y, int dim)
 cdef extern from "cython_utils.c" nogil:
-    float get_lr(float initial_lr, int i_epoch, int n_epochs) 
+    float get_lr(float initial_lr, int i_epoch, int n_epochs, int amplify_grads) 
 cdef extern from "cython_utils.c" nogil:
     void print_status(int i_epoch, int n_epochs)
 cdef extern from "cython_utils.c" nogil:
@@ -60,18 +60,20 @@ cdef void get_kernels(
     float[:, :] tail_embedding,
     float[:] weights,
     int normalized,
+    int amplify_grads,
     int frob,
     int num_threads,
     int n_vertices,
     int n_edges,
     int i_epoch,
     int dim,
+    int negative_sample_rate,
     float a,
     float b,
     float average_weight
 ) nogil:
     cdef:
-        int edge, j, k, d
+        int edge, j, k, d, s
         float dist_squared, weight_scalar
         float *y1
         float *y2
@@ -92,7 +94,7 @@ cdef void get_kernels(
             dist_squared = sq_euc_dist(y1, y2, dim)
 
             # t-SNE early exaggeration
-            if normalized and i_epoch < 250:
+            if amplify_grads and i_epoch < 250:
                 weight_scalar = 4
             else:
                 weight_scalar = 1
@@ -106,23 +108,24 @@ cdef void get_kernels(
                 weights[edge] * weight_scalar
             )
 
-            k = rand() % n_vertices
-            for d in range(dim):
-                y2[d] = tail_embedding[k, d]
-                rep_vecs[edge * dim + d] = y1[d] - y2[d]
-            dist_squared = sq_euc_dist(y1, y2, dim)
-            repulsive_force_func(
-                rep_func_outputs,
-                normalized,
-                frob,
-                dist_squared,
-                a,
-                b,
-                1.0,
-                average_weight,
-            )
-            rep_forces[edge] = rep_func_outputs[0]
-            local_Z[0] += rep_func_outputs[1]
+            for s in range(negative_sample_rate):
+                k = rand() % n_vertices
+                for d in range(dim):
+                    y2[d] = tail_embedding[k, d]
+                    rep_vecs[edge * dim + d] = y1[d] - y2[d]
+                dist_squared = sq_euc_dist(y1, y2, dim)
+                repulsive_force_func(
+                    rep_func_outputs,
+                    normalized,
+                    frob,
+                    dist_squared,
+                    a,
+                    b,
+                    1.0,
+                    average_weight,
+                )
+                rep_forces[edge] = rep_func_outputs[0]
+                local_Z[0] += rep_func_outputs[1]
 
         free(rep_func_outputs)
         free(y1)
@@ -180,7 +183,7 @@ cdef void _uniform_umap_epoch(
     int sym_attraction,
     int frob,
     int num_threads,
-    int momentum,
+    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -192,6 +195,7 @@ cdef void _uniform_umap_epoch(
     float b,
     int dim,
     int n_vertices,
+    int negative_sample_rate,
     float lr,
     int i_epoch
 ):
@@ -237,12 +241,14 @@ cdef void _uniform_umap_epoch(
             tail_embedding,
             weights,
             normalized,
+            amplify_grads,
             frob,
             num_threads,
             n_vertices,
             n_edges,
             i_epoch,
             dim,
+            negative_sample_rate,
             a,
             b,
             average_weight
@@ -286,7 +292,7 @@ cdef void _uniform_umap_epoch(
                     grad_d = clip(all_grads[index] * gains[index], -1, 1)
 
                     all_updates[index] = grad_d * lr \
-                                       + momentum * 0.9 * all_updates[index]
+                                       + amplify_grads * 0.9 * all_updates[index]
                     head_embedding[v, d] += all_updates[index]
 
     free(all_grads)
@@ -297,7 +303,7 @@ cdef uniform_umap_optimize(
     int sym_attraction,
     int frob,
     int num_threads,
-    int momentum,
+    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -309,6 +315,7 @@ cdef uniform_umap_optimize(
     float initial_lr,
     int n_epochs,
     int n_vertices,
+    int negative_sample_rate,
     int verbose
 ):
     cdef:
@@ -325,13 +332,13 @@ cdef uniform_umap_optimize(
             gains[index] = 1
 
     for i_epoch in range(n_epochs):
-        lr = get_lr(initial_lr, i_epoch, n_epochs)
+        lr = get_lr(initial_lr, i_epoch, n_epochs, amplify_grads)
         _uniform_umap_epoch(
             normalized,
             sym_attraction,
             frob,
             num_threads,
-            momentum,
+            amplify_grads,
             head_embedding,
             tail_embedding,
             head,
@@ -343,6 +350,7 @@ cdef uniform_umap_optimize(
             b,
             dim,
             n_vertices,
+            negative_sample_rate,
             lr,
             i_epoch
         )
@@ -362,7 +370,7 @@ def uniform_umap_opt_wrapper(
     int sym_attraction,
     int frob,
     int num_threads,
-    int momentum,
+    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -373,6 +381,7 @@ def uniform_umap_opt_wrapper(
     float a,
     float b,
     float initial_lr,
+    int negative_sample_rate,
     int verbose=True,
     **kwargs
 ):
@@ -394,7 +403,7 @@ def uniform_umap_opt_wrapper(
         sym_attraction,
         frob,
         num_threads,
-        momentum,
+        amplify_grads,
         head_embedding,
         tail_embedding,
         head,
@@ -406,6 +415,7 @@ def uniform_umap_opt_wrapper(
         initial_lr,
         n_epochs,
         n_vertices,
+        negative_sample_rate,
         verbose
     )
 

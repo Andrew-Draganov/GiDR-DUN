@@ -588,7 +588,7 @@ def simplicial_set_embedding(
     frob,
     gpu,
     num_threads,
-    momentum,
+    amplify_grads,
     batch_size,
     data,
     graph,
@@ -701,11 +701,12 @@ def simplicial_set_embedding(
 
     graph.eliminate_zeros()
 
-    if isinstance(init, str) and init == "random":
-        embedding = random_state.uniform(
-            low=-10.0, high=10.0, size=(graph.shape[0], n_components)
+    if init == 'random':
+        embedding = random_state.multivariate_normal(
+            mean=np.zeros(n_components), cov=np.eye(n_components), size=(graph.shape[0])
         ).astype(np.float32)
-    elif isinstance(init, str) and init == "spectral":
+    else:
+        assert init == 'spectral'
         # We add a little noise to avoid local minima for optimization to come
         initialisation = spectral_layout(
             data,
@@ -722,22 +723,6 @@ def simplicial_set_embedding(
         ).astype(
             np.float32
         )
-    else:
-        # ANDREW - this isn't a true random initialization...
-        init_data = np.array(init)
-        if len(init_data.shape) == 2:
-            if np.unique(init_data, axis=0).shape[0] < init_data.shape[0]:
-                tree = KDTree(init_data)
-                dist, ind = tree.query(init_data, k=2)
-                nndist = np.mean(dist[:, 1])
-                embedding = init_data + random_state.normal(
-                    scale=0.001 * nndist, size=init_data.shape
-                ).astype(np.float32)
-            else:
-                embedding = init_data
-
-    # FIXME FIXME -- add option to do this or not do this
-    # graph = standardize_neighbors(graph)
 
     # ANDREW - head and tail here represent the indices of nodes that have edges in high-dim
     #        - So for each edge e_{ij}, head is low-dim embedding of point i and tail
@@ -768,7 +753,7 @@ def simplicial_set_embedding(
         frob,
         gpu,
         num_threads,
-        momentum,
+        amplify_grads,
         batch_size,
         embedding,
         embedding,
@@ -797,7 +782,7 @@ def _optimize_layout_euclidean(
         frob,
         gpu,
         num_threads,
-        momentum,
+        amplify_grads,
         batch_size,
         head_embedding,
         tail_embedding,
@@ -823,7 +808,7 @@ def _optimize_layout_euclidean(
         'sym_attraction': int(sym_attraction),
         'frob': int(frob),
         'num_threads': num_threads,
-        'momentum': int(momentum),
+        'amplify_grads': int(amplify_grads),
         'batch_size': weights.shape[0] if batch_size == -1 else batch_size,
         'head_embedding': head_embedding,
         'tail_embedding': tail_embedding,
@@ -1075,7 +1060,7 @@ class UniformUmap(BaseEstimator):
         sym_attraction=True,
         frob=False,
         gpu=False,
-        momentum=False,
+        amplify_grads=False,
         batch_size=-1,
         euclidean=True,
         min_dist=0.1,
@@ -1115,7 +1100,7 @@ class UniformUmap(BaseEstimator):
         self.frob = frob
         self.gpu = gpu
         self.euclidean = euclidean
-        self.momentum = momentum
+        self.amplify_grads = amplify_grads
         self.batch_size = batch_size
 
         self.spread = spread
@@ -1475,7 +1460,7 @@ class UniformUmap(BaseEstimator):
             self.frob,
             self.gpu,
             self.num_threads,
-            self.momentum,
+            self.amplify_grads,
             self.batch_size,
             X,
             self.graph_,

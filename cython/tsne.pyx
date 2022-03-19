@@ -15,7 +15,7 @@ cdef extern from "cython_utils.c" nogil:
 cdef extern from "cython_utils.c" nogil:
     float sq_euc_dist(float* x, float* y, int dim)
 cdef extern from "cython_utils.c" nogil:
-    float get_lr(float initial_lr, int i_epoch, int n_epochs) 
+    float get_lr(float initial_lr, int i_epoch, int n_epochs, int amplify_grads) 
 cdef extern from "cython_utils.c" nogil:
     void print_status(int i_epoch, int n_epochs)
 cdef extern from "cython_utils.c" nogil:
@@ -74,6 +74,7 @@ cdef void collect_attr_grads(
     float[:, :] tail_embedding,
     float[:] weights,
     int normalized,
+    int amplify_grads,
     int sym_attraction,
     int frob,
     int num_threads,
@@ -107,7 +108,7 @@ cdef void collect_attr_grads(
             dist_squared = sq_euc_dist(y1, y2, dim)
 
             # t-SNE early exaggeration
-            if i_epoch < 100:
+            if amplify_grads and i_epoch < 250:
                 weight_scalar = 4
             else:
                 weight_scalar = 1
@@ -177,11 +178,6 @@ cdef void collect_rep_grads(
             for i_cell in range(num_cells):
                 cell_dist = cell_summaries[i_cell * offset + dim]
                 cell_size = cell_summaries[i_cell * offset + dim + 1]
-                # FIXME - think more about this cell_size bounding
-                # Ignoring small cells gives clusters that REALLY emphasize
-                #      local relationships while generally maintaining global ones
-                # if cell_size < 3:
-                #     continue
                 repulsive_force_func(
                     rep_func_outputs,
                     normalized,
@@ -211,7 +207,7 @@ cdef void _tsne_epoch(
     int sym_attraction,
     int frob,
     int num_threads,
-    int momentum,
+    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -265,6 +261,7 @@ cdef void _tsne_epoch(
             tail_embedding,
             weights,
             normalized,
+            amplify_grads,
             sym_attraction,
             frob,
             num_threads,
@@ -304,7 +301,7 @@ cdef void _tsne_epoch(
                 for d in range(dim):
                     index = v * dim + d
                     all_attr_grads[index] += local_attr_grads[index] * attr_scalar
-                    all_rep_grads[index] += local_rep_grads[index] * rep_scalar / Z
+                    all_rep_grads[index] += local_rep_grads[index] * rep_scalar
 
         with parallel(num_threads=num_threads):
             for v in prange(n_vertices):
@@ -317,7 +314,7 @@ cdef void _tsne_epoch(
                     gains[index] = clip(gains[index], 0.01, 1000)
                     grad_d = (all_rep_grads[index] - all_attr_grads[index]) * gains[index]
 
-                    if momentum:
+                    if amplify_grads:
                         all_updates[index] = grad_d * lr + 0.9 * all_updates[index]
                     else:
                         all_updates[index] = grad_d * lr
@@ -338,7 +335,7 @@ cdef tsne_optimize(
     int sym_attraction,
     int frob,
     int num_threads,
-    int momentum,
+    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -374,13 +371,13 @@ cdef tsne_optimize(
 
     for i_epoch in range(n_epochs):
         qt.build_tree(head_embedding)
-        lr = get_lr(initial_lr, i_epoch, n_epochs)
+        lr = get_lr(initial_lr, i_epoch, n_epochs, amplify_grads)
         _tsne_epoch(
             normalized,
             sym_attraction,
             frob,
             num_threads,
-            momentum,
+            amplify_grads,
             head_embedding,
             tail_embedding,
             head,
@@ -411,7 +408,7 @@ def tsne_opt_wrapper(
     int sym_attraction,
     int frob,
     int num_threads,
-    int momentum,
+    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -445,7 +442,7 @@ def tsne_opt_wrapper(
         sym_attraction,
         frob,
         num_threads,
-        momentum,
+        amplify_grads,
         head_embedding,
         tail_embedding,
         head,
