@@ -14,6 +14,7 @@ cdef extern from "gpu_dim_reduction.cpp":
     void gpu_umap_wrap(
         int normalized,
         int sym_attraction,
+        int frob,
         int momentum,
         float* head_embedding,
         float* tail_embedding,
@@ -66,6 +67,7 @@ cdef uniform_umap_gpu(
     gpu_umap_wrap(
         normalized,
         sym_attraction,
+        frob,
         momentum,
         &head_embedding[0, 0], # Move from numpy to c pointer arrays
         &tail_embedding[0, 0],
