@@ -90,15 +90,15 @@ static float frob_attr_force(int normalized, float p, float q){
     if(normalized){
         // FIXME - is it faster to get q^2 and then use that for q^3?
         // FIXME - took out a Z scalar from this
-        return  p * (q * q + 2 * pow(q, 3));
+        return  p * (q * q + 2 * fast_pow(q, 3));
     }
     return p * q * q;
 }
 
 static float frob_rep_force(int normalized, float q){
     if(normalized)
-        return pow(q, 3) + 2 * pow(q, 4);
-    return pow(q, 3);
+        return fast_pow(q, 3) + 2 * fast_pow(q, 4);
+    return fast_pow(q, 3);
 }
 
 static float attractive_force_func(

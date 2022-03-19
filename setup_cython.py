@@ -1,10 +1,11 @@
 from distutils.core import setup as CySetup
 from distutils.core import Extension
 from Cython.Build import cythonize, build_ext
+import os
 import numpy
 
-# os.environ['CC']='/usr/local/Cellar/gcc/11.2.0_3/bin/gcc-11'
-# os.environ['CXX']='/usr/local/Cellar/gcc/11.2.0_3/bin/g++-11'
+os.environ['CC']='/usr/local/Cellar/gcc/11.2.0_3/bin/gcc-11'
+os.environ['CXX']='/usr/local/Cellar/gcc/11.2.0_3/bin/g++-11'
 
 uniform_umap_build = Extension(
     'uniform_umap_opt',

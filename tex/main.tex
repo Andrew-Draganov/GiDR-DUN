@@ -4,6 +4,7 @@
 
 \documentclass[sigconf, nonacm]{acmart}
 \usepackage{mathtools}
+\usepackage{xcolor}
 \usepackage{amsfonts}
 \usepackage{caption}
 \usepackage{subfig}
@@ -20,6 +21,7 @@
 \newcommand\vldbyear{2020}
 % should be fine as it is
 \newcommand\vldbauthors{\authors}
+\newcommand\ourmethod{Uniform UMAP}
 \newcommand\vldbtitle{\shorttitle} 
 % leave empty if no availability url should be set
 \newcommand\vldbavailabilityurl{URL_TO_YOUR_ARTIFACTS}
@@ -36,25 +38,31 @@
 \author{Katrine}
 \affiliation{%
   \institution{Aarhus University}
-  \streetaddress{}
-  \city{}
+  \streetaddress{Somewhere 5}
+  \city{Aarhus}
   \state{}
-  \postcode{}
+  \postcode{8000}
+  \country{}
 }
 \email{draganovandrew@cs.au.dk}
 %%
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
-Dimensionality reduction algorithms are used across scientific disciplines to visualize and understand data. Among them, tSNE and UMAP have become two of the most
-popular due to their quick runtimes and intuitive results. However, despite their ubiquity and similarities there
-has not been a comprehensive comparison of the two approaches. In this work, we describe a general framework for comparing dimensionality reduction algorithms and
-identify simple methods for obtaining each algorithm from the other. We disprove several claims regarding the source of the algorithms' efficacy and clarify
-misconceptions regarding components of each algorithm. Inspired by this, we create a new dimensionality reduction algorithm, Uniform UMAP, by combining the best characteristics of tSNE
-and UMAP. Uniform UMAP can recreate the results of both tSNE \& UMAP and, when executed in a single thread, performs the optimizations an order of magnitude faster than
-multi-threaded UMAP and several orders of magnitude faster than multi-threaded tSNE on even modestly sized datasets. We additionally highlight that Uniform UMAP is easier to parallelize than either of the previous approaches and provide
-a simple GPU implementation for yet another order of magnitude speedup.
-Lastly, we provide theoretical insights for future dimensionality reduction improvements.
+TSNE and UMAP have become two of the most popular dimensionality reduction algorithms due to their quick runtimes and intuitive low-dimensional embeddings.
+Despite their ubiquity and similarities, however, there has not been a comprehensive attempt to fuse the two approaches into a single method. In this work, we
+describe a general framework for comparing dimensionality reduction algorithms and analyze the differences between TSNE and UMAP in terms of this framework.
+Under this framework, we identify which changes are necessary and sufficient to switch between the two approaches and disprove several claims regarding the
+reason for each algorithms' efficacy, thus clarifying misconceptions regarding each algorithm.
+
+Inspired by this, we create a new dimensionality reduction algorithm, \ourmethod, that combines the best characteristics of tSNE
+and UMAP and is able to reproduce the results of either method with only a few hyperparameter changes. \ourmethod, when executed in a single thread, performs the optimization an order of magnitude faster than
+multi-threaded UMAP and several orders of magnitude faster than multi-threaded tSNE on even modestly sized datasets. By virtue of its scalable characteristics,
+we are able to effectively parallelize \ourmethod to obtain additional speed improvements. We also devise a new GPU
+solution that performs our method's optimization significantly faster than existing GPU implementations of either UMAP or tSNE.
+
+We lastly provide theoretical insights for future dimensionality reduction improvements. Our code is fully plug-and-play with the standard UMAP and tSNE
+libraries and available to the public at \_\_\_\_.
 \end{abstract}
 
 \maketitle
@@ -86,200 +94,282 @@ The source code, data, and/or other artifacts have been made available at \url{\
 %%% VLDB block end %%%
 
 \section{Introduction}
-Dimensionality reduction (DR) algorithms are invaluable for qualitatively inspecting high-dimensional data. As such, they are consistently used across the sciences
-with famous applications in \_\_\_\_, \_\_\_\_, and \_\_\_\_. A DR algorithm receives an input dataset $X \in \mathbb{R}^{N \times D}$ of
-$N$ points in $D$ dimensional space and
-attempts to find a faithful embedding into a lower dimensional space $Y \in \mathbb{R}^{N \times d}$, where $d << D$. The term \textit{faithful} is
-defined as keeping similar points similar and dissimilar points dissimilar, where similarity is commonly measured by distance metrics or kernels in the
-corresponding spaces. In this paper, we refer to the pairwise squared distance matrices in high- and low-dimensional spaces as $E^X$ and $E^Y$, respectively.
+Dimensionality reduction (DR) algorithms are invaluable for qualitatively inspecting high-dimensional data and are used across computational and natural-science
+disciplines for data visualization, denoising, graph embeddings, and many other tasks \textcolor{red}{REFERENCES}. Intuitively, DR algorithms accept a high-dimensional dataset as
+input and find a faithful embedding in a lower-dimensional space. The term \textit{faithful} traditionally implies keeping similar points similar and dissimilar
+points dissimilar, where similarity is measured by distance metrics or kernels in the corresponding spaces. This naturally implies a $O(n^2)$ runtime for many
+nonlinear approaches, as we must compare the high- and low-dimensional pairwise distance matrices before we can be certain of the embedding quality.
 
-Recent approaches model the problem in terms of the minimization of some objective function $\mathcal{L}(f(E^X), g(E^Y))$, where $f$ and $g$ are high- and
-low-dimensional functions with respect to the distances. They then employ gradient descent to overcome the lack of clear closed-form solutions. We
-focus on the tSNE \cite{van2008visualizing} and UMAP \cite{mcinnes2018umap} gradient descent-based algorithms, which have become standard DR
-techniques in recent years --- each getting cited more than
-1000 times per year on average. Despite both their ubiquity and similarity, though, there has not been a thorough analysis of the different design choices
-     between the two methods.
+Recent gradient-based methods have managed to improve on this by performing optimization only on relevant entries of the pairwise distance matrices.
+Among these, TSNE and UMAP are by far the most popular due to their speed and intuitive results, each getting cited more than 1000 times per year on average.
+They specifically overcome the $O(n^2)$ bound by constructing a setting in which distant points do not exert strong forces on one another, allowing the optimization to focus on nearest neighbors in the high dimensional space and sampling methods in the low-dimensional space.
+
+Formally, TSNE \cite{van2008visualizing} and UMAP \cite{mcinnes2018umap} both receive an input dataset $X \in \mathbb{R}^{N \times D}$ of
+$N$ points in $D$ dimensional space and
+attempt to find a faithful embedding into a lower dimensional space $Y \in \mathbb{R}^{N \times d}$, where $d << D$. 
+ In this paper, we refer to the pairwise squared distance matrices in high- and low-dimensional spaces as $E^X$ and $E^Y$, respectively.
+Both algorithms model the problem as minimizing the KL divergence $\mathcal{L}(f(E^X), g(E^Y))$, where $f$ and $g$ are high- and
+low-dimensional functions with respect to the distances. For both algorithms, $f$ is an inverse exponential function while $g$ is an inverse polynomial function --- chosen specifically to handle differences between high- and low-dimensional distance distributions.
+We immediately see clear similarities between the two approaches; they share the same objective function structure, both optimize based
+on sampling and nearest-neighbors and both utilize gradient descent to find the embedding. Despite their ubiquity and similarity, however, there has not been
+a comprehensive attempt to unify the two methods.
 
 In this paper, we first identify every framework choice and implementation discrepancy that differs between tSNE and UMAP. This allows us to describe each algorithm as a set of on/off
-switches across the space of these differences. We then implement tSNE and UMAP in a common library, giving us the ability to study the effect of each
-design choice on each of the algorithms.
-We provide evidence that the most relevant changes are the choice of normalization on $E^X$ and $E^Y$ and the choice of gradient descent algorithm by showing that the other design choices do not have a consistent or significant effect on the resulting embeddings.
+switches across the space of these differences. We then implement tSNE and UMAP in a common library, giving us the ability to study the effect of these
+''switches`` on each of the algorithms.
+We provide evidence that the most relevant changes are the choice of normalization on $E^X$ and $E^Y$ and the choice of gradient descent algorithm.
+In fact, a majority of the differences between TSNE and UMAP turn out to be irrelevant in terms of both quantitative and qualitative analysis across datasets.
+This refutes several claims made in both the TSNE and UMAP papers regarding the necessary components of their approaches.
 
-Based on this analysis we propose Uniform UMAP, a method that can recreate both tSNE and UMAP results by changing just two input parameters. Additionally, our
-method obtains a significant speedup on UMAP and a multiple-order-of-magnitude speedup on tSNE by choosing the more efficient options among the
-irrelevant design choices.
-Furthermore, our library includes GPU code and simpler objective functions for further speedups, providing the fastest implementation for achieving the results
-from both tSNE and UMAP in
-a fully plug-and-play manner with respect each algorithm's current popular implementation.
+Based on this analysis we propose \ourmethod, an embedding algorithm that recreates both tSNE and UMAP embeddings by changing just two input parameters.
+We experimentally validate that \ourmethod can simulate both methods through quantitative metrics and qualitative
+evaluations. Surprisingly, we also show that the choice of optimizing the KL divergence is not set in stone, finding that minimizing the Frobenius norm provides
+embeddings of a similar quality despite significantly simpler gradient calculations. Due to these improvements, \ourmethod is particularly amenable to
+parallelization, recreating UMAP's embeddings 5-times faster and TSNE's several orders of magnitude faster.
+Lastly, our library includes the option for GPU code, giving us the fastest method for optimizing TSNE and UMAP embeddings in any algorithm/processor setting.
+Our code is fully compatible with each algorithm's current popular implementation and available at \_\_\_\_.
+
+In summary, our contributions are as follows:
+\begin{enumerate}
+        \item We perform the first full analysis of every difference between the TSNE and UMAP algorithms, identifying which changes are necessary to
+        convert one algorithm to the other.
+        \item We propose \ourmethod, an optimization algorithm that effectively recreates either TSNE or UMAP embeddings as dictated by only two input
+            parameters.
+        \item We release a simple, plug-and-play implementation of our approach, providing significant speed improvements for TSNE and UMAP on both
+        the CPU and GPU.
+\end{enumerate}
+
+\section{Related Work}
+
+\ourmethod falls into a broad category of gradient based DR approaches, characterized by minimizing a non-convex objective using variants of gradient descent.
+We have already presented TSNE and UMAP, which are the two most common, but there exist several variations on each of these algorithms. When discussing TSNE, we
+refer to \cite{van2014accelerating}, which established the nearest neighbor and sampling speed improvements. Since this paper, a popular subsequent improvement
+was presented in \cite{linderman2019fast}, wherein Fast Fourier Transforms were used to accelerate the comparisons between points. Another approach based on
+TSNE is the LargeVis algorithm, proposed in \cite{tang2016visualizing}, which modifies the embedding functions to satisfy a Bernoulli probabilistic model of
+the low-dimensional dataset. As the more recent algorithm, UMAP has not had as many variations yet. One promising direction, however, has been to extend the
+second step of UMAP as a parametric optimization on neural network weights \cite{sainburg2020parametric}.
+
+There have been several papers that attempt to explain the difference between TSNE and UMAP. In both \cite{kobak2019umap} and \cite{kobak2021initialization},
+the argument is made that the necessary and sufficient condition to switch between their embeddings is the difference in initialization between the two methods.
+Namely, TSNE randomlyinitializes the low-dimensional dataset whereas UMAP first calculates a Laplacian Eigenmap \cite{belkin2003laplacian} embedding before
+beginning the optimization. We have been unable to reproduce these results across datasets and optimization criteria, a topic we discuss later in our results.
+
+Lastly, we also mention the state-of-the-art implementations of both TSNE and UMAP on the GPU. The CPU implementations are found in the scikit-learn and
+umap-learn python libraries for TSNE and UMAP, respectively. The fastest current implementations on the GPU, however, can be found in the RAPIDS AI
+framework \cite{nolet2020bringing} \cite{rapidsframework}.
+
+\section{Comparison of tSNE and UMAP} \label{comparison}
+We begin by formally introducing the tSNE and UMAP DR algorithms. Let $X \in \mathbb{R}^{N \times D}$ be the high dimensional dataset of $N$ points and let $Y
+\in \mathbb{R}^{N \times d}$ be a previously initialized set of $N$ points in lower-dimensional space such that $d << D$. 
+
+We now respectively establish Gaussian and student-t kernels on the high- and low-dimensional distances to represent the likelihood that $x_i$ and $y_i$ choose
+$x_j$ and $y_j$ as their respective nearest neighbors. These kernels are defined by
+\begin{align}
+    % FIXME - the denominator here isn't quite right
+    p^{tsne}_{j|i}(x_i, x_j) &= \dfrac{\text{exp}(-d(x_i, x_j)^2 / 2 \sigma_i^2)}{\sum_{k \neq l} \text{exp}(-d(x_k, x_l)^2 / 2 \sigma_k^2)} \\[0.5ex]
+    q^{tsne}_{ij}(y_i, y_j) &= \dfrac{(1 + ||y_i - y_j||^2_2)^{-1}}{\sum_{k \neq l} (1 + ||y_k - y_l||^2_2)^{-1}} \\[1.5ex]
+    p^{umap}_{j|i}(x_i, x_j) &= \dfrac{\text{exp} (-d(x_i, x_j)^2 + \rho_{i})}{\tau_i} \\[0.3ex]
+    q^{umap}_{ij}(y_i, y_j) &= \left( 1 + a(||y_i - y_j||^2_2)^b \right) ^{-1}
+\end{align}
+where $d(x_i, x_j)$ is the high-dimensional distance function, $\sigma$ and $\tau$ are point-specific variance scalars, $\rho_i = \min_{j \neq i} d(x_i, x_j)$,
+and $a$ and $b$ are constants. In practice, we can assume that $2 \sigma_i^2$ is functionally equivalent to $\tau_i$, and we will use $\tau$ when referring to
+this kernel variance term. The high-dimensional kernels are symmetrized by applying symmetrization functions. Without loss of generality, let $p_{ij}
+= S(p_{j|i}, p_{i|j})$ for some symmetrization function $S$.
+
+The principal difference in these functions is the normalization factor. tSNE scales the high- and low-dimensional kernels by all of the pairwise
+relationships whereas UMAP allows the Gaussian and Student-t kernels to remain untouched\footnote{We note that the tSNE papers give the impression that
+high-dimensional normalization 
+occurs across rows, while in reality the code performs normalization across the entire pairwise kernel matrix.}. This implies a different probabilistic
+interpretation between the two algorithms. In the case of tSNE, the weights are normalized across the entire matrix of pairwise relations, giving us 
+a probability distribution across the entire dataset. In the case of UMAP, our pairwise kernels remain unnormalized, implying a Bernoulli distribution along
+each edge that can be interpreted as the likelihood of that edge existing.
+
+Each algorithm then applies gradient descent with respect to the KL-divergence(s) between these probability distributions. We refer to the high- and
+low-dimensional pairwise kernel matrices as $P = \left( p_{ij} \right)_{i, j < N}$ and $Q = \left( q_{ij}
+\right)_{i, j < N}$ respectively. This gives us the loss functions
+\begin{align}
+    \mathcal{L}_{tsne} &= \text{KL} (P || Q) = \sum_{i \neq j} p_{ij} \log \dfrac{p_{ij}}{q_{ij}} \\
+    \mathcal{L}_{umap} &= \sum_{i \neq j} \left[ p_{ij} \log \dfrac{p_{ij}}{q_{ij}} + (1 - p_{ij}) \log \dfrac{1 - p_{ij}}{1 - q_{ij}} \right]
+\end{align}
+In essence, tSNE minimizes the KL divergence of the entire pairwise kernel matrices whereas UMAP sums over each edge's KL divergence in terms of the Bernoulli distribution.
+
+\subsection{Intuition}
+
+We would like to provide some intuition for these two normalizations. In the normalized case we have a probability distribution over all
+distinct pairwise relationships $p(x_i, x_j)$ and $q(y_i, y_j)$ for $i \neq j$. In the unnormalized case we instead have a probability distribution over each
+individual distinct pairwise relationship. We can look at these through the lens of a fully-connected graphs in which each edge $e_{ij}$ is the
+kernel value $p(x_i, x_j)$ or $q(y_i, y_j)$. Under this lens, the probabilities in the normalized case are akin to asking ``when we pick a random edge, what is the
+probability that we pick $e_{ij}$?''. Alternatively, the unnormalized variant asks ``for the specific edge $e_{ij}$, what is the probability that it exists?''
+Minimizing the KL divergence therefore amounts to ensuring that these probabilities in the high- and low-dimensional spaces are as similar as possible.
+
+In practice, both tSNE and UMAP optimize this KL divergence by separately calculating attractive and repulsive forces. It is unnecessary to calculate
+every single attraction and repulsion though, as dissimilar points in the high-dimensional space impose negligible attraction in the low-dimensional space.
+To simplify the complexity, both approaches establish a nearest neighbor graph \cite{van2014accelerating} with edges $|\mathcal{E}|$ among the
+high-dimensional points where points $x_i$ and $x_j$ share an edge if either $x_i$ is $x_j$'s nearest neighbor or $x_j$ is $x_i$'s nearest neighbor.
+Then both algorithms simply perform attractions along these edges while performing repulsions evenly across the rest of the points. In this sense, we can
+interpret the gradient descent problem as a set of springs between every pair of points in $Y$ where the spring constants are determined by the Gaussian and
+Student-t kernels.
+
+\subsection{Gradients}
+
+The gradients of each algorithm change substantially due to the differing normalizations. In tSNE, the gradient can be written as
+\begin{equation}
+    \dfrac{\partial \mathcal{L}_{tsne}}{\partial y_i} = 4 \sum_{j \neq i} (p_{ij} - q_{ij}) q_{ij} Z (y_i - y_j)
+\end{equation}
+where $Z = \sum_{k \neq l} (1 + ||y_k - y_l||_2^2)^{-1}$ is the normalization factor for the low-dimensional kernel. This is often represented as an attractive
+and repulsive force with
+\begin{align*}
+    \dfrac{\partial \mathcal{L}_{tsne}}{\partial y_i} &= 4(\mathcal{A}_i^{tsne} + \mathcal{R}_i^{tsne}) = \\
+    &= 4 \left[ - \sum_{j, j \neq i} p_{ij}q_{ij}Z (y_i - y_j) + \sum_{j, j \neq i} q_{ij}^2 Z (y_i - y_j) \right]
+\end{align*}
+
+UMAP also describes separating its gradient into attractive and repulsive terms\footnote{$p_{ij}$ are the calculated nearest neighbor weights in the
+high-dimensional space. $p_{ik}$, on the other hand, are the potentially unknown pairwise weights between point $i$ and a randomly selected point $k$}, with
+\begin{align}
+    \mathcal{A}_i^{umap} = & \sum_{j, j \neq i} \dfrac{-2ab||y_i - y_j||_2^{2(b-1)}}{1 + ||y_i - y_j||_2^2} p_{ij} (y_i - y_j) \label{umap_attr} \\
+    \mathcal{R}_i^{umap} = & \sum_{j, j \neq i} \dfrac{2b}{(\epsilon + ||y_i - y_k||_2^2)(1 + a ||y_i - y_k||_2^{2b})} \cdot \label{umap_rep} \\
+    &\cdot (1 - p_{ik}) (y_i - y_k) \nonumber
+\end{align}
+
+We make the argument that this change in normalization is the fundamental difference between the two algorithms. First, note that the UMAP repulsive force is
+inversely quadratic with respect to the low-dimensional distance. This means that points that are too close in the low-dimensional space experience
+significantly stronger repulsions under UMAP's gradients than under TSNE's. This can be seen in figures \ref{fig:linear_grads} and \ref{fig:exp_grads}, where we
+plot the force between points $y_i$ and $y_j$ as a function of their high- and low-dimensional distances.
+Additionally, the normalization has a direct effect on the accumulated gradient force during a single epoch.
+By not normalizing, UMAP's pairwise likelihoods have orders of magnitude $p_{ij}, q_{ij} ~ 0.5$, whereas TSNE's are bounded by the fact that $\sum_{i \neq j}
+p_{ij} = \sum_{i \neq j} q_{ij} = 1$.
+This means that the average TSNE spring force is significantly weaker than the average UMAP one.
+However, TSNE and UMAP calculate comparable numbers of attractions and repulsions during every epoch, naturally leading to UMAP collecting significantly
+stronger per-point gradients over the span of an epoch of gradient descent.
 
 
-% \section{Comparison of tSNE and UMAP} \label{comparison}
-% We begin by formally introducing the tSNE and UMAP DR algorithms. Let $X \in \mathbb{R}^{N \times D}$ be the high dimensional dataset of $N$ points and let $Y
-% \in \mathbb{R}^{N \times d}$ be a previously initialized set of $N$ points in lower-dimensional space such that $d << D$. 
-% 
-% We now respectively establish Gaussian and student-t kernels on the high- and low-dimensional distances to represent the likelihood that $x_i$ and $y_i$ choose
-% $x_j$ and $y_j$ as their respective nearest neighbors. These kernels are defined by
-% \begin{align}
-%     % FIXME - the denominator here isn't quite right
-%     p^{tsne}_{j|i}(x_i, x_j) &= \dfrac{\text{exp}(-d(x_i, x_j)^2 / 2 \sigma_i^2)}{\sum_{k \neq l} \text{exp}(-d(x_k, x_l)^2 / 2 \sigma_k^2)} \\[0.5ex]
-%     q^{tsne}_{ij}(y_i, y_j) &= \dfrac{(1 + ||y_i - y_j||^2_2)^{-1}}{\sum_{k \neq l} (1 + ||y_k - y_l||^2_2)^{-1}} \\[1.5ex]
-%     p^{umap}_{j|i}(x_i, x_j) &= \dfrac{\text{exp} (-d(x_i, x_j)^2 + \rho_{i})}{\tau_i} \\[0.3ex]
-%     q^{umap}_{ij}(y_i, y_j) &= \left( 1 + a(||y_i - y_j||^2_2)^b \right) ^{-1}
-% \end{align}
-% where $d(x_i, x_j)$ is the high-dimensional distance function, $\sigma$ and $\tau$ are point-specific variance scalars, $\rho_i = \min_{j \neq i} d(x_i, x_j)$,
-% and $a$ and $b$ are constants. In practice, we can assume that $2 \sigma_i^2$ is functionally equivalent to $\tau_i$, and we will use $\tau$ when referring to
-% this kernel variance term. The high-dimensional kernels are symmetrized by applying symmetrization functions. Without loss of generality, let $p_{ij}
-% = S(p_{j|i}, p_{i|j})$ for some symmetrization function $S$.
-% 
-% We posit that the primary difference between tSNE and UMAP is the change in normalization. tSNE normalizes the high- and low-dimensional kernels by all of the pairwise
-% relations whereas UMAP allows the Gaussian and Student-t kernels to remain untouched\footnote{We note that the tSNE papers give the impression that
-% high-dimensional normalization 
-% occurs across rows, while in reality the code performs normalization across the entire pairwise kernel matrix.}. This implies a different probabilistic
-% interpretation between the two algorithms. In the case of tSNE, the weights are normalized across the entire matrix of pairwise relations, giving us 
-% a probability distribution across the entire dataset. In the case of UMAP, our pairwise kernels remain unnormalized, implying a Bernoulli distribution along
-% each edge that can be interpreted as the likelihood of that edge existing (effectively independently from the other edges).
-% 
-% Each algorithm then applies gradient descent with respect to the KL-divergence(s) between these probability distributions. We refer to the high- and
-% low-dimensional probability
-% distributions as $P = \left( p_{ij} \right)_{i, j < N}$ and $Q = \left( q_{ij}
-% \right)_{i, j < N}$ respectively. This gives us the loss functions
-% \begin{align}
-%     \mathcal{L}_{tsne} &= \text{KL} (P || Q) = \sum_{i \neq j} p_{ij} \log \dfrac{p_{ij}}{q_{ij}} \\
-%     \mathcal{L}_{umap} &= \sum_{i \neq j} \left[ p_{ij} \log \dfrac{p_{ij}}{q_{ij}} + (1 - p_{ij}) \log \dfrac{1 - p_{ij}}{1 - q_{ij}} \right]
-% \end{align}
-% In essence, tSNE minimizes the KL divergence of the low- and high-dimensional pairwise distance matrices under their respective kernels, whereas UMAP sums over
-% each edge's KL divergence in terms of the Bernoulli distribution.
-% 
-% \subsection{Intuition}
-% 
-% We would like to provide some intuition for these two normalizations. In the normalized case we have a probability distribution over all
-% distinct pairwise relationships $p(x_i, x_j)$ and $q(y_i, y_j)$ for $i \neq j$. In the unnormalized case we instead have a probability distribution over each
-% individual distinct pairwise relationship. We can look at these through the lens of a fully-connected graphs in which each edge $e_{ij}$ is the
-% kernel value $p(x_i, x_j)$ or $q(y_i, y_j)$. Under this lens, the probabilities in the normalized case are akin to asking ``when we pick a random edge, what is the
-% probability that we pick $e_{ij}$?''. Alternatively, the unnormalized variant asks ``for the specific edge $e_{ij}$, what is the probability that it exists?''
-% Minimizing the KL divergence therefore amounts to ensuring that these probabilities in the high- and low-dimensional spaces are as similar as possible.
-% 
-% In practice, both tSNE and UMAP optimize this KL divergence by separately calculating attractive and repulsive forces. It is, however, unnecessary to calculate
-% each such attraction and repulsion as, for example, dissimilar points in the high-dimensional space impose negligible attraction in the low-dimensional space.
-% To simplify the complexity, both approaches establish a nearest neighbor graph \cite{van2014accelerating} with edges $|\mathcal{E}|$ among the
-% high-dimensional points where points $x_i$ and $x_j$ share an edge if either $x_i$ is $x_j$'s nearest neighbor \underline{or} $x_j$ is $x_i$'s nearest neighbor.
-% Then both algorithms simply perform attractions along these edges while performing repulsions evenly across the rest of the points. In this sense, we can
-% interpret the gradient descent problem as a set of springs between every pair of points in $Y$ where the spring constants are determined by the Gaussian and
-% Student-t kernels.
-% 
-% \subsection{Gradients}
-% 
-% The gradient of the KL divergences becomes substantially different due to the differing normalizations. In tSNE, the gradient can be written as
-% \begin{equation}
-%     \dfrac{\partial \mathcal{L}_{tsne}}{\partial y_i} = 4 \sum_{j \neq i} (p_{ij} - q_{ij}) q_{ij} Z (y_i - y_j)
-% \end{equation}
-% where $Z = \sum_{k \neq l} (1 + ||y_k - y_l||_2^2)^{-1}$ is the normalization factor for the low-dimensional kernel. This is often represented as an attractive
-% and repulsive force with
-% \begin{align*}
-%     \dfrac{\partial \mathcal{L}_{tsne}}{\partial y_i} &= 4(F^{tsne}_{attr} + F^{tsne}_{rep}) = \\
-%     &= 4 \left[ \sum_{j \neq i} p_{ij}q_{ij}Z (y_i - y_j) - \sum_{j \neq i} q_{ij}^2
-% Z (y_i - y_j) \right]
-% \end{align*}
-% 
-% UMAP also describes separating its gradient into attractive and repulsive terms, with
-% \begin{align}
-%     F_{attr}^{umap} = &\dfrac{-2ab||y_i - y_j||_2^{2(b-1)}}{1 + ||y_i - y_j||_2^2} p_{ij} (y_i - y_j) \\
-%     F_{rep}^{umap} = &\dfrac{2b}{(\epsilon + ||y_i - y_j||_2^2)(1 + a ||y_i - y_j||_2^{2b})} \cdot \\
-%     &\cdot (1 - p_{ij}) (y_i - y_j) \label{umap_rep}
-% \end{align}
-% 
-% Note that the UMAP repulsive force is inversely quadratic with respect to the low-dimensional distance. This accounts for UMAP's significantly stronger
-% repulsions seen in figures \ref{fig:linear_grads} and \ref{fig:exp_grads}.
-% 
-% \begin{figure}
-% \centering
-% 	\subfloat[\centering tSNE gradients]{{\includegraphics[width=7cm]{tex_images/tsne_grad.png} }}%
-% 	\qquad
-% 	\subfloat[\centering UMAP gradients]{{\includegraphics[width=7cm]{tex_images/umap_grad.png} }}%
-% 	\caption{A comparison of tSNE and UMAP gradients for linearly growing distances}%
-% 	\label{fig:linear_grads}%
-% \end{figure}
-% 
-% \begin{figure}
-% \centering
-% 	\subfloat[\centering tSNE gradients]{{\includegraphics[width=7cm]{tex_images/tsne_exp_grads.png} }}%
-% 	\qquad
-% 	\subfloat[\centering UMAP gradients]{{\includegraphics[width=7cm]{tex_images/umap_exp_grads.png} }}%
-% 	\caption{A comparison of tSNE and UMAP gradients for exponentially growing distances}%
-% 	\label{fig:exp_grads}%
-% \end{figure}
-% 
-% \subsection{Implementation differences} \label{implementation_diffs}
-% Given the above descriptions of the algorithms, we now describe specific implementation differences between the two. Section \ref{results} will discuss the
-% practical effect that each of these has on the results.
-% 
-% \begin{itemize}
-%     \item tSNE collects all of the attractive and repulsive forces before applying momentum gradient descent across every point simultaneously. In contrast,
-%         UMAP updates the position of every point directly upon calculating its attractive and repulsive forces.
-%     \begin{itemize}
-%         \item Accordingly, UMAP applies attractive and repulsive forces iteratively by calculating $k$ random repulsive forces for every attractive force along the
-%             nearest neighbor edges.
-%         \item In contrast, tSNE similarly calculates attractions along each edge but estimates each point's repulsions across the entire dataset with Barnes-Hut
-%             trees.
-%     \end{itemize}
-% 
-%     \item tSNE's gradient descent has an additional scalar that amplifies the forces if a point moves in the same direction at time $t+1$ as it did at time $t$
-%         and dampens the forces otherwise.
-% 
-%     \item UMAP finds approximate nearest neighbors using nearest-neighbor descent whereas tSNE takes the time to exactly identify nearest neighbor relationships.
-% 
-%     \item UMAP's high dimensional kernel on points $x_i$ and $x_j$ subtracts the minimum distance $\rho_i = \min_{k \neq i} d(x_i, x_k)$. The theoretical
-%         justification for this is discussed at length in the UMAP paper. 
-% 
-%     \item tSNE symmetrizes the high-dimensional kernels with $S_{tsne}(p_{j|i}, p_{i|j}) = (p_{j|i} + p_{i|j}) / 2$ while UMAP uses a probabilistic
-%         symmetrization with $S_{umap}(p_{j|i}, p_{i|j}) = p_{j|i} + p_{i|j} - p_{j|i} \cdot p_{i|j}$
-% 
-%     \item tSNE performs random initialization whereas UMAP initializes with a Laplacian eigenmap projection.
-% 
-%     \item UMAP applies the attractive force between $y_i$ and $y_j$ to both $y_i$'s and $y_j$'s positions whereas tSNE applies the attractive force to only $y_i$.
-%         We refer to these options as \textit{symmetric} and \textit{asymmetric} attraction.
-% \end{itemize}
-% 
-% \subsection{Uniform UMAP} \label{uniform}
-% We must make a few modifications to either UMAP's or tSNE's optimization methodology in order to perform a fully controlled comparison between the two. The principle obstacle is that
-% UMAP performs live gradient updates on each point (which precludes the use of momentum gradient descent) while tSNE collects the gradients across the entire
-% dataset before applying them simultaneously. This complicates comparing the two as tSNE normalizes repulsive forces by the sum over all kernels $Z$,
-% therefore making it impossible to implement tSNE within UMAP's original framework. Specifically, UMAP would require access to all the repulsions for
-% normalization but applies the repulsions before all of them have been collected.
-% 
-% UMAP's original algorithm approximates the $p_{ij}$ and $(1 - p_{ij})$ scalars in the attractive and repulsive forces by selectively applying attractions
-% and repulsions per epoch. Namely, the attractive and repulsive forces are applied on any given epoch with likelihood proportional to $p_{ij}$
-% or $(1 - p_{ij})$. Thus if a force was applied on epoch $i$ it will not necessarily be performed on epoch $i+1$. Note that this choice was not necessitated by theoretical derivations
-% and can be modified without sacrificing the theoretical soundness of the UMAP algorithm.
-% 
-% We would instead like to implement UMAP such that we uniformly calculate one repulsion for every attraction in order to neatly collect all of forces before
-% normalizing and performing gradient descent. To do this, note that the nearest-neighbor edge weights $p_{ij}$ are available to us during
-% optimization. In order to approximate the $(1 - p_{ij})$ scalars, however, we hypothesize that they will
-% effectively average out when applied to random pairs of points over many repulsions. We therefore replace the sampling scheme by doing one repulsion for every attraction and scaling the repulsive force by $(1 - \bar{p}_{ij})$, where
-% $\bar{p}_{ij}$ is the mean high-dimensional kernel value. We experimentally validate this decision in table ?? and show that this achieves identical results to UMAP across datasets and metrics.
-% 
-% We name this modified UMAP implementation \textit{Uniform UMAP} and note that it has several structural advantages to the original method. 
-% \begin{itemize}
-%         \item Uniform UMAP removes the need for calculating multiple repulsions during the sampling schema, cutting down on the number of force calculations by $n-1$, where $n$ is the number of repulsions performed when the repulsive forces are sampled.
-%         \item We can now easily collect gradients across the entire dataset, allowing us to apply techniques like momentum gradient descent for quicker convergence.
-%         \item The repulsions no longer depend on the epoch or edge weights, allowing us to effectively distribute force computations
-%         \item When correctly modified to implement tSNE, Uniform UMAP removes tSNE's dependency on the computationally costly Barnes-Hut trees, obtaining a very
-%             significant speedup over other tSNE implementations.
-% \end{itemize}
-% 
-% With this change, we can use Uniform UMAP to obtain UMAP's results using full-dataset gradient descent as is done in tSNE.
-% 
-% % FIXME FIXME FIXME -- the below logic should work when normalized, since the repulsions aren't crazy strong
-% % The second major modification has to do with the iterative nature of the gradient descent epochs. Consider the following common situation: assume during
-% % epoch $t$ that we apply an attraction along the edge $(y_i, y_j)$ and then a repulsion along $(y_i, y_k)$. Then, in epoch $t+1$ we once again attract along
-% % $(y_i, y_j)$ and repel along $(y_i, y_l)$. Due to randomness, many individual repulsive forces will negligibly affect the embedding. Thus the two attractive forces,
-% % originally separated by a repulsion, can be approximated by performing the attraction $(y_i, y_j)$ at time $t$ twice, followed by applying the two repulsive
-% % forces in tandem. Generalizing this logic, we note that applying a $k$-times stronger attractive force with $k$ random repulsions approximates the iterative
-% % nature of UMAP and tSNE, with approximations worsening as $k$ grows.
-% % Furthermore, if we intend to apply an attractive force $k$ times then we can calculate apriori how much the force will diminish with each application. Thus, we can be
-% % more sophisticated than simply scaling the force linearly by the number of repeated applications. \textit{It remains to identify when this approximation is appropriate
-% % and to what extent it is correct}.
-% 
+\begin{figure}
+\centering
+	\subfloat[\centering tSNE gradients]{{\includegraphics[width=7cm]{tex_images/tsne_grad.png} }}%
+	\qquad
+	\subfloat[\centering UMAP gradients]{{\includegraphics[width=7cm]{tex_images/umap_grad.png} }}%
+	\caption{A comparison of tSNE and UMAP gradients for linearly growing distances}%
+	\label{fig:linear_grads}%
+\end{figure}
+
+\begin{figure}
+\centering
+	\subfloat[\centering tSNE gradients]{{\includegraphics[width=7cm]{tex_images/tsne_exp_grads.png} }}%
+	\qquad
+	\subfloat[\centering UMAP gradients]{{\includegraphics[width=7cm]{tex_images/umap_exp_grads.png} }}%
+	\caption{A comparison of tSNE and UMAP gradients for exponentially growing distances}%
+	\label{fig:exp_grads}%
+\end{figure}
+
+\subsection{Implementation differences} \label{implementation_diffs}
+Given the above descriptions of the algorithms, we now describe every implementation difference between them. Section \ref{results} will discuss the
+practical effect that each of these has on the results.
+
+\begin{itemize}
+    \item Gradient Descent
+        \begin{itemize}
+        \item TSNE collects all of the attractive and repulsive forces before applying momentum gradient descent across every point.
+            \begin{itemize}
+            \item tSNE's gradient descent has an additional scalar that amplifies the force if a point moves in the same direction at time $t+1$ as it did at time $t$
+                and dampens the force otherwise.
+            \end{itemize}
+        \item In contrast, UMAP updates the position of every point immediately upon calculating the attractive and repulsive forces acting on it.
+        \end{itemize}
+
+    \item Scalars
+        \begin{itemize}
+        \item UMAP uses scalars $a$ and $b$ to manage the distribution of $Q$.
+        \item TSNE operates under the assumption that $a = b = 1$.
+        \end{itemize}
+
+    \item Attractive Force Sampling
+        \begin{itemize}
+        \item TSNE applies every attractive force at every epoch.
+        \item UMAP simulates the $p_{ij}$ scalar in \ref{umap_attr} by only applying the force every $1 / p_{ij}$ epochs.
+            \begin{itemize}
+                \item We note that UMAP similarly scales the repulsive forces by sampling them at a rate of $1 / (1 - p_{ik}$
+            \end{itemize}
+        \end{itemize}
+
+    \item Repulsive Force Sampling
+        \begin{itemize}
+        \item TSNE estimates each point's repulsion from every other point using Barnes-Hut trees.
+        \item UMAP only calculates repulsive forces with respect to $k$ randomly sampled points.
+        \end{itemize}
+
+    \item Force Application
+        \begin{itemize}
+        \item UMAP applies the attractive force between $y_i$ and $y_j$ to both $y_i$'s and $y_j$'s positions
+        \item tSNE applies the attractive force to only $y_i$.
+        \end{itemize}
+        We refer to these options as \textit{symmetric} and \textit{asymmetric} attraction.
+
+    \item Nearest Neighbors
+        \begin{itemize}
+        \item tSNE takes the time to identify exact nearest neighbor relationships.
+        \item UMAP finds approximate nearest neighbors using nearest-neighbor descent \cite{dong2011efficient}.
+        \end{itemize}
+
+    \item Distance Calculations
+        \begin{itemize}
+        \item UMAP's high dimensional kernel on points $x_i$ and $x_j$ subtracts the minimum squared distance $\rho_i = \min_{k \neq i} d(x_i, x_k)^2$. The theoretical
+        justification for this is discussed at length in the UMAP paper. 
+        \item TSNE uses the traditional squared distance metric.
+        \end{itemize}
+
+    \item Symmetrization
+        \begin{itemize}
+        \item tSNE symmetrizes the high-dimensional kernels with $S_{tsne}(p_{j|i}, p_{i|j}) = (p_{j|i} + p_{i|j}) / 2$.
+        \item UMAP uses a probabilistic symmetrization with $S_{umap}(p_{j|i}, p_{i|j}) = p_{j|i} + p_{i|j} - p_{j|i} \cdot p_{i|j}$.
+        \end{itemize}
+
+    \item Initialization
+        \begin{itemize}
+        \item tSNE randomly initializes $Y$.
+        \item UMAP initializes with a Laplacian Eigenmap projection.
+        \end{itemize}
+
+\end{itemize}
+
+\subsection{Comparison Implementation}
+In order to evaluate each of the above changes, we re-implemented the TSNE and UMAP algorithms such that each choice can be freely applied onto both algorithms.
+There are a few complications that we would like to mention, however. The fact that UMAP applies gradients live inside the optimization loop is incompatible
+with momentum gradient descent or the change in normalization. This is due to the fact that the forces under normalization or momentum gradient
+descent rely on scalars that are gathered over the course of the entire epoch. As such, both of these were evaluated on a variant of UMAP in which gradients are
+collected across the epoch before being applied. We find that collecting gradients vs. applying them immediately does not change the resulting
+embedding in any of our experiments.
+
+\section{\ourmethod} \label{uniform}
+We now present \ourmethod  --- an algorithm that can recreate both TSNE and UMAP results at much higher speeds than any implementation of either algorithm.
+The key observation is noticing that the only two necessary ''switches`` are the normalization and the usage of momentum during the gradient descent. In fact,
+every other discrepancy between the algorithm is inconsequential across datasets and domains. This allows us to remove TSNE's reliance on the costly Barnes-Hut
+trees and instead perform repulsions due to sampling.
+Furthermore, by removing UMAP's reliance on sampling to simulate $p_{ij}$ and $1 - p_{ik}$, we also remove the need for performing multiple repulsions for every
+attraction.\footnote{We note that not most values of $p_{ik}$ are unavailable to us during optimization. We overcome this by setting $p_{ik} = 1 - \bar{p}_{ij}
+\; \forall \; p_{ik}$. UMAP's implementation similarly does not calculate $p_{ik}$, instead using $p_{ik} \approx p_{ij}$ as an estimation.} We exprimentally
+validate that these changes still allow us to obtain both TSNE's and UMAP's embeddings despite the significantly simplified optimization loop.
+
+With respect to the other choices, \ourmethod  uses TSNE's asymmetric attraction, distance-metric, and gradient collection along with UMAP's
+initialization, scalars, nearest neighbors, and symmetrization.
+
+We also point out the curious fact that optimizing the KL divergence is not a necessary condition to achieve compelling embeddings. Indeed, we find that one can
+instead optimize the Frobenius norm without sacrificing quality:
+\[ \mathcal{L}(X, Y) = \sum_{i \neq j} (p(x_i, x_j) - q(y_i, y_j))^2 \]
+
+This presents us with the following attractive and repulsive forces acting on point $y_i$
+% FIXME -- check these to be totally correct
+\begin{align*}
+    \mathcal{A}_i^{frob-tsne} &= -4ab \sum_{j, j \neq i} p_{ij} Z (q_{ij}^2 + 2q_{ij}^3) (y_i - y_j) \\
+    \mathcal{R}_i^{frob-tsne} &= 4ab \sum_{j, j \neq i} Z( q_{ij}^3 + 2q_{ij}^4) (y_i - y_j) \\
+    &\\
+    \mathcal{A}_i^{frob-umap} &= -4ab \sum_{j, j \neq i} p_{ij} q_{ij}^2 (y_i - y_j) \\
+    \mathcal{R}_i^{frob-umap} &= 4ab \sum_{j, j \neq i} q_{ij}^3 (y_i - y_j)  
+\end{align*}
+
+Although this does not necessarily simplify the TSNE calculations, the UMAP gradients are significantly cleaner as we have reduced the number of non-integer
+power relationships and removed the need for estimating $1 - p_{ik}$. We find that the resulting embeddings are also more consistent.
+
+>>>>>>> f01e2a7 (Merging tex updates)
 % \section{Embedding Results} \label{results}
 % We now show that, subject to the change in \ref{uniform}, one can directly implement both tSNE and UMAP through either framework. We first show that Uniform UMAP
 % can successfully recreate UMAP's outputs across a variety of datasets. Then, we go through the elements in \ref{implementation_diffs} to identify what effect

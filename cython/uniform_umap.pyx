@@ -92,7 +92,7 @@ cdef void get_kernels(
             dist_squared = sq_euc_dist(y1, y2, dim)
 
             # t-SNE early exaggeration
-            if normalized and i_epoch < 100:
+            if normalized and i_epoch < 250:
                 weight_scalar = 4
             else:
                 weight_scalar = 1
@@ -283,7 +283,7 @@ cdef void _uniform_umap_epoch(
                     else:
                         gains[index] *= 0.8
                     gains[index] = clip(gains[index], 0.01, 1000)
-                    grad_d = all_grads[index] * gains[index]
+                    grad_d = clip(all_grads[index] * gains[index], -1, 1)
 
                     all_updates[index] = grad_d * lr \
                                        + momentum * 0.9 * all_updates[index]
