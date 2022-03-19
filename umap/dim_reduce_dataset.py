@@ -7,6 +7,7 @@ from umap_ import UniformUmap
 from distances import make_dist_plots, remove_diag
 import argparse
 from sklearn.manifold import TSNE
+import pymde
 from sklearn.datasets import make_swiss_roll
 from sklearn.decomposition import PCA
 from sklearn.decomposition import KernelPCA
@@ -21,7 +22,7 @@ parser.add_argument(
 )
 parser.add_argument(
     '--dr-algorithm',
-    choices=['uniform_umap', 'original_umap', 'tsne', 'pca', 'kernel_pca'],
+    choices=['uniform_umap', 'original_umap', 'tsne', 'pca', 'kernel_pca', 'pyMDE'],
     default='uniform_umap',
     help='Which algorithm to use for performing dim reduction'
 )
@@ -231,6 +232,12 @@ elif args.dr_algorithm == 'original_umap':
         )
 elif args.dr_algorithm == 'tsne':
     dr = TSNE(random_state=12345, verbose=3)
+elif args.dr_algorithm == 'pyMDE':
+    start = time.time()
+    embedding = pymde.preserve_neighbors(points).embed(verbose=True)
+    end = time.time()
+    print('Total time took {:.3f} seconds'.format(end - start))
+    quit()
 elif args.dr_algorithm == 'pca':
     dr = PCA()
 elif args.dr_algorithm == 'kernel_pca':
