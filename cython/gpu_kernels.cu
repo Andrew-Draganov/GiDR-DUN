@@ -34,7 +34,7 @@ void gpuf() {
 #include <curand_kernel.h>
 #include <curand.h>
 
-#define BLOCK_SIZE 1024
+#define BLOCK_SIZE 256//1024
 
 /// https://github.com/rapidsai/cuml/blob/branch-22.04/cpp/src/umap/runner.cuh
 
@@ -548,12 +548,15 @@ __global__
 void
 compute_grads_full_shared_mem_N(const int frob, const int normalized, float *__restrict__ d_rep_grads,
                                 float *__restrict__ d_attr_grads,
-                                const float *__restrict__ d_weights, const int n, const int *__restrict__ d_N,
+                                const float *__restrict__ d_weights,
+                                const int n,
+                                const int *__restrict__ d_N,
+                                const int *__restrict__ d_neighbor_ends,
                                 const float *__restrict__ d_D_embed,
                                 float *__restrict__ d_Z, const float a, const float b, const int dims_embed,
                                 curandState *__restrict__ d_random, const float sym_attraction,
                                 const float weight_scalar,
-                                const float average_weight, const int k) {
+                                const float average_weight, const int k, const int negative_sample_rate) {
 
     extern __shared__ float s_rep_grads[];
     float *s_attr_grads = &s_rep_grads[blockDim.x * dims_embed];
@@ -568,11 +571,14 @@ compute_grads_full_shared_mem_N(const int frob, const int normalized, float *__r
             s_attr_grads[tid * dims_embed + h] = 0.;
         }
 
-        for (int i_edge = i_point * k; i_edge < i_point * k + k; i_edge++) {
-            int j_point = d_N[i_edge];
+//        for (int i_edge = i_point * k; i_edge < i_point * k + k; i_edge++) {
+//            int j_point = d_N[i_edge];
+//
+//            if (j_point < 0)
+//                continue;
 
-            if (j_point < 0)
-                continue;
+        for (int i_edge = get_start(d_neighbor_ends, i_point); i_edge < get_end(d_neighbor_ends, i_point); i_edge++) {
+            int j_point = d_N[i_edge];
 
             float dist_squared = sqrd_dist(d_D_embed, dims_embed, i_point, j_point);
             float attr = attractive_force_func(
@@ -583,32 +589,36 @@ compute_grads_full_shared_mem_N(const int frob, const int normalized, float *__r
                     b,
                     d_weights[i_edge] * weight_scalar
             );
-
-            int g = curand(&d_random[i_thread]) % n;//random int
-            dist_squared = sqrd_dist(d_D_embed, dims_embed, i_point, g);
-            float rep = repulsive_force_func(
-//                    rep_func_outputs,
-                    d_Z,
-                    i_thread,
-                    frob,
-                    normalized,
-                    dist_squared,
-                    a,
-                    b,
-                    1.0,
-                    average_weight
-            );
-
             for (int h = 0; h < dims_embed; h++) {
-                s_rep_grads[tid * dims_embed + h] +=
-                        rep * (d_D_embed[i_point * dims_embed + h] - d_D_embed[g * dims_embed + h]);
 
                 float force = attr * (d_D_embed[i_point * dims_embed + h] - d_D_embed[j_point * dims_embed + h]);
-                s_attr_grads[tid * dims_embed + h] -=
-                        force;
+                s_attr_grads[tid * dims_embed + h] -= force;
                 atomicAdd(&d_attr_grads[j_point * dims_embed + h],
                           force * sym_attraction); //changing this to i_point makes it 2x faster do to memory
             }
+
+            for (int s = 0; s < negative_sample_rate; s++) {
+                int g = curand(&d_random[i_thread]) % n;//random int
+                dist_squared = sqrd_dist(d_D_embed, dims_embed, i_point, g);
+                float rep = repulsive_force_func(
+//                    rep_func_outputs,
+                        d_Z,
+                        i_thread,
+                        frob,
+                        normalized,
+                        dist_squared,
+                        a,
+                        b,
+                        1.0,
+                        average_weight
+                );
+
+                for (int h = 0; h < dims_embed; h++) {
+                    s_rep_grads[tid * dims_embed + h] +=
+                            rep * (d_D_embed[i_point * dims_embed + h] - d_D_embed[g * dims_embed + h]);
+                }
+            }
+
         }
 
         for (int h = 0; h < dims_embed; h++) {
@@ -1098,7 +1108,8 @@ void gpu_umap_full_N(int normalized, // unused
                      int n_vertices,
                      float init_lr,
                      int n_epochs,
-                     int n_edges
+                     int n_edges,
+                     int negative_sample_rate
 ) {
     cudaDeviceSynchronize();
     int number_of_blocks_scalar = 32;//16 can be replace with something smaller then BLOCK_SIZE
@@ -1143,10 +1154,10 @@ void gpu_umap_full_N(int normalized, // unused
     int k = gpu_max(d_neighbor_counts, n_vertices);
     printf("k: %d\n", k);
 
-    int *d_N_new = gpu_malloc_int(n_vertices * k);
-    float *d_weights_new = gpu_malloc_float(n_vertices * k);
-    gpu_set_all(d_N_new, n_vertices * k, -1);
-    pack_N<<<number_of_blocks, BLOCK_SIZE>>>(d_N_new, d_weights_new, d_N, d_weights, d_neighbor_ends, n_vertices, k);
+//    int *d_N_new = gpu_malloc_int(n_vertices * k);
+//    float *d_weights_new = gpu_malloc_float(n_vertices * k);
+//    gpu_set_all(d_N_new, n_vertices * k, -1);
+//    pack_N<<<number_of_blocks, BLOCK_SIZE>>>(d_N_new, d_weights_new, d_N, d_weights, d_neighbor_ends, n_vertices, k);
 
     reduced_sum_fix<<<number_of_blocks_half * 2, BLOCK_SIZE, BLOCK_SIZE * sizeof(float)>>>
             (d_tmp_sum_1, d_weights, n_edges);
@@ -1163,6 +1174,7 @@ void gpu_umap_full_N(int normalized, // unused
     printf("- sym_attraction: %d\n", sym_attraction);
     printf("- normalized: %d\n", normalized);
     printf("- n_edges: %d\n", n_edges);
+    printf("- negative_sample_rate: %d\n", negative_sample_rate);
     printf("- a: %f\n", a);
     printf("- b: %f\n", b);
     printf("- number_of_blocks_scalar: %d\n", number_of_blocks_scalar);
@@ -1173,6 +1185,8 @@ void gpu_umap_full_N(int normalized, // unused
 //    gpuErrchk(cudaPeekAtLastError());
 
     gpu_set_all(d_tmp_sum_2, 1, 1.);
+    cudaDeviceSynchronize();
+    gpuErrchk(cudaPeekAtLastError());
 
 //    cudaStream_t stream = 0;
 //    cudaStreamCreate(&stream);
@@ -1188,8 +1202,8 @@ void gpu_umap_full_N(int normalized, // unused
         cudaMemset(d_rep_grads, 0, n_vertices * dims_embed * sizeof(float));
         cudaMemset(d_attr_grads, 0, n_vertices * dims_embed * sizeof(float));
         cudaMemset(d_Z, 0, number_of_threads_in_total * sizeof(float));
-//        cudaDeviceSynchronize();
-//        gpuErrchk(cudaPeekAtLastError());
+        cudaDeviceSynchronize();
+        gpuErrchk(cudaPeekAtLastError());
 
         float weight_scalar;
         if (i_epoch < 100)
@@ -1197,11 +1211,19 @@ void gpu_umap_full_N(int normalized, // unused
         else
             weight_scalar = 1;
 
+        cudaDeviceSynchronize();
+        gpuErrchk(cudaPeekAtLastError());
         compute_grads_full_shared_mem_N << < number_of_blocks, BLOCK_SIZE, BLOCK_SIZE * dims_embed * 2 *
                                                                            sizeof(float)>> >
 //        compute_grads_full << < number_of_blocks, BLOCK_SIZE>> >
-        (frob, normalized, d_rep_grads, d_attr_grads, d_weights_new, n_vertices, d_N_new, d_D_embed, d_Z,
-                a, b, dims_embed, d_random, sym_attraction, weight_scalar, average_weight, k);
+        (frob, normalized, d_rep_grads, d_attr_grads,
+//         d_weights_new,
+                d_weights,
+                n_vertices,
+//         d_N_new,
+                d_N, d_neighbor_ends,
+                d_D_embed, d_Z,
+                a, b, dims_embed, d_random, sym_attraction, weight_scalar, average_weight, k, negative_sample_rate);
         cudaDeviceSynchronize();
         gpuErrchk(cudaPeekAtLastError());
 
@@ -1275,7 +1297,8 @@ void gpu_umap(
         int n_vertices,
         float initial_lr,
         int n_edges,
-        int n_epochs
+        int n_epochs,
+        int negative_sample_rate
 ) {
     int k = n_edges / n_vertices;
 //    gpu_umap_2(normalized, n_vertices, head_embedding, dim, head, neighbor_counts, n_edges / n_vertices, weights,
@@ -1300,7 +1323,8 @@ void gpu_umap(
             n_vertices,
             initial_lr,
             n_epochs,
-            n_edges
+            n_edges,
+            negative_sample_rate
     );
 //    printf("head: ");
 //    for (int i = 0; i < 30; i++) {

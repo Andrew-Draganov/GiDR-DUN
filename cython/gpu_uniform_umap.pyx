@@ -30,7 +30,8 @@ cdef extern from "gpu_dim_reduction.cpp":
         int n_vertices,
         float initial_lr,
         int n_edges,
-        int n_epochs
+        int n_epochs,
+        int negative_sample_rate
     )
 
 ctypedef np.float32_t DTYPE_FLOAT
@@ -53,6 +54,7 @@ cdef uniform_umap_gpu(
     float initial_lr,
     int n_epochs,
     int n_vertices,
+    int negative_sample_rate,
     int verbose
 ):
     cdef:
@@ -83,7 +85,8 @@ cdef uniform_umap_gpu(
         n_vertices,
         initial_lr,
         n_edges,
-        n_epochs
+        n_epochs,
+        negative_sample_rate
     )
 
 
@@ -106,6 +109,7 @@ def gpu_opt_wrapper(
     float a,
     float b,
     float initial_lr,
+    int negative_sample_rate,
     int verbose=True,
     **kwargs
 ):
@@ -139,6 +143,7 @@ def gpu_opt_wrapper(
         initial_lr,
         n_epochs,
         n_vertices,
+        negative_sample_rate,
         verbose
     )
 

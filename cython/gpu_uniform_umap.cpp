@@ -1244,7 +1244,7 @@ typedef npy_int32 __pyx_t_7sklearn_9neighbors_10_quad_tree_INT32_t;
  */
 typedef npy_uint32 __pyx_t_7sklearn_9neighbors_10_quad_tree_UINT32_t;
 
-/* "cython/gpu_uniform_umap.pyx":36
+/* "cython/gpu_uniform_umap.pyx":37
  *     )
  * 
  * ctypedef np.float32_t DTYPE_FLOAT             # <<<<<<<<<<<<<<
@@ -1253,7 +1253,7 @@ typedef npy_uint32 __pyx_t_7sklearn_9neighbors_10_quad_tree_UINT32_t;
  */
 typedef __pyx_t_5numpy_float32_t __pyx_t_12optimize_gpu_DTYPE_FLOAT;
 
-/* "cython/gpu_uniform_umap.pyx":37
+/* "cython/gpu_uniform_umap.pyx":38
  * 
  * ctypedef np.float32_t DTYPE_FLOAT
  * ctypedef np.int32_t DTYPE_INT             # <<<<<<<<<<<<<<
@@ -2017,7 +2017,7 @@ static float *__pyx_vp_7sklearn_9neighbors_10_quad_tree_EPSILON = 0;
 #define __pyx_v_7sklearn_9neighbors_10_quad_tree_EPSILON (*__pyx_vp_7sklearn_9neighbors_10_quad_tree_EPSILON)
 
 /* Module declarations from 'optimize_gpu' */
-static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int, int, int, int, PyArrayObject *, PyArrayObject *, PyArrayObject *, PyArrayObject *, PyArrayObject *, PyArrayObject *, float, float, int, float, int, int, int); /*proto*/
+static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int, int, int, int, PyArrayObject *, PyArrayObject *, PyArrayObject *, PyArrayObject *, PyArrayObject *, PyArrayObject *, float, float, int, float, int, int, int, int); /*proto*/
 static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT = { "DTYPE_FLOAT", NULL, sizeof(__pyx_t_12optimize_gpu_DTYPE_FLOAT), { 0 }, 0, 'R', 0, 0 };
 static __Pyx_TypeInfo __Pyx_TypeInfo_int = { "int", NULL, sizeof(int), { 0 }, 0, IS_UNSIGNED(int) ? 'U' : 'I', IS_UNSIGNED(int), 0 };
 static __Pyx_TypeInfo __Pyx_TypeInfo_long = { "long", NULL, sizeof(long), { 0 }, 0, IS_UNSIGNED(long) ? 'U' : 'I', IS_UNSIGNED(long), 0 };
@@ -2070,6 +2070,7 @@ static const char __pyx_k_tail_embedding[] = "tail_embedding";
 static const char __pyx_k_gpu_opt_wrapper[] = "gpu_opt_wrapper";
 static const char __pyx_k_neighbor_counts[] = "neighbor_counts";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
+static const char __pyx_k_negative_sample_rate[] = "negative_sample_rate";
 static const char __pyx_k_cython_gpu_uniform_umap_pyx[] = "cython/gpu_uniform_umap.pyx";
 static const char __pyx_k_numpy_core_multiarray_failed_to[] = "numpy.core.multiarray failed to import";
 static const char __pyx_k_numpy_core_umath_failed_to_impor[] = "numpy.core.umath failed to import";
@@ -2098,6 +2099,7 @@ static PyObject *__pyx_n_s_n_edges;
 static PyObject *__pyx_n_s_n_epochs;
 static PyObject *__pyx_n_s_n_vertices;
 static PyObject *__pyx_n_s_name;
+static PyObject *__pyx_n_s_negative_sample_rate;
 static PyObject *__pyx_n_s_neighbor_counts;
 static PyObject *__pyx_n_s_normalized;
 static PyObject *__pyx_n_s_numpy;
@@ -2117,14 +2119,14 @@ static PyObject *__pyx_n_s_verbose;
 static PyObject *__pyx_n_s_weight_sum;
 static PyObject *__pyx_n_s_weights;
 static PyObject *__pyx_n_s_zeros;
-static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_amplify_grads, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, int __pyx_v_n_epochs, int __pyx_v_n_vertices, float __pyx_v_a, float __pyx_v_b, float __pyx_v_initial_lr, int __pyx_v_verbose, CYTHON_UNUSED PyObject *__pyx_v_kwargs); /* proto */
+static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_amplify_grads, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, int __pyx_v_n_epochs, int __pyx_v_n_vertices, float __pyx_v_a, float __pyx_v_b, float __pyx_v_initial_lr, int __pyx_v_negative_sample_rate, int __pyx_v_verbose, CYTHON_UNUSED PyObject *__pyx_v_kwargs); /* proto */
 static PyObject *__pyx_tuple_;
 static PyObject *__pyx_tuple__2;
 static PyObject *__pyx_tuple__3;
 static PyObject *__pyx_codeobj__4;
 /* Late includes */
 
-/* "cython/gpu_uniform_umap.pyx":39
+/* "cython/gpu_uniform_umap.pyx":40
  * ctypedef np.int32_t DTYPE_INT
  * 
  * cdef uniform_umap_gpu(             # <<<<<<<<<<<<<<
@@ -2132,7 +2134,7 @@ static PyObject *__pyx_codeobj__4;
  *     int sym_attraction,
  */
 
-static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_amplify_grads, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, float __pyx_v_a, float __pyx_v_b, int __pyx_v_dim, float __pyx_v_initial_lr, int __pyx_v_n_epochs, int __pyx_v_n_vertices, CYTHON_UNUSED int __pyx_v_verbose) {
+static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_amplify_grads, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, float __pyx_v_a, float __pyx_v_b, int __pyx_v_dim, float __pyx_v_initial_lr, int __pyx_v_n_epochs, int __pyx_v_n_vertices, int __pyx_v_negative_sample_rate, CYTHON_UNUSED int __pyx_v_verbose) {
   PyArrayObject *__pyx_v_all_updates = 0;
   PyArrayObject *__pyx_v_gains = 0;
   int __pyx_v_n_edges;
@@ -2215,52 +2217,52 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   __pyx_pybuffernd_neighbor_counts.rcbuffer = &__pyx_pybuffer_neighbor_counts;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 39, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 40, __pyx_L1_error)
   }
   __pyx_pybuffernd_head_embedding.diminfo[0].strides = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_head_embedding.diminfo[0].shape = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_head_embedding.diminfo[1].strides = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_head_embedding.diminfo[1].shape = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 39, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 40, __pyx_L1_error)
   }
   __pyx_pybuffernd_tail_embedding.diminfo[0].strides = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_tail_embedding.diminfo[0].shape = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_tail_embedding.diminfo[1].strides = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_tail_embedding.diminfo[1].shape = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_head, &__Pyx_TypeInfo_int, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 39, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_head, &__Pyx_TypeInfo_int, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 40, __pyx_L1_error)
   }
   __pyx_pybuffernd_head.diminfo[0].strides = __pyx_pybuffernd_head.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_head.diminfo[0].shape = __pyx_pybuffernd_head.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail, &__Pyx_TypeInfo_int, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 39, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail, &__Pyx_TypeInfo_int, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 40, __pyx_L1_error)
   }
   __pyx_pybuffernd_tail.diminfo[0].strides = __pyx_pybuffernd_tail.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_tail.diminfo[0].shape = __pyx_pybuffernd_tail.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_weights, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 39, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_weights, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 40, __pyx_L1_error)
   }
   __pyx_pybuffernd_weights.diminfo[0].strides = __pyx_pybuffernd_weights.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_weights.diminfo[0].shape = __pyx_pybuffernd_weights.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer, (PyObject*)__pyx_v_neighbor_counts, &__Pyx_TypeInfo_long, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 39, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer, (PyObject*)__pyx_v_neighbor_counts, &__Pyx_TypeInfo_long, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 40, __pyx_L1_error)
   }
   __pyx_pybuffernd_neighbor_counts.diminfo[0].strides = __pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_neighbor_counts.diminfo[0].shape = __pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer.shape[0];
 
-  /* "cython/gpu_uniform_umap.pyx":63
+  /* "cython/gpu_uniform_umap.pyx":65
  *         np.ndarray[DTYPE_FLOAT, ndim=2] gains
  * 
  *     all_updates = py_np.zeros([n_vertices, dim], dtype=py_np.float32, order='c')             # <<<<<<<<<<<<<<
  *     gains = py_np.ones([n_vertices, dim], dtype=py_np.float32, order='c')
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = PyList_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_4 = PyList_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_1);
   PyList_SET_ITEM(__pyx_t_4, 0, __pyx_t_1);
@@ -2268,27 +2270,27 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   PyList_SET_ITEM(__pyx_t_4, 1, __pyx_t_3);
   __pyx_t_1 = 0;
   __pyx_t_3 = 0;
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4);
   __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float32); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float32); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 63, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_order, __pyx_n_s_c) < 0) __PYX_ERR(0, 63, __pyx_L1_error)
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 63, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_order, __pyx_n_s_c) < 0) __PYX_ERR(0, 65, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 63, __pyx_L1_error)
+  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 65, __pyx_L1_error)
   __pyx_t_6 = ((PyArrayObject *)__pyx_t_5);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -2305,29 +2307,29 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
       __pyx_t_8 = __pyx_t_9 = __pyx_t_10 = 0;
     }
     __pyx_pybuffernd_all_updates.diminfo[0].strides = __pyx_pybuffernd_all_updates.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_all_updates.diminfo[0].shape = __pyx_pybuffernd_all_updates.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_all_updates.diminfo[1].strides = __pyx_pybuffernd_all_updates.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_all_updates.diminfo[1].shape = __pyx_pybuffernd_all_updates.rcbuffer->pybuffer.shape[1];
-    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 63, __pyx_L1_error)
+    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 65, __pyx_L1_error)
   }
   __pyx_t_6 = 0;
   __pyx_v_all_updates = ((PyArrayObject *)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "cython/gpu_uniform_umap.pyx":64
+  /* "cython/gpu_uniform_umap.pyx":66
  * 
  *     all_updates = py_np.zeros([n_vertices, dim], dtype=py_np.float32, order='c')
  *     gains = py_np.ones([n_vertices, dim], dtype=py_np.float32, order='c')             # <<<<<<<<<<<<<<
  * 
  *     cdef int n_edges = int(weights.shape[0])
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_py_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_py_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_ones); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_ones); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_2 = PyList_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_t_2 = PyList_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_GIVEREF(__pyx_t_5);
   PyList_SET_ITEM(__pyx_t_2, 0, __pyx_t_5);
@@ -2335,27 +2337,27 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   PyList_SET_ITEM(__pyx_t_2, 1, __pyx_t_3);
   __pyx_t_5 = 0;
   __pyx_t_3 = 0;
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_2);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_2);
   __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_py_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_py_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float32); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float32); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 64, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_order, __pyx_n_s_c) < 0) __PYX_ERR(0, 64, __pyx_L1_error)
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_order, __pyx_n_s_c) < 0) __PYX_ERR(0, 66, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 64, __pyx_L1_error)
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 66, __pyx_L1_error)
   __pyx_t_11 = ((PyArrayObject *)__pyx_t_1);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -2372,13 +2374,13 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
       __pyx_t_10 = __pyx_t_9 = __pyx_t_8 = 0;
     }
     __pyx_pybuffernd_gains.diminfo[0].strides = __pyx_pybuffernd_gains.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_gains.diminfo[0].shape = __pyx_pybuffernd_gains.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_gains.diminfo[1].strides = __pyx_pybuffernd_gains.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_gains.diminfo[1].shape = __pyx_pybuffernd_gains.rcbuffer->pybuffer.shape[1];
-    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 64, __pyx_L1_error)
+    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 66, __pyx_L1_error)
   }
   __pyx_t_11 = 0;
   __pyx_v_gains = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "cython/gpu_uniform_umap.pyx":66
+  /* "cython/gpu_uniform_umap.pyx":68
  *     gains = py_np.ones([n_vertices, dim], dtype=py_np.float32, order='c')
  * 
  *     cdef int n_edges = int(weights.shape[0])             # <<<<<<<<<<<<<<
@@ -2387,7 +2389,7 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
  */
   __pyx_v_n_edges = ((int)(__pyx_v_weights->dimensions[0]));
 
-  /* "cython/gpu_uniform_umap.pyx":72
+  /* "cython/gpu_uniform_umap.pyx":74
  *         frob,
  *         amplify_grads,
  *         &head_embedding[0, 0], # Move from numpy to c pointer arrays             # <<<<<<<<<<<<<<
@@ -2407,10 +2409,10 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_13 >= __pyx_pybuffernd_head_embedding.diminfo[1].shape)) __pyx_t_7 = 1;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 72, __pyx_L1_error)
+    __PYX_ERR(0, 74, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":73
+  /* "cython/gpu_uniform_umap.pyx":75
  *         amplify_grads,
  *         &head_embedding[0, 0], # Move from numpy to c pointer arrays
  *         &tail_embedding[0, 0],             # <<<<<<<<<<<<<<
@@ -2430,10 +2432,10 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_15 >= __pyx_pybuffernd_tail_embedding.diminfo[1].shape)) __pyx_t_7 = 1;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 73, __pyx_L1_error)
+    __PYX_ERR(0, 75, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":74
+  /* "cython/gpu_uniform_umap.pyx":76
  *         &head_embedding[0, 0], # Move from numpy to c pointer arrays
  *         &tail_embedding[0, 0],
  *         &head[0],             # <<<<<<<<<<<<<<
@@ -2448,10 +2450,10 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_16 >= __pyx_pybuffernd_head.diminfo[0].shape)) __pyx_t_7 = 0;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 74, __pyx_L1_error)
+    __PYX_ERR(0, 76, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":75
+  /* "cython/gpu_uniform_umap.pyx":77
  *         &tail_embedding[0, 0],
  *         &head[0],
  *         &tail[0],             # <<<<<<<<<<<<<<
@@ -2466,10 +2468,10 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_17 >= __pyx_pybuffernd_tail.diminfo[0].shape)) __pyx_t_7 = 0;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 75, __pyx_L1_error)
+    __PYX_ERR(0, 77, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":76
+  /* "cython/gpu_uniform_umap.pyx":78
  *         &head[0],
  *         &tail[0],
  *         &weights[0],             # <<<<<<<<<<<<<<
@@ -2484,10 +2486,10 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_18 >= __pyx_pybuffernd_weights.diminfo[0].shape)) __pyx_t_7 = 0;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 76, __pyx_L1_error)
+    __PYX_ERR(0, 78, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":77
+  /* "cython/gpu_uniform_umap.pyx":79
  *         &tail[0],
  *         &weights[0],
  *         &neighbor_counts[0],             # <<<<<<<<<<<<<<
@@ -2502,10 +2504,10 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_19 >= __pyx_pybuffernd_neighbor_counts.diminfo[0].shape)) __pyx_t_7 = 0;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 77, __pyx_L1_error)
+    __PYX_ERR(0, 79, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":78
+  /* "cython/gpu_uniform_umap.pyx":80
  *         &weights[0],
  *         &neighbor_counts[0],
  *         &all_updates[0, 0],             # <<<<<<<<<<<<<<
@@ -2525,10 +2527,10 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_21 >= __pyx_pybuffernd_all_updates.diminfo[1].shape)) __pyx_t_7 = 1;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 78, __pyx_L1_error)
+    __PYX_ERR(0, 80, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":79
+  /* "cython/gpu_uniform_umap.pyx":81
  *         &neighbor_counts[0],
  *         &all_updates[0, 0],
  *         &gains[0, 0],             # <<<<<<<<<<<<<<
@@ -2548,19 +2550,19 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_23 >= __pyx_pybuffernd_gains.diminfo[1].shape)) __pyx_t_7 = 1;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 79, __pyx_L1_error)
+    __PYX_ERR(0, 81, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":67
+  /* "cython/gpu_uniform_umap.pyx":69
  * 
  *     cdef int n_edges = int(weights.shape[0])
  *     gpu_umap_wrap(             # <<<<<<<<<<<<<<
  *         normalized,
  *         sym_attraction,
  */
-  gpu_umap_wrap(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_amplify_grads, (&(*__Pyx_BufPtrCContig2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_head_embedding.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_head_embedding.diminfo[1].strides))), (&(*__Pyx_BufPtrCContig2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_tail_embedding.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_tail_embedding.diminfo[1].strides))), (&(*__Pyx_BufPtrCContig1d(int *, __pyx_pybuffernd_head.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_head.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(int *, __pyx_pybuffernd_tail.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_tail.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_weights.rcbuffer->pybuffer.buf, __pyx_t_18, __pyx_pybuffernd_weights.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(long *, __pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_neighbor_counts.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_all_updates.rcbuffer->pybuffer.buf, __pyx_t_20, __pyx_pybuffernd_all_updates.diminfo[0].strides, __pyx_t_21, __pyx_pybuffernd_all_updates.diminfo[1].strides))), (&(*__Pyx_BufPtrStrided2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_gains.rcbuffer->pybuffer.buf, __pyx_t_22, __pyx_pybuffernd_gains.diminfo[0].strides, __pyx_t_23, __pyx_pybuffernd_gains.diminfo[1].strides))), __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_n_vertices, __pyx_v_initial_lr, __pyx_v_n_edges, __pyx_v_n_epochs);
+  gpu_umap_wrap(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_amplify_grads, (&(*__Pyx_BufPtrCContig2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_head_embedding.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_head_embedding.diminfo[1].strides))), (&(*__Pyx_BufPtrCContig2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_tail_embedding.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_tail_embedding.diminfo[1].strides))), (&(*__Pyx_BufPtrCContig1d(int *, __pyx_pybuffernd_head.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_head.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(int *, __pyx_pybuffernd_tail.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_tail.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_weights.rcbuffer->pybuffer.buf, __pyx_t_18, __pyx_pybuffernd_weights.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(long *, __pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_neighbor_counts.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_all_updates.rcbuffer->pybuffer.buf, __pyx_t_20, __pyx_pybuffernd_all_updates.diminfo[0].strides, __pyx_t_21, __pyx_pybuffernd_all_updates.diminfo[1].strides))), (&(*__Pyx_BufPtrStrided2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_gains.rcbuffer->pybuffer.buf, __pyx_t_22, __pyx_pybuffernd_gains.diminfo[0].strides, __pyx_t_23, __pyx_pybuffernd_gains.diminfo[1].strides))), __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_n_vertices, __pyx_v_initial_lr, __pyx_v_n_edges, __pyx_v_n_epochs, __pyx_v_negative_sample_rate);
 
-  /* "cython/gpu_uniform_umap.pyx":39
+  /* "cython/gpu_uniform_umap.pyx":40
  * ctypedef np.int32_t DTYPE_INT
  * 
  * cdef uniform_umap_gpu(             # <<<<<<<<<<<<<<
@@ -2610,7 +2612,7 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   return __pyx_r;
 }
 
-/* "cython/gpu_uniform_umap.pyx":93
+/* "cython/gpu_uniform_umap.pyx":96
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def gpu_opt_wrapper(             # <<<<<<<<<<<<<<
@@ -2637,6 +2639,7 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
   float __pyx_v_a;
   float __pyx_v_b;
   float __pyx_v_initial_lr;
+  int __pyx_v_negative_sample_rate;
   int __pyx_v_verbose;
   CYTHON_UNUSED PyObject *__pyx_v_kwargs = 0;
   int __pyx_lineno = 0;
@@ -2648,12 +2651,14 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
   __pyx_v_kwargs = PyDict_New(); if (unlikely(!__pyx_v_kwargs)) return NULL;
   __Pyx_GOTREF(__pyx_v_kwargs);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_normalized,&__pyx_n_s_sym_attraction,&__pyx_n_s_frob,&__pyx_n_s_amplify_grads,&__pyx_n_s_head,&__pyx_n_s_tail,&__pyx_n_s_head_embedding,&__pyx_n_s_tail_embedding,&__pyx_n_s_weights,&__pyx_n_s_neighbor_counts,&__pyx_n_s_n_epochs,&__pyx_n_s_n_vertices,&__pyx_n_s_a,&__pyx_n_s_b,&__pyx_n_s_initial_lr,&__pyx_n_s_verbose,0};
-    PyObject* values[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_normalized,&__pyx_n_s_sym_attraction,&__pyx_n_s_frob,&__pyx_n_s_amplify_grads,&__pyx_n_s_head,&__pyx_n_s_tail,&__pyx_n_s_head_embedding,&__pyx_n_s_tail_embedding,&__pyx_n_s_weights,&__pyx_n_s_neighbor_counts,&__pyx_n_s_n_epochs,&__pyx_n_s_n_vertices,&__pyx_n_s_a,&__pyx_n_s_b,&__pyx_n_s_initial_lr,&__pyx_n_s_negative_sample_rate,&__pyx_n_s_verbose,0};
+    PyObject* values[17] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case 17: values[16] = PyTuple_GET_ITEM(__pyx_args, 16);
+        CYTHON_FALLTHROUGH;
         case 16: values[15] = PyTuple_GET_ITEM(__pyx_args, 15);
         CYTHON_FALLTHROUGH;
         case 15: values[14] = PyTuple_GET_ITEM(__pyx_args, 14);
@@ -2698,101 +2703,108 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_sym_attraction)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 1); __PYX_ERR(0, 93, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 1); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_frob)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 2); __PYX_ERR(0, 93, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 2); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_amplify_grads)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 3); __PYX_ERR(0, 93, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 3); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 4); __PYX_ERR(0, 93, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 4); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 5); __PYX_ERR(0, 93, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 5); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 6); __PYX_ERR(0, 93, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 6); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  7:
         if (likely((values[7] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 7); __PYX_ERR(0, 93, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 7); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  8:
         if (likely((values[8] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_weights)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 8); __PYX_ERR(0, 93, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 8); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  9:
         if (likely((values[9] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_neighbor_counts)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 9); __PYX_ERR(0, 93, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 9); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 10:
         if (likely((values[10] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_epochs)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 10); __PYX_ERR(0, 93, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 10); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 11:
         if (likely((values[11] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_vertices)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 11); __PYX_ERR(0, 93, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 11); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 12:
         if (likely((values[12] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_a)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 12); __PYX_ERR(0, 93, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 12); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 13:
         if (likely((values[13] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_b)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 13); __PYX_ERR(0, 93, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 13); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 14:
         if (likely((values[14] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_initial_lr)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 14); __PYX_ERR(0, 93, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 14); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 15:
+        if (likely((values[15] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_negative_sample_rate)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 15); __PYX_ERR(0, 96, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case 16:
         if (kw_args > 0) {
           PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_verbose);
-          if (value) { values[15] = value; kw_args--; }
+          if (value) { values[16] = value; kw_args--; }
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, pos_args, "gpu_opt_wrapper") < 0)) __PYX_ERR(0, 93, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, pos_args, "gpu_opt_wrapper") < 0)) __PYX_ERR(0, 96, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
-        case 16: values[15] = PyTuple_GET_ITEM(__pyx_args, 15);
+        case 17: values[16] = PyTuple_GET_ITEM(__pyx_args, 16);
         CYTHON_FALLTHROUGH;
-        case 15: values[14] = PyTuple_GET_ITEM(__pyx_args, 14);
+        case 16: values[15] = PyTuple_GET_ITEM(__pyx_args, 15);
+        values[14] = PyTuple_GET_ITEM(__pyx_args, 14);
         values[13] = PyTuple_GET_ITEM(__pyx_args, 13);
         values[12] = PyTuple_GET_ITEM(__pyx_args, 12);
         values[11] = PyTuple_GET_ITEM(__pyx_args, 11);
@@ -2811,28 +2823,29 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
         default: goto __pyx_L5_argtuple_error;
       }
     }
-    __pyx_v_normalized = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 94, __pyx_L3_error)
-    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 95, __pyx_L3_error)
-    __pyx_v_frob = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_frob == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 96, __pyx_L3_error)
-    __pyx_v_amplify_grads = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_amplify_grads == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 97, __pyx_L3_error)
+    __pyx_v_normalized = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 97, __pyx_L3_error)
+    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 98, __pyx_L3_error)
+    __pyx_v_frob = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_frob == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 99, __pyx_L3_error)
+    __pyx_v_amplify_grads = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_amplify_grads == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L3_error)
     __pyx_v_head = ((PyArrayObject *)values[4]);
     __pyx_v_tail = ((PyArrayObject *)values[5]);
     __pyx_v_head_embedding = ((PyArrayObject *)values[6]);
     __pyx_v_tail_embedding = ((PyArrayObject *)values[7]);
     __pyx_v_weights = ((PyArrayObject *)values[8]);
     __pyx_v_neighbor_counts = ((PyArrayObject *)values[9]);
-    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[10]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 104, __pyx_L3_error)
-    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[11]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 105, __pyx_L3_error)
-    __pyx_v_a = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 106, __pyx_L3_error)
-    __pyx_v_b = __pyx_PyFloat_AsFloat(values[13]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 107, __pyx_L3_error)
-    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 108, __pyx_L3_error)
-    if (values[15]) {
-      __pyx_v_verbose = __Pyx_PyInt_As_int(values[15]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 109, __pyx_L3_error)
+    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[10]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 107, __pyx_L3_error)
+    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[11]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 108, __pyx_L3_error)
+    __pyx_v_a = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 109, __pyx_L3_error)
+    __pyx_v_b = __pyx_PyFloat_AsFloat(values[13]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 110, __pyx_L3_error)
+    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 111, __pyx_L3_error)
+    __pyx_v_negative_sample_rate = __Pyx_PyInt_As_int(values[15]); if (unlikely((__pyx_v_negative_sample_rate == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 112, __pyx_L3_error)
+    if (values[16]) {
+      __pyx_v_verbose = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 113, __pyx_L3_error)
     } else {
 
-      /* "cython/gpu_uniform_umap.pyx":109
- *     float b,
+      /* "cython/gpu_uniform_umap.pyx":113
  *     float initial_lr,
+ *     int negative_sample_rate,
  *     int verbose=True,             # <<<<<<<<<<<<<<
  *     **kwargs
  * ):
@@ -2842,22 +2855,22 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 93, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 96, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
   __Pyx_AddTraceback("optimize_gpu.gpu_opt_wrapper", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head), __pyx_ptype_5numpy_ndarray, 1, "head", 0))) __PYX_ERR(0, 98, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail), __pyx_ptype_5numpy_ndarray, 1, "tail", 0))) __PYX_ERR(0, 99, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head_embedding), __pyx_ptype_5numpy_ndarray, 1, "head_embedding", 0))) __PYX_ERR(0, 100, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail_embedding), __pyx_ptype_5numpy_ndarray, 1, "tail_embedding", 0))) __PYX_ERR(0, 101, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_weights), __pyx_ptype_5numpy_ndarray, 1, "weights", 0))) __PYX_ERR(0, 102, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_neighbor_counts), __pyx_ptype_5numpy_ndarray, 1, "neighbor_counts", 0))) __PYX_ERR(0, 103, __pyx_L1_error)
-  __pyx_r = __pyx_pf_12optimize_gpu_gpu_opt_wrapper(__pyx_self, __pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_amplify_grads, __pyx_v_head, __pyx_v_tail, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_weights, __pyx_v_neighbor_counts, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_a, __pyx_v_b, __pyx_v_initial_lr, __pyx_v_verbose, __pyx_v_kwargs);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head), __pyx_ptype_5numpy_ndarray, 1, "head", 0))) __PYX_ERR(0, 101, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail), __pyx_ptype_5numpy_ndarray, 1, "tail", 0))) __PYX_ERR(0, 102, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head_embedding), __pyx_ptype_5numpy_ndarray, 1, "head_embedding", 0))) __PYX_ERR(0, 103, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail_embedding), __pyx_ptype_5numpy_ndarray, 1, "tail_embedding", 0))) __PYX_ERR(0, 104, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_weights), __pyx_ptype_5numpy_ndarray, 1, "weights", 0))) __PYX_ERR(0, 105, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_neighbor_counts), __pyx_ptype_5numpy_ndarray, 1, "neighbor_counts", 0))) __PYX_ERR(0, 106, __pyx_L1_error)
+  __pyx_r = __pyx_pf_12optimize_gpu_gpu_opt_wrapper(__pyx_self, __pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_amplify_grads, __pyx_v_head, __pyx_v_tail, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_weights, __pyx_v_neighbor_counts, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_a, __pyx_v_b, __pyx_v_initial_lr, __pyx_v_negative_sample_rate, __pyx_v_verbose, __pyx_v_kwargs);
 
-  /* "cython/gpu_uniform_umap.pyx":93
+  /* "cython/gpu_uniform_umap.pyx":96
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def gpu_opt_wrapper(             # <<<<<<<<<<<<<<
@@ -2875,7 +2888,7 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_amplify_grads, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, int __pyx_v_n_epochs, int __pyx_v_n_vertices, float __pyx_v_a, float __pyx_v_b, float __pyx_v_initial_lr, int __pyx_v_verbose, CYTHON_UNUSED PyObject *__pyx_v_kwargs) {
+static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_amplify_grads, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, int __pyx_v_n_epochs, int __pyx_v_n_vertices, float __pyx_v_a, float __pyx_v_b, float __pyx_v_initial_lr, int __pyx_v_negative_sample_rate, int __pyx_v_verbose, CYTHON_UNUSED PyObject *__pyx_v_kwargs) {
   int __pyx_v_dim;
   float __pyx_v_weight_sum;
   npy_intp __pyx_v_i;
@@ -2931,36 +2944,36 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
   __pyx_pybuffernd_neighbor_counts.rcbuffer = &__pyx_pybuffer_neighbor_counts;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_head, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_INT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 93, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_head, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_INT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 96, __pyx_L1_error)
   }
   __pyx_pybuffernd_head.diminfo[0].strides = __pyx_pybuffernd_head.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_head.diminfo[0].shape = __pyx_pybuffernd_head.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_INT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 93, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_INT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 96, __pyx_L1_error)
   }
   __pyx_pybuffernd_tail.diminfo[0].strides = __pyx_pybuffernd_tail.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_tail.diminfo[0].shape = __pyx_pybuffernd_tail.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 93, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 96, __pyx_L1_error)
   }
   __pyx_pybuffernd_head_embedding.diminfo[0].strides = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_head_embedding.diminfo[0].shape = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_head_embedding.diminfo[1].strides = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_head_embedding.diminfo[1].shape = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 93, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 96, __pyx_L1_error)
   }
   __pyx_pybuffernd_tail_embedding.diminfo[0].strides = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_tail_embedding.diminfo[0].shape = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_tail_embedding.diminfo[1].strides = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_tail_embedding.diminfo[1].shape = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_weights, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 93, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_weights, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 96, __pyx_L1_error)
   }
   __pyx_pybuffernd_weights.diminfo[0].strides = __pyx_pybuffernd_weights.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_weights.diminfo[0].shape = __pyx_pybuffernd_weights.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer, (PyObject*)__pyx_v_neighbor_counts, &__Pyx_TypeInfo_long, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 93, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer, (PyObject*)__pyx_v_neighbor_counts, &__Pyx_TypeInfo_long, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 96, __pyx_L1_error)
   }
   __pyx_pybuffernd_neighbor_counts.diminfo[0].strides = __pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_neighbor_counts.diminfo[0].shape = __pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer.shape[0];
 
-  /* "cython/gpu_uniform_umap.pyx":114
+  /* "cython/gpu_uniform_umap.pyx":118
  *     cdef:
  *         int i_epoch, n_edges
  *         cdef int dim = head_embedding.shape[1]             # <<<<<<<<<<<<<<
@@ -2969,7 +2982,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
  */
   __pyx_v_dim = (__pyx_v_head_embedding->dimensions[1]);
 
-  /* "cython/gpu_uniform_umap.pyx":117
+  /* "cython/gpu_uniform_umap.pyx":121
  * 
  *     # Perform weight scaling on high-dimensional relationships
  *     cdef float weight_sum = 0.0             # <<<<<<<<<<<<<<
@@ -2978,7 +2991,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
  */
   __pyx_v_weight_sum = 0.0;
 
-  /* "cython/gpu_uniform_umap.pyx":118
+  /* "cython/gpu_uniform_umap.pyx":122
  *     # Perform weight scaling on high-dimensional relationships
  *     cdef float weight_sum = 0.0
  *     if normalized:             # <<<<<<<<<<<<<<
@@ -2988,7 +3001,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
   __pyx_t_1 = (__pyx_v_normalized != 0);
   if (__pyx_t_1) {
 
-    /* "cython/gpu_uniform_umap.pyx":119
+    /* "cython/gpu_uniform_umap.pyx":123
  *     cdef float weight_sum = 0.0
  *     if normalized:
  *         for i in range(weights.shape[0]):             # <<<<<<<<<<<<<<
@@ -3000,7 +3013,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
     for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
       __pyx_v_i = __pyx_t_4;
 
-      /* "cython/gpu_uniform_umap.pyx":120
+      /* "cython/gpu_uniform_umap.pyx":124
  *     if normalized:
  *         for i in range(weights.shape[0]):
  *             weight_sum += weights[i]             # <<<<<<<<<<<<<<
@@ -3011,7 +3024,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
       __pyx_v_weight_sum = (__pyx_v_weight_sum + (*__Pyx_BufPtrCContig1d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_weights.rcbuffer->pybuffer.buf, __pyx_t_5, __pyx_pybuffernd_weights.diminfo[0].strides)));
     }
 
-    /* "cython/gpu_uniform_umap.pyx":121
+    /* "cython/gpu_uniform_umap.pyx":125
  *         for i in range(weights.shape[0]):
  *             weight_sum += weights[i]
  *         for i in range(weights.shape[0]):             # <<<<<<<<<<<<<<
@@ -3023,7 +3036,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
     for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
       __pyx_v_i = __pyx_t_4;
 
-      /* "cython/gpu_uniform_umap.pyx":122
+      /* "cython/gpu_uniform_umap.pyx":126
  *             weight_sum += weights[i]
  *         for i in range(weights.shape[0]):
  *             weights[i] /= weight_sum             # <<<<<<<<<<<<<<
@@ -3034,7 +3047,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
       *__Pyx_BufPtrCContig1d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_weights.rcbuffer->pybuffer.buf, __pyx_t_5, __pyx_pybuffernd_weights.diminfo[0].strides) /= __pyx_v_weight_sum;
     }
 
-    /* "cython/gpu_uniform_umap.pyx":123
+    /* "cython/gpu_uniform_umap.pyx":127
  *         for i in range(weights.shape[0]):
  *             weights[i] /= weight_sum
  *         initial_lr *= 200             # <<<<<<<<<<<<<<
@@ -3043,7 +3056,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
  */
     __pyx_v_initial_lr = (__pyx_v_initial_lr * 200.0);
 
-    /* "cython/gpu_uniform_umap.pyx":118
+    /* "cython/gpu_uniform_umap.pyx":122
  *     # Perform weight scaling on high-dimensional relationships
  *     cdef float weight_sum = 0.0
  *     if normalized:             # <<<<<<<<<<<<<<
@@ -3052,26 +3065,26 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
  */
   }
 
-  /* "cython/gpu_uniform_umap.pyx":125
+  /* "cython/gpu_uniform_umap.pyx":129
  *         initial_lr *= 200
  * 
  *     uniform_umap_gpu(             # <<<<<<<<<<<<<<
  *         normalized,
  *         sym_attraction,
  */
-  __pyx_t_6 = __pyx_f_12optimize_gpu_uniform_umap_gpu(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_amplify_grads, ((PyArrayObject *)__pyx_v_head_embedding), ((PyArrayObject *)__pyx_v_tail_embedding), ((PyArrayObject *)__pyx_v_head), ((PyArrayObject *)__pyx_v_tail), ((PyArrayObject *)__pyx_v_weights), ((PyArrayObject *)__pyx_v_neighbor_counts), __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_initial_lr, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_verbose); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 125, __pyx_L1_error)
+  __pyx_t_6 = __pyx_f_12optimize_gpu_uniform_umap_gpu(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_amplify_grads, ((PyArrayObject *)__pyx_v_head_embedding), ((PyArrayObject *)__pyx_v_tail_embedding), ((PyArrayObject *)__pyx_v_head), ((PyArrayObject *)__pyx_v_tail), ((PyArrayObject *)__pyx_v_weights), ((PyArrayObject *)__pyx_v_neighbor_counts), __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_initial_lr, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_negative_sample_rate, __pyx_v_verbose); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 129, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-  /* "cython/gpu_uniform_umap.pyx":145
+  /* "cython/gpu_uniform_umap.pyx":150
  *     )
  * 
  *     return py_np.asarray(head_embedding)             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_py_np); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_py_np); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_asarray); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_asarray); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __pyx_t_7 = NULL;
@@ -3086,14 +3099,14 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
   }
   __pyx_t_6 = (__pyx_t_7) ? __Pyx_PyObject_Call2Args(__pyx_t_8, __pyx_t_7, ((PyObject *)__pyx_v_head_embedding)) : __Pyx_PyObject_CallOneArg(__pyx_t_8, ((PyObject *)__pyx_v_head_embedding));
   __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-  if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 145, __pyx_L1_error)
+  if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   __pyx_r = __pyx_t_6;
   __pyx_t_6 = 0;
   goto __pyx_L0;
 
-  /* "cython/gpu_uniform_umap.pyx":93
+  /* "cython/gpu_uniform_umap.pyx":96
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def gpu_opt_wrapper(             # <<<<<<<<<<<<<<
@@ -4221,6 +4234,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_n_epochs, __pyx_k_n_epochs, sizeof(__pyx_k_n_epochs), 0, 0, 1, 1},
   {&__pyx_n_s_n_vertices, __pyx_k_n_vertices, sizeof(__pyx_k_n_vertices), 0, 0, 1, 1},
   {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
+  {&__pyx_n_s_negative_sample_rate, __pyx_k_negative_sample_rate, sizeof(__pyx_k_negative_sample_rate), 0, 0, 1, 1},
   {&__pyx_n_s_neighbor_counts, __pyx_k_neighbor_counts, sizeof(__pyx_k_neighbor_counts), 0, 0, 1, 1},
   {&__pyx_n_s_normalized, __pyx_k_normalized, sizeof(__pyx_k_normalized), 0, 0, 1, 1},
   {&__pyx_n_s_numpy, __pyx_k_numpy, sizeof(__pyx_k_numpy), 0, 0, 1, 1},
@@ -4243,7 +4257,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 119, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 123, __pyx_L1_error)
   __pyx_builtin_ImportError = __Pyx_GetBuiltinName(__pyx_n_s_ImportError); if (!__pyx_builtin_ImportError) __PYX_ERR(1, 945, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
@@ -4276,17 +4290,17 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "cython/gpu_uniform_umap.pyx":93
+  /* "cython/gpu_uniform_umap.pyx":96
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def gpu_opt_wrapper(             # <<<<<<<<<<<<<<
  *     int normalized,
  *     int sym_attraction,
  */
-  __pyx_tuple__3 = PyTuple_Pack(22, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_frob, __pyx_n_s_amplify_grads, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_weights, __pyx_n_s_neighbor_counts, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_initial_lr, __pyx_n_s_verbose, __pyx_n_s_kwargs, __pyx_n_s_i_epoch, __pyx_n_s_n_edges, __pyx_n_s_dim, __pyx_n_s_weight_sum, __pyx_n_s_i); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 93, __pyx_L1_error)
+  __pyx_tuple__3 = PyTuple_Pack(23, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_frob, __pyx_n_s_amplify_grads, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_weights, __pyx_n_s_neighbor_counts, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_verbose, __pyx_n_s_kwargs, __pyx_n_s_i_epoch, __pyx_n_s_n_edges, __pyx_n_s_dim, __pyx_n_s_weight_sum, __pyx_n_s_i); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
-  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(16, 0, 22, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARKEYWORDS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cython_gpu_uniform_umap_pyx, __pyx_n_s_gpu_opt_wrapper, 93, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 93, __pyx_L1_error)
+  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(17, 0, 23, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARKEYWORDS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cython_gpu_uniform_umap_pyx, __pyx_n_s_gpu_opt_wrapper, 96, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -4662,16 +4676,16 @@ if (!__Pyx_RefNanny) {
  */
   __pyx_t_2 = __pyx_f_5numpy_import_array(); if (unlikely(__pyx_t_2 == ((int)-1))) __PYX_ERR(0, 11, __pyx_L1_error)
 
-  /* "cython/gpu_uniform_umap.pyx":93
+  /* "cython/gpu_uniform_umap.pyx":96
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def gpu_opt_wrapper(             # <<<<<<<<<<<<<<
  *     int normalized,
  *     int sym_attraction,
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12optimize_gpu_1gpu_opt_wrapper, NULL, __pyx_n_s_optimize_gpu); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 93, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12optimize_gpu_1gpu_opt_wrapper, NULL, __pyx_n_s_optimize_gpu); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_gpu_opt_wrapper, __pyx_t_1) < 0) __PYX_ERR(0, 93, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_gpu_opt_wrapper, __pyx_t_1) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "cython/gpu_uniform_umap.pyx":1

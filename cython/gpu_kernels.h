@@ -32,6 +32,7 @@ extern "C++" void gpu_umap(
         int n_vertices,
         float initial_lr,
         int n_edges,
-        int n_epochs
+        int n_epochs,
+        int negative_sample_rate
 );
 #endif

@@ -39,7 +39,8 @@ void gpu_umap_wrap(
         int n_vertices,
         float initial_lr,
         int n_edges,
-        int n_epochs
+        int n_epochs,
+        int negative_sample_rate
 ) {
     gpu_umap(
             normalized,
@@ -60,6 +61,7 @@ void gpu_umap_wrap(
             n_vertices,
             initial_lr,
             n_edges,
-            n_epochs
+            n_epochs,
+            negative_sample_rate
     );
 }
