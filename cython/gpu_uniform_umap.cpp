@@ -2055,7 +2055,6 @@ static const char __pyx_k_i_epoch[] = "i_epoch";
 static const char __pyx_k_n_edges[] = "n_edges";
 static const char __pyx_k_verbose[] = "verbose";
 static const char __pyx_k_weights[] = "weights";
-static const char __pyx_k_momentum[] = "momentum";
 static const char __pyx_k_n_epochs[] = "n_epochs";
 static const char __pyx_k_initial_lr[] = "initial_lr";
 static const char __pyx_k_n_vertices[] = "n_vertices";
@@ -2064,6 +2063,7 @@ static const char __pyx_k_pyx_vtable[] = "__pyx_vtable__";
 static const char __pyx_k_weight_sum[] = "weight_sum";
 static const char __pyx_k_ImportError[] = "ImportError";
 static const char __pyx_k_optimize_gpu[] = "optimize_gpu";
+static const char __pyx_k_amplify_grads[] = "amplify_grads";
 static const char __pyx_k_head_embedding[] = "head_embedding";
 static const char __pyx_k_sym_attraction[] = "sym_attraction";
 static const char __pyx_k_tail_embedding[] = "tail_embedding";
@@ -2075,6 +2075,7 @@ static const char __pyx_k_numpy_core_multiarray_failed_to[] = "numpy.core.multia
 static const char __pyx_k_numpy_core_umath_failed_to_impor[] = "numpy.core.umath failed to import";
 static PyObject *__pyx_n_s_ImportError;
 static PyObject *__pyx_n_s_a;
+static PyObject *__pyx_n_s_amplify_grads;
 static PyObject *__pyx_n_s_asarray;
 static PyObject *__pyx_n_s_b;
 static PyObject *__pyx_n_s_c;
@@ -2093,7 +2094,6 @@ static PyObject *__pyx_n_s_import;
 static PyObject *__pyx_n_s_initial_lr;
 static PyObject *__pyx_n_s_kwargs;
 static PyObject *__pyx_n_s_main;
-static PyObject *__pyx_n_s_momentum;
 static PyObject *__pyx_n_s_n_edges;
 static PyObject *__pyx_n_s_n_epochs;
 static PyObject *__pyx_n_s_n_vertices;
@@ -2117,7 +2117,7 @@ static PyObject *__pyx_n_s_verbose;
 static PyObject *__pyx_n_s_weight_sum;
 static PyObject *__pyx_n_s_weights;
 static PyObject *__pyx_n_s_zeros;
-static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_momentum, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, int __pyx_v_n_epochs, int __pyx_v_n_vertices, float __pyx_v_a, float __pyx_v_b, float __pyx_v_initial_lr, int __pyx_v_verbose, CYTHON_UNUSED PyObject *__pyx_v_kwargs); /* proto */
+static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_amplify_grads, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, int __pyx_v_n_epochs, int __pyx_v_n_vertices, float __pyx_v_a, float __pyx_v_b, float __pyx_v_initial_lr, int __pyx_v_verbose, CYTHON_UNUSED PyObject *__pyx_v_kwargs); /* proto */
 static PyObject *__pyx_tuple_;
 static PyObject *__pyx_tuple__2;
 static PyObject *__pyx_tuple__3;
@@ -2132,7 +2132,7 @@ static PyObject *__pyx_codeobj__4;
  *     int sym_attraction,
  */
 
-static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_momentum, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, float __pyx_v_a, float __pyx_v_b, int __pyx_v_dim, float __pyx_v_initial_lr, int __pyx_v_n_epochs, int __pyx_v_n_vertices, CYTHON_UNUSED int __pyx_v_verbose) {
+static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_amplify_grads, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, float __pyx_v_a, float __pyx_v_b, int __pyx_v_dim, float __pyx_v_initial_lr, int __pyx_v_n_epochs, int __pyx_v_n_vertices, CYTHON_UNUSED int __pyx_v_verbose) {
   PyArrayObject *__pyx_v_all_updates = 0;
   PyArrayObject *__pyx_v_gains = 0;
   int __pyx_v_n_edges;
@@ -2389,7 +2389,7 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
 
   /* "cython/gpu_uniform_umap.pyx":72
  *         frob,
- *         momentum,
+ *         amplify_grads,
  *         &head_embedding[0, 0], # Move from numpy to c pointer arrays             # <<<<<<<<<<<<<<
  *         &tail_embedding[0, 0],
  *         &head[0],
@@ -2411,7 +2411,7 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   }
 
   /* "cython/gpu_uniform_umap.pyx":73
- *         momentum,
+ *         amplify_grads,
  *         &head_embedding[0, 0], # Move from numpy to c pointer arrays
  *         &tail_embedding[0, 0],             # <<<<<<<<<<<<<<
  *         &head[0],
@@ -2558,7 +2558,7 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
  *         normalized,
  *         sym_attraction,
  */
-  gpu_umap_wrap(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_momentum, (&(*__Pyx_BufPtrCContig2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_head_embedding.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_head_embedding.diminfo[1].strides))), (&(*__Pyx_BufPtrCContig2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_tail_embedding.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_tail_embedding.diminfo[1].strides))), (&(*__Pyx_BufPtrCContig1d(int *, __pyx_pybuffernd_head.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_head.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(int *, __pyx_pybuffernd_tail.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_tail.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_weights.rcbuffer->pybuffer.buf, __pyx_t_18, __pyx_pybuffernd_weights.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(long *, __pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_neighbor_counts.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_all_updates.rcbuffer->pybuffer.buf, __pyx_t_20, __pyx_pybuffernd_all_updates.diminfo[0].strides, __pyx_t_21, __pyx_pybuffernd_all_updates.diminfo[1].strides))), (&(*__Pyx_BufPtrStrided2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_gains.rcbuffer->pybuffer.buf, __pyx_t_22, __pyx_pybuffernd_gains.diminfo[0].strides, __pyx_t_23, __pyx_pybuffernd_gains.diminfo[1].strides))), __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_n_vertices, __pyx_v_initial_lr, __pyx_v_n_edges, __pyx_v_n_epochs);
+  gpu_umap_wrap(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_amplify_grads, (&(*__Pyx_BufPtrCContig2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_head_embedding.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_head_embedding.diminfo[1].strides))), (&(*__Pyx_BufPtrCContig2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_tail_embedding.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_tail_embedding.diminfo[1].strides))), (&(*__Pyx_BufPtrCContig1d(int *, __pyx_pybuffernd_head.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_head.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(int *, __pyx_pybuffernd_tail.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_tail.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_weights.rcbuffer->pybuffer.buf, __pyx_t_18, __pyx_pybuffernd_weights.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(long *, __pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_neighbor_counts.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_all_updates.rcbuffer->pybuffer.buf, __pyx_t_20, __pyx_pybuffernd_all_updates.diminfo[0].strides, __pyx_t_21, __pyx_pybuffernd_all_updates.diminfo[1].strides))), (&(*__Pyx_BufPtrStrided2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_gains.rcbuffer->pybuffer.buf, __pyx_t_22, __pyx_pybuffernd_gains.diminfo[0].strides, __pyx_t_23, __pyx_pybuffernd_gains.diminfo[1].strides))), __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_n_vertices, __pyx_v_initial_lr, __pyx_v_n_edges, __pyx_v_n_epochs);
 
   /* "cython/gpu_uniform_umap.pyx":39
  * ctypedef np.int32_t DTYPE_INT
@@ -2625,7 +2625,7 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
   int __pyx_v_normalized;
   int __pyx_v_sym_attraction;
   int __pyx_v_frob;
-  int __pyx_v_momentum;
+  int __pyx_v_amplify_grads;
   PyArrayObject *__pyx_v_head = 0;
   PyArrayObject *__pyx_v_tail = 0;
   PyArrayObject *__pyx_v_head_embedding = 0;
@@ -2648,7 +2648,7 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
   __pyx_v_kwargs = PyDict_New(); if (unlikely(!__pyx_v_kwargs)) return NULL;
   __Pyx_GOTREF(__pyx_v_kwargs);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_normalized,&__pyx_n_s_sym_attraction,&__pyx_n_s_frob,&__pyx_n_s_momentum,&__pyx_n_s_head,&__pyx_n_s_tail,&__pyx_n_s_head_embedding,&__pyx_n_s_tail_embedding,&__pyx_n_s_weights,&__pyx_n_s_neighbor_counts,&__pyx_n_s_n_epochs,&__pyx_n_s_n_vertices,&__pyx_n_s_a,&__pyx_n_s_b,&__pyx_n_s_initial_lr,&__pyx_n_s_verbose,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_normalized,&__pyx_n_s_sym_attraction,&__pyx_n_s_frob,&__pyx_n_s_amplify_grads,&__pyx_n_s_head,&__pyx_n_s_tail,&__pyx_n_s_head_embedding,&__pyx_n_s_tail_embedding,&__pyx_n_s_weights,&__pyx_n_s_neighbor_counts,&__pyx_n_s_n_epochs,&__pyx_n_s_n_vertices,&__pyx_n_s_a,&__pyx_n_s_b,&__pyx_n_s_initial_lr,&__pyx_n_s_verbose,0};
     PyObject* values[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
@@ -2708,7 +2708,7 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
         }
         CYTHON_FALLTHROUGH;
         case  3:
-        if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_momentum)) != 0)) kw_args--;
+        if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_amplify_grads)) != 0)) kw_args--;
         else {
           __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 3); __PYX_ERR(0, 93, __pyx_L3_error)
         }
@@ -2814,7 +2814,7 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
     __pyx_v_normalized = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 94, __pyx_L3_error)
     __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 95, __pyx_L3_error)
     __pyx_v_frob = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_frob == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 96, __pyx_L3_error)
-    __pyx_v_momentum = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 97, __pyx_L3_error)
+    __pyx_v_amplify_grads = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_amplify_grads == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 97, __pyx_L3_error)
     __pyx_v_head = ((PyArrayObject *)values[4]);
     __pyx_v_tail = ((PyArrayObject *)values[5]);
     __pyx_v_head_embedding = ((PyArrayObject *)values[6]);
@@ -2855,7 +2855,7 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail_embedding), __pyx_ptype_5numpy_ndarray, 1, "tail_embedding", 0))) __PYX_ERR(0, 101, __pyx_L1_error)
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_weights), __pyx_ptype_5numpy_ndarray, 1, "weights", 0))) __PYX_ERR(0, 102, __pyx_L1_error)
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_neighbor_counts), __pyx_ptype_5numpy_ndarray, 1, "neighbor_counts", 0))) __PYX_ERR(0, 103, __pyx_L1_error)
-  __pyx_r = __pyx_pf_12optimize_gpu_gpu_opt_wrapper(__pyx_self, __pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_momentum, __pyx_v_head, __pyx_v_tail, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_weights, __pyx_v_neighbor_counts, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_a, __pyx_v_b, __pyx_v_initial_lr, __pyx_v_verbose, __pyx_v_kwargs);
+  __pyx_r = __pyx_pf_12optimize_gpu_gpu_opt_wrapper(__pyx_self, __pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_amplify_grads, __pyx_v_head, __pyx_v_tail, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_weights, __pyx_v_neighbor_counts, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_a, __pyx_v_b, __pyx_v_initial_lr, __pyx_v_verbose, __pyx_v_kwargs);
 
   /* "cython/gpu_uniform_umap.pyx":93
  * @cython.wraparound(False)
@@ -2875,7 +2875,7 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_momentum, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, int __pyx_v_n_epochs, int __pyx_v_n_vertices, float __pyx_v_a, float __pyx_v_b, float __pyx_v_initial_lr, int __pyx_v_verbose, CYTHON_UNUSED PyObject *__pyx_v_kwargs) {
+static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_amplify_grads, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, int __pyx_v_n_epochs, int __pyx_v_n_vertices, float __pyx_v_a, float __pyx_v_b, float __pyx_v_initial_lr, int __pyx_v_verbose, CYTHON_UNUSED PyObject *__pyx_v_kwargs) {
   int __pyx_v_dim;
   float __pyx_v_weight_sum;
   npy_intp __pyx_v_i;
@@ -3059,7 +3059,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
  *         normalized,
  *         sym_attraction,
  */
-  __pyx_t_6 = __pyx_f_12optimize_gpu_uniform_umap_gpu(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_momentum, ((PyArrayObject *)__pyx_v_head_embedding), ((PyArrayObject *)__pyx_v_tail_embedding), ((PyArrayObject *)__pyx_v_head), ((PyArrayObject *)__pyx_v_tail), ((PyArrayObject *)__pyx_v_weights), ((PyArrayObject *)__pyx_v_neighbor_counts), __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_initial_lr, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_verbose); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 125, __pyx_L1_error)
+  __pyx_t_6 = __pyx_f_12optimize_gpu_uniform_umap_gpu(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_amplify_grads, ((PyArrayObject *)__pyx_v_head_embedding), ((PyArrayObject *)__pyx_v_tail_embedding), ((PyArrayObject *)__pyx_v_head), ((PyArrayObject *)__pyx_v_tail), ((PyArrayObject *)__pyx_v_weights), ((PyArrayObject *)__pyx_v_neighbor_counts), __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_initial_lr, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_verbose); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 125, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
@@ -4198,6 +4198,7 @@ static struct PyModuleDef __pyx_moduledef = {
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_ImportError, __pyx_k_ImportError, sizeof(__pyx_k_ImportError), 0, 0, 1, 1},
   {&__pyx_n_s_a, __pyx_k_a, sizeof(__pyx_k_a), 0, 0, 1, 1},
+  {&__pyx_n_s_amplify_grads, __pyx_k_amplify_grads, sizeof(__pyx_k_amplify_grads), 0, 0, 1, 1},
   {&__pyx_n_s_asarray, __pyx_k_asarray, sizeof(__pyx_k_asarray), 0, 0, 1, 1},
   {&__pyx_n_s_b, __pyx_k_b, sizeof(__pyx_k_b), 0, 0, 1, 1},
   {&__pyx_n_s_c, __pyx_k_c, sizeof(__pyx_k_c), 0, 0, 1, 1},
@@ -4216,7 +4217,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_initial_lr, __pyx_k_initial_lr, sizeof(__pyx_k_initial_lr), 0, 0, 1, 1},
   {&__pyx_n_s_kwargs, __pyx_k_kwargs, sizeof(__pyx_k_kwargs), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
-  {&__pyx_n_s_momentum, __pyx_k_momentum, sizeof(__pyx_k_momentum), 0, 0, 1, 1},
   {&__pyx_n_s_n_edges, __pyx_k_n_edges, sizeof(__pyx_k_n_edges), 0, 0, 1, 1},
   {&__pyx_n_s_n_epochs, __pyx_k_n_epochs, sizeof(__pyx_k_n_epochs), 0, 0, 1, 1},
   {&__pyx_n_s_n_vertices, __pyx_k_n_vertices, sizeof(__pyx_k_n_vertices), 0, 0, 1, 1},
@@ -4283,7 +4283,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  *     int normalized,
  *     int sym_attraction,
  */
-  __pyx_tuple__3 = PyTuple_Pack(22, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_frob, __pyx_n_s_momentum, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_weights, __pyx_n_s_neighbor_counts, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_initial_lr, __pyx_n_s_verbose, __pyx_n_s_kwargs, __pyx_n_s_i_epoch, __pyx_n_s_n_edges, __pyx_n_s_dim, __pyx_n_s_weight_sum, __pyx_n_s_i); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 93, __pyx_L1_error)
+  __pyx_tuple__3 = PyTuple_Pack(22, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_frob, __pyx_n_s_amplify_grads, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_weights, __pyx_n_s_neighbor_counts, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_initial_lr, __pyx_n_s_verbose, __pyx_n_s_kwargs, __pyx_n_s_i_epoch, __pyx_n_s_n_edges, __pyx_n_s_dim, __pyx_n_s_weight_sum, __pyx_n_s_i); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 93, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
   __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(16, 0, 22, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARKEYWORDS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cython_gpu_uniform_umap_pyx, __pyx_n_s_gpu_opt_wrapper, 93, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 93, __pyx_L1_error)

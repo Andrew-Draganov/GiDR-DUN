@@ -666,7 +666,7 @@ __global__
 void
 apply_grads_full(float *d_Z, float *d_D_embed, float *d_rep_grads, float *d_attr_grads, float *d_all_grads,
                  float *d_gains,
-                 int n, int dims_embed, float lr, float a, float b, float momentum) {
+                 int n, int dims_embed, float lr, float a, float b, float amplify_graps) {
     for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < n; i += blockDim.x * gridDim.x) {
         for (int h = 0; h < dims_embed; h++) {
             int index = i * dims_embed + h;
@@ -679,7 +679,7 @@ apply_grads_full(float *d_Z, float *d_D_embed, float *d_rep_grads, float *d_attr
             d_gains[index] = clip(d_gains[index], 0.01, 100);
             grad *= d_gains[index];
 
-            d_all_grads[index] *= (float) momentum * 0.9;
+            d_all_grads[index] *= (float) amplify_graps * 0.9;
             d_all_grads[index] += grad * lr;
 
             d_D_embed[index] += d_all_grads[index];
@@ -687,7 +687,9 @@ apply_grads_full(float *d_Z, float *d_D_embed, float *d_rep_grads, float *d_attr
     }
 }
 
-float get_lr(float initial_lr, int i_epoch, int n_epochs) {
+float get_lr(float initial_lr, int i_epoch, int n_epochs, int amplify_graps) {
+    if (amplify_graps)
+        return initial_lr;
     return initial_lr * (1.0 - (((float) i_epoch) / ((float) n_epochs)));
 }
 
@@ -776,7 +778,7 @@ void convert(int *d_dst_int, long *d_src_long, int n) {
 
 void gpu_umap_2(int normalized, // unused
                 int sym_attraction, // unused
-                int momentum, // unused
+                int amplify_graps, // unused
                 float *h_D_embed, //head_embedding,
                 float *h_D_embed_other, //tail_embedding,
                 int *h_N, //head,
@@ -816,7 +818,7 @@ void gpu_umap_2(int normalized, // unused
     inclusive_scan(d_neighbor_counts, d_neighbor_ends, n_vertices);
 
     for (int i_epoch = 0; i_epoch < n_epochs; i_epoch++) {
-        float lr = get_lr(init_lr, i_epoch, n_epochs);
+        float lr = get_lr(init_lr, i_epoch, n_epochs, amplify_graps);
         cudaMemset(d_grads, 0, n_vertices * dims_embed * sizeof(float));
         compute_grads << < number_of_blocks, BLOCK_SIZE >> >
         (normalized, d_grads, d_weights, n_vertices, d_N, d_neighbor_ends, d_D_embed, a, b, dims_embed, d_random);
@@ -884,7 +886,7 @@ float mean(float *h_x, int n) {
 
 void gpu_umap_full(int normalized, // unused
                    int sym_attraction, // unused
-                   int momentum, // unused
+                   int amplify_graps, // unused
                    float *h_D_embed, //head_embedding,
                    float *h_D_embed_other, //tail_embedding,
                    int *h_N, //head,
@@ -952,7 +954,7 @@ void gpu_umap_full(int normalized, // unused
     printf("\n\nParams:\n");
 //    printf("- CPU average_weight: %f\n", mean(h_weights, n_edges));
     printf("- average_weight: %f\n", average_weight);
-    printf("- momentum: %d\n", momentum);
+    printf("- amplify_graps: %d\n", amplify_graps);
     printf("- sym_attraction: %d\n", sym_attraction);
     printf("- normalized: %d\n", normalized);
     printf("- n_edges: %d\n", n_edges);
@@ -974,7 +976,7 @@ void gpu_umap_full(int normalized, // unused
 //    cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
 
     for (int i_epoch = 0; i_epoch < n_epochs; i_epoch++) {
-        float lr = get_lr(init_lr, i_epoch, n_epochs);
+        float lr = get_lr(init_lr, i_epoch, n_epochs, amplify_graps);
 //        cudaMemsetAsync(d_rep_grads, 0, n_vertices * dims_embed * sizeof(float), stream);
 //        cudaMemsetAsync(d_attr_grads, 0, n_vertices * dims_embed * sizeof(float), stream);
 //        cudaMemsetAsync(d_Z, 0, number_of_threads_in_total * sizeof(float), stream);
@@ -985,7 +987,7 @@ void gpu_umap_full(int normalized, // unused
 //        gpuErrchk(cudaPeekAtLastError());
 
         float weight_scalar;
-        if (i_epoch < 100)
+        if (amplify_graps && i_epoch < 250)
             weight_scalar = 4;
         else
             weight_scalar = 1;
@@ -1013,7 +1015,7 @@ void gpu_umap_full(int normalized, // unused
         }
 
         apply_grads_full << < number_of_blocks, BLOCK_SIZE>> >
-        (d_tmp_sum_2, d_D_embed, d_rep_grads, d_attr_grads, d_all_grads, d_gains, n_vertices, dims_embed, lr, a, b, momentum);
+        (d_tmp_sum_2, d_D_embed, d_rep_grads, d_attr_grads, d_all_grads, d_gains, n_vertices, dims_embed, lr, a, b, amplify_graps);
 
 //        cudaDeviceSynchronize();
 //        gpuErrchk(cudaPeekAtLastError());
@@ -1081,7 +1083,7 @@ void pack_N(int *d_N_new, float *d_weights_new, int *d_N, float *d_weights, int 
 void gpu_umap_full_N(int normalized, // unused
                      int sym_attraction, // unused
                      int frob,
-                     int momentum, // unused
+                     int amplify_graps, // unused
                      float *h_D_embed, //head_embedding,
                      float *h_D_embed_other, //tail_embedding,
                      int *h_N, //head,
@@ -1157,7 +1159,7 @@ void gpu_umap_full_N(int normalized, // unused
     printf("\n\nParams:\n");
 //    printf("- CPU average_weight: %f\n", mean(h_weights, n_edges));
     printf("- average_weight: %f\n", average_weight);
-    printf("- momentum: %d\n", momentum);
+    printf("- amplify_graps: %d\n", amplify_graps);
     printf("- sym_attraction: %d\n", sym_attraction);
     printf("- normalized: %d\n", normalized);
     printf("- n_edges: %d\n", n_edges);
@@ -1179,7 +1181,7 @@ void gpu_umap_full_N(int normalized, // unused
 //    cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
 
     for (int i_epoch = 0; i_epoch < n_epochs; i_epoch++) {
-        float lr = get_lr(init_lr, i_epoch, n_epochs);
+        float lr = get_lr(init_lr, i_epoch, n_epochs, amplify_graps);
 //        cudaMemsetAsync(d_rep_grads, 0, n_vertices * dims_embed * sizeof(float), stream);
 //        cudaMemsetAsync(d_attr_grads, 0, n_vertices * dims_embed * sizeof(float), stream);
 //        cudaMemsetAsync(d_Z, 0, number_of_threads_in_total * sizeof(float), stream);
@@ -1218,7 +1220,7 @@ void gpu_umap_full_N(int normalized, // unused
         }
 
         apply_grads_full << < number_of_blocks, BLOCK_SIZE>> >
-        (d_tmp_sum_2, d_D_embed, d_rep_grads, d_attr_grads, d_all_grads, d_gains, n_vertices, dims_embed, lr, a, b, momentum);
+        (d_tmp_sum_2, d_D_embed, d_rep_grads, d_attr_grads, d_all_grads, d_gains, n_vertices, dims_embed, lr, a, b, amplify_graps);
 
 //        cudaDeviceSynchronize();
 //        gpuErrchk(cudaPeekAtLastError());
@@ -1258,7 +1260,7 @@ void gpu_umap(
         int normalized,
         int sym_attraction,
         int frob,
-        int momentum,
+        int amplify_graps,
         float *head_embedding,
         float *tail_embedding,
         int *head,
@@ -1283,7 +1285,7 @@ void gpu_umap(
             normalized, // unused
             sym_attraction, // unused
             frob,
-            momentum, // unused
+            amplify_graps, // unused
             head_embedding,
             tail_embedding,
             head,
