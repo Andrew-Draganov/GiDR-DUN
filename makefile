@@ -7,11 +7,11 @@ run: #this is working :D
 	#
 	# Running...
 	#python umap/dim_reduce_dataset.py --optimize-method cy_umap_uniform --num-points 60000
-	python umap/dim_reduce_dataset.py --num-points 60000 --gpu
+	python uniform_umap/dim_reduce_dataset.py --num-points 60000 --gpu
 
 run_tsne:
 	#python umap/dim_reduce_dataset.py --optimize-method cy_umap_uniform --num-points 60000 --normalized --momentum
-	python umap/dim_reduce_dataset.py --num-points 60000 --gpu --kernel-choice tsne
+	python uniform_umap/dim_reduce_dataset.py --num-points 60000 --gpu --kernel-choice tsne
 
 #clean:
 #	rm *.so *.o test.c
