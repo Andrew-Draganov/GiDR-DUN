@@ -29,8 +29,8 @@ def get_pairwise_dist_matrix(points):
     return dists
 
 def get_linear_progression(upper_bound):
-    low_dim_dists = np.arange(0.01, upper_bound, 0.01)
-    high_dim_dists = np.arange(0.01, upper_bound, 0.01)
+    low_dim_dists = np.arange(0.01, upper_bound, upper_bound/100)
+    high_dim_dists = np.arange(0.01, upper_bound, upper_bound/100)
     return low_dim_dists, high_dim_dists
 
 def get_exp_progression():
@@ -133,6 +133,17 @@ def tsne_grads(Dx, Dy):
     gradient = np.flip(gradient, 0)
     return gradient
 
+def frob_tsne_grads(Dx, Dy):
+    P = np.exp(-(np.square(Dx) / 2))
+    Q = 1 / (1 + np.square(Dy))
+    P, Q = np.meshgrid(P, Q)
+    Z_stack = [1 / (1 + np.square(Dy)) for _ in Dy]
+    # FIXME - Is it okay to use the same distance values for both the kernels and the (y_i - y_j) scaling?
+    Dy_stack = [Dy for _ in Dy]
+    gradient = 4 * (P - Q) * (Q**2 + 2*Q**3) * np.stack(Z_stack, -1) * np.stack(Dy_stack, -1)
+    gradient = np.flip(gradient, 0)
+    return gradient
+
 def umap_grads(Dx, Dy, a, b, k):
     sigma = find_sigma(Dx, np.log2(k))
     P_vec = np.exp(-1 * (np.square(Dx) - np.min(np.square(Dx))) / sigma)
@@ -183,7 +194,13 @@ def find_sigma(D, target):
     return mid
 
 
-def make_plot(low_dim_dists, high_dim_dists, gradient, contour=True):
+def make_plot(
+    low_dim_dists,
+    high_dim_dists,
+    gradient,
+    upper_bound,
+    contour=True
+):
     num_dists = len(low_dim_dists)
     fig = plt.figure()
     ax1 = fig.add_subplot(1, 1, 1)
@@ -206,20 +223,25 @@ def make_plot(low_dim_dists, high_dim_dists, gradient, contour=True):
     plt.ylabel('Low dim distance >>')
 
     x_tick_indices = np.arange(
-        int(num_dists/10),
+        float(num_dists)/5,
         num_dists,
-        num_dists/10
+        float(num_dists)/5
     )
-    x_tick_indices = x_tick_indices.astype(np.int32)
 
     y_tick_indices = np.arange(
-        0,
+        float(num_dists)/5,
         num_dists,
-        num_dists/10
+        float(num_dists)/5
     )
-    y_tick_indices = y_tick_indices.astype(np.int32)
 
-    plt.xticks(x_tick_indices, np.sort(np.round(high_dim_dists, 2))[x_tick_indices])
+    plt.xticks(
+        x_tick_indices,
+        np.arange(
+            float(upper_bound)/5,
+            upper_bound,
+            float(upper_bound)/5
+        ).astype(np.int32)
+    )
     plt.tick_params(
         axis='x',
         bottom=True,
@@ -228,7 +250,14 @@ def make_plot(low_dim_dists, high_dim_dists, gradient, contour=True):
         labeltop=False,
         which='both',
     )
-    plt.yticks(y_tick_indices, np.sort(np.round(low_dim_dists, 2))[::-1][y_tick_indices])
+    plt.yticks(
+        y_tick_indices,
+        np.arange(
+            float(upper_bound)/5,
+            upper_bound,
+            float(upper_bound)/5
+        )[::-1].astype(np.int32)
+    )
     plt.tick_params(
         axis='y',
         left=True,
@@ -240,6 +269,7 @@ def make_plot(low_dim_dists, high_dim_dists, gradient, contour=True):
 
 
 if __name__ == '__main__':
+    upper_bound = 5
     # Basic PCA gradients plot
     # low_dim_dists, high_dim_dists = get_linear_progression(upper_bound=0.5)
     # gradient = pca_grads(high_dim_dists, low_dim_dists, centered=False)
@@ -251,9 +281,6 @@ if __name__ == '__main__':
     # make_plot(low_dim_dists, high_dim_dists, gradient, contour=False)
 
     # CHOOSE HOW TO GET LOW- AND HIGH-DIM DISTANCES #
-
-    # Uncomment for exponentially growing distances
-    # low_dim_dists, high_dim_dists = get_exp_progression()
 
     # Uncomment for random multivariate-gaussian distances
     # low_dim_dists, high_dim_dists = get_gaussian_dists(
@@ -267,25 +294,30 @@ if __name__ == '__main__':
     # low_dim_dists, high_dim_dists = get_mnist_dists(num_points=20)
 
     # Uncomment this and below for linearly growing distances
-    low_dim_dists, high_dim_dists = get_linear_progression(upper_bound=10)
+    # low_dim_dists, high_dim_dists = get_linear_progression(upper_bound=10)
 
     # tSNE gradients plot
     # gradient = tsne_grads(high_dim_dists, low_dim_dists)
     # make_plot(low_dim_dists, high_dim_dists, gradient)
 
     # Uncomment this and above for linearly growing distances
-    low_dim_dists, high_dim_dists = get_linear_progression(upper_bound=1)
+    low_dim_dists, high_dim_dists = get_linear_progression(upper_bound=upper_bound)
+
+    # Uncomment for exponentially growing distances
+    # low_dim_dists, high_dim_dists = get_exp_progression()
 
     # UMAP gradients plot
     a = 1
     b = 1
     k = 20
-    gradient = umap_grads(high_dim_dists, low_dim_dists, a, b, k)
-    make_plot(low_dim_dists, high_dim_dists, gradient)
+    gradient = tsne_grads(high_dim_dists, low_dim_dists)
+    # gradient = umap_grads(high_dim_dists, low_dim_dists, a, b, k)
+    make_plot(low_dim_dists, high_dim_dists, gradient, upper_bound)
 
     # Frobenius UMAP gradients plot
     a = 1
     b = 1
     k = 20
-    gradient = frob_umap_grads(high_dim_dists, low_dim_dists, a, b, k)
-    make_plot(low_dim_dists, high_dim_dists, gradient)
+    gradient = frob_tsne_grads(high_dim_dists, low_dim_dists)
+    # gradient = frob_umap_grads(high_dim_dists, low_dim_dists, a, b, k)
+    make_plot(low_dim_dists, high_dim_dists, gradient, upper_bound)
