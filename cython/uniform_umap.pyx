@@ -15,6 +15,8 @@ cdef extern from "cython_utils.c" nogil:
 cdef extern from "cython_utils.c" nogil:
     float sq_euc_dist(float* x, float* y, int dim)
 cdef extern from "cython_utils.c" nogil:
+    float ang_dist(float* x, float* y, int dim)
+cdef extern from "cython_utils.c" nogil:
     float get_lr(float initial_lr, int i_epoch, int n_epochs, int amplify_grads) 
 cdef extern from "cython_utils.c" nogil:
     void print_status(int i_epoch, int n_epochs)
@@ -24,7 +26,7 @@ cdef extern from "cython_utils.c" nogil:
     float attractive_force_func(
             int normalized,
             int frob,
-            float dist_squared,
+            float dist,
             float a,
             float b,
             float edge_weight
@@ -34,7 +36,7 @@ cdef extern from "cython_utils.c" nogil:
             float* rep_func_outputs,
             int normalized,
             int frob,
-            float dist_squared,
+            float dist,
             float a,
             float b,
             float cell_size,
@@ -48,20 +50,20 @@ ctypedef np.int32_t DTYPE_INT
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef void get_kernels(
+cdef void gather_gradients(
     float *local_Z,
-    float *attr_forces,
-    float *rep_forces,
-    float *attr_vecs,
-    float *rep_vecs,
+    float *attr_grads,
+    float *rep_grads,
     int[:] head,
     int[:] tail,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     float[:] weights,
     int normalized,
+    int angular,
     int amplify_grads,
     int frob,
+    int sym_attraction,
     int num_threads,
     int n_vertices,
     int n_edges,
@@ -74,7 +76,8 @@ cdef void get_kernels(
 ) nogil:
     cdef:
         int edge, j, k, d, s
-        float dist_squared, weight_scalar
+        float dist, weight_scalar, grad_d
+        float attr_force, rep_force
         float *y1
         float *y2
         float *rep_func_outputs
@@ -90,8 +93,11 @@ cdef void get_kernels(
             for d in range(dim):
                 y1[d] = head_embedding[j, d]
                 y2[d] = tail_embedding[k, d]
-                attr_vecs[edge * dim + d] = y1[d] - y2[d]
-            dist_squared = sq_euc_dist(y1, y2, dim)
+
+            if angular:
+                dist = ang_dist(y1, y2, dim)
+            else:
+                dist = sq_euc_dist(y1, y2, dim)
 
             # t-SNE early exaggeration
             if amplify_grads and i_epoch < 250:
@@ -99,80 +105,51 @@ cdef void get_kernels(
             else:
                 weight_scalar = 1
 
-            attr_forces[edge] = attractive_force_func(
+            attr_force = attractive_force_func(
                 normalized,
                 frob,
-                dist_squared,
+                dist,
                 a,
                 b,
                 weights[edge] * weight_scalar
             )
+            for d in range(dim):
+                grad_d = attr_force * (y1[d] - y2[d])
+                attr_grads[j * dim + d] -= grad_d
+                if sym_attraction:
+                    k = tail[edge]
+                    attr_grads[k * dim + d] += grad_d
 
             for s in range(negative_sample_rate):
                 k = rand() % n_vertices
                 for d in range(dim):
                     y2[d] = tail_embedding[k, d]
-                    rep_vecs[edge * dim + d] = y1[d] - y2[d]
-                dist_squared = sq_euc_dist(y1, y2, dim)
+
+                if angular:
+                    dist = ang_dist(y1, y2, dim)
+                else:
+                    dist = sq_euc_dist(y1, y2, dim)
+
                 repulsive_force_func(
                     rep_func_outputs,
                     normalized,
                     frob,
-                    dist_squared,
+                    dist,
                     a,
                     b,
                     1.0,
                     average_weight,
                 )
-                rep_forces[edge] = rep_func_outputs[0]
+                rep_force = rep_func_outputs[0]
                 local_Z[0] += rep_func_outputs[1]
+
+                for d in range(dim):
+                    grad_d = rep_force * (y1[d] - y2[d])
+                    rep_grads[j * dim + d] += grad_d
 
         free(rep_func_outputs)
         free(y1)
         free(y2)
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.cdivision(True)
-cdef void gather_gradients(
-    float *local_grads,
-    int[:] head,
-    int[:] tail,
-    float* attr_forces,
-    float* rep_forces,
-    float* attr_vecs,
-    float* rep_vecs,
-    int sym_attraction,
-    int frob,
-    int num_threads,
-    int n_vertices,
-    int n_edges,
-    int dim,
-    float Z
-) nogil:
-    cdef:
-        int j, k, v, d, edge, index
-        float force, grad_d
-
-    with parallel(num_threads=num_threads):
-        # Fill allocated memory with zeros
-        for v in prange(n_vertices):
-            for d in range(dim):
-                index = v * dim + d
-                local_grads[index] = 0
-
-        for edge in prange(n_edges):
-            j = head[edge]
-            for d in range(dim):
-                grad_d = attr_forces[edge] * attr_vecs[edge * dim + d]
-                local_grads[j * dim + d] -= grad_d
-                if sym_attraction:
-                    k = tail[edge]
-                    local_grads[k * dim + d] += grad_d
-
-            for d in range(dim):
-                grad_d = rep_forces[edge] * rep_vecs[edge * dim + d]
-                local_grads[j * dim + d] += grad_d / Z
 
 
 @cython.boundscheck(False)
@@ -180,6 +157,7 @@ cdef void gather_gradients(
 @cython.cdivision(True)
 cdef void _uniform_umap_epoch(
     int normalized,
+    int angular,
     int sym_attraction,
     int frob,
     int num_threads,
@@ -200,49 +178,41 @@ cdef void _uniform_umap_epoch(
     int i_epoch
 ):
     cdef:
-        int i, j, k, d, v, index, edge
+        int i, j, k, d, v, index
+        float grad_d
+        float *attr_grads
+        float *rep_grads
         float *all_grads
-
-        float *attr_vecs
-        float *rep_vecs
-        float *attr_forces
-        float *rep_forces
-
         float *local_Z
 
     cdef int n_edges = int(head.shape[0])
     cdef float Z = 0
-    cdef float grad_d = 0.0
     cdef float average_weight = get_avg_weight(&weights[0], n_edges)
 
     local_Z = <float*> malloc(sizeof(float))
-    attr_forces = <float*> malloc(sizeof(float) * n_edges)
-    rep_forces = <float*> malloc(sizeof(float) * n_edges)
-    attr_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
-    rep_vecs = <float*> malloc(sizeof(float) * n_edges * dim)
-
-    all_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
-
+    attr_grads = <float*> malloc(sizeof(float) * n_edges * dim)
+    rep_grads = <float*> malloc(sizeof(float) * n_edges * dim)
     with nogil:
         for v in prange(n_vertices, num_threads=num_threads):
             for d in range(dim):
-                all_grads[v * dim + d] = 0
+                attr_grads[v * dim + d] = 0
+                rep_grads[v * dim + d] = 0
 
     with nogil:
-        get_kernels(
+        gather_gradients(
             local_Z,
-            attr_forces,
-            rep_forces,
-            attr_vecs,
-            rep_vecs,
+            attr_grads,
+            rep_grads,
             head,
             tail,
             head_embedding,
             tail_embedding,
             weights,
             normalized,
+            angular,
             amplify_grads,
             frob,
+            sym_attraction,
             num_threads,
             n_vertices,
             n_edges,
@@ -253,53 +223,34 @@ cdef void _uniform_umap_epoch(
             b,
             average_weight
         )
-
         Z += local_Z[0]
         free(local_Z)
         if not normalized:
             Z = 1
 
-        gather_gradients(
-            all_grads,
-            head,
-            tail,
-            attr_forces,
-            rep_forces,
-            attr_vecs,
-            rep_vecs,
-            sym_attraction,
-            frob,
-            num_threads,
-            n_vertices,
-            n_edges,
-            dim,
-            Z
-        )
-        free(attr_forces)
-        free(rep_forces)
-        free(attr_vecs)
-        free(rep_vecs)
+    with nogil, parallel(num_threads=num_threads):
+        for v in prange(n_vertices):
+            for d in range(dim):
+                index = v * dim + d
+                grad_d = 4 * a * b * (attr_grads[index] + rep_grads[index] / Z)
+                if grad_d * all_updates[index] > 0.0:
+                    gains[index] += 0.2
+                else:
+                    gains[index] *= 0.8
+                gains[index] = clip(gains[index], 0.01, 1000)
+                grad_d = clip(grad_d * gains[index], -1, 1)
 
-        with parallel(num_threads=num_threads):
-            for v in prange(n_vertices):
-                for d in range(dim):
-                    index = v * dim + d
-                    if all_grads[index] * all_updates[index] > 0.0:
-                        gains[index] += 0.2
-                    else:
-                        gains[index] *= 0.8
-                    gains[index] = clip(gains[index], 0.01, 1000)
-                    grad_d = clip(all_grads[index] * gains[index], -1, 1)
+                all_updates[index] = grad_d * lr \
+                                   + amplify_grads * 0.9 * all_updates[index]
+                head_embedding[v, d] += all_updates[index]
 
-                    all_updates[index] = grad_d * lr \
-                                       + amplify_grads * 0.9 * all_updates[index]
-                    head_embedding[v, d] += all_updates[index]
-
-    free(all_grads)
+    free(attr_grads)
+    free(rep_grads)
 
 
 cdef uniform_umap_optimize(
     int normalized,
+    int angular,
     int sym_attraction,
     int frob,
     int num_threads,
@@ -335,6 +286,7 @@ cdef uniform_umap_optimize(
         lr = get_lr(initial_lr, i_epoch, n_epochs, amplify_grads)
         _uniform_umap_epoch(
             normalized,
+            angular,
             sym_attraction,
             frob,
             num_threads,
@@ -354,6 +306,7 @@ cdef uniform_umap_optimize(
             lr,
             i_epoch
         )
+        # FIXME -- why is this still printing even for verbose=False
         if verbose:
             print_status(i_epoch, n_epochs)
 
@@ -367,6 +320,7 @@ cdef uniform_umap_optimize(
 @cython.boundscheck(False)
 def uniform_umap_opt_wrapper(
     int normalized,
+    int angular,
     int sym_attraction,
     int frob,
     int num_threads,
@@ -396,10 +350,11 @@ def uniform_umap_opt_wrapper(
             weight_sum += weights[i]
         for i in range(weights.shape[0]):
             weights[i] /= weight_sum
-        initial_lr *= 800
+        initial_lr = n_vertices / 500
 
     uniform_umap_optimize(
         normalized,
+        angular,
         sym_attraction,
         frob,
         num_threads,

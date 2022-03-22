@@ -28,15 +28,10 @@ from scipy.sparse import tril as sparse_tril, triu as sparse_triu
 import scipy.sparse.csgraph
 import numba
 
-import distances as dist
+from . import distances as dist
 
-from utils import (
-    submatrix,
-    ts,
-    csr_unique,
-    fast_knn_indices,
-)
-from spectral import spectral_layout
+from . import utils
+from . import spectral
 # from pynndescent import NNDescent
 from nndescent.pynndescent_ import NNDescent
 import nndescent.distances as pynnd_dist
@@ -252,11 +247,11 @@ def nearest_neighbors(
         The random projection forest used for searching (if used, None otherwise)
     """
     if verbose:
-        print(ts(), "Finding Nearest Neighbors")
+        print(utils.ts(), "Finding Nearest Neighbors")
 
     if metric == "precomputed":
         # Compute indices of n nearest neighbors
-        knn_indices = fast_knn_indices(X, n_neighbors)
+        knn_indices = utils.fast_knn_indices(X, n_neighbors)
         # Compute the nearest neighbor distances
         #   (equivalent to np.sort(X)[:,:n_neighbors])
         knn_dists = X[np.arange(X.shape[0])[:, None], knn_indices].copy()
@@ -270,17 +265,17 @@ def nearest_neighbors(
         n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
         n_iters = max(5, int(round(np.log2(X.shape[0]))))
 
-        # if euclidean:
-        #     distance_func = pynnd_dist.euclidean
-        # else:
-        #     distance_func = pynnd_dist.cosine
+        if euclidean:
+            distance_func = pynnd_dist.euclidean
+        else:
+            distance_func = pynnd_dist.cosine
 
         knn_search_index = NNDescent(
             X,
             n_neighbors=n_neighbors,
             random_state=random_state,
             n_trees=n_trees,
-            # distance_func=distance_func,
+            distance_func=distance_func,
             n_iters=n_iters,
             max_candidates=20,
             n_jobs=num_threads,
@@ -289,7 +284,7 @@ def nearest_neighbors(
         knn_indices, knn_dists = knn_search_index.neighbor_graph
 
     if verbose:
-        print(ts(), "Finished Nearest Neighbor Search")
+        print(utils.ts(), "Finished Nearest Neighbor Search")
     return knn_indices, knn_dists, knn_search_index
 
 
@@ -584,12 +579,12 @@ def standardize_neighbors(graph):
 def simplicial_set_embedding(
     optimize_method,
     normalized,
+    euclidean,
     sym_attraction,
     frob,
     gpu,
     num_threads,
     amplify_grads,
-    batch_size,
     data,
     graph,
     n_components,
@@ -598,7 +593,7 @@ def simplicial_set_embedding(
     b,
     negative_sample_rate,
     n_epochs,
-    init,
+    random_init,
     random_state,
     metric,
     output_metric=dist.named_distances_with_gradients["euclidean"],
@@ -645,7 +640,7 @@ def simplicial_set_embedding(
         embeddings. If 0 is specified a value will be selected based on
         the size of the input dataset (200 for large datasets, 500 for small).
 
-    init: string
+    random_init: float
         How to initialize the low dimensional embedding. Options are:
             * 'spectral': use a spectral embedding of the fuzzy 1-skeleton
             * 'random': assign initial embedding positions at random.
@@ -701,14 +696,13 @@ def simplicial_set_embedding(
 
     graph.eliminate_zeros()
 
-    if init == 'random':
+    if random_init:
         embedding = random_state.multivariate_normal(
             mean=np.zeros(n_components), cov=np.eye(n_components), size=(graph.shape[0])
         ).astype(np.float32)
     else:
-        assert init == 'spectral'
         # We add a little noise to avoid local minima for optimization to come
-        initialisation = spectral_layout(
+        initialisation = spectral.spectral_layout(
             data,
             graph,
             n_components,
@@ -743,18 +737,19 @@ def simplicial_set_embedding(
 
     rng_state = random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
 
-    print('optimizing layout...')
+    if verbose:
+        print('optimizing layout...')
     # FIXME FIXME -- need to make sure that all numpy matrices are in
     #   'c' format!
-    embedding = _optimize_layout_euclidean(
+    embedding, opt_time = _optimize_layout_euclidean(
         optimize_method,
         normalized,
+        euclidean,
         sym_attraction,
         frob,
         gpu,
         num_threads,
         amplify_grads,
-        batch_size,
         embedding,
         embedding,
         head,
@@ -772,18 +767,18 @@ def simplicial_set_embedding(
         verbose
     )
 
-    return embedding, {}
+    return embedding, {'opt_time': opt_time}
 
 
 def _optimize_layout_euclidean(
         optimize_method,
         normalized,
+        euclidean,
         sym_attraction,
         frob,
         gpu,
         num_threads,
         amplify_grads,
-        batch_size,
         head_embedding,
         tail_embedding,
         head,
@@ -805,11 +800,11 @@ def _optimize_layout_euclidean(
     args = {
         'optimize_method': optimize_method,
         'normalized': normalized,
+        'angular': not euclidean,
         'sym_attraction': int(sym_attraction),
         'frob': int(frob),
         'num_threads': num_threads,
         'amplify_grads': int(amplify_grads),
-        'batch_size': weights.shape[0] if batch_size == -1 else batch_size,
         'head_embedding': head_embedding,
         'tail_embedding': tail_embedding,
         'head': head,
@@ -842,9 +837,11 @@ def _optimize_layout_euclidean(
             raise ValueError("Optimization method is unsupported at the current time")
     embedding = optimizer(**args)
     end = time.time()
+    opt_time = end - start
     # FIXME -- make into logger output
-    print('Optimization took {:.3f} seconds'.format(end - start))
-    return embedding
+    if verbose:
+        print('Optimization took {:.3f} seconds'.format(opt_time))
+    return embedding, opt_time
 
 
 @numba.njit()
@@ -950,11 +947,8 @@ class UniformUmap(BaseEstimator):
     learning_rate: float (optional, default 1.0)
         The initial learning rate for the embedding optimization.
 
-    init: string (optional, default 'spectral')
-        How to initialize the low dimensional embedding. Options are:
-            * 'spectral': use a spectral embedding of the fuzzy 1-skeleton
-            * 'random': assign initial embedding positions at random.
-            * A numpy array of initial embedding positions.
+    random_init: boolean (optional, default false)
+        How to initialize the low dimensional embedding
 
     min_dist: float (optional, default 0.1)
         The effective minimum distance between embedded points. Smaller values
@@ -1052,17 +1046,16 @@ class UniformUmap(BaseEstimator):
         output_metric="euclidean",
         n_epochs=None,
         learning_rate=1.0,
-        init="spectral",
+        random_init=False,
         pseudo_distance=True,
         tsne_symmetrization=False,
         optimize_method='umap_sampling',
         normalized=0,
+        euclidean=True,
         sym_attraction=True,
         frob=False,
         gpu=False,
         amplify_grads=False,
-        batch_size=-1,
-        euclidean=True,
         min_dist=0.1,
         spread=1.0,
         low_memory=True,
@@ -1077,7 +1070,6 @@ class UniformUmap(BaseEstimator):
         target_metric="categorical",
         target_weight=0.5,
         transform_seed=42,
-        transform_mode="embedding",
         force_approximation_algorithm=False,
         verbose=False,
         unique=False,
@@ -1087,7 +1079,7 @@ class UniformUmap(BaseEstimator):
         self.output_metric = output_metric
         self.target_metric = target_metric
         self.n_epochs = n_epochs
-        self.init = init
+        self.random_init = random_init
         self.n_components = n_components
         self.learning_rate = learning_rate
 
@@ -1096,12 +1088,12 @@ class UniformUmap(BaseEstimator):
         self.pseudo_distance = pseudo_distance
         self.optimize_method = optimize_method
         self.normalized = normalized
+        self.euclidean = euclidean
         self.sym_attraction = sym_attraction
         self.frob = frob
         self.gpu = gpu
         self.euclidean = euclidean
         self.amplify_grads = amplify_grads
-        self.batch_size = batch_size
 
         self.spread = spread
         self.min_dist = min_dist
@@ -1114,7 +1106,6 @@ class UniformUmap(BaseEstimator):
         self.target_metric = target_metric
         self.target_weight = target_weight
         self.transform_seed = transform_seed
-        self.transform_mode = transform_mode
         self.force_approximation_algorithm = force_approximation_algorithm
         self.verbose = verbose
         self.unique = unique
@@ -1129,18 +1120,8 @@ class UniformUmap(BaseEstimator):
             raise ValueError("min_dist must be less than or equal to spread")
         if self.min_dist < 0.0:
             raise ValueError("min_dist cannot be negative")
-        if not isinstance(self.init, str) and not isinstance(self.init, np.ndarray):
-            raise ValueError("init must be a string or ndarray")
-        if isinstance(self.init, str) and self.init not in (
-            "spectral",
-            "random",
-        ):
-            raise ValueError('string init values must be "spectral" or "random"')
-        if (
-            isinstance(self.init, np.ndarray)
-            and self.init.shape[1] != self.n_components
-        ):
-            raise ValueError("init ndarray must match n_components value")
+        if not isinstance(self.random_init, bool):
+            raise ValueError("init must be a bool")
         if not isinstance(self.metric, str) and not callable(self.metric):
             raise ValueError("metric must be string or callable")
         if self.negative_sample_rate < 0:
@@ -1240,11 +1221,6 @@ class UniformUmap(BaseEstimator):
         else:
             self._a = self.a
             self._b = self.b
-
-        if isinstance(self.init, np.ndarray):
-            init = check_array(self.init, dtype=np.float32, accept_sparse=False)
-        else:
-            init = self.init
 
         self._initial_lr = self.learning_rate
         self._validate_parameters()
@@ -1417,51 +1393,50 @@ class UniformUmap(BaseEstimator):
             )
         self._supervised = False
         end = time.time()
-        print('Calculating high dim similarities took {:.3f} seconds'.format(end - start))
+        if self.verbose:
+            print('Calculating high dim similarities took {:.3f} seconds'.format(end - start))
 
         if self.verbose:
-            print(ts(), "Construct embedding")
+            print(utils.ts(), "Construct embedding")
 
-        if self.transform_mode == "embedding":
-            self.embedding_, aux_data = self._fit_embed_data(
-                self._raw_data[index],
-                self.n_epochs,
-                init,
-                random_state,  # JH why raw data?
+        self.embedding_, aux_data = self._fit_embed_data(
+            self._raw_data[index],
+            self.n_epochs,
+            random_state,
+        )
+        # Assign any points that are fully disconnected from our manifold(s) to have embedding
+        # coordinates of np.nan.  These will be filtered by our plotting functions automatically.
+        # They also prevent users from being deceived a distance query to one of these points.
+        # Might be worth moving this into simplicial_set_embedding or _fit_embed_data
+        disconnected_vertices = np.array(self.graph_.sum(axis=1)).flatten() == 0
+        if len(disconnected_vertices) > 0:
+            self.embedding_[disconnected_vertices] = np.full(
+                self.n_components, np.nan
             )
-            # Assign any points that are fully disconnected from our manifold(s) to have embedding
-            # coordinates of np.nan.  These will be filtered by our plotting functions automatically.
-            # They also prevent users from being deceived a distance query to one of these points.
-            # Might be worth moving this into simplicial_set_embedding or _fit_embed_data
-            disconnected_vertices = np.array(self.graph_.sum(axis=1)).flatten() == 0
-            if len(disconnected_vertices) > 0:
-                self.embedding_[disconnected_vertices] = np.full(
-                    self.n_components, np.nan
-                )
 
-            self.embedding_ = self.embedding_[inverse]
+        self.embedding_ = self.embedding_[inverse]
 
         if self.verbose:
-            print(ts() + " Finished embedding")
+            print(utils.ts() + " Finished embedding")
 
         numba.set_num_threads(self._original_n_threads)
         self._input_hash = joblib.hash(self._raw_data)
 
-        return self
+        return self, aux_data['opt_time']
 
-    def _fit_embed_data(self, X, n_epochs, init, random_state):
+    def _fit_embed_data(self, X, n_epochs, random_state):
         """A method wrapper for simplicial_set_embedding that can be
         replaced by subclasses.
         """
         return simplicial_set_embedding(
             self.optimize_method,
             self.normalized,
+            self.euclidean,
             self.sym_attraction,
             self.frob,
             self.gpu,
             self.num_threads,
             self.amplify_grads,
-            self.batch_size,
             X,
             self.graph_,
             self.n_components,
@@ -1470,7 +1445,7 @@ class UniformUmap(BaseEstimator):
             self._b,
             self.negative_sample_rate,
             n_epochs,
-            init,
+            self.random_init,
             random_state,
             self._input_distance_func,
             self._output_distance_func,
@@ -1494,17 +1469,8 @@ class UniformUmap(BaseEstimator):
         X_new : array, shape (n_samples, n_components)
             Embedding of the training data in low-dimensional space.
         """
-        self.fit(X)
-        if self.transform_mode == "embedding":
-            return self.embedding_
-        elif self.transform_mode == "graph":
-            return self.graph_
-        else:
-            raise ValueError(
-                "Unrecognized transform mode {}; should be one of 'embedding' or 'graph'".format(
-                    self.transform_mode
-                )
-            )
+        _, opt_time = self.fit(X)
+        return self.embedding_, opt_time
 
     def transform(self, X):
         """Transform X into the existing embedded space and return that
@@ -1574,10 +1540,10 @@ class UniformUmap(BaseEstimator):
                     metric=self._input_distance_func,
                 )
             indices = np.argpartition(dmat, self._n_neighbors)[:, : self._n_neighbors]
-            dmat_shortened = submatrix(dmat, indices, self._n_neighbors)
+            dmat_shortened = utils.submatrix(dmat, indices, self._n_neighbors)
             indices_sorted = np.argsort(dmat_shortened)
-            indices = submatrix(indices, indices_sorted, self._n_neighbors)
-            dists = submatrix(dmat_shortened, indices_sorted, self._n_neighbors)
+            indices = utils.submatrix(indices, indices_sorted, self._n_neighbors)
+            dists = utils.submatrix(dmat_shortened, indices_sorted, self._n_neighbors)
         else:
             epsilon = 0.12
             indices, dists = self._knn_search_index.query(

@@ -32,6 +32,22 @@ static float sq_euc_dist(float* x, float* y, int dim) {
     return result;
 }
 
+static float ang_dist(float* x, float* y, int dim) {
+    // cosine distance between vectors x and y
+    float result = 0.0;
+    float x_len  = 0.0;
+    float y_len  = 0.0;
+    float eps = 0.0001;
+    for(int i=0; i<dim; i++){
+        result += x[i] * y[i];
+        x_len += x[i] * x[i];
+        y_len += y[i] * y[i];
+    }
+    if(x_len < eps || y_len < eps)
+        return 1;
+    return result / (sqrt(x_len * y_len));
+}
+
 static float get_lr(float initial_lr, int i_epoch, int n_epochs, int amplify_grads){ 
     if(amplify_grads == 1)
         return initial_lr;
@@ -52,24 +68,24 @@ float get_avg_weight(float* weights, int n_edges){
     return average_weight;
 }
 
-static float umap_attr_scalar(float dist_squared, float a, float b){
+static float umap_attr_scalar(float dist, float a, float b){
     float grad_scalar = 0.0;
-    grad_scalar = 2.0 * a * b * fast_pow(dist_squared, b - 1.0);
-    grad_scalar /= a * fast_pow(dist_squared, b) + 1.0;
+    grad_scalar = 2.0 * a * b * fast_pow(dist, b - 1.0);
+    grad_scalar /= a * fast_pow(dist, b) + 1.0;
     return grad_scalar;
 }
 
-static float umap_rep_scalar(float dist_squared, float a, float b){
+static float umap_rep_scalar(float dist, float a, float b){
     float phi_ijZ = 0.0;
     phi_ijZ = 2.0 * b;
-    phi_ijZ /= (0.001 + dist_squared) * (a * fast_pow(dist_squared, b) + 1);
+    phi_ijZ /= (0.001 + dist) * (a * fast_pow(dist, b) + 1);
     return phi_ijZ;
 }
 
-static float kernel_function(float dist_squared, float a, float b){
+static float kernel_function(float dist, float a, float b){
     if(b <= 1)
-        return 1 / (1 + a * fast_pow(dist_squared, b));
-    return fast_pow(dist_squared, b - 1) / (1 + a * fast_pow(dist_squared, b));
+        return 1 / (1 + a * fast_pow(dist, b));
+    return fast_pow(dist, b - 1) / (1 + a * fast_pow(dist, b));
 }
 
 
@@ -86,7 +102,6 @@ static float kl_rep_force(int normalized, float q, float avg_weight){
     //   we have only calculated them for the nearest neighbors.
     return q * (1 - avg_weight);
 }
-
 
 static float frob_attr_force(int normalized, float p, float q){
     if(normalized){
@@ -106,16 +121,16 @@ static float frob_rep_force(int normalized, float q){
 static float attractive_force_func(
         int normalized,
         int frob,
-        float dist_squared,
+        float dist,
         float a,
         float b,
         float edge_weight
 ){
     float q;
     if(normalized || frob)
-        q = kernel_function(dist_squared, a, b);
+        q = kernel_function(dist, a, b);
     else
-        q = umap_attr_scalar(dist_squared, a, b);
+        q = umap_attr_scalar(dist, a, b);
 
     if(frob)
         return frob_attr_force(normalized, edge_weight, q);
@@ -127,7 +142,7 @@ static void repulsive_force_func(
         float* rep_func_outputs,
         int normalized,
         int frob,
-        float dist_squared,
+        float dist,
         float a,
         float b,
         float cell_size,
@@ -135,9 +150,9 @@ static void repulsive_force_func(
 ){
     float q;
     if(normalized || frob)
-        q = kernel_function(dist_squared, a, b);
+        q = kernel_function(dist, a, b);
     else
-        q = umap_rep_scalar(dist_squared, a, b);
+        q = umap_rep_scalar(dist, a, b);
 
     if(frob)
         rep_func_outputs[0] = frob_rep_force(normalized, q);

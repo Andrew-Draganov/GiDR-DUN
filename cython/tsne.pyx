@@ -15,20 +15,22 @@ cdef extern from "cython_utils.c" nogil:
 cdef extern from "cython_utils.c" nogil:
     float sq_euc_dist(float* x, float* y, int dim)
 cdef extern from "cython_utils.c" nogil:
+    float ang_dist(float* x, float* y, int dim)
+cdef extern from "cython_utils.c" nogil:
     float get_lr(float initial_lr, int i_epoch, int n_epochs, int amplify_grads) 
 cdef extern from "cython_utils.c" nogil:
     void print_status(int i_epoch, int n_epochs)
 cdef extern from "cython_utils.c" nogil:
-    float umap_repulsion_grad(float dist_squared, float a, float b)
+    float umap_repulsion_grad(float dist, float a, float b)
 cdef extern from "cython_utils.c" nogil:
-    float kernel_function(float dist_squared, float a, float b)
+    float kernel_function(float dist, float a, float b)
 cdef extern from "cython_utils.c" nogil:
     float get_avg_weight(float* weights, int n_edges)
 cdef extern from "cython_utils.c" nogil:
     float attractive_force_func(
             int normalized,
             int frob,
-            float dist_squared,
+            float dist,
             float a,
             float b,
             float edge_weight
@@ -38,27 +40,12 @@ cdef extern from "cython_utils.c" nogil:
             float* rep_func_outputs,
             int normalized,
             int frob,
-            float dist_squared,
+            float dist,
             float a,
             float b,
             float cell_size,
             float average_weight
     )
-
-cdef float ang_dist(float* x, float* y, int dim):
-    """ cosine distance between vectors x and y """
-    cdef float result = 0.0
-    cdef float x_len  = 0.0
-    cdef float y_len  = 0.0
-    cdef float eps = 0.0001
-    cdef int i = 0
-    for i in range(dim):
-        result += x[i] * y[i]
-        x_len += x[i] * x[i]
-        y_len += y[i] * y[i]
-    if x_len < eps or y_len < eps:
-        return 1
-    return result / (sqrt(x_len * y_len))
 
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
@@ -87,7 +74,7 @@ cdef void collect_attr_grads(
 ) nogil:
     cdef:
         int edge, j, k, d, v
-        float dist_squared, weight_scalar, grad_d
+        float dist, weight_scalar, grad_d
         float *y1
         float *y2
         float attr_force
@@ -105,7 +92,7 @@ cdef void collect_attr_grads(
             for d in range(dim):
                 y1[d] = head_embedding[j, d]
                 y2[d] = tail_embedding[k, d]
-            dist_squared = sq_euc_dist(y1, y2, dim)
+            dist = sq_euc_dist(y1, y2, dim)
 
             # t-SNE early exaggeration
             if amplify_grads and i_epoch < 250:
@@ -116,7 +103,7 @@ cdef void collect_attr_grads(
             attr_force = attractive_force_func(
                 normalized,
                 frob,
-                dist_squared,
+                dist,
                 a,
                 b,
                 weights[edge] * weight_scalar
@@ -124,9 +111,9 @@ cdef void collect_attr_grads(
 
             for d in range(dim):
                 grad_d = attr_force * (y1[d] - y2[d])
-                local_attr_grads[j * dim + d] += grad_d
+                local_attr_grads[j * dim + d] -= grad_d
                 if sym_attraction:
-                    local_attr_grads[k * dim + d] -= grad_d
+                    local_attr_grads[k * dim + d] += grad_d
         free(y1)
         free(y2)
 
@@ -153,7 +140,7 @@ cdef void collect_rep_grads(
         long cell_metadata
         float theta = 0.5
         long offset = dim + 2
-        float dist_squared, cell_dist, cell_size, grad_d
+        float dist, cell_dist, cell_size, grad_d
         float *cell_summaries
         float *rep_func_outputs
         float *y1
@@ -204,6 +191,7 @@ cdef void collect_rep_grads(
 @cython.cdivision(True)
 cdef void _tsne_epoch(
     int normalized,
+    int angular,
     int sym_attraction,
     int frob,
     int num_threads,
@@ -225,7 +213,7 @@ cdef void _tsne_epoch(
 ):
     cdef:
         int i, j, k, l, num_cells, d, i_cell, v
-        float grad_scalar, dist_squared, grad_d, Z
+        float grad_scalar, dist, grad_d, Z
         float theta = 0.5
         long dim_index, index
         float *all_attr_grads
@@ -307,12 +295,12 @@ cdef void _tsne_epoch(
             for v in prange(n_vertices):
                 for d in range(dim):
                     index = v * dim + d
-                    if (all_rep_grads[index] - all_attr_grads[index]) * all_updates[index] > 0.0:
+                    if (all_rep_grads[index] + all_attr_grads[index]) * all_updates[index] > 0.0:
                         gains[index] += 0.2
                     else:
                         gains[index] *= 0.8
                     gains[index] = clip(gains[index], 0.01, 1000)
-                    grad_d = (all_rep_grads[index] - all_attr_grads[index]) * gains[index]
+                    grad_d = (all_rep_grads[index] + all_attr_grads[index]) * gains[index]
 
                     if amplify_grads:
                         all_updates[index] = grad_d * lr + 0.9 * all_updates[index]
@@ -332,6 +320,7 @@ cdef void _tsne_epoch(
 
 cdef tsne_optimize(
     int normalized,
+    int angular,
     int sym_attraction,
     int frob,
     int num_threads,
@@ -374,6 +363,7 @@ cdef tsne_optimize(
         lr = get_lr(initial_lr, i_epoch, n_epochs, amplify_grads)
         _tsne_epoch(
             normalized,
+            angular,
             sym_attraction,
             frob,
             num_threads,
@@ -405,6 +395,7 @@ cdef tsne_optimize(
 def tsne_opt_wrapper(
     str optimize_method,
     int normalized,
+    int angular,
     int sym_attraction,
     int frob,
     int num_threads,
@@ -439,6 +430,7 @@ def tsne_opt_wrapper(
 
     tsne_optimize(
         normalized,
+        angular,
         sym_attraction,
         frob,
         num_threads,
