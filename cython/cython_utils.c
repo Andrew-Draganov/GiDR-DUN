@@ -105,8 +105,6 @@ static float kl_rep_force(int normalized, float q, float avg_weight){
 
 static float frob_attr_force(int normalized, float p, float q){
     if(normalized){
-        // FIXME - is it faster to get q^2 and then use that for q^3?
-        // FIXME - took out a Z scalar from this
         return  p * (q * q + 2 * fast_pow(q, 3));
     }
     return p * q * q;
