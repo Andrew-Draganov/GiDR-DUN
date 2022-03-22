@@ -10,16 +10,16 @@ from utils.get_algorithm import get_algorithm
 
 if __name__ == '__main__':
     datasets = [
-        # 'mnist',
-        # 'fashion_mnist',
+        'mnist',
+        'fashion_mnist',
         'cifar',
         'swiss_roll',
         'coil',
         'google_news',
     ]
     num_points = [
-        # 60000,
-        # 60000,
+        60000,
+        60000,
         50000,
         5000,
         7200,
