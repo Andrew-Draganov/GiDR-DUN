@@ -34,8 +34,8 @@ def get_linear_progression(upper_bound):
     return low_dim_dists, high_dim_dists
 
 def get_exp_progression():
-    low_dim_dists = [0.005 * 1.12 ** i for i in range(100)]
-    high_dim_dists = [0.005 * 1.12 ** i for i in range(100)]
+    low_dim_dists = [math.pow(2, i/10-5) for i in range(100)]
+    high_dim_dists = [math.pow(2, i/10-5) for i in range(100)]
     return low_dim_dists, high_dim_dists
 
 def get_pairwise_dist_array(points):
@@ -122,8 +122,10 @@ def pca_grads(Dx, Dy, num_points=-1, centered=False):
     gradient = np.flip(gradient, 0)
     return gradient
 
-def tsne_grads(Dx, Dy):
-    P = np.exp(-(np.square(Dx) / 2))
+def tsne_grads(Dx, Dy, k):
+    # sigma = find_sigma(Dx, np.log2(k))
+    sigma = 1
+    P = np.exp(-(np.square(Dx) / sigma))
     Q = 1 / (1 + np.square(Dy))
     P, Q = np.meshgrid(P, Q)
     Z_stack = [1 / (1 + np.square(Dy)) for _ in Dy]
@@ -133,8 +135,10 @@ def tsne_grads(Dx, Dy):
     gradient = np.flip(gradient, 0)
     return gradient
 
-def frob_tsne_grads(Dx, Dy):
-    P = np.exp(-(np.square(Dx) / 2))
+def frob_tsne_grads(Dx, Dy, k):
+    # sigma = find_sigma(Dx, np.log2(k))
+    sigma = 1
+    P = np.exp(-(np.square(Dx) / sigma))
     Q = 1 / (1 + np.square(Dy))
     P, Q = np.meshgrid(P, Q)
     Z_stack = [1 / (1 + np.square(Dy)) for _ in Dy]
@@ -145,7 +149,8 @@ def frob_tsne_grads(Dx, Dy):
     return gradient
 
 def umap_grads(Dx, Dy, a, b, k):
-    sigma = find_sigma(Dx, np.log2(k))
+    # sigma = find_sigma(Dx, np.log2(k))
+    sigma = 1
     P_vec = np.exp(-1 * (np.square(Dx) - np.min(np.square(Dx))) / sigma)
     attr_vec = -2 * a * b * np.power(np.square(Dy), b - 1) / (1 + np.square(Dy))
     rep_vec = 2 * b / ((0.001 + np.square(Dy)) * (1 + a * np.power(np.square(Dy), b)))
@@ -158,7 +163,8 @@ def umap_grads(Dx, Dy, a, b, k):
     return gradient
 
 def frob_umap_grads(Dx, Dy, a, b, k):
-    sigma = find_sigma(Dx, np.log2(k))
+    # sigma = find_sigma(Dx, np.log2(k))
+    sigma = 1
     P_vec = np.exp(-1 * (np.square(Dx) - np.min(np.square(Dx))) / sigma)
     Q_vec = 1 / (1 + a * np.square(Dy) ** b)
     attr_vec = P_vec * Q_vec * Q_vec
@@ -199,6 +205,7 @@ def make_plot(
     high_dim_dists,
     gradient,
     upper_bound,
+    exp=False,
     contour=True
 ):
     num_dists = len(low_dim_dists)
@@ -214,7 +221,7 @@ def make_plot(
             X,
             Y,
             gradient,
-            levels=[0, 10],
+            levels=[0],
             colors='black',
             linestyles='dashed'
         )
@@ -222,25 +229,27 @@ def make_plot(
     plt.xlabel('High dim distance >>')
     plt.ylabel('Low dim distance >>')
 
-    x_tick_indices = np.arange(
+    tick_indices = np.arange(
         float(num_dists)/5,
         num_dists,
         float(num_dists)/5
     )
 
-    y_tick_indices = np.arange(
-        float(num_dists)/5,
-        num_dists,
-        float(num_dists)/5
-    )
-
-    plt.xticks(
-        x_tick_indices,
-        np.arange(
+    if exp:
+        tick_values = np.power(
+            float(2),
+            (np.arange(1, 5) * 2 - 5).astype(np.float32)
+        )
+    else:
+        tick_values = np.arange(
             float(upper_bound)/5,
             upper_bound,
             float(upper_bound)/5
         ).astype(np.int32)
+
+    plt.xticks(
+        tick_indices,
+        tick_values
     )
     plt.tick_params(
         axis='x',
@@ -251,12 +260,8 @@ def make_plot(
         which='both',
     )
     plt.yticks(
-        y_tick_indices,
-        np.arange(
-            float(upper_bound)/5,
-            upper_bound,
-            float(upper_bound)/5
-        )[::-1].astype(np.int32)
+        tick_indices,
+        tick_values[::-1]
     )
     plt.tick_params(
         axis='y',
@@ -300,24 +305,30 @@ if __name__ == '__main__':
     # gradient = tsne_grads(high_dim_dists, low_dim_dists)
     # make_plot(low_dim_dists, high_dim_dists, gradient)
 
-    # Uncomment this and above for linearly growing distances
+    a = 1
+    b = 1
+    k = 20
+
+    # linear plots
     low_dim_dists, high_dim_dists = get_linear_progression(upper_bound=upper_bound)
-
-    # Uncomment for exponentially growing distances
-    # low_dim_dists, high_dim_dists = get_exp_progression()
-
-    # UMAP gradients plot
-    a = 1
-    b = 1
-    k = 20
-    gradient = tsne_grads(high_dim_dists, low_dim_dists)
-    # gradient = umap_grads(high_dim_dists, low_dim_dists, a, b, k)
+    gradient = tsne_grads(high_dim_dists, low_dim_dists, k)
+    make_plot(low_dim_dists, high_dim_dists, gradient, upper_bound)
+    gradient = frob_tsne_grads(high_dim_dists, low_dim_dists, k)
     make_plot(low_dim_dists, high_dim_dists, gradient, upper_bound)
 
-    # Frobenius UMAP gradients plot
-    a = 1
-    b = 1
-    k = 20
-    gradient = frob_tsne_grads(high_dim_dists, low_dim_dists)
-    # gradient = frob_umap_grads(high_dim_dists, low_dim_dists, a, b, k)
+    gradient = frob_umap_grads(high_dim_dists, low_dim_dists, a, b, k)
     make_plot(low_dim_dists, high_dim_dists, gradient, upper_bound)
+    gradient = umap_grads(high_dim_dists, low_dim_dists, a, b, k)
+    make_plot(low_dim_dists, high_dim_dists, gradient, upper_bound)
+
+    # exponential plots
+    low_dim_dists, high_dim_dists = get_exp_progression()
+    gradient = tsne_grads(high_dim_dists, low_dim_dists, k)
+    make_plot(low_dim_dists, high_dim_dists, gradient, upper_bound, exp=True)
+    gradient = frob_tsne_grads(high_dim_dists, low_dim_dists, k)
+    make_plot(low_dim_dists, high_dim_dists, gradient, upper_bound, exp=True)
+
+    gradient = frob_umap_grads(high_dim_dists, low_dim_dists, a, b, k)
+    make_plot(low_dim_dists, high_dim_dists, gradient, upper_bound, exp=True)
+    gradient = umap_grads(high_dim_dists, low_dim_dists, a, b, k)
+    make_plot(low_dim_dists, high_dim_dists, gradient, upper_bound, exp=True)
