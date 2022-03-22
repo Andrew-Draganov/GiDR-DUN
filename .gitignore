@@ -24,3 +24,4 @@ umap/Images
 build/
 .DS_Store
 *.so
+.vscode/

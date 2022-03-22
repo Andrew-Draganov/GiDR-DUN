@@ -1,5 +1,5 @@
 from warnings import warn, catch_warnings, simplefilter
-from .umap_ import UMAP
+#from .uniform_umap_ import UMAP
 
 try:
     with catch_warnings():

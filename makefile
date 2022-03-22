@@ -17,5 +17,8 @@ run_tsne:
 #	rm *.so *.o test.c
 
 profile:
-	nvcc -o cython/profile cython/profiling_test.cpp cython/gpu_kernels.cu cython/GPU_utils.cu
+	nvcc -o cython/profile cython/profilinrapig_test.cpp cython/gpu_kernels.cu cython/GPU_utils.cu
 	nvprof ./cython/profile
+
+run_rapids:
+	python rapids_umap.py 
