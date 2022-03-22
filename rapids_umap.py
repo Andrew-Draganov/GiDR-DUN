@@ -43,7 +43,8 @@ projection = cumlUMAP(n_neighbors=15, n_epochs=500, negative_sample_rate=1, init
 end = time.time()
 print('CUML UMAP took {:.3f} seconds'.format(end - start))
 
-make_dist_plots(points, projection, labels, "cumlumap", "mnist")
+#make_dist_plots(points, projection, labels, "cumlumap", "mnist")
+projection = projection.to_pandas().values
 
 plt.scatter(projection[:, 0], projection[:, 1], c=labels, s=0.1, alpha=0.8)
 plt.show()
