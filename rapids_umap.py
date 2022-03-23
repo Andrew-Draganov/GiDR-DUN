@@ -47,4 +47,4 @@ print('CUML UMAP took {:.3f} seconds'.format(end - start))
 projection = projection.to_pandas().values
 
 plt.scatter(projection[:, 0], projection[:, 1], c=labels, s=0.1, alpha=0.8)
-plt.show()
+plt.savefig("rapids.png")
