@@ -19,6 +19,8 @@ cython/optimize.cpp
 uniform_umap/__pycache__
 nndescent/nndescent/__pycache__
 cython/__pycache__
+uniform_umap/__pycache__
+utils/__pycache__
 datasets/
 umap/.DS_Store
 umap/Images
