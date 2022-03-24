@@ -6,12 +6,10 @@ run: #this is working :D
 	python setup_cython_gpu.py install #https://stavshamir.github.io/python/making-your-c-library-callable-from-python-by-wrapping-it-with-cython/
 	#
 	# Running...
-	#python umap/dim_reduce_dataset.py --optimize-method cy_umap_uniform --num-points 60000
-	python uniform_umap/dim_reduce_dataset.py --num-points 60000 --gpu
+	python dim_reduce_dataset.py --optimize-method uniform_umap --gpu --num-points 60000
 
 run_tsne:
-	#python umap/dim_reduce_dataset.py --optimize-method cy_umap_uniform --num-points 60000 --normalized --momentum
-	python uniform_umap/dim_reduce_dataset.py --num-points 60000 --gpu --kernel-choice tsne
+	python dim_reduce_dataset.py --optimize-method uniform_umap --num-points 60000 --normalized --momentum
 
 #clean:
 #	rm *.so *.o test.c
