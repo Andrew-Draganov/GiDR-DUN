@@ -23,6 +23,7 @@ void of() {
 void gpu_umap_wrap(
         int normalized,
         int sym_attraction,
+        int frob,
         int momentum,
         float *head_embedding,
         float *tail_embedding,
@@ -38,11 +39,13 @@ void gpu_umap_wrap(
         int n_vertices,
         float initial_lr,
         int n_edges,
-        int n_epochs
+        int n_epochs,
+        int negative_sample_rate
 ) {
     gpu_umap(
             normalized,
             sym_attraction,
+            frob,
             momentum,
             head_embedding,
             tail_embedding,
@@ -58,6 +61,7 @@ void gpu_umap_wrap(
             n_vertices,
             initial_lr,
             n_edges,
-            n_epochs
+            n_epochs,
+            negative_sample_rate
     );
 }

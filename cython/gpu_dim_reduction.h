@@ -14,6 +14,7 @@ void of();
 void gpu_umap_wrap(
         int normalized,
         int sym_attraction,
+        int frob,
         int momentum,
         float* head_embedding,
         float* tail_embedding,
@@ -29,7 +30,8 @@ void gpu_umap_wrap(
         int n_vertices,
         float initial_lr,
         int n_edges,
-        int n_epochs
+        int n_epochs,
+        int negative_sample_rate
 );
 
 #endif //UMAP_EXAMPLE_TEST_OBJECT_H
