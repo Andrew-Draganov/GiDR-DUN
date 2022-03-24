@@ -234,38 +234,6 @@ Then both algorithms simply perform attractions along these edges while performi
 interpret the gradient descent problem as a set of springs between every pair of points in $Y$ where the spring constants are determined by the Gaussian and
 Student-t kernels.
 
-\subsection{Gradients}
-
-The gradients of each algorithm change substantially due to the differing normalizations. In tSNE, the gradient can be written as
-\begin{equation}
-    \dfrac{\partial \mathcal{L}_{tsne}}{\partial y_i} = 4 \sum_{j \neq i} (p_{ij} - q_{ij}) q_{ij} Z (y_i - y_j)
-\end{equation}
-where $Z = \sum_{k \neq l} (1 + ||y_k - y_l||_2^2)^{-1}$ is the normalization factor for the low-dimensional kernel. This is often represented as an attractive
-and repulsive force with
-\begin{align*}
-    \dfrac{\partial \mathcal{L}_{tsne}}{\partial y_i} &= 4(\mathcal{A}_i^{tsne} + \mathcal{R}_i^{tsne}) = \\
-    &= 4 \left[ - \sum_{j, j \neq i} p_{ij}q_{ij}Z (y_i - y_j) + \sum_{j, j \neq i} q_{ij}^2 Z (y_i - y_j) \right]
-\end{align*}
-
-UMAP also describes separating its gradient into attractive and repulsive terms\footnote{$p_{ij}$ are the calculated nearest neighbor weights in the
-high-dimensional space. $p_{ik}$, on the other hand, are the potentially unknown pairwise weights between point $i$ and a randomly selected point $k$}, with
-\begin{align}
-    \mathcal{A}_i^{umap} = & \sum_{j, j \neq i} \dfrac{-2ab||y_i - y_j||_2^{2(b-1)}}{1 + ||y_i - y_j||_2^2} p_{ij} (y_i - y_j) \label{umap_attr} \\
-    \mathcal{R}_i^{umap} = & \sum_{j, j \neq i} \dfrac{2b}{(\epsilon + ||y_i - y_k||_2^2)(1 + a ||y_i - y_k||_2^{2b})} \cdot \label{umap_rep} \\
-    &\cdot (1 - p_{ik}) (y_i - y_k) \nonumber
-\end{align}
-
-We make the argument that this change in normalization is the fundamental difference between the two algorithms. First, note that the UMAP repulsive force is
-inversely quadratic with respect to the low-dimensional distance. This means that points that are too close in the low-dimensional space experience
-significantly stronger repulsions under UMAP's gradients than under TSNE's. This can be seen in figures \ref{fig:linear_grads} and \ref{fig:exp_grads}, where we
-plot the force between points $y_i$ and $y_j$ as a function of their high- and low-dimensional distances.
-Additionally, the normalization has a direct effect on the accumulated gradients during a single epoch.
-By not normalizing, UMAP's pairwise likelihoods have orders of magnitude $p_{ij}, q_{ij} \approx 0.5$, whereas TSNE's are bounded by the fact that $\sum_{i \neq j}
-p_{ij} = \sum_{i \neq j} q_{ij} = 1$.
-This means that the average TSNE spring force is significantly weaker than the average UMAP one.
-However, TSNE and UMAP calculate comparable numbers of attractions and repulsions during every epoch, naturally leading to UMAP collecting significantly
-stronger per-point gradients over the span of an epoch of gradient descent.
-
 
 \begin{figure*}[h]
     \begin{tabular}{|c|c|c|c|c|}
@@ -291,6 +259,40 @@ stronger per-point gradients over the span of an epoch of gradient descent.
 Notice that the KL-divergence and Frobenius norm have similar minima. The top-left image is a recreation of the original gradient plot in \cite{van2008visualizing}.}
 \label{grad_plots}
 \end{figure*}
+
+\subsection{Gradients}
+
+The gradients of each algorithm change substantially due to the differing normalizations. In tSNE, the gradient can be written as
+\begin{equation}
+    \dfrac{\partial \mathcal{L}_{tsne}}{\partial y_i} = 4 \sum_{j \neq i} (p_{ij} - q_{ij}) q_{ij} Z (y_i - y_j)
+\end{equation}
+where $Z = \sum_{k \neq l} (1 + ||y_k - y_l||_2^2)^{-1}$ is the normalization factor for the low-dimensional kernel. This is often represented as an attractive
+and repulsive force with
+\begin{align*}
+    \dfrac{\partial \mathcal{L}_{tsne}}{\partial y_i} &= 4(\mathcal{A}_i^{tsne} + \mathcal{R}_i^{tsne}) = \\
+    &= 4 \left[ - \sum_{j, j \neq i} p_{ij}q_{ij}Z (y_i - y_j) + \sum_{j, j \neq i} q_{ij}^2 Z (y_i - y_j) \right]
+\end{align*}
+
+UMAP also describes separating its gradient into attractive and repulsive terms\footnote{$p_{ij}$ are the calculated nearest neighbor weights in the
+high-dimensional space. $p_{ik}$, on the other hand, are the potentially unknown pairwise weights between point $i$ and a randomly selected point $k$}, with
+\begin{align}
+    \mathcal{A}_i^{umap} = & \sum_{j, j \neq i} \dfrac{-2ab||y_i - y_j||_2^{2(b-1)}}{1 + ||y_i - y_j||_2^2} p_{ij} (y_i - y_j) \label{umap_attr} \\
+    \mathcal{R}_i^{umap} = & \sum_{j, j \neq i} \dfrac{2b}{(\epsilon + ||y_i - y_k||_2^2)(1 + a ||y_i - y_k||_2^{2b})} \cdot \label{umap_rep} \\
+    &\cdot (1 - p_{ik}) (y_i - y_k) \nonumber
+\end{align}
+We draw the reader's attention to the $p_{ij}$ and $1 - p_{ik}$ scalars that arrise in the attractive and repulsive forces respectively. These are relevant for
+much of the upcoming discussion.
+
+We make the argument that this change in normalization is the fundamental difference between the two algorithms. First, note that the UMAP repulsive force is
+inversely quadratic with respect to the low-dimensional distance. This means that points that are too close in the low-dimensional space experience
+significantly stronger repulsions under UMAP's gradients than under TSNE's. This can be seen in figures \ref{fig:linear_grads} and \ref{fig:exp_grads}, where we
+plot the force between points $y_i$ and $y_j$ as a function of their high- and low-dimensional distances.
+Additionally, the normalization has a direct effect on the accumulated gradients during a single epoch.
+By not normalizing, UMAP's pairwise likelihoods have orders of magnitude $p_{ij}, q_{ij} \approx 0.5$, whereas TSNE's are bounded by the fact that $\sum_{i \neq j}
+p_{ij} = \sum_{i \neq j} q_{ij} = 1$.
+This means that the average TSNE spring force is significantly weaker than the average UMAP one.
+However, TSNE and UMAP calculate comparable numbers of attractions and repulsions during every epoch, naturally leading to UMAP collecting significantly
+stronger per-point gradients over the span of an epoch of gradient descent.
 
 
 \subsection{Implementation differences} \label{implementation_diffs}
@@ -387,6 +389,31 @@ Second, TSNE calculates the repulsive force with respect to every other point by
 a constant number of points $k$. If both are operating in the unnormalized setting, the Barnes-Hut implementation would have an $n/k$ times stronger repulsion
 on average. Thus, we implement the unnormalized version of TSNE by scaling the collected repulsive gradients by $k/n$.
 
+
+\begin{figure*}
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
+    \hline
+    algorithm & metric & default & init & pseudo-distance & symmetrization & sym attraction & frobenius & a, b \\
+    \hline
+
+    \multirow{2}{*}{UMAP} & kNN-accuracy & 95.4 & 96.6 & 94.4 & 96.7 & 96.6 & 96.7 & 96.5 \\ \cline{2-9}
+                          & V-Score & 82.5 & 84.6 & 82.2 & 82.5 & 83.5 & 87.0 & 82.2 \\
+    \hline
+
+    \multirow{2}{*}{TSNE} & kNN-accuracy & 95.1 & 95.2 & 96.0 & 94.9 & 94.8 & 94.7 & 95.1 \\ \cline{2-9}
+                          & V-Score & 70.9 & 70.7 & 73.9 & 70.8 & 80.7 & 71.8 & 73.5 \\
+    \hline
+
+    \multirow{2}{*}{\ourmethod} & kNN-accuracy & 96.2 & 96.4 & 96.7 & 96.6 & 96.5 & 96.2 & 95.8 \\ \cline{2-9}
+                                & V-Score & 84.0 & 82.1 & 85.2 & 85.1 & 83.3 & 85.4 & 81.2 \\
+    \hline
+    \end{tabular}
+    \caption{kNN-accuracy for $k=100$ and V-score for each isolated parameter on MNIST. Notice that no parameter has a significant effect on the metrics
+    compared to the default.}
+    \label{irrelevant-metrics}
+\end{figure*}
+
 \section{\ourmethod} \label{uniform}
 We now present \ourmethod  --- an algorithm that can recreate both TSNE and UMAP results at much higher speeds than any implementation of either algorithm.
 The key observation is noticing that the only two necessary ''switches`` between TSNE and UMAP are the normalization and gradient amplification. In fact,
@@ -400,7 +427,7 @@ attraction.\footnote{We note that not most values of $p_{ik}$ are unavailable to
 \; \forall \; p_{ik}$. UMAP's implementation similarly does not calculate $p_{ik}$, instead using $p_{ik} \approx p_{ij}$ as an estimation.} We exprimentally
 validate that these changes still allow us to obtain both TSNE's and UMAP's embeddings despite the significantly simplified optimization loop.
 
-With respect to the other choices, \ourmethod  uses TSNE's asymmetric attraction, scalars, distance-metric, and gradient amplification along with UMAP's
+With respect to the other choices, \ourmethod uses TSNE's asymmetric attraction, scalars, distance-metric, and gradient amplification along with UMAP's
 initialization, nearest neighbors, and symmetrization. Given these settings, our algorithm follows the UMAP optimization procedure except that we
 \begin{enumerate}
         \item replace the force sampling by iteratively processing every attraction and repulsion
@@ -414,7 +441,7 @@ instead optimize the squared Frobenius norm without sacrificing quality:
 \[ \mathcal{L}(X, Y) = \sum_{i \neq j} (p(x_i, x_j) - q(y_i, y_j))^2 \]
 
 This presents us with the following attractive and repulsive forces acting on point $y_i$
-% FIXME -- check these to be totally correct
+% FIXME -- The code should run with the correct frob gradients under the a, b scalars...
 \begin{align*}
     \mathcal{A}_i^{frob-tsne} &= -4 \sum_{j, j \neq i} p_{ij} Z (q_{ij}^2 + 2q_{ij}^3) (y_i - y_j) \\
     \mathcal{R}_i^{frob-tsne} &= 4 \sum_{j, j \neq i} Z( q_{ij}^3 + 2q_{ij}^4) (y_i - y_j) \\
@@ -426,6 +453,9 @@ This presents us with the following attractive and repulsive forces acting on po
 We wrote these under the assumption that $a = b = 1$, although the gradients are simple to calculate in the alternative setting as well. We note that this is
 cleaner to minimize in practice as we no longer have to estimate $1 - p_{ik}$, a value that is not available to us when we only calculate $p$ for the nearest
 neighbors in the high-dimensional space.
+
+We lastly point out that removing the repulsions from every other point in the normalized setting results in weaker gradients than in the original TSNE
+algorithm. We account for this by scaling the learning rate proportionally to the input data size.
 
 \begin{figure} \label{relevant-mnist}
     \centering
@@ -455,6 +485,31 @@ neighbors in the high-dimensional space.
     \ourmethod recreates both TSNE and UMAP under default and normalized settings}
 \end{figure}
 
+\begin{figure} \label{relevant-fashion-mnist}
+    \centering
+    \begin{tabular}{|c|c|c|}
+    \hline
+    default & \centered{normalization and \\ gradient amplification} & sym attraction \\
+    \hline
+
+    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/tsne/default/embedding.png}&
+    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/tsne/normalized/embedding.png}&
+    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/tsne/sym_attraction/embedding.png}\\
+    \hline
+
+    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/umap/default/embedding.png}&
+    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/umap/normalized/embedding.png}&
+    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/umap/sym_attraction/embedding.png}\\
+    \hline
+
+    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/uniform_umap/default/embedding.png}&
+    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/uniform_umap/normalized/embedding.png}&
+    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/uniform_umap/sym_attraction/embedding.png}\\
+
+    \hline
+    \end{tabular}
+\end{figure}
+
 \section{Results}
 \subsection{Metrics}
 We utilize standard clustering and dimensionality reduction metrics to quantitatively evaluate the embeddings. We record the kNN-accuracy to assert that objects
@@ -467,34 +522,6 @@ precision and recall, with the V-measure acting as the structural analog to the 
 
 Additionally, we note that dimensionality reduction methods are often judged by their qualitative ability to make datasets digestible. This is difficult to
 quantify, so we use our best judgement when saying that two embeddings with comparable metrics ''look`` similar.
-
-\subsection{TSNE \& UMAP Parameters}
-We start by showing results to support the claim that the normalization is the primary difference maker among the identified hyperparameters. Our first step is
-to show that the other algorithm settings do not induce a significant deviation in the embeddings. When referring to figure \ref{irrelevant-mnist} and table
-\ref{irrelevant-metrics}, the column labeled default uses the settings as described in \ref{implementation_diffs}. Every other column, then, means that we
-switched that specific parameter to its alternative setting. Comparing to the default algorithms' embeddings, we see that
-none of the parameters impose an immediately visible effect on the resulting images. This is substantiated by the metrics, showing that 
-the parameter modifications do not significantly impact the kNN-accuracy or V-measure, with the exception of the Frobenius norm on TSNE. Digging deeper, we find
-that replacing the KL-divergence with the Frobenius norm increases the magnitude of the repulsive gradients, as seen in figure \ref{grad_plots}. This imposes
-slighly more separation between dissimilar points in the low-dimensional space and allows the metrics to untangle the class structure more easily. We also note
-that the change in initialization naturally affects the layout of the points due to the highly non-convex objective function. Despite this, there does not seem
-to be a discernible loss in quality one way or the other, leading us to prefer the Laplacian Eigenmap initialization due to its predictable output orientation.
-
-We only show the effect of single hyperparameter changes for combinatoric reasons. In our experimentation, however, we see no difference between applying one
-hyperparameter change and any other number of them.
-
-We now turn our attention to the parameters that do have a significant effect on the resulting embeddings. Namely, these are the normalization (and
-corresponding gradient amplification) and the symmetric attraction. Changing between symmetric and asymmetric attraction can be thought of as similar to scaling
-the attractive force by 2. Naturally, then, it leads to tighter clusters in the case of TSNE (with corresponding improvements in the metrics). However on UMAP, which
-already has a stronger emphasis on similarity, symmetric attraction plays a smaller role both qualitatively and quantitatively. We thus chose to implement
-\ourmethod with asymmetric attraction as it adequately recreates UMAP embeddings, better approximates the TSNE outputs, and is also quicker to optimize.
-
-Lastly, we analyze the effect that normalization has on the embeddings. This is toggled in unison with the gradient amplification changes, as performing UMAP's
-gradient descent in the normalized setting does not move the points at all while TSNE's gradient descent in the normalized setting forces the points to grow
-to unwieldy magnitudes. Under these changes, we see that TSNE in the unnormalized setting induces significantly more separation between the clusters in a manner
-similar to UMAP. The representations are significantly fuzzier, however, as we are still performing repulsions with respect to every other point, causing the
-embedding to fall closer to the mean of the multi-modal high dimensional distribution. We see the opposite effect when optimizing UMAP in the normalized
-setting. 
 
 \begin{figure*}
     \centering
@@ -531,6 +558,50 @@ setting.
     \caption{Effect of the less-relevant algorithm settings on MNIST embeddings. The rows are TSNE, UMAP, and \ourmethod from top to bottom.}
     \label{irrelevant-mnist}
 \end{figure*}
+
+\subsection{TSNE \& UMAP Parameters}
+We start by showing results to support the claim that the normalization is the primary difference maker among the identified hyperparameters. Our first step is
+to show that the other algorithm settings do not induce a significant deviation in the embeddings. When referring to figure \ref{irrelevant-mnist} and table
+\ref{irrelevant-metrics}, the column labeled default uses the settings as described in \ref{implementation_diffs}. Every other column, then, means that we
+switched that specific parameter to its alternative setting. Comparing to the default algorithms' embeddings, we see that
+none of the parameters impose an immediately visible effect on the resulting images. This is substantiated by the metrics, showing that 
+the parameter modifications do not significantly impact the kNN-accuracy or V-measure, with the exception of the Frobenius norm on TSNE. Digging deeper, we find
+that replacing the KL-divergence with the Frobenius norm increases the magnitude of the repulsive gradients, as seen in figure \ref{grad_plots}. This imposes
+slighly more separation between dissimilar points in the low-dimensional space and allows the metrics to untangle the class structure more easily.
+
+We also note that the change in initialization naturally affects the layout of the points due to the highly non-convex objective function. Interestingly, while
+clusters that are close to one another under one initialization remain close under the other, the large-scale structure of the embedding seems to not matter as
+much. Namely, clusters that are far apart can be placed anywhere in the embedding as long as they maintain sufficient distance between one another. In either
+case, there does not seem to be a discernible change in quality between the two initializations, leading us to prefer the Laplacian Eigenmap initialization on
+small datasets (<100K) due to its predictable output orientation and random initialization on large datasets (>100K) for runtime concerns.
+
+We only show the effect of single hyperparameter changes for combinatoric reasons. In our experimentation, however, we see no difference between applying one
+hyperparameter change and any other number of them. Furthermore, there are a few hyperparameters that we do not include in the main body of this paper, as they
+both have no effect on the embeddings and are the least interesting. These include calculating the exact nearest neighbors vs. approximating them, gradient
+clipping, and the number of epochs.
+
+We now turn our attention to the parameters that do have a significant effect on the resulting embeddings. Namely, these are the normalization (and
+corresponding gradient amplification) and the symmetric attraction. Changing between symmetric and asymmetric attraction is similar to scaling
+the attractive force by 2. Naturally, then, it leads to tighter clusters in the case of TSNE (with corresponding improvements in the metrics). However on UMAP, which
+already tends to have tighter clusters, symmetric attraction plays a smaller role both qualitatively and quantitatively. We thus chose to implement
+\ourmethod with asymmetric attraction as it adequately recreates UMAP embeddings, better approximates the TSNE outputs, and is also quicker to optimize.
+
+Lastly, we analyze the effect that normalization has on the embeddings. This is toggled in unison with the gradient amplification changes, as performing UMAP's
+gradient descent in the normalized setting does not move the points at all while TSNE's gradient descent in the normalized setting forces the points to grow
+to unwieldy magnitudes. Under these changes, we see that TSNE in the unnormalized setting induces significantly more separation between the clusters in a manner
+similar to UMAP. The representations are significantly fuzzier, however, as we are still performing repulsions with respect to every other point, causing the
+embedding to fall closer to the mean of the multi-modal high dimensional distribution.
+
+We see a much more extreme effect when performing UMAP in the normalized setting. Recall that the UMAP algorithm approximates the $p_{ij}$ and $1 - p_{ik}$
+gradient scalars by sampling the attractions and repulsions proportionally to $p_{ij}$ and $1 - p_{ij}$. However, the gradients in the normalized setting still
+have the $p_{ij}$ scalar on attractions but lose the $1 - p_{ik}$ scalar on repulsions. The UMAP sampling schema, then, imposes an unnecessary weight on the
+repulsions in the normalized setting.
+Accounting for this requires dividing the repulsive forces by $1 - p_{ik}$, but this (with the momentum gradient descent and stronger learning rate) leads to
+a highly unstable training regime.
+
+This implies that stabilizing UMAP in the normalized setting requires removing the sampling and instead directly multiplying by $p_{ij}$ and $1 - p_{ik}$.
+Indeed, this is exactly what we do in \ourmethod.
+Under this change, and only this change, we obtain embeddings that are effectively identical to those that our method returns under its default parameters.
 
 \begin{figure*} \label{irrelevant-fashion-mnist}
     \centering
@@ -569,57 +640,81 @@ setting.
     \end{tabular}
 \end{figure*}
 
-\begin{figure} \label{relevant-fashion-mnist}
-    \centering
-    \begin{tabular}{|c|c|c|}
-    \hline
-    default & \centered{normalization and \\ gradient amplification} & sym attraction \\
-    \hline
+\subsection{Theoretical Implications}
+The UMAP pseudo-distance's functional irrelevance is particularly interesting. It was originally proposed in conjunction with an insightful new theoretical
+framework for analyzing dimensionality reduction algorithms. Namely, it highlighted that UMAP is attempting to find a low-dimensional pointset such that its
+manifold matches the high-dimensional pointset's under this pseudo-distance metric. Despite this clean foundation, however, the experimental results show that
+the pseudo-distance metric is not a relevant hyperparameter on these datasets. We see two options for what this could mean. The first is that the algorithm's
+reliance on gradient descent and highly non-convex criteria loses the relevance of the pseudo-distance metric during optimization. The unfortunate second option
+is that this pseudo-distance metric, while insightful from a theoretical perspective, is not a necessary component of the overall optimization.
 
-    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/tsne/default/embedding.png}&
-    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/tsne/normalized/embedding.png}&
-    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/tsne/sym_attraction/embedding.png}\\
-    \hline
+We further ask which algorithmic changes are compatible with the theoretic framework. For example, optimizing the Frobenius norm gives significantly different
+gradient plots but is as theoretically sound as optimizing the KL-divergence.
 
-    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/umap/default/embedding.png}&
-    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/umap/normalized/embedding.png}&
-    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/umap/sym_attraction/embedding.png}\\
-    \hline
+\subsection{\ourmethod vs. TSNE/UMAP}
+Given the analysis of the TSNE and UMAP parameters, we compare the original algorithms with \ourmethod's outputs. Namely, we aim to show that our method's
+UMAP-like outputs are functionally equivalent to UMAP's and its TSNE-like outputs are functionally equivalent to TSNE's. This can be seen qualitatively in
+figure \ref{irrelevant-mnist}, where we see the effect that each ``irrelevant'' parameter has over \ourmethod vs. the original algorithms it is recreating. This
+is similarly evident in the metric analysis, where the difference in scores is indiscernible from random variations. The same holds for \ourmethod under
+symmetric and asymmetric attraction, mirroring the effect that this parameter has on TSNE and UMAP. We cannot compare our method to the original algorithms
+under differing normalizations, as that is the variable dictating which algorithm it is emulating. Thus, across all of the identified hyperparameters and
+settings, our method satisfactorily reproduces the embeddings for both TSNE and UMAP across datasets.
+% FIXME -- talk about how UMAP author says ``TSNE can't do this, TSNE can't do that''... but it totally can under this implementation
 
-    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/uniform_umap/default/embedding.png}&
-    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/uniform_umap/normalized/embedding.png}&
-    \includegraphics[width=.25\linewidth]{outputs/fashion_mnist/uniform_umap/sym_attraction/embedding.png}\\
 
-    \hline
-    \end{tabular}
-\end{figure}
+\subsection{Runtime Analysis}
+We now analyzing our method's runtime vs. those of TSNE, UMAP, and other dimensionality reduction algorithms. Specifically, we also compare against LargeVis, pyMDE
+\cite{agrawal2021minimum}, and FitSNE. The runtime comparison is broken up into \textit{optimization runtime} and \textit{total runtime}. Ostensibly, we have
+only modified the optimization algorithm, so a direct speed comparison here seems appropriate. However, these methods calculate the nearest neighbors
+in many different ways, with significant speed differences hidden therein. We stick with the precedent set in \cite{mcinnes2018umap} and
+\cite{tang2016visualizing} and simply compare total runtimes rather than accounting for the various nearest-neighbor search implementations.
 
-\begin{figure*}
-    \centering
-    \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
-    \hline
-    algorithm & metric & default & init & pseudo-distance & symmetrization & sym attraction & frobenius & a, b \\
-    \hline
+As an aside, we would like to also mention that our implementations of UMAP and TSNE for the experimental evaluation also contain several speedups over the original
+codebases. We compare our implementations of TSNE and UMAP with the originals in table \textcolor{red}{??}.
 
-    \multirow{2}{*}{UMAP} & kNN-accuracy & 95.4 & 96.6 & 94.4 & 96.7 & 96.6 & 96.7 & 96.5 \\ \cline{2-9}
-                          & V-Score & 82.5 & 84.6 & 82.2 & 82.5 & 83.5 & 87.0 & 82.2 \\
-    \hline
+We see that \ourmethod consistently outperforms every existing dimensionality reduction algorithm on speed. We obtain a consistent 5-times
+speedup over the existing UMAP optimization time and are several orders of magnitude faster than existing TSNE optimizers. This is due to multiple optimizations
+that our method has over the existing algorithms. First, the symmetric attraction operation requires costly out-of-order memory access. Additionally, \ourmethod
+sets the $a$ and $b$ scalars to 0, significantly simplifying gradient computations. Lastly, by uniformly calculating one repulsion for each attraction, we
+simplify the load distribution when parallelizing.
 
-    \multirow{2}{*}{TSNE} & kNN-accuracy & 95.1 & 95.2 & 96.0 & 94.9 & 94.8 & 94.7 & 95.1 \\ \cline{2-9}
-                          & V-Score & 70.9 & 70.7 & 73.9 & 70.8 & 80.7 & 71.8 & 73.5 \\
-    \hline
+\subsection{GPU Implementation}
+These changes are particularly amenable to running on the GPU. Thus, we also test our runtime against available GPU implementations of both TSNE and UMAP. We
+see corresponding speedups as in the CPU case, with optimizing MNIST's 60000 points only taking 0.5 seconds.
 
-    \multirow{2}{*}{\ourmethod} & kNN-accuracy & 96.2 & 96.4 & 96.7 & 96.6 & 96.5 & 96.2 & 95.8 \\ \cline{2-9}
-                                & V-Score & 84.0 & 82.1 & 85.2 & 85.1 & 83.3 & 85.4 & 81.2 \\
-    \hline
-    \end{tabular}
-    \caption{kNN-accuracy for $k=100$ and V-score for each isolated parameter on MNIST. Notice that no parameter has a significant effect on the metrics
-    compared to the default.}
-    \label{irrelevant-metrics}
-\end{figure*}
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
 
 \end{document}
 \endinput
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
