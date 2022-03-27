@@ -4,16 +4,16 @@
 {
     "distutils": {
         "depends": [
-            "/home/andrew/py_venv/lib/python3.8/site-packages/numpy/core/include/numpy/arrayobject.h",
-            "/home/andrew/py_venv/lib/python3.8/site-packages/numpy/core/include/numpy/arrayscalars.h",
-            "/home/andrew/py_venv/lib/python3.8/site-packages/numpy/core/include/numpy/ndarrayobject.h",
-            "/home/andrew/py_venv/lib/python3.8/site-packages/numpy/core/include/numpy/ndarraytypes.h",
-            "/home/andrew/py_venv/lib/python3.8/site-packages/numpy/core/include/numpy/ufuncobject.h",
+            "/home/jakobrj/anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/core/include/numpy/arrayobject.h",
+            "/home/jakobrj/anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/core/include/numpy/arrayscalars.h",
+            "/home/jakobrj/anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/core/include/numpy/ndarrayobject.h",
+            "/home/jakobrj/anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/core/include/numpy/ndarraytypes.h",
+            "/home/jakobrj/anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/core/include/numpy/ufuncobject.h",
             "cython/gpu_dim_reduction.cpp"
         ],
         "include_dirs": [
             "cython",
-            "/home/andrew/py_venv/lib/python3.8/site-packages/numpy/core/include",
+            "/home/jakobrj/anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/core/include",
             "/usr/local/cuda-11/targets/x86_64-linux/include/"
         ],
         "language": "c++",
@@ -1019,7 +1019,7 @@ typedef struct {
 } __Pyx_BufFmt_Context;
 
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":690
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":690
  * # in Cython to enable them only on the right systems.
  * 
  * ctypedef npy_int8       int8_t             # <<<<<<<<<<<<<<
@@ -1028,7 +1028,7 @@ typedef struct {
  */
 typedef npy_int8 __pyx_t_5numpy_int8_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":691
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":691
  * 
  * ctypedef npy_int8       int8_t
  * ctypedef npy_int16      int16_t             # <<<<<<<<<<<<<<
@@ -1037,7 +1037,7 @@ typedef npy_int8 __pyx_t_5numpy_int8_t;
  */
 typedef npy_int16 __pyx_t_5numpy_int16_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":692
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":692
  * ctypedef npy_int8       int8_t
  * ctypedef npy_int16      int16_t
  * ctypedef npy_int32      int32_t             # <<<<<<<<<<<<<<
@@ -1046,7 +1046,7 @@ typedef npy_int16 __pyx_t_5numpy_int16_t;
  */
 typedef npy_int32 __pyx_t_5numpy_int32_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":693
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":693
  * ctypedef npy_int16      int16_t
  * ctypedef npy_int32      int32_t
  * ctypedef npy_int64      int64_t             # <<<<<<<<<<<<<<
@@ -1055,7 +1055,7 @@ typedef npy_int32 __pyx_t_5numpy_int32_t;
  */
 typedef npy_int64 __pyx_t_5numpy_int64_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":697
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":697
  * #ctypedef npy_int128     int128_t
  * 
  * ctypedef npy_uint8      uint8_t             # <<<<<<<<<<<<<<
@@ -1064,7 +1064,7 @@ typedef npy_int64 __pyx_t_5numpy_int64_t;
  */
 typedef npy_uint8 __pyx_t_5numpy_uint8_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":698
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":698
  * 
  * ctypedef npy_uint8      uint8_t
  * ctypedef npy_uint16     uint16_t             # <<<<<<<<<<<<<<
@@ -1073,7 +1073,7 @@ typedef npy_uint8 __pyx_t_5numpy_uint8_t;
  */
 typedef npy_uint16 __pyx_t_5numpy_uint16_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":699
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":699
  * ctypedef npy_uint8      uint8_t
  * ctypedef npy_uint16     uint16_t
  * ctypedef npy_uint32     uint32_t             # <<<<<<<<<<<<<<
@@ -1082,7 +1082,7 @@ typedef npy_uint16 __pyx_t_5numpy_uint16_t;
  */
 typedef npy_uint32 __pyx_t_5numpy_uint32_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":700
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":700
  * ctypedef npy_uint16     uint16_t
  * ctypedef npy_uint32     uint32_t
  * ctypedef npy_uint64     uint64_t             # <<<<<<<<<<<<<<
@@ -1091,7 +1091,7 @@ typedef npy_uint32 __pyx_t_5numpy_uint32_t;
  */
 typedef npy_uint64 __pyx_t_5numpy_uint64_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":704
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":704
  * #ctypedef npy_uint128    uint128_t
  * 
  * ctypedef npy_float32    float32_t             # <<<<<<<<<<<<<<
@@ -1100,7 +1100,7 @@ typedef npy_uint64 __pyx_t_5numpy_uint64_t;
  */
 typedef npy_float32 __pyx_t_5numpy_float32_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":705
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":705
  * 
  * ctypedef npy_float32    float32_t
  * ctypedef npy_float64    float64_t             # <<<<<<<<<<<<<<
@@ -1109,7 +1109,7 @@ typedef npy_float32 __pyx_t_5numpy_float32_t;
  */
 typedef npy_float64 __pyx_t_5numpy_float64_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":714
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":714
  * # The int types are mapped a bit surprising --
  * # numpy.int corresponds to 'l' and numpy.long to 'q'
  * ctypedef npy_long       int_t             # <<<<<<<<<<<<<<
@@ -1118,7 +1118,7 @@ typedef npy_float64 __pyx_t_5numpy_float64_t;
  */
 typedef npy_long __pyx_t_5numpy_int_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":715
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":715
  * # numpy.int corresponds to 'l' and numpy.long to 'q'
  * ctypedef npy_long       int_t
  * ctypedef npy_longlong   long_t             # <<<<<<<<<<<<<<
@@ -1127,7 +1127,7 @@ typedef npy_long __pyx_t_5numpy_int_t;
  */
 typedef npy_longlong __pyx_t_5numpy_long_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":716
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":716
  * ctypedef npy_long       int_t
  * ctypedef npy_longlong   long_t
  * ctypedef npy_longlong   longlong_t             # <<<<<<<<<<<<<<
@@ -1136,7 +1136,7 @@ typedef npy_longlong __pyx_t_5numpy_long_t;
  */
 typedef npy_longlong __pyx_t_5numpy_longlong_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":718
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":718
  * ctypedef npy_longlong   longlong_t
  * 
  * ctypedef npy_ulong      uint_t             # <<<<<<<<<<<<<<
@@ -1145,7 +1145,7 @@ typedef npy_longlong __pyx_t_5numpy_longlong_t;
  */
 typedef npy_ulong __pyx_t_5numpy_uint_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":719
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":719
  * 
  * ctypedef npy_ulong      uint_t
  * ctypedef npy_ulonglong  ulong_t             # <<<<<<<<<<<<<<
@@ -1154,7 +1154,7 @@ typedef npy_ulong __pyx_t_5numpy_uint_t;
  */
 typedef npy_ulonglong __pyx_t_5numpy_ulong_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":720
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":720
  * ctypedef npy_ulong      uint_t
  * ctypedef npy_ulonglong  ulong_t
  * ctypedef npy_ulonglong  ulonglong_t             # <<<<<<<<<<<<<<
@@ -1163,7 +1163,7 @@ typedef npy_ulonglong __pyx_t_5numpy_ulong_t;
  */
 typedef npy_ulonglong __pyx_t_5numpy_ulonglong_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":722
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":722
  * ctypedef npy_ulonglong  ulonglong_t
  * 
  * ctypedef npy_intp       intp_t             # <<<<<<<<<<<<<<
@@ -1172,7 +1172,7 @@ typedef npy_ulonglong __pyx_t_5numpy_ulonglong_t;
  */
 typedef npy_intp __pyx_t_5numpy_intp_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":723
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":723
  * 
  * ctypedef npy_intp       intp_t
  * ctypedef npy_uintp      uintp_t             # <<<<<<<<<<<<<<
@@ -1181,7 +1181,7 @@ typedef npy_intp __pyx_t_5numpy_intp_t;
  */
 typedef npy_uintp __pyx_t_5numpy_uintp_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":725
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":725
  * ctypedef npy_uintp      uintp_t
  * 
  * ctypedef npy_double     float_t             # <<<<<<<<<<<<<<
@@ -1190,7 +1190,7 @@ typedef npy_uintp __pyx_t_5numpy_uintp_t;
  */
 typedef npy_double __pyx_t_5numpy_float_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":726
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":726
  * 
  * ctypedef npy_double     float_t
  * ctypedef npy_double     double_t             # <<<<<<<<<<<<<<
@@ -1199,7 +1199,7 @@ typedef npy_double __pyx_t_5numpy_float_t;
  */
 typedef npy_double __pyx_t_5numpy_double_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":727
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":727
  * ctypedef npy_double     float_t
  * ctypedef npy_double     double_t
  * ctypedef npy_longdouble longdouble_t             # <<<<<<<<<<<<<<
@@ -1208,7 +1208,7 @@ typedef npy_double __pyx_t_5numpy_double_t;
  */
 typedef npy_longdouble __pyx_t_5numpy_longdouble_t;
 
-/* "sklearn/neighbors/_quad_tree.pxd":9
+/* "sklearn/neighbors/_quad_tree.pxd":13
  * cimport numpy as np
  * 
  * ctypedef np.npy_float32 DTYPE_t          # Type of X             # <<<<<<<<<<<<<<
@@ -1217,7 +1217,7 @@ typedef npy_longdouble __pyx_t_5numpy_longdouble_t;
  */
 typedef npy_float32 __pyx_t_7sklearn_9neighbors_10_quad_tree_DTYPE_t;
 
-/* "sklearn/neighbors/_quad_tree.pxd":10
+/* "sklearn/neighbors/_quad_tree.pxd":14
  * 
  * ctypedef np.npy_float32 DTYPE_t          # Type of X
  * ctypedef np.npy_intp SIZE_t              # Type for indices and counters             # <<<<<<<<<<<<<<
@@ -1226,7 +1226,7 @@ typedef npy_float32 __pyx_t_7sklearn_9neighbors_10_quad_tree_DTYPE_t;
  */
 typedef npy_intp __pyx_t_7sklearn_9neighbors_10_quad_tree_SIZE_t;
 
-/* "sklearn/neighbors/_quad_tree.pxd":11
+/* "sklearn/neighbors/_quad_tree.pxd":15
  * ctypedef np.npy_float32 DTYPE_t          # Type of X
  * ctypedef np.npy_intp SIZE_t              # Type for indices and counters
  * ctypedef np.npy_int32 INT32_t            # Signed 32 bit integer             # <<<<<<<<<<<<<<
@@ -1235,7 +1235,7 @@ typedef npy_intp __pyx_t_7sklearn_9neighbors_10_quad_tree_SIZE_t;
  */
 typedef npy_int32 __pyx_t_7sklearn_9neighbors_10_quad_tree_INT32_t;
 
-/* "sklearn/neighbors/_quad_tree.pxd":12
+/* "sklearn/neighbors/_quad_tree.pxd":16
  * ctypedef np.npy_intp SIZE_t              # Type for indices and counters
  * ctypedef np.npy_int32 INT32_t            # Signed 32 bit integer
  * ctypedef np.npy_uint32 UINT32_t          # Unsigned 32 bit integer             # <<<<<<<<<<<<<<
@@ -1244,7 +1244,7 @@ typedef npy_int32 __pyx_t_7sklearn_9neighbors_10_quad_tree_INT32_t;
  */
 typedef npy_uint32 __pyx_t_7sklearn_9neighbors_10_quad_tree_UINT32_t;
 
-/* "cython/gpu_uniform_umap.pyx":35
+/* "cython/gpu_uniform_umap.pyx":37
  *     )
  * 
  * ctypedef np.float32_t DTYPE_FLOAT             # <<<<<<<<<<<<<<
@@ -1253,7 +1253,7 @@ typedef npy_uint32 __pyx_t_7sklearn_9neighbors_10_quad_tree_UINT32_t;
  */
 typedef __pyx_t_5numpy_float32_t __pyx_t_12optimize_gpu_DTYPE_FLOAT;
 
-/* "cython/gpu_uniform_umap.pyx":36
+/* "cython/gpu_uniform_umap.pyx":38
  * 
  * ctypedef np.float32_t DTYPE_FLOAT
  * ctypedef np.int32_t DTYPE_INT             # <<<<<<<<<<<<<<
@@ -1289,7 +1289,7 @@ static CYTHON_INLINE __pyx_t_double_complex __pyx_t_double_complex_from_parts(do
 /*--- Type declarations ---*/
 struct __pyx_obj_7sklearn_9neighbors_10_quad_tree__QuadTree;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":729
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":729
  * ctypedef npy_longdouble longdouble_t
  * 
  * ctypedef npy_cfloat      cfloat_t             # <<<<<<<<<<<<<<
@@ -1298,7 +1298,7 @@ struct __pyx_obj_7sklearn_9neighbors_10_quad_tree__QuadTree;
  */
 typedef npy_cfloat __pyx_t_5numpy_cfloat_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":730
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":730
  * 
  * ctypedef npy_cfloat      cfloat_t
  * ctypedef npy_cdouble     cdouble_t             # <<<<<<<<<<<<<<
@@ -1307,7 +1307,7 @@ typedef npy_cfloat __pyx_t_5numpy_cfloat_t;
  */
 typedef npy_cdouble __pyx_t_5numpy_cdouble_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":731
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":731
  * ctypedef npy_cfloat      cfloat_t
  * ctypedef npy_cdouble     cdouble_t
  * ctypedef npy_clongdouble clongdouble_t             # <<<<<<<<<<<<<<
@@ -1316,7 +1316,7 @@ typedef npy_cdouble __pyx_t_5numpy_cdouble_t;
  */
 typedef npy_clongdouble __pyx_t_5numpy_clongdouble_t;
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":733
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":733
  * ctypedef npy_clongdouble clongdouble_t
  * 
  * ctypedef npy_cdouble     complex_t             # <<<<<<<<<<<<<<
@@ -1331,7 +1331,7 @@ struct __pyx_opt_args_7sklearn_9neighbors_10_quad_tree_9_QuadTree_summarize;
 struct __pyx_opt_args_7sklearn_9neighbors_10_quad_tree_9_QuadTree__resize_c;
 struct __pyx_opt_args_7sklearn_9neighbors_10_quad_tree_9_QuadTree__get_cell;
 
-/* "sklearn/neighbors/_quad_tree.pxd":17
+/* "sklearn/neighbors/_quad_tree.pxd":21
  * # It allows us to write printf debugging lines
  * # and remove them at compile time
  * cdef enum:             # <<<<<<<<<<<<<<
@@ -1342,7 +1342,7 @@ enum  {
   __pyx_e_7sklearn_9neighbors_10_quad_tree_DEBUGFLAG = 0
 };
 
-/* "sklearn/neighbors/_quad_tree.pxd":25
+/* "sklearn/neighbors/_quad_tree.pxd":29
  * # have is_leaf and max_width consecutive as it permits to avoid padding by
  * # the compiler and keep the size coherent for both C and numpy data structures.
  * cdef struct Cell:             # <<<<<<<<<<<<<<
@@ -1364,7 +1364,7 @@ struct __pyx_t_7sklearn_9neighbors_10_quad_tree_Cell {
   __pyx_t_7sklearn_9neighbors_10_quad_tree_DTYPE_t max_bounds[3];
 };
 
-/* "sklearn/neighbors/_quad_tree.pxd":71
+/* "sklearn/neighbors/_quad_tree.pxd":75
  * 
  *     # Point insertion methods
  *     cdef int insert_point(self, DTYPE_t[3] point, SIZE_t point_index,             # <<<<<<<<<<<<<<
@@ -1376,7 +1376,7 @@ struct __pyx_opt_args_7sklearn_9neighbors_10_quad_tree_9_QuadTree_insert_point {
   __pyx_t_7sklearn_9neighbors_10_quad_tree_SIZE_t cell_id;
 };
 
-/* "sklearn/neighbors/_quad_tree.pxd":73
+/* "sklearn/neighbors/_quad_tree.pxd":77
  *     cdef int insert_point(self, DTYPE_t[3] point, SIZE_t point_index,
  *                           SIZE_t cell_id=*) nogil except -1
  *     cdef SIZE_t _insert_point_in_new_child(self, DTYPE_t[3] point, Cell* cell,             # <<<<<<<<<<<<<<
@@ -1388,7 +1388,7 @@ struct __pyx_opt_args_7sklearn_9neighbors_10_quad_tree_9_QuadTree__insert_point_
   __pyx_t_7sklearn_9neighbors_10_quad_tree_SIZE_t size;
 };
 
-/* "sklearn/neighbors/_quad_tree.pxd":80
+/* "sklearn/neighbors/_quad_tree.pxd":84
  * 
  *     # Create a summary of the Tree compare to a query point
  *     cdef long summarize(self, DTYPE_t[3] point, DTYPE_t* results,             # <<<<<<<<<<<<<<
@@ -1402,7 +1402,7 @@ struct __pyx_opt_args_7sklearn_9neighbors_10_quad_tree_9_QuadTree_summarize {
   long idx;
 };
 
-/* "sklearn/neighbors/_quad_tree.pxd":95
+/* "sklearn/neighbors/_quad_tree.pxd":99
  *     # Private array manipulation to manage the ``cells`` array
  *     cdef int _resize(self, SIZE_t capacity) nogil except -1
  *     cdef int _resize_c(self, SIZE_t capacity=*) nogil except -1             # <<<<<<<<<<<<<<
@@ -1414,7 +1414,7 @@ struct __pyx_opt_args_7sklearn_9neighbors_10_quad_tree_9_QuadTree__resize_c {
   __pyx_t_7sklearn_9neighbors_10_quad_tree_SIZE_t capacity;
 };
 
-/* "sklearn/neighbors/_quad_tree.pxd":96
+/* "sklearn/neighbors/_quad_tree.pxd":100
  *     cdef int _resize(self, SIZE_t capacity) nogil except -1
  *     cdef int _resize_c(self, SIZE_t capacity=*) nogil except -1
  *     cdef int _get_cell(self, DTYPE_t[3] point, SIZE_t cell_id=*) nogil except -1             # <<<<<<<<<<<<<<
@@ -1425,7 +1425,7 @@ struct __pyx_opt_args_7sklearn_9neighbors_10_quad_tree_9_QuadTree__get_cell {
   __pyx_t_7sklearn_9neighbors_10_quad_tree_SIZE_t cell_id;
 };
 
-/* "sklearn/neighbors/_quad_tree.pxd":51
+/* "sklearn/neighbors/_quad_tree.pxd":55
  * 
  * 
  * cdef class _QuadTree:             # <<<<<<<<<<<<<<
@@ -2017,7 +2017,7 @@ static float *__pyx_vp_7sklearn_9neighbors_10_quad_tree_EPSILON = 0;
 #define __pyx_v_7sklearn_9neighbors_10_quad_tree_EPSILON (*__pyx_vp_7sklearn_9neighbors_10_quad_tree_EPSILON)
 
 /* Module declarations from 'optimize_gpu' */
-static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int, int, int, int, PyArrayObject *, PyArrayObject *, PyArrayObject *, PyArrayObject *, PyArrayObject *, PyArrayObject *, float, float, int, float, int, int, int); /*proto*/
+static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int, int, int, int, PyArrayObject *, PyArrayObject *, PyArrayObject *, PyArrayObject *, PyArrayObject *, PyArrayObject *, float, float, int, float, int, int, int, int); /*proto*/
 static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT = { "DTYPE_FLOAT", NULL, sizeof(__pyx_t_12optimize_gpu_DTYPE_FLOAT), { 0 }, 0, 'R', 0, 0 };
 static __Pyx_TypeInfo __Pyx_TypeInfo_int = { "int", NULL, sizeof(int), { 0 }, 0, IS_UNSIGNED(int) ? 'U' : 'I', IS_UNSIGNED(int), 0 };
 static __Pyx_TypeInfo __Pyx_TypeInfo_long = { "long", NULL, sizeof(long), { 0 }, 0, IS_UNSIGNED(long) ? 'U' : 'I', IS_UNSIGNED(long), 0 };
@@ -2055,7 +2055,6 @@ static const char __pyx_k_i_epoch[] = "i_epoch";
 static const char __pyx_k_n_edges[] = "n_edges";
 static const char __pyx_k_verbose[] = "verbose";
 static const char __pyx_k_weights[] = "weights";
-static const char __pyx_k_momentum[] = "momentum";
 static const char __pyx_k_n_epochs[] = "n_epochs";
 static const char __pyx_k_initial_lr[] = "initial_lr";
 static const char __pyx_k_n_vertices[] = "n_vertices";
@@ -2064,17 +2063,20 @@ static const char __pyx_k_pyx_vtable[] = "__pyx_vtable__";
 static const char __pyx_k_weight_sum[] = "weight_sum";
 static const char __pyx_k_ImportError[] = "ImportError";
 static const char __pyx_k_optimize_gpu[] = "optimize_gpu";
+static const char __pyx_k_amplify_grads[] = "amplify_grads";
 static const char __pyx_k_head_embedding[] = "head_embedding";
 static const char __pyx_k_sym_attraction[] = "sym_attraction";
 static const char __pyx_k_tail_embedding[] = "tail_embedding";
 static const char __pyx_k_gpu_opt_wrapper[] = "gpu_opt_wrapper";
 static const char __pyx_k_neighbor_counts[] = "neighbor_counts";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
+static const char __pyx_k_negative_sample_rate[] = "negative_sample_rate";
 static const char __pyx_k_cython_gpu_uniform_umap_pyx[] = "cython/gpu_uniform_umap.pyx";
 static const char __pyx_k_numpy_core_multiarray_failed_to[] = "numpy.core.multiarray failed to import";
 static const char __pyx_k_numpy_core_umath_failed_to_impor[] = "numpy.core.umath failed to import";
 static PyObject *__pyx_n_s_ImportError;
 static PyObject *__pyx_n_s_a;
+static PyObject *__pyx_n_s_amplify_grads;
 static PyObject *__pyx_n_s_asarray;
 static PyObject *__pyx_n_s_b;
 static PyObject *__pyx_n_s_c;
@@ -2093,11 +2095,11 @@ static PyObject *__pyx_n_s_import;
 static PyObject *__pyx_n_s_initial_lr;
 static PyObject *__pyx_n_s_kwargs;
 static PyObject *__pyx_n_s_main;
-static PyObject *__pyx_n_s_momentum;
 static PyObject *__pyx_n_s_n_edges;
 static PyObject *__pyx_n_s_n_epochs;
 static PyObject *__pyx_n_s_n_vertices;
 static PyObject *__pyx_n_s_name;
+static PyObject *__pyx_n_s_negative_sample_rate;
 static PyObject *__pyx_n_s_neighbor_counts;
 static PyObject *__pyx_n_s_normalized;
 static PyObject *__pyx_n_s_numpy;
@@ -2117,14 +2119,14 @@ static PyObject *__pyx_n_s_verbose;
 static PyObject *__pyx_n_s_weight_sum;
 static PyObject *__pyx_n_s_weights;
 static PyObject *__pyx_n_s_zeros;
-static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_momentum, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, int __pyx_v_n_epochs, int __pyx_v_n_vertices, float __pyx_v_a, float __pyx_v_b, float __pyx_v_initial_lr, int __pyx_v_verbose, CYTHON_UNUSED PyObject *__pyx_v_kwargs); /* proto */
+static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_amplify_grads, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, int __pyx_v_n_epochs, int __pyx_v_n_vertices, float __pyx_v_a, float __pyx_v_b, float __pyx_v_initial_lr, int __pyx_v_negative_sample_rate, int __pyx_v_verbose, CYTHON_UNUSED PyObject *__pyx_v_kwargs); /* proto */
 static PyObject *__pyx_tuple_;
 static PyObject *__pyx_tuple__2;
 static PyObject *__pyx_tuple__3;
 static PyObject *__pyx_codeobj__4;
 /* Late includes */
 
-/* "cython/gpu_uniform_umap.pyx":38
+/* "cython/gpu_uniform_umap.pyx":40
  * ctypedef np.int32_t DTYPE_INT
  * 
  * cdef uniform_umap_gpu(             # <<<<<<<<<<<<<<
@@ -2132,7 +2134,7 @@ static PyObject *__pyx_codeobj__4;
  *     int sym_attraction,
  */
 
-static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized, int __pyx_v_sym_attraction, CYTHON_UNUSED int __pyx_v_frob, int __pyx_v_momentum, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, float __pyx_v_a, float __pyx_v_b, int __pyx_v_dim, float __pyx_v_initial_lr, int __pyx_v_n_epochs, int __pyx_v_n_vertices, CYTHON_UNUSED int __pyx_v_verbose) {
+static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_amplify_grads, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, float __pyx_v_a, float __pyx_v_b, int __pyx_v_dim, float __pyx_v_initial_lr, int __pyx_v_n_epochs, int __pyx_v_n_vertices, int __pyx_v_negative_sample_rate, CYTHON_UNUSED int __pyx_v_verbose) {
   PyArrayObject *__pyx_v_all_updates = 0;
   PyArrayObject *__pyx_v_gains = 0;
   int __pyx_v_n_edges;
@@ -2215,52 +2217,52 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   __pyx_pybuffernd_neighbor_counts.rcbuffer = &__pyx_pybuffer_neighbor_counts;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 38, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 40, __pyx_L1_error)
   }
   __pyx_pybuffernd_head_embedding.diminfo[0].strides = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_head_embedding.diminfo[0].shape = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_head_embedding.diminfo[1].strides = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_head_embedding.diminfo[1].shape = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 38, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 40, __pyx_L1_error)
   }
   __pyx_pybuffernd_tail_embedding.diminfo[0].strides = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_tail_embedding.diminfo[0].shape = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_tail_embedding.diminfo[1].strides = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_tail_embedding.diminfo[1].shape = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_head, &__Pyx_TypeInfo_int, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 38, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_head, &__Pyx_TypeInfo_int, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 40, __pyx_L1_error)
   }
   __pyx_pybuffernd_head.diminfo[0].strides = __pyx_pybuffernd_head.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_head.diminfo[0].shape = __pyx_pybuffernd_head.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail, &__Pyx_TypeInfo_int, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 38, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail, &__Pyx_TypeInfo_int, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 40, __pyx_L1_error)
   }
   __pyx_pybuffernd_tail.diminfo[0].strides = __pyx_pybuffernd_tail.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_tail.diminfo[0].shape = __pyx_pybuffernd_tail.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_weights, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 38, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_weights, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 40, __pyx_L1_error)
   }
   __pyx_pybuffernd_weights.diminfo[0].strides = __pyx_pybuffernd_weights.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_weights.diminfo[0].shape = __pyx_pybuffernd_weights.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer, (PyObject*)__pyx_v_neighbor_counts, &__Pyx_TypeInfo_long, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 38, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer, (PyObject*)__pyx_v_neighbor_counts, &__Pyx_TypeInfo_long, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 40, __pyx_L1_error)
   }
   __pyx_pybuffernd_neighbor_counts.diminfo[0].strides = __pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_neighbor_counts.diminfo[0].shape = __pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer.shape[0];
 
-  /* "cython/gpu_uniform_umap.pyx":62
+  /* "cython/gpu_uniform_umap.pyx":65
  *         np.ndarray[DTYPE_FLOAT, ndim=2] gains
  * 
  *     all_updates = py_np.zeros([n_vertices, dim], dtype=py_np.float32, order='c')             # <<<<<<<<<<<<<<
  *     gains = py_np.ones([n_vertices, dim], dtype=py_np.float32, order='c')
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = PyList_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __pyx_t_4 = PyList_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_1);
   PyList_SET_ITEM(__pyx_t_4, 0, __pyx_t_1);
@@ -2268,27 +2270,27 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   PyList_SET_ITEM(__pyx_t_4, 1, __pyx_t_3);
   __pyx_t_1 = 0;
   __pyx_t_3 = 0;
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_4);
   __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_py_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float32); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_float32); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 62, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_order, __pyx_n_s_c) < 0) __PYX_ERR(0, 62, __pyx_L1_error)
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 62, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_order, __pyx_n_s_c) < 0) __PYX_ERR(0, 65, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 65, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 62, __pyx_L1_error)
+  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 65, __pyx_L1_error)
   __pyx_t_6 = ((PyArrayObject *)__pyx_t_5);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -2305,29 +2307,29 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
       __pyx_t_8 = __pyx_t_9 = __pyx_t_10 = 0;
     }
     __pyx_pybuffernd_all_updates.diminfo[0].strides = __pyx_pybuffernd_all_updates.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_all_updates.diminfo[0].shape = __pyx_pybuffernd_all_updates.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_all_updates.diminfo[1].strides = __pyx_pybuffernd_all_updates.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_all_updates.diminfo[1].shape = __pyx_pybuffernd_all_updates.rcbuffer->pybuffer.shape[1];
-    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 62, __pyx_L1_error)
+    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 65, __pyx_L1_error)
   }
   __pyx_t_6 = 0;
   __pyx_v_all_updates = ((PyArrayObject *)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "cython/gpu_uniform_umap.pyx":63
+  /* "cython/gpu_uniform_umap.pyx":66
  * 
  *     all_updates = py_np.zeros([n_vertices, dim], dtype=py_np.float32, order='c')
  *     gains = py_np.ones([n_vertices, dim], dtype=py_np.float32, order='c')             # <<<<<<<<<<<<<<
  * 
  *     cdef int n_edges = int(weights.shape[0])
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_py_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_py_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_ones); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_ones); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_n_vertices); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_dim); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_2 = PyList_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_2 = PyList_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_GIVEREF(__pyx_t_5);
   PyList_SET_ITEM(__pyx_t_2, 0, __pyx_t_5);
@@ -2335,27 +2337,27 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   PyList_SET_ITEM(__pyx_t_2, 1, __pyx_t_3);
   __pyx_t_5 = 0;
   __pyx_t_3 = 0;
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_2);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_2);
   __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_py_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_py_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float32); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_float32); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 63, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_dtype, __pyx_t_1) < 0) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_order, __pyx_n_s_c) < 0) __PYX_ERR(0, 63, __pyx_L1_error)
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 63, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_order, __pyx_n_s_c) < 0) __PYX_ERR(0, 66, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 66, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 63, __pyx_L1_error)
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 66, __pyx_L1_error)
   __pyx_t_11 = ((PyArrayObject *)__pyx_t_1);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -2372,13 +2374,13 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
       __pyx_t_10 = __pyx_t_9 = __pyx_t_8 = 0;
     }
     __pyx_pybuffernd_gains.diminfo[0].strides = __pyx_pybuffernd_gains.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_gains.diminfo[0].shape = __pyx_pybuffernd_gains.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_gains.diminfo[1].strides = __pyx_pybuffernd_gains.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_gains.diminfo[1].shape = __pyx_pybuffernd_gains.rcbuffer->pybuffer.shape[1];
-    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 63, __pyx_L1_error)
+    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 66, __pyx_L1_error)
   }
   __pyx_t_11 = 0;
   __pyx_v_gains = ((PyArrayObject *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "cython/gpu_uniform_umap.pyx":65
+  /* "cython/gpu_uniform_umap.pyx":68
  *     gains = py_np.ones([n_vertices, dim], dtype=py_np.float32, order='c')
  * 
  *     cdef int n_edges = int(weights.shape[0])             # <<<<<<<<<<<<<<
@@ -2387,9 +2389,9 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
  */
   __pyx_v_n_edges = ((int)(__pyx_v_weights->dimensions[0]));
 
-  /* "cython/gpu_uniform_umap.pyx":70
- *         sym_attraction,
- *         momentum,
+  /* "cython/gpu_uniform_umap.pyx":74
+ *         frob,
+ *         amplify_grads,
  *         &head_embedding[0, 0], # Move from numpy to c pointer arrays             # <<<<<<<<<<<<<<
  *         &tail_embedding[0, 0],
  *         &head[0],
@@ -2407,11 +2409,11 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_13 >= __pyx_pybuffernd_head_embedding.diminfo[1].shape)) __pyx_t_7 = 1;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 70, __pyx_L1_error)
+    __PYX_ERR(0, 74, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":71
- *         momentum,
+  /* "cython/gpu_uniform_umap.pyx":75
+ *         amplify_grads,
  *         &head_embedding[0, 0], # Move from numpy to c pointer arrays
  *         &tail_embedding[0, 0],             # <<<<<<<<<<<<<<
  *         &head[0],
@@ -2430,10 +2432,10 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_15 >= __pyx_pybuffernd_tail_embedding.diminfo[1].shape)) __pyx_t_7 = 1;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 71, __pyx_L1_error)
+    __PYX_ERR(0, 75, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":72
+  /* "cython/gpu_uniform_umap.pyx":76
  *         &head_embedding[0, 0], # Move from numpy to c pointer arrays
  *         &tail_embedding[0, 0],
  *         &head[0],             # <<<<<<<<<<<<<<
@@ -2448,10 +2450,10 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_16 >= __pyx_pybuffernd_head.diminfo[0].shape)) __pyx_t_7 = 0;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 72, __pyx_L1_error)
+    __PYX_ERR(0, 76, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":73
+  /* "cython/gpu_uniform_umap.pyx":77
  *         &tail_embedding[0, 0],
  *         &head[0],
  *         &tail[0],             # <<<<<<<<<<<<<<
@@ -2466,10 +2468,10 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_17 >= __pyx_pybuffernd_tail.diminfo[0].shape)) __pyx_t_7 = 0;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 73, __pyx_L1_error)
+    __PYX_ERR(0, 77, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":74
+  /* "cython/gpu_uniform_umap.pyx":78
  *         &head[0],
  *         &tail[0],
  *         &weights[0],             # <<<<<<<<<<<<<<
@@ -2484,10 +2486,10 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_18 >= __pyx_pybuffernd_weights.diminfo[0].shape)) __pyx_t_7 = 0;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 74, __pyx_L1_error)
+    __PYX_ERR(0, 78, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":75
+  /* "cython/gpu_uniform_umap.pyx":79
  *         &tail[0],
  *         &weights[0],
  *         &neighbor_counts[0],             # <<<<<<<<<<<<<<
@@ -2502,10 +2504,10 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_19 >= __pyx_pybuffernd_neighbor_counts.diminfo[0].shape)) __pyx_t_7 = 0;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 75, __pyx_L1_error)
+    __PYX_ERR(0, 79, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":76
+  /* "cython/gpu_uniform_umap.pyx":80
  *         &weights[0],
  *         &neighbor_counts[0],
  *         &all_updates[0, 0],             # <<<<<<<<<<<<<<
@@ -2525,10 +2527,10 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_21 >= __pyx_pybuffernd_all_updates.diminfo[1].shape)) __pyx_t_7 = 1;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 76, __pyx_L1_error)
+    __PYX_ERR(0, 80, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":77
+  /* "cython/gpu_uniform_umap.pyx":81
  *         &neighbor_counts[0],
  *         &all_updates[0, 0],
  *         &gains[0, 0],             # <<<<<<<<<<<<<<
@@ -2548,19 +2550,19 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   } else if (unlikely(__pyx_t_23 >= __pyx_pybuffernd_gains.diminfo[1].shape)) __pyx_t_7 = 1;
   if (unlikely(__pyx_t_7 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_7);
-    __PYX_ERR(0, 77, __pyx_L1_error)
+    __PYX_ERR(0, 81, __pyx_L1_error)
   }
 
-  /* "cython/gpu_uniform_umap.pyx":66
+  /* "cython/gpu_uniform_umap.pyx":69
  * 
  *     cdef int n_edges = int(weights.shape[0])
  *     gpu_umap_wrap(             # <<<<<<<<<<<<<<
  *         normalized,
  *         sym_attraction,
  */
-  gpu_umap_wrap(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_momentum, (&(*__Pyx_BufPtrCContig2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_head_embedding.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_head_embedding.diminfo[1].strides))), (&(*__Pyx_BufPtrCContig2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_tail_embedding.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_tail_embedding.diminfo[1].strides))), (&(*__Pyx_BufPtrCContig1d(int *, __pyx_pybuffernd_head.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_head.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(int *, __pyx_pybuffernd_tail.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_tail.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_weights.rcbuffer->pybuffer.buf, __pyx_t_18, __pyx_pybuffernd_weights.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(long *, __pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_neighbor_counts.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_all_updates.rcbuffer->pybuffer.buf, __pyx_t_20, __pyx_pybuffernd_all_updates.diminfo[0].strides, __pyx_t_21, __pyx_pybuffernd_all_updates.diminfo[1].strides))), (&(*__Pyx_BufPtrStrided2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_gains.rcbuffer->pybuffer.buf, __pyx_t_22, __pyx_pybuffernd_gains.diminfo[0].strides, __pyx_t_23, __pyx_pybuffernd_gains.diminfo[1].strides))), __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_n_vertices, __pyx_v_initial_lr, __pyx_v_n_edges, __pyx_v_n_epochs);
+  gpu_umap_wrap(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_amplify_grads, (&(*__Pyx_BufPtrCContig2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.buf, __pyx_t_12, __pyx_pybuffernd_head_embedding.diminfo[0].strides, __pyx_t_13, __pyx_pybuffernd_head_embedding.diminfo[1].strides))), (&(*__Pyx_BufPtrCContig2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.buf, __pyx_t_14, __pyx_pybuffernd_tail_embedding.diminfo[0].strides, __pyx_t_15, __pyx_pybuffernd_tail_embedding.diminfo[1].strides))), (&(*__Pyx_BufPtrCContig1d(int *, __pyx_pybuffernd_head.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_head.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(int *, __pyx_pybuffernd_tail.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_tail.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_weights.rcbuffer->pybuffer.buf, __pyx_t_18, __pyx_pybuffernd_weights.diminfo[0].strides))), (&(*__Pyx_BufPtrCContig1d(long *, __pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer.buf, __pyx_t_19, __pyx_pybuffernd_neighbor_counts.diminfo[0].strides))), (&(*__Pyx_BufPtrStrided2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_all_updates.rcbuffer->pybuffer.buf, __pyx_t_20, __pyx_pybuffernd_all_updates.diminfo[0].strides, __pyx_t_21, __pyx_pybuffernd_all_updates.diminfo[1].strides))), (&(*__Pyx_BufPtrStrided2d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_gains.rcbuffer->pybuffer.buf, __pyx_t_22, __pyx_pybuffernd_gains.diminfo[0].strides, __pyx_t_23, __pyx_pybuffernd_gains.diminfo[1].strides))), __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_n_vertices, __pyx_v_initial_lr, __pyx_v_n_edges, __pyx_v_n_epochs, __pyx_v_negative_sample_rate);
 
-  /* "cython/gpu_uniform_umap.pyx":38
+  /* "cython/gpu_uniform_umap.pyx":40
  * ctypedef np.int32_t DTYPE_INT
  * 
  * cdef uniform_umap_gpu(             # <<<<<<<<<<<<<<
@@ -2610,7 +2612,7 @@ static PyObject *__pyx_f_12optimize_gpu_uniform_umap_gpu(int __pyx_v_normalized,
   return __pyx_r;
 }
 
-/* "cython/gpu_uniform_umap.pyx":91
+/* "cython/gpu_uniform_umap.pyx":96
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def gpu_opt_wrapper(             # <<<<<<<<<<<<<<
@@ -2625,7 +2627,7 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
   int __pyx_v_normalized;
   int __pyx_v_sym_attraction;
   int __pyx_v_frob;
-  int __pyx_v_momentum;
+  int __pyx_v_amplify_grads;
   PyArrayObject *__pyx_v_head = 0;
   PyArrayObject *__pyx_v_tail = 0;
   PyArrayObject *__pyx_v_head_embedding = 0;
@@ -2637,6 +2639,7 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
   float __pyx_v_a;
   float __pyx_v_b;
   float __pyx_v_initial_lr;
+  int __pyx_v_negative_sample_rate;
   int __pyx_v_verbose;
   CYTHON_UNUSED PyObject *__pyx_v_kwargs = 0;
   int __pyx_lineno = 0;
@@ -2648,12 +2651,14 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
   __pyx_v_kwargs = PyDict_New(); if (unlikely(!__pyx_v_kwargs)) return NULL;
   __Pyx_GOTREF(__pyx_v_kwargs);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_normalized,&__pyx_n_s_sym_attraction,&__pyx_n_s_frob,&__pyx_n_s_momentum,&__pyx_n_s_head,&__pyx_n_s_tail,&__pyx_n_s_head_embedding,&__pyx_n_s_tail_embedding,&__pyx_n_s_weights,&__pyx_n_s_neighbor_counts,&__pyx_n_s_n_epochs,&__pyx_n_s_n_vertices,&__pyx_n_s_a,&__pyx_n_s_b,&__pyx_n_s_initial_lr,&__pyx_n_s_verbose,0};
-    PyObject* values[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_normalized,&__pyx_n_s_sym_attraction,&__pyx_n_s_frob,&__pyx_n_s_amplify_grads,&__pyx_n_s_head,&__pyx_n_s_tail,&__pyx_n_s_head_embedding,&__pyx_n_s_tail_embedding,&__pyx_n_s_weights,&__pyx_n_s_neighbor_counts,&__pyx_n_s_n_epochs,&__pyx_n_s_n_vertices,&__pyx_n_s_a,&__pyx_n_s_b,&__pyx_n_s_initial_lr,&__pyx_n_s_negative_sample_rate,&__pyx_n_s_verbose,0};
+    PyObject* values[17] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case 17: values[16] = PyTuple_GET_ITEM(__pyx_args, 16);
+        CYTHON_FALLTHROUGH;
         case 16: values[15] = PyTuple_GET_ITEM(__pyx_args, 15);
         CYTHON_FALLTHROUGH;
         case 15: values[14] = PyTuple_GET_ITEM(__pyx_args, 14);
@@ -2698,101 +2703,108 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_sym_attraction)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 1); __PYX_ERR(0, 91, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 1); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_frob)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 2); __PYX_ERR(0, 91, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 2); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
-        if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_momentum)) != 0)) kw_args--;
+        if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_amplify_grads)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 3); __PYX_ERR(0, 91, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 3); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 4); __PYX_ERR(0, 91, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 4); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
         if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 5); __PYX_ERR(0, 91, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 5); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  6:
         if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_head_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 6); __PYX_ERR(0, 91, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 6); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  7:
         if (likely((values[7] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_tail_embedding)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 7); __PYX_ERR(0, 91, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 7); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  8:
         if (likely((values[8] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_weights)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 8); __PYX_ERR(0, 91, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 8); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  9:
         if (likely((values[9] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_neighbor_counts)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 9); __PYX_ERR(0, 91, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 9); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 10:
         if (likely((values[10] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_epochs)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 10); __PYX_ERR(0, 91, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 10); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 11:
         if (likely((values[11] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_n_vertices)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 11); __PYX_ERR(0, 91, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 11); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 12:
         if (likely((values[12] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_a)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 12); __PYX_ERR(0, 91, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 12); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 13:
         if (likely((values[13] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_b)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 13); __PYX_ERR(0, 91, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 13); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 14:
         if (likely((values[14] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_initial_lr)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, 14); __PYX_ERR(0, 91, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 14); __PYX_ERR(0, 96, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case 15:
+        if (likely((values[15] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_negative_sample_rate)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, 15); __PYX_ERR(0, 96, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case 16:
         if (kw_args > 0) {
           PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_verbose);
-          if (value) { values[15] = value; kw_args--; }
+          if (value) { values[16] = value; kw_args--; }
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, pos_args, "gpu_opt_wrapper") < 0)) __PYX_ERR(0, 91, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, __pyx_v_kwargs, values, pos_args, "gpu_opt_wrapper") < 0)) __PYX_ERR(0, 96, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
-        case 16: values[15] = PyTuple_GET_ITEM(__pyx_args, 15);
+        case 17: values[16] = PyTuple_GET_ITEM(__pyx_args, 16);
         CYTHON_FALLTHROUGH;
-        case 15: values[14] = PyTuple_GET_ITEM(__pyx_args, 14);
+        case 16: values[15] = PyTuple_GET_ITEM(__pyx_args, 15);
+        values[14] = PyTuple_GET_ITEM(__pyx_args, 14);
         values[13] = PyTuple_GET_ITEM(__pyx_args, 13);
         values[12] = PyTuple_GET_ITEM(__pyx_args, 12);
         values[11] = PyTuple_GET_ITEM(__pyx_args, 11);
@@ -2811,28 +2823,29 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
         default: goto __pyx_L5_argtuple_error;
       }
     }
-    __pyx_v_normalized = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 92, __pyx_L3_error)
-    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 93, __pyx_L3_error)
-    __pyx_v_frob = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_frob == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 94, __pyx_L3_error)
-    __pyx_v_momentum = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_momentum == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 95, __pyx_L3_error)
+    __pyx_v_normalized = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_normalized == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 97, __pyx_L3_error)
+    __pyx_v_sym_attraction = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sym_attraction == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 98, __pyx_L3_error)
+    __pyx_v_frob = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_frob == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 99, __pyx_L3_error)
+    __pyx_v_amplify_grads = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_amplify_grads == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L3_error)
     __pyx_v_head = ((PyArrayObject *)values[4]);
     __pyx_v_tail = ((PyArrayObject *)values[5]);
     __pyx_v_head_embedding = ((PyArrayObject *)values[6]);
     __pyx_v_tail_embedding = ((PyArrayObject *)values[7]);
     __pyx_v_weights = ((PyArrayObject *)values[8]);
     __pyx_v_neighbor_counts = ((PyArrayObject *)values[9]);
-    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[10]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 102, __pyx_L3_error)
-    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[11]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 103, __pyx_L3_error)
-    __pyx_v_a = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 104, __pyx_L3_error)
-    __pyx_v_b = __pyx_PyFloat_AsFloat(values[13]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 105, __pyx_L3_error)
-    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 106, __pyx_L3_error)
-    if (values[15]) {
-      __pyx_v_verbose = __Pyx_PyInt_As_int(values[15]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 107, __pyx_L3_error)
+    __pyx_v_n_epochs = __Pyx_PyInt_As_int(values[10]); if (unlikely((__pyx_v_n_epochs == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 107, __pyx_L3_error)
+    __pyx_v_n_vertices = __Pyx_PyInt_As_int(values[11]); if (unlikely((__pyx_v_n_vertices == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 108, __pyx_L3_error)
+    __pyx_v_a = __pyx_PyFloat_AsFloat(values[12]); if (unlikely((__pyx_v_a == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 109, __pyx_L3_error)
+    __pyx_v_b = __pyx_PyFloat_AsFloat(values[13]); if (unlikely((__pyx_v_b == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 110, __pyx_L3_error)
+    __pyx_v_initial_lr = __pyx_PyFloat_AsFloat(values[14]); if (unlikely((__pyx_v_initial_lr == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 111, __pyx_L3_error)
+    __pyx_v_negative_sample_rate = __Pyx_PyInt_As_int(values[15]); if (unlikely((__pyx_v_negative_sample_rate == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 112, __pyx_L3_error)
+    if (values[16]) {
+      __pyx_v_verbose = __Pyx_PyInt_As_int(values[16]); if (unlikely((__pyx_v_verbose == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 113, __pyx_L3_error)
     } else {
 
-      /* "cython/gpu_uniform_umap.pyx":107
- *     float b,
+      /* "cython/gpu_uniform_umap.pyx":113
  *     float initial_lr,
+ *     int negative_sample_rate,
  *     int verbose=True,             # <<<<<<<<<<<<<<
  *     **kwargs
  * ):
@@ -2842,22 +2855,22 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 15, 16, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 91, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("gpu_opt_wrapper", 0, 16, 17, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 96, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_DECREF(__pyx_v_kwargs); __pyx_v_kwargs = 0;
   __Pyx_AddTraceback("optimize_gpu.gpu_opt_wrapper", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head), __pyx_ptype_5numpy_ndarray, 1, "head", 0))) __PYX_ERR(0, 96, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail), __pyx_ptype_5numpy_ndarray, 1, "tail", 0))) __PYX_ERR(0, 97, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head_embedding), __pyx_ptype_5numpy_ndarray, 1, "head_embedding", 0))) __PYX_ERR(0, 98, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail_embedding), __pyx_ptype_5numpy_ndarray, 1, "tail_embedding", 0))) __PYX_ERR(0, 99, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_weights), __pyx_ptype_5numpy_ndarray, 1, "weights", 0))) __PYX_ERR(0, 100, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_neighbor_counts), __pyx_ptype_5numpy_ndarray, 1, "neighbor_counts", 0))) __PYX_ERR(0, 101, __pyx_L1_error)
-  __pyx_r = __pyx_pf_12optimize_gpu_gpu_opt_wrapper(__pyx_self, __pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_momentum, __pyx_v_head, __pyx_v_tail, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_weights, __pyx_v_neighbor_counts, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_a, __pyx_v_b, __pyx_v_initial_lr, __pyx_v_verbose, __pyx_v_kwargs);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head), __pyx_ptype_5numpy_ndarray, 1, "head", 0))) __PYX_ERR(0, 101, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail), __pyx_ptype_5numpy_ndarray, 1, "tail", 0))) __PYX_ERR(0, 102, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_head_embedding), __pyx_ptype_5numpy_ndarray, 1, "head_embedding", 0))) __PYX_ERR(0, 103, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tail_embedding), __pyx_ptype_5numpy_ndarray, 1, "tail_embedding", 0))) __PYX_ERR(0, 104, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_weights), __pyx_ptype_5numpy_ndarray, 1, "weights", 0))) __PYX_ERR(0, 105, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_neighbor_counts), __pyx_ptype_5numpy_ndarray, 1, "neighbor_counts", 0))) __PYX_ERR(0, 106, __pyx_L1_error)
+  __pyx_r = __pyx_pf_12optimize_gpu_gpu_opt_wrapper(__pyx_self, __pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_amplify_grads, __pyx_v_head, __pyx_v_tail, __pyx_v_head_embedding, __pyx_v_tail_embedding, __pyx_v_weights, __pyx_v_neighbor_counts, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_a, __pyx_v_b, __pyx_v_initial_lr, __pyx_v_negative_sample_rate, __pyx_v_verbose, __pyx_v_kwargs);
 
-  /* "cython/gpu_uniform_umap.pyx":91
+  /* "cython/gpu_uniform_umap.pyx":96
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def gpu_opt_wrapper(             # <<<<<<<<<<<<<<
@@ -2875,7 +2888,7 @@ static PyObject *__pyx_pw_12optimize_gpu_1gpu_opt_wrapper(PyObject *__pyx_self, 
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_momentum, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, int __pyx_v_n_epochs, int __pyx_v_n_vertices, float __pyx_v_a, float __pyx_v_b, float __pyx_v_initial_lr, int __pyx_v_verbose, CYTHON_UNUSED PyObject *__pyx_v_kwargs) {
+static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject *__pyx_self, int __pyx_v_normalized, int __pyx_v_sym_attraction, int __pyx_v_frob, int __pyx_v_amplify_grads, PyArrayObject *__pyx_v_head, PyArrayObject *__pyx_v_tail, PyArrayObject *__pyx_v_head_embedding, PyArrayObject *__pyx_v_tail_embedding, PyArrayObject *__pyx_v_weights, PyArrayObject *__pyx_v_neighbor_counts, int __pyx_v_n_epochs, int __pyx_v_n_vertices, float __pyx_v_a, float __pyx_v_b, float __pyx_v_initial_lr, int __pyx_v_negative_sample_rate, int __pyx_v_verbose, CYTHON_UNUSED PyObject *__pyx_v_kwargs) {
   int __pyx_v_dim;
   float __pyx_v_weight_sum;
   npy_intp __pyx_v_i;
@@ -2931,36 +2944,36 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
   __pyx_pybuffernd_neighbor_counts.rcbuffer = &__pyx_pybuffer_neighbor_counts;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_head, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_INT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 91, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head.rcbuffer->pybuffer, (PyObject*)__pyx_v_head, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_INT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 96, __pyx_L1_error)
   }
   __pyx_pybuffernd_head.diminfo[0].strides = __pyx_pybuffernd_head.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_head.diminfo[0].shape = __pyx_pybuffernd_head.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_INT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 91, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_INT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 96, __pyx_L1_error)
   }
   __pyx_pybuffernd_tail.diminfo[0].strides = __pyx_pybuffernd_tail.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_tail.diminfo[0].shape = __pyx_pybuffernd_tail.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 91, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_head_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_head_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 96, __pyx_L1_error)
   }
   __pyx_pybuffernd_head_embedding.diminfo[0].strides = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_head_embedding.diminfo[0].shape = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_head_embedding.diminfo[1].strides = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_head_embedding.diminfo[1].shape = __pyx_pybuffernd_head_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 91, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer, (PyObject*)__pyx_v_tail_embedding, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 2, 0, __pyx_stack) == -1)) __PYX_ERR(0, 96, __pyx_L1_error)
   }
   __pyx_pybuffernd_tail_embedding.diminfo[0].strides = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_tail_embedding.diminfo[0].shape = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_tail_embedding.diminfo[1].strides = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_tail_embedding.diminfo[1].shape = __pyx_pybuffernd_tail_embedding.rcbuffer->pybuffer.shape[1];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_weights, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 91, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_weights.rcbuffer->pybuffer, (PyObject*)__pyx_v_weights, &__Pyx_TypeInfo_nn___pyx_t_12optimize_gpu_DTYPE_FLOAT, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS| PyBUF_WRITABLE, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 96, __pyx_L1_error)
   }
   __pyx_pybuffernd_weights.diminfo[0].strides = __pyx_pybuffernd_weights.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_weights.diminfo[0].shape = __pyx_pybuffernd_weights.rcbuffer->pybuffer.shape[0];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer, (PyObject*)__pyx_v_neighbor_counts, &__Pyx_TypeInfo_long, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 91, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer, (PyObject*)__pyx_v_neighbor_counts, &__Pyx_TypeInfo_long, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 96, __pyx_L1_error)
   }
   __pyx_pybuffernd_neighbor_counts.diminfo[0].strides = __pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_neighbor_counts.diminfo[0].shape = __pyx_pybuffernd_neighbor_counts.rcbuffer->pybuffer.shape[0];
 
-  /* "cython/gpu_uniform_umap.pyx":112
+  /* "cython/gpu_uniform_umap.pyx":118
  *     cdef:
  *         int i_epoch, n_edges
  *         cdef int dim = head_embedding.shape[1]             # <<<<<<<<<<<<<<
@@ -2969,7 +2982,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
  */
   __pyx_v_dim = (__pyx_v_head_embedding->dimensions[1]);
 
-  /* "cython/gpu_uniform_umap.pyx":115
+  /* "cython/gpu_uniform_umap.pyx":121
  * 
  *     # Perform weight scaling on high-dimensional relationships
  *     cdef float weight_sum = 0.0             # <<<<<<<<<<<<<<
@@ -2978,7 +2991,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
  */
   __pyx_v_weight_sum = 0.0;
 
-  /* "cython/gpu_uniform_umap.pyx":116
+  /* "cython/gpu_uniform_umap.pyx":122
  *     # Perform weight scaling on high-dimensional relationships
  *     cdef float weight_sum = 0.0
  *     if normalized:             # <<<<<<<<<<<<<<
@@ -2988,7 +3001,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
   __pyx_t_1 = (__pyx_v_normalized != 0);
   if (__pyx_t_1) {
 
-    /* "cython/gpu_uniform_umap.pyx":117
+    /* "cython/gpu_uniform_umap.pyx":123
  *     cdef float weight_sum = 0.0
  *     if normalized:
  *         for i in range(weights.shape[0]):             # <<<<<<<<<<<<<<
@@ -3000,7 +3013,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
     for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
       __pyx_v_i = __pyx_t_4;
 
-      /* "cython/gpu_uniform_umap.pyx":118
+      /* "cython/gpu_uniform_umap.pyx":124
  *     if normalized:
  *         for i in range(weights.shape[0]):
  *             weight_sum += weights[i]             # <<<<<<<<<<<<<<
@@ -3011,7 +3024,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
       __pyx_v_weight_sum = (__pyx_v_weight_sum + (*__Pyx_BufPtrCContig1d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_weights.rcbuffer->pybuffer.buf, __pyx_t_5, __pyx_pybuffernd_weights.diminfo[0].strides)));
     }
 
-    /* "cython/gpu_uniform_umap.pyx":119
+    /* "cython/gpu_uniform_umap.pyx":125
  *         for i in range(weights.shape[0]):
  *             weight_sum += weights[i]
  *         for i in range(weights.shape[0]):             # <<<<<<<<<<<<<<
@@ -3023,7 +3036,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
     for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_3; __pyx_t_4+=1) {
       __pyx_v_i = __pyx_t_4;
 
-      /* "cython/gpu_uniform_umap.pyx":120
+      /* "cython/gpu_uniform_umap.pyx":126
  *             weight_sum += weights[i]
  *         for i in range(weights.shape[0]):
  *             weights[i] /= weight_sum             # <<<<<<<<<<<<<<
@@ -3034,7 +3047,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
       *__Pyx_BufPtrCContig1d(__pyx_t_12optimize_gpu_DTYPE_FLOAT *, __pyx_pybuffernd_weights.rcbuffer->pybuffer.buf, __pyx_t_5, __pyx_pybuffernd_weights.diminfo[0].strides) /= __pyx_v_weight_sum;
     }
 
-    /* "cython/gpu_uniform_umap.pyx":121
+    /* "cython/gpu_uniform_umap.pyx":127
  *         for i in range(weights.shape[0]):
  *             weights[i] /= weight_sum
  *         initial_lr *= 200             # <<<<<<<<<<<<<<
@@ -3043,7 +3056,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
  */
     __pyx_v_initial_lr = (__pyx_v_initial_lr * 200.0);
 
-    /* "cython/gpu_uniform_umap.pyx":116
+    /* "cython/gpu_uniform_umap.pyx":122
  *     # Perform weight scaling on high-dimensional relationships
  *     cdef float weight_sum = 0.0
  *     if normalized:             # <<<<<<<<<<<<<<
@@ -3052,26 +3065,26 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
  */
   }
 
-  /* "cython/gpu_uniform_umap.pyx":123
+  /* "cython/gpu_uniform_umap.pyx":129
  *         initial_lr *= 200
  * 
  *     uniform_umap_gpu(             # <<<<<<<<<<<<<<
  *         normalized,
  *         sym_attraction,
  */
-  __pyx_t_6 = __pyx_f_12optimize_gpu_uniform_umap_gpu(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_momentum, ((PyArrayObject *)__pyx_v_head_embedding), ((PyArrayObject *)__pyx_v_tail_embedding), ((PyArrayObject *)__pyx_v_head), ((PyArrayObject *)__pyx_v_tail), ((PyArrayObject *)__pyx_v_weights), ((PyArrayObject *)__pyx_v_neighbor_counts), __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_initial_lr, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_verbose); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __pyx_t_6 = __pyx_f_12optimize_gpu_uniform_umap_gpu(__pyx_v_normalized, __pyx_v_sym_attraction, __pyx_v_frob, __pyx_v_amplify_grads, ((PyArrayObject *)__pyx_v_head_embedding), ((PyArrayObject *)__pyx_v_tail_embedding), ((PyArrayObject *)__pyx_v_head), ((PyArrayObject *)__pyx_v_tail), ((PyArrayObject *)__pyx_v_weights), ((PyArrayObject *)__pyx_v_neighbor_counts), __pyx_v_a, __pyx_v_b, __pyx_v_dim, __pyx_v_initial_lr, __pyx_v_n_epochs, __pyx_v_n_vertices, __pyx_v_negative_sample_rate, __pyx_v_verbose); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 129, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-  /* "cython/gpu_uniform_umap.pyx":143
+  /* "cython/gpu_uniform_umap.pyx":150
  *     )
  * 
  *     return py_np.asarray(head_embedding)             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_py_np); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 143, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_n_s_py_np); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_asarray); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 143, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_asarray); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __pyx_t_7 = NULL;
@@ -3086,14 +3099,14 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
   }
   __pyx_t_6 = (__pyx_t_7) ? __Pyx_PyObject_Call2Args(__pyx_t_8, __pyx_t_7, ((PyObject *)__pyx_v_head_embedding)) : __Pyx_PyObject_CallOneArg(__pyx_t_8, ((PyObject *)__pyx_v_head_embedding));
   __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-  if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 143, __pyx_L1_error)
+  if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   __pyx_r = __pyx_t_6;
   __pyx_t_6 = 0;
   goto __pyx_L0;
 
-  /* "cython/gpu_uniform_umap.pyx":91
+  /* "cython/gpu_uniform_umap.pyx":96
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def gpu_opt_wrapper(             # <<<<<<<<<<<<<<
@@ -3133,7 +3146,7 @@ static PyObject *__pyx_pf_12optimize_gpu_gpu_opt_wrapper(CYTHON_UNUSED PyObject 
   return __pyx_r;
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":735
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":735
  * ctypedef npy_cdouble     complex_t
  * 
  * cdef inline object PyArray_MultiIterNew1(a):             # <<<<<<<<<<<<<<
@@ -3150,7 +3163,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew1(PyObject *__
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("PyArray_MultiIterNew1", 0);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":736
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":736
  * 
  * cdef inline object PyArray_MultiIterNew1(a):
  *     return PyArray_MultiIterNew(1, <void*>a)             # <<<<<<<<<<<<<<
@@ -3164,7 +3177,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew1(PyObject *__
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":735
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":735
  * ctypedef npy_cdouble     complex_t
  * 
  * cdef inline object PyArray_MultiIterNew1(a):             # <<<<<<<<<<<<<<
@@ -3183,7 +3196,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew1(PyObject *__
   return __pyx_r;
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":738
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":738
  *     return PyArray_MultiIterNew(1, <void*>a)
  * 
  * cdef inline object PyArray_MultiIterNew2(a, b):             # <<<<<<<<<<<<<<
@@ -3200,7 +3213,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew2(PyObject *__
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("PyArray_MultiIterNew2", 0);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":739
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":739
  * 
  * cdef inline object PyArray_MultiIterNew2(a, b):
  *     return PyArray_MultiIterNew(2, <void*>a, <void*>b)             # <<<<<<<<<<<<<<
@@ -3214,7 +3227,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew2(PyObject *__
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":738
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":738
  *     return PyArray_MultiIterNew(1, <void*>a)
  * 
  * cdef inline object PyArray_MultiIterNew2(a, b):             # <<<<<<<<<<<<<<
@@ -3233,7 +3246,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew2(PyObject *__
   return __pyx_r;
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":741
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":741
  *     return PyArray_MultiIterNew(2, <void*>a, <void*>b)
  * 
  * cdef inline object PyArray_MultiIterNew3(a, b, c):             # <<<<<<<<<<<<<<
@@ -3250,7 +3263,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew3(PyObject *__
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("PyArray_MultiIterNew3", 0);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":742
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":742
  * 
  * cdef inline object PyArray_MultiIterNew3(a, b, c):
  *     return PyArray_MultiIterNew(3, <void*>a, <void*>b, <void*> c)             # <<<<<<<<<<<<<<
@@ -3264,7 +3277,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew3(PyObject *__
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":741
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":741
  *     return PyArray_MultiIterNew(2, <void*>a, <void*>b)
  * 
  * cdef inline object PyArray_MultiIterNew3(a, b, c):             # <<<<<<<<<<<<<<
@@ -3283,7 +3296,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew3(PyObject *__
   return __pyx_r;
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":744
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":744
  *     return PyArray_MultiIterNew(3, <void*>a, <void*>b, <void*> c)
  * 
  * cdef inline object PyArray_MultiIterNew4(a, b, c, d):             # <<<<<<<<<<<<<<
@@ -3300,7 +3313,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew4(PyObject *__
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("PyArray_MultiIterNew4", 0);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":745
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":745
  * 
  * cdef inline object PyArray_MultiIterNew4(a, b, c, d):
  *     return PyArray_MultiIterNew(4, <void*>a, <void*>b, <void*>c, <void*> d)             # <<<<<<<<<<<<<<
@@ -3314,7 +3327,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew4(PyObject *__
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":744
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":744
  *     return PyArray_MultiIterNew(3, <void*>a, <void*>b, <void*> c)
  * 
  * cdef inline object PyArray_MultiIterNew4(a, b, c, d):             # <<<<<<<<<<<<<<
@@ -3333,7 +3346,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew4(PyObject *__
   return __pyx_r;
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":747
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":747
  *     return PyArray_MultiIterNew(4, <void*>a, <void*>b, <void*>c, <void*> d)
  * 
  * cdef inline object PyArray_MultiIterNew5(a, b, c, d, e):             # <<<<<<<<<<<<<<
@@ -3350,7 +3363,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew5(PyObject *__
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("PyArray_MultiIterNew5", 0);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":748
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":748
  * 
  * cdef inline object PyArray_MultiIterNew5(a, b, c, d, e):
  *     return PyArray_MultiIterNew(5, <void*>a, <void*>b, <void*>c, <void*> d, <void*> e)             # <<<<<<<<<<<<<<
@@ -3364,7 +3377,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew5(PyObject *__
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":747
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":747
  *     return PyArray_MultiIterNew(4, <void*>a, <void*>b, <void*>c, <void*> d)
  * 
  * cdef inline object PyArray_MultiIterNew5(a, b, c, d, e):             # <<<<<<<<<<<<<<
@@ -3383,7 +3396,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyArray_MultiIterNew5(PyObject *__
   return __pyx_r;
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":750
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":750
  *     return PyArray_MultiIterNew(5, <void*>a, <void*>b, <void*>c, <void*> d, <void*> e)
  * 
  * cdef inline tuple PyDataType_SHAPE(dtype d):             # <<<<<<<<<<<<<<
@@ -3397,7 +3410,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("PyDataType_SHAPE", 0);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":751
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":751
  * 
  * cdef inline tuple PyDataType_SHAPE(dtype d):
  *     if PyDataType_HASSUBARRAY(d):             # <<<<<<<<<<<<<<
@@ -3407,7 +3420,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
   __pyx_t_1 = (PyDataType_HASSUBARRAY(__pyx_v_d) != 0);
   if (__pyx_t_1) {
 
-    /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":752
+    /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":752
  * cdef inline tuple PyDataType_SHAPE(dtype d):
  *     if PyDataType_HASSUBARRAY(d):
  *         return <tuple>d.subarray.shape             # <<<<<<<<<<<<<<
@@ -3419,7 +3432,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
     __pyx_r = ((PyObject*)__pyx_v_d->subarray->shape);
     goto __pyx_L0;
 
-    /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":751
+    /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":751
  * 
  * cdef inline tuple PyDataType_SHAPE(dtype d):
  *     if PyDataType_HASSUBARRAY(d):             # <<<<<<<<<<<<<<
@@ -3428,7 +3441,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
  */
   }
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":754
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":754
  *         return <tuple>d.subarray.shape
  *     else:
  *         return ()             # <<<<<<<<<<<<<<
@@ -3442,7 +3455,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
     goto __pyx_L0;
   }
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":750
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":750
  *     return PyArray_MultiIterNew(5, <void*>a, <void*>b, <void*>c, <void*> d, <void*> e)
  * 
  * cdef inline tuple PyDataType_SHAPE(dtype d):             # <<<<<<<<<<<<<<
@@ -3457,7 +3470,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_PyDataType_SHAPE(PyArray_Descr *__
   return __pyx_r;
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":929
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":929
  *     int _import_umath() except -1
  * 
  * cdef inline void set_array_base(ndarray arr, object base):             # <<<<<<<<<<<<<<
@@ -3469,7 +3482,7 @@ static CYTHON_INLINE void __pyx_f_5numpy_set_array_base(PyArrayObject *__pyx_v_a
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("set_array_base", 0);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":930
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":930
  * 
  * cdef inline void set_array_base(ndarray arr, object base):
  *     Py_INCREF(base) # important to do this before stealing the reference below!             # <<<<<<<<<<<<<<
@@ -3478,7 +3491,7 @@ static CYTHON_INLINE void __pyx_f_5numpy_set_array_base(PyArrayObject *__pyx_v_a
  */
   Py_INCREF(__pyx_v_base);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":931
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":931
  * cdef inline void set_array_base(ndarray arr, object base):
  *     Py_INCREF(base) # important to do this before stealing the reference below!
  *     PyArray_SetBaseObject(arr, base)             # <<<<<<<<<<<<<<
@@ -3487,7 +3500,7 @@ static CYTHON_INLINE void __pyx_f_5numpy_set_array_base(PyArrayObject *__pyx_v_a
  */
   (void)(PyArray_SetBaseObject(__pyx_v_arr, __pyx_v_base));
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":929
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":929
  *     int _import_umath() except -1
  * 
  * cdef inline void set_array_base(ndarray arr, object base):             # <<<<<<<<<<<<<<
@@ -3499,7 +3512,7 @@ static CYTHON_INLINE void __pyx_f_5numpy_set_array_base(PyArrayObject *__pyx_v_a
   __Pyx_RefNannyFinishContext();
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":933
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":933
  *     PyArray_SetBaseObject(arr, base)
  * 
  * cdef inline object get_array_base(ndarray arr):             # <<<<<<<<<<<<<<
@@ -3514,7 +3527,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("get_array_base", 0);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":934
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":934
  * 
  * cdef inline object get_array_base(ndarray arr):
  *     base = PyArray_BASE(arr)             # <<<<<<<<<<<<<<
@@ -3523,7 +3536,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
  */
   __pyx_v_base = PyArray_BASE(__pyx_v_arr);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":935
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":935
  * cdef inline object get_array_base(ndarray arr):
  *     base = PyArray_BASE(arr)
  *     if base is NULL:             # <<<<<<<<<<<<<<
@@ -3533,7 +3546,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
   __pyx_t_1 = ((__pyx_v_base == NULL) != 0);
   if (__pyx_t_1) {
 
-    /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":936
+    /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":936
  *     base = PyArray_BASE(arr)
  *     if base is NULL:
  *         return None             # <<<<<<<<<<<<<<
@@ -3544,7 +3557,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":935
+    /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":935
  * cdef inline object get_array_base(ndarray arr):
  *     base = PyArray_BASE(arr)
  *     if base is NULL:             # <<<<<<<<<<<<<<
@@ -3553,7 +3566,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
  */
   }
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":937
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":937
  *     if base is NULL:
  *         return None
  *     return <object>base             # <<<<<<<<<<<<<<
@@ -3565,7 +3578,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
   __pyx_r = ((PyObject *)__pyx_v_base);
   goto __pyx_L0;
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":933
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":933
  *     PyArray_SetBaseObject(arr, base)
  * 
  * cdef inline object get_array_base(ndarray arr):             # <<<<<<<<<<<<<<
@@ -3580,7 +3593,7 @@ static CYTHON_INLINE PyObject *__pyx_f_5numpy_get_array_base(PyArrayObject *__py
   return __pyx_r;
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":941
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":941
  * # Versions of the import_* functions which are more suitable for
  * # Cython code.
  * cdef inline int import_array() except -1:             # <<<<<<<<<<<<<<
@@ -3604,7 +3617,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("import_array", 0);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":942
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":942
  * # Cython code.
  * cdef inline int import_array() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -3620,7 +3633,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":943
+      /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":943
  * cdef inline int import_array() except -1:
  *     try:
  *         __pyx_import_array()             # <<<<<<<<<<<<<<
@@ -3629,7 +3642,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
  */
       __pyx_t_4 = _import_array(); if (unlikely(__pyx_t_4 == ((int)-1))) __PYX_ERR(1, 943, __pyx_L3_error)
 
-      /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":942
+      /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":942
  * # Cython code.
  * cdef inline int import_array() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -3643,7 +3656,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":944
+    /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":944
  *     try:
  *         __pyx_import_array()
  *     except Exception:             # <<<<<<<<<<<<<<
@@ -3658,7 +3671,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
 
-      /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":945
+      /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":945
  *         __pyx_import_array()
  *     except Exception:
  *         raise ImportError("numpy.core.multiarray failed to import")             # <<<<<<<<<<<<<<
@@ -3674,7 +3687,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":942
+    /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":942
  * # Cython code.
  * cdef inline int import_array() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -3689,7 +3702,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
     __pyx_L8_try_end:;
   }
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":941
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":941
  * # Versions of the import_* functions which are more suitable for
  * # Cython code.
  * cdef inline int import_array() except -1:             # <<<<<<<<<<<<<<
@@ -3712,7 +3725,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void) {
   return __pyx_r;
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":947
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":947
  *         raise ImportError("numpy.core.multiarray failed to import")
  * 
  * cdef inline int import_umath() except -1:             # <<<<<<<<<<<<<<
@@ -3736,7 +3749,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("import_umath", 0);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":948
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":948
  * 
  * cdef inline int import_umath() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -3752,7 +3765,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":949
+      /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":949
  * cdef inline int import_umath() except -1:
  *     try:
  *         _import_umath()             # <<<<<<<<<<<<<<
@@ -3761,7 +3774,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
  */
       __pyx_t_4 = _import_umath(); if (unlikely(__pyx_t_4 == ((int)-1))) __PYX_ERR(1, 949, __pyx_L3_error)
 
-      /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":948
+      /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":948
  * 
  * cdef inline int import_umath() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -3775,7 +3788,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":950
+    /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":950
  *     try:
  *         _import_umath()
  *     except Exception:             # <<<<<<<<<<<<<<
@@ -3790,7 +3803,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
 
-      /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":951
+      /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":951
  *         _import_umath()
  *     except Exception:
  *         raise ImportError("numpy.core.umath failed to import")             # <<<<<<<<<<<<<<
@@ -3806,7 +3819,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":948
+    /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":948
  * 
  * cdef inline int import_umath() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -3821,7 +3834,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
     __pyx_L8_try_end:;
   }
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":947
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":947
  *         raise ImportError("numpy.core.multiarray failed to import")
  * 
  * cdef inline int import_umath() except -1:             # <<<<<<<<<<<<<<
@@ -3844,7 +3857,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_umath(void) {
   return __pyx_r;
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":953
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":953
  *         raise ImportError("numpy.core.umath failed to import")
  * 
  * cdef inline int import_ufunc() except -1:             # <<<<<<<<<<<<<<
@@ -3868,7 +3881,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("import_ufunc", 0);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":954
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":954
  * 
  * cdef inline int import_ufunc() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -3884,7 +3897,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":955
+      /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":955
  * cdef inline int import_ufunc() except -1:
  *     try:
  *         _import_umath()             # <<<<<<<<<<<<<<
@@ -3893,7 +3906,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
  */
       __pyx_t_4 = _import_umath(); if (unlikely(__pyx_t_4 == ((int)-1))) __PYX_ERR(1, 955, __pyx_L3_error)
 
-      /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":954
+      /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":954
  * 
  * cdef inline int import_ufunc() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -3907,7 +3920,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":956
+    /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":956
  *     try:
  *         _import_umath()
  *     except Exception:             # <<<<<<<<<<<<<<
@@ -3922,7 +3935,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
 
-      /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":957
+      /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":957
  *         _import_umath()
  *     except Exception:
  *         raise ImportError("numpy.core.umath failed to import")             # <<<<<<<<<<<<<<
@@ -3938,7 +3951,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":954
+    /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":954
  * 
  * cdef inline int import_ufunc() except -1:
  *     try:             # <<<<<<<<<<<<<<
@@ -3953,7 +3966,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
     __pyx_L8_try_end:;
   }
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":953
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":953
  *         raise ImportError("numpy.core.umath failed to import")
  * 
  * cdef inline int import_ufunc() except -1:             # <<<<<<<<<<<<<<
@@ -3976,7 +3989,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_ufunc(void) {
   return __pyx_r;
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":967
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":967
  * 
  * 
  * cdef inline bint is_timedelta64_object(object obj):             # <<<<<<<<<<<<<<
@@ -3989,7 +4002,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_is_timedelta64_object(PyObject *__pyx_v_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("is_timedelta64_object", 0);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":979
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":979
  *     bool
  *     """
  *     return PyObject_TypeCheck(obj, &PyTimedeltaArrType_Type)             # <<<<<<<<<<<<<<
@@ -3999,7 +4012,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_is_timedelta64_object(PyObject *__pyx_v_
   __pyx_r = PyObject_TypeCheck(__pyx_v_obj, (&PyTimedeltaArrType_Type));
   goto __pyx_L0;
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":967
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":967
  * 
  * 
  * cdef inline bint is_timedelta64_object(object obj):             # <<<<<<<<<<<<<<
@@ -4013,7 +4026,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_is_timedelta64_object(PyObject *__pyx_v_
   return __pyx_r;
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":982
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":982
  * 
  * 
  * cdef inline bint is_datetime64_object(object obj):             # <<<<<<<<<<<<<<
@@ -4026,7 +4039,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_is_datetime64_object(PyObject *__pyx_v_o
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("is_datetime64_object", 0);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":994
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":994
  *     bool
  *     """
  *     return PyObject_TypeCheck(obj, &PyDatetimeArrType_Type)             # <<<<<<<<<<<<<<
@@ -4036,7 +4049,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_is_datetime64_object(PyObject *__pyx_v_o
   __pyx_r = PyObject_TypeCheck(__pyx_v_obj, (&PyDatetimeArrType_Type));
   goto __pyx_L0;
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":982
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":982
  * 
  * 
  * cdef inline bint is_datetime64_object(object obj):             # <<<<<<<<<<<<<<
@@ -4050,7 +4063,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_is_datetime64_object(PyObject *__pyx_v_o
   return __pyx_r;
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":997
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":997
  * 
  * 
  * cdef inline npy_datetime get_datetime64_value(object obj) nogil:             # <<<<<<<<<<<<<<
@@ -4061,7 +4074,7 @@ static CYTHON_INLINE int __pyx_f_5numpy_is_datetime64_object(PyObject *__pyx_v_o
 static CYTHON_INLINE npy_datetime __pyx_f_5numpy_get_datetime64_value(PyObject *__pyx_v_obj) {
   npy_datetime __pyx_r;
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":1004
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":1004
  *     also needed.  That can be found using `get_datetime64_unit`.
  *     """
  *     return (<PyDatetimeScalarObject*>obj).obval             # <<<<<<<<<<<<<<
@@ -4071,7 +4084,7 @@ static CYTHON_INLINE npy_datetime __pyx_f_5numpy_get_datetime64_value(PyObject *
   __pyx_r = ((PyDatetimeScalarObject *)__pyx_v_obj)->obval;
   goto __pyx_L0;
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":997
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":997
  * 
  * 
  * cdef inline npy_datetime get_datetime64_value(object obj) nogil:             # <<<<<<<<<<<<<<
@@ -4084,7 +4097,7 @@ static CYTHON_INLINE npy_datetime __pyx_f_5numpy_get_datetime64_value(PyObject *
   return __pyx_r;
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":1007
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":1007
  * 
  * 
  * cdef inline npy_timedelta get_timedelta64_value(object obj) nogil:             # <<<<<<<<<<<<<<
@@ -4095,7 +4108,7 @@ static CYTHON_INLINE npy_datetime __pyx_f_5numpy_get_datetime64_value(PyObject *
 static CYTHON_INLINE npy_timedelta __pyx_f_5numpy_get_timedelta64_value(PyObject *__pyx_v_obj) {
   npy_timedelta __pyx_r;
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":1011
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":1011
  *     returns the int64 value underlying scalar numpy timedelta64 object
  *     """
  *     return (<PyTimedeltaScalarObject*>obj).obval             # <<<<<<<<<<<<<<
@@ -4105,7 +4118,7 @@ static CYTHON_INLINE npy_timedelta __pyx_f_5numpy_get_timedelta64_value(PyObject
   __pyx_r = ((PyTimedeltaScalarObject *)__pyx_v_obj)->obval;
   goto __pyx_L0;
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":1007
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":1007
  * 
  * 
  * cdef inline npy_timedelta get_timedelta64_value(object obj) nogil:             # <<<<<<<<<<<<<<
@@ -4118,7 +4131,7 @@ static CYTHON_INLINE npy_timedelta __pyx_f_5numpy_get_timedelta64_value(PyObject
   return __pyx_r;
 }
 
-/* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":1014
+/* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":1014
  * 
  * 
  * cdef inline NPY_DATETIMEUNIT get_datetime64_unit(object obj) nogil:             # <<<<<<<<<<<<<<
@@ -4129,7 +4142,7 @@ static CYTHON_INLINE npy_timedelta __pyx_f_5numpy_get_timedelta64_value(PyObject
 static CYTHON_INLINE NPY_DATETIMEUNIT __pyx_f_5numpy_get_datetime64_unit(PyObject *__pyx_v_obj) {
   NPY_DATETIMEUNIT __pyx_r;
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":1018
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":1018
  *     returns the unit part of the dtype for a numpy datetime64 object.
  *     """
  *     return <NPY_DATETIMEUNIT>(<PyDatetimeScalarObject*>obj).obmeta.base             # <<<<<<<<<<<<<<
@@ -4137,7 +4150,7 @@ static CYTHON_INLINE NPY_DATETIMEUNIT __pyx_f_5numpy_get_datetime64_unit(PyObjec
   __pyx_r = ((NPY_DATETIMEUNIT)((PyDatetimeScalarObject *)__pyx_v_obj)->obmeta.base);
   goto __pyx_L0;
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":1014
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":1014
  * 
  * 
  * cdef inline NPY_DATETIMEUNIT get_datetime64_unit(object obj) nogil:             # <<<<<<<<<<<<<<
@@ -4198,6 +4211,7 @@ static struct PyModuleDef __pyx_moduledef = {
 static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_ImportError, __pyx_k_ImportError, sizeof(__pyx_k_ImportError), 0, 0, 1, 1},
   {&__pyx_n_s_a, __pyx_k_a, sizeof(__pyx_k_a), 0, 0, 1, 1},
+  {&__pyx_n_s_amplify_grads, __pyx_k_amplify_grads, sizeof(__pyx_k_amplify_grads), 0, 0, 1, 1},
   {&__pyx_n_s_asarray, __pyx_k_asarray, sizeof(__pyx_k_asarray), 0, 0, 1, 1},
   {&__pyx_n_s_b, __pyx_k_b, sizeof(__pyx_k_b), 0, 0, 1, 1},
   {&__pyx_n_s_c, __pyx_k_c, sizeof(__pyx_k_c), 0, 0, 1, 1},
@@ -4216,11 +4230,11 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_initial_lr, __pyx_k_initial_lr, sizeof(__pyx_k_initial_lr), 0, 0, 1, 1},
   {&__pyx_n_s_kwargs, __pyx_k_kwargs, sizeof(__pyx_k_kwargs), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
-  {&__pyx_n_s_momentum, __pyx_k_momentum, sizeof(__pyx_k_momentum), 0, 0, 1, 1},
   {&__pyx_n_s_n_edges, __pyx_k_n_edges, sizeof(__pyx_k_n_edges), 0, 0, 1, 1},
   {&__pyx_n_s_n_epochs, __pyx_k_n_epochs, sizeof(__pyx_k_n_epochs), 0, 0, 1, 1},
   {&__pyx_n_s_n_vertices, __pyx_k_n_vertices, sizeof(__pyx_k_n_vertices), 0, 0, 1, 1},
   {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
+  {&__pyx_n_s_negative_sample_rate, __pyx_k_negative_sample_rate, sizeof(__pyx_k_negative_sample_rate), 0, 0, 1, 1},
   {&__pyx_n_s_neighbor_counts, __pyx_k_neighbor_counts, sizeof(__pyx_k_neighbor_counts), 0, 0, 1, 1},
   {&__pyx_n_s_normalized, __pyx_k_normalized, sizeof(__pyx_k_normalized), 0, 0, 1, 1},
   {&__pyx_n_s_numpy, __pyx_k_numpy, sizeof(__pyx_k_numpy), 0, 0, 1, 1},
@@ -4243,7 +4257,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 117, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 123, __pyx_L1_error)
   __pyx_builtin_ImportError = __Pyx_GetBuiltinName(__pyx_n_s_ImportError); if (!__pyx_builtin_ImportError) __PYX_ERR(1, 945, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
@@ -4254,7 +4268,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":945
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":945
  *         __pyx_import_array()
  *     except Exception:
  *         raise ImportError("numpy.core.multiarray failed to import")             # <<<<<<<<<<<<<<
@@ -4265,7 +4279,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":951
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":951
  *         _import_umath()
  *     except Exception:
  *         raise ImportError("numpy.core.umath failed to import")             # <<<<<<<<<<<<<<
@@ -4276,17 +4290,17 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "cython/gpu_uniform_umap.pyx":91
+  /* "cython/gpu_uniform_umap.pyx":96
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def gpu_opt_wrapper(             # <<<<<<<<<<<<<<
  *     int normalized,
  *     int sym_attraction,
  */
-  __pyx_tuple__3 = PyTuple_Pack(22, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_frob, __pyx_n_s_momentum, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_weights, __pyx_n_s_neighbor_counts, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_initial_lr, __pyx_n_s_verbose, __pyx_n_s_kwargs, __pyx_n_s_i_epoch, __pyx_n_s_n_edges, __pyx_n_s_dim, __pyx_n_s_weight_sum, __pyx_n_s_i); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 91, __pyx_L1_error)
+  __pyx_tuple__3 = PyTuple_Pack(23, __pyx_n_s_normalized, __pyx_n_s_sym_attraction, __pyx_n_s_frob, __pyx_n_s_amplify_grads, __pyx_n_s_head, __pyx_n_s_tail, __pyx_n_s_head_embedding, __pyx_n_s_tail_embedding, __pyx_n_s_weights, __pyx_n_s_neighbor_counts, __pyx_n_s_n_epochs, __pyx_n_s_n_vertices, __pyx_n_s_a, __pyx_n_s_b, __pyx_n_s_initial_lr, __pyx_n_s_negative_sample_rate, __pyx_n_s_verbose, __pyx_n_s_kwargs, __pyx_n_s_i_epoch, __pyx_n_s_n_edges, __pyx_n_s_dim, __pyx_n_s_weight_sum, __pyx_n_s_i); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
-  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(16, 0, 22, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARKEYWORDS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cython_gpu_uniform_umap_pyx, __pyx_n_s_gpu_opt_wrapper, 91, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 91, __pyx_L1_error)
+  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(17, 0, 23, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARKEYWORDS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cython_gpu_uniform_umap_pyx, __pyx_n_s_gpu_opt_wrapper, 96, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -4400,11 +4414,11 @@ static int __Pyx_modinit_type_import_code(void) {
   __pyx_ptype_5numpy_ufunc = __Pyx_ImportType(__pyx_t_1, "numpy", "ufunc", sizeof(PyUFuncObject), __Pyx_ImportType_CheckSize_Ignore);
    if (!__pyx_ptype_5numpy_ufunc) __PYX_ERR(1, 827, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyImport_ImportModule("sklearn.neighbors._quad_tree"); if (unlikely(!__pyx_t_1)) __PYX_ERR(3, 51, __pyx_L1_error)
+  __pyx_t_1 = PyImport_ImportModule("sklearn.neighbors._quad_tree"); if (unlikely(!__pyx_t_1)) __PYX_ERR(3, 55, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_ptype_7sklearn_9neighbors_10_quad_tree__QuadTree = __Pyx_ImportType(__pyx_t_1, "sklearn.neighbors._quad_tree", "_QuadTree", sizeof(struct __pyx_obj_7sklearn_9neighbors_10_quad_tree__QuadTree), __Pyx_ImportType_CheckSize_Warn);
-   if (!__pyx_ptype_7sklearn_9neighbors_10_quad_tree__QuadTree) __PYX_ERR(3, 51, __pyx_L1_error)
-  __pyx_vtabptr_7sklearn_9neighbors_10_quad_tree__QuadTree = (struct __pyx_vtabstruct_7sklearn_9neighbors_10_quad_tree__QuadTree*)__Pyx_GetVtable(__pyx_ptype_7sklearn_9neighbors_10_quad_tree__QuadTree->tp_dict); if (unlikely(!__pyx_vtabptr_7sklearn_9neighbors_10_quad_tree__QuadTree)) __PYX_ERR(3, 51, __pyx_L1_error)
+   if (!__pyx_ptype_7sklearn_9neighbors_10_quad_tree__QuadTree) __PYX_ERR(3, 55, __pyx_L1_error)
+  __pyx_vtabptr_7sklearn_9neighbors_10_quad_tree__QuadTree = (struct __pyx_vtabstruct_7sklearn_9neighbors_10_quad_tree__QuadTree*)__Pyx_GetVtable(__pyx_ptype_7sklearn_9neighbors_10_quad_tree__QuadTree->tp_dict); if (unlikely(!__pyx_vtabptr_7sklearn_9neighbors_10_quad_tree__QuadTree)) __PYX_ERR(3, 55, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_RefNannyFinishContext();
   return 0;
@@ -4662,16 +4676,16 @@ if (!__Pyx_RefNanny) {
  */
   __pyx_t_2 = __pyx_f_5numpy_import_array(); if (unlikely(__pyx_t_2 == ((int)-1))) __PYX_ERR(0, 11, __pyx_L1_error)
 
-  /* "cython/gpu_uniform_umap.pyx":91
+  /* "cython/gpu_uniform_umap.pyx":96
  * @cython.wraparound(False)
  * @cython.boundscheck(False)
  * def gpu_opt_wrapper(             # <<<<<<<<<<<<<<
  *     int normalized,
  *     int sym_attraction,
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12optimize_gpu_1gpu_opt_wrapper, NULL, __pyx_n_s_optimize_gpu); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 91, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12optimize_gpu_1gpu_opt_wrapper, NULL, __pyx_n_s_optimize_gpu); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_gpu_opt_wrapper, __pyx_t_1) < 0) __PYX_ERR(0, 91, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_gpu_opt_wrapper, __pyx_t_1) < 0) __PYX_ERR(0, 96, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "cython/gpu_uniform_umap.pyx":1
@@ -4684,7 +4698,7 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_1) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "../../py_venv/lib/python3.8/site-packages/numpy/__init__.pxd":1014
+  /* "../../anaconda3/envs/gpu/lib/python3.9/site-packages/numpy/__init__.pxd":1014
  * 
  * 
  * cdef inline NPY_DATETIMEUNIT get_datetime64_unit(object obj) nogil:             # <<<<<<<<<<<<<<

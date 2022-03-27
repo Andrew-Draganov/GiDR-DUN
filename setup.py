@@ -14,7 +14,7 @@ setup(
         'pynndescent',
         'sklearn',
         'scipy',
-        'tensorflow',
+        # 'tensorflow',
         'tensorflow_datasets'
     ],
 )

@@ -14,7 +14,8 @@ cdef extern from "gpu_dim_reduction.cpp":
     void gpu_umap_wrap(
         int normalized,
         int sym_attraction,
-        int momentum,
+        int frob,
+        int amplify_grads,
         float* head_embedding,
         float* tail_embedding,
         int* head,
@@ -29,7 +30,8 @@ cdef extern from "gpu_dim_reduction.cpp":
         int n_vertices,
         float initial_lr,
         int n_edges,
-        int n_epochs
+        int n_epochs,
+        int negative_sample_rate
     )
 
 ctypedef np.float32_t DTYPE_FLOAT
@@ -39,7 +41,7 @@ cdef uniform_umap_gpu(
     int normalized,
     int sym_attraction,
     int frob,
-    int momentum,
+    int amplify_grads,
     np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] head_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] tail_embedding,
     np.ndarray[int, ndim=1, mode='c'] head,
@@ -52,6 +54,7 @@ cdef uniform_umap_gpu(
     float initial_lr,
     int n_epochs,
     int n_vertices,
+    int negative_sample_rate,
     int verbose
 ):
     cdef:
@@ -66,7 +69,8 @@ cdef uniform_umap_gpu(
     gpu_umap_wrap(
         normalized,
         sym_attraction,
-        momentum,
+        frob,
+        amplify_grads,
         &head_embedding[0, 0], # Move from numpy to c pointer arrays
         &tail_embedding[0, 0],
         &head[0],
@@ -81,7 +85,8 @@ cdef uniform_umap_gpu(
         n_vertices,
         initial_lr,
         n_edges,
-        n_epochs
+        n_epochs,
+        negative_sample_rate
     )
 
 
@@ -92,7 +97,7 @@ def gpu_opt_wrapper(
     int normalized,
     int sym_attraction,
     int frob,
-    int momentum,
+    int amplify_grads,
     np.ndarray[DTYPE_INT, ndim=1, mode='c'] head,
     np.ndarray[DTYPE_INT, ndim=1, mode='c'] tail,
     np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] head_embedding,
@@ -104,6 +109,7 @@ def gpu_opt_wrapper(
     float a,
     float b,
     float initial_lr,
+    int negative_sample_rate,
     int verbose=True,
     **kwargs
 ):
@@ -124,7 +130,7 @@ def gpu_opt_wrapper(
         normalized,
         sym_attraction,
         frob,
-        momentum,
+        amplify_grads,
         head_embedding,
         tail_embedding,
         head,
@@ -137,6 +143,7 @@ def gpu_opt_wrapper(
         initial_lr,
         n_epochs,
         n_vertices,
+        negative_sample_rate,
         verbose
     )
 
