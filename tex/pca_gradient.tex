@@ -13,7 +13,7 @@
 % \usepackage[linesnumbered,ruled,vlined]{algorithm2e}
 \usepackage[backend=bibtex]{biblatex}
 \theoremstyle{definition}
-\newtheorem*{definition}{Definition}
+\newtheorem{definition}{Definition}
 \allowdisplaybreaks
 \title{PCA as Gradient Descent}
 \author{Andrew Draganov}
@@ -22,163 +22,93 @@
 \maketitle
 \section{PCA objective function and gradient}
 
-\begin{figure}
-\centering
-\includegraphics[width=.4\textwidth]{tex_images/0500.png}
-\caption{The result of performing gradient descent PCA on the MNIST dataset}
-\end{figure}
+Given a high-dimensional dataset $X \in \mathbb{R}^{n \times D}$ and randomly initialized $Y \in \mathbb{R}^{n \times d}$, we aim to approximate a gradient
+$\nabla_Y$ that is minimized when $Y$ is the PCA embedding of $X$ into $d$ dimensions.
 
-Given a high-dimensional dataset $X \in \mathbb{R}^{N \times D}$, we aim to identify a gradient descent objective to find points $Y \in \mathbb{R}^{N \times d}$
-with $d << D$ such that $Y$ is the result of performing PCA on $X$.
-
-We start with formalizing PCA as minimizing the function
-
+We start with the claim that PCA minimizes the function
 \begin{equation}
-    f_{PCA}(X, Y) = ||L (E^X - E^Y) L ||^2_F
+    f_{pca}(X, Y) = ||C (E^X - E^Y) C ||^2_F
 \end{equation}
-where $E^X \in \mathbb{R}^{N \times N}$ and $E^Y \in \mathbb{R}^{N \times N}$ are the pairwise squared distance matrix for $X$ and $Y$ and $L$ is the $N \times N$ centering matrix. Optimizing this function inherently
-amounts to minimizing the Frobenius norm between the two matrices. We show two separate ways to calculate the gradient of $f_{PCA}$ with respect to the
-low-dimensional points $Y$.
+where $E^X \in \mathbb{R}^{n \times n}$ and $E^Y \in \mathbb{R}^{n \times n}$ are the pairwise squared distance matrices for $X$ and $Y$ and $C$ is the $n \times
+n$ centering matrix.
 
-\subsection{Element-wise gradient calculations}
+Before developing its gradient, we first establish the following preliminary:
+\begin{definition}{\textit{$E^X$ in terms of Gram matrices ---}}
+    Given $X \in \mathbb{R}^{n \times D}$ and Gram matrix $G_X = X X^T$, we can write $E^X$ as $E^X = \text{diag}(G_X) \mathbbm{1}^T + \mathbbm{1}
+    \text{diag}(G_X)^T - 2G$ where $\mathbbm{1} \in \mathbb{R}^{n \times D}$ is the
+    matrix of all 1's
+\end{definition}
 
-To identify the effect of gradient descent on $Y$, we can deconstruct the matrices into a set of element-wise operations. We can re-arrange the term in the
-Frobenius norm:
+We simplify notation by writing $\text{diag}(G_X) = g_x$, giving us \[ E^X = g_X \mathbbm{1}^T + \mathbbm{1} g_X^T - 2G_X \]
+By applying this definition, we rearrange our cost function by
 \begin{align*}
-    L (E^X - E^Y) L &= LE^XL - LE^YL \\
-    &= E^X - \bar{X}^{\rightarrow} - \bar{X}^{\downarrow} - E^Y + \bar{Y}^{\rightarrow} + \bar{Y}^{\downarrow}
+    f_{pca}(X, Y) &= ||C(E^X - E^Y)C||_F^2 \\
+    f_{pca}(X, Y) &= ||C(g_X \mathbbm{1} + \mathbbm{1} g_X^T - 2G_X - g_Y \mathbbm{1} - \mathbbm{1} g_Y^T + 2G_Y)C||_F^2 
 \end{align*}
-where $\bar{X}^{\rightarrow}$ is the $N \times N$ matrix of row-means that the centering matrix on the right-hand-side of $X$ subtracts. The other $\bar{X}$ and
-$\bar{Y}$ variables are defined accordingly. We can now rearrange these to obtain:
-\[ L (E^X - E^Y) L = E^X - E^Y - \Lambda \]
-for $\Lambda = - \bar{X}^{\rightarrow} - \bar{X}^{\downarrow} + \bar{Y}^{\rightarrow} + \bar{Y}^{\downarrow} \in \mathbb{R}^{N \times N}$
-
-Then the PCA objective function can equivalently be written as
-\begin{equation}
-    f_{PCA}(X, Y) = \sum_{i, j} \left( ||x_i - x_j||^2 - ||y_i - y_j||^2 - \lambda_{ij} \right) ^2
+But now notice that $C \mathbbm{1} = 0 = \mathbbm{1}^T C$. So we can simplify this expression into
+\[ f_{pca}(X, Y) = ||C(2G_Y - 2G_X)C||_F^2 \]
+\textit{We will temporarily ignore the factor $2$ scalar and centering matrices for the purposes of constructing a minimal viable example.} Given these
+simplifications, our modified cost function is written as
+\[ g_{pca}(X, Y) = ||G_X - G_Y||_F^2 \]
+The gradient of this with respect to $Y$ along dimension $\alpha$ is then
+\[
+\nabla^{\alpha}_Y g_{pca}(X, Y) = 2(G_X - G_Y)(Y_{*\alpha} \mathbbm{1}^T - \mathbbm{1} Y_{*\alpha}^T) \mathbbm{1}
+\]
+where $Y_{*\alpha}$ is the column of $Y$ along dimension $\alpha$ and $\mathbbm{1} \in \mathbb{R}^{n \times 1}$ is the all-1 vector. Since the dimensions of $Y$
+are treated independently, WLOG $d=1$:
+\begin{equation} \label{simple_gradient}
+    \nabla g_{pca}(X, Y) = 2(G_X - G_Y)(Y \mathbbm{1}^T - \mathbbm{1} Y^T) \mathbbm{1}
 \end{equation}
 
-To perform gradient descent, we take the partial derivative with respect to $y_i$ to obtain
-\[ \nabla_{y_i} f(X, Y) = -4 \sum_{j} (||x_i - x_j||^2 - ||y_i - y_j||^2 - \lambda_{ij}) (\dfrac{\partial \vec{\lambda}_{ij}}{\partial y_i} + \vec{y}_i - \vec{y}_j) \]
+It is this gradient that we will try to approximate with a low-rank substitute.
 
-This gives us the following gradient descent algorithm with learning rate $\nu$:
-\begin{equation*}
-    \boxed{
-    \begin{aligned}
-        \nabla_{y_i} f(X, Y) &= -4 \sum_{j} (||x_i - x_j||^2 - ||y_i - y_j||^2 - \lambda_{ij}) \left( \dfrac{\partial \vec{\lambda}_{ij}}{\partial y_i}
-        + \vec{y}_i - \vec{y}_j \right) \\
-        Y_{t + 1} &= Y_t + \nu \nabla_{Y} f(X, Y)
-    \end{aligned}
-    }
-\end{equation*}
+In the next section we show that $(Y \mathbbm{1}^T - \mathbbm{1} Y^T) \mathbbm{1}$ is just $nCY$ and can thus be computed in $O(n)$ time. If we are given
+rank-$k$ approximations for $G_X$ and $G_Y$, we will then be able to calculate the gradient in $O(kn) + O(nd)$ time.
 
-This gives us the following algorithm:
-\begin{algorithm}
-\caption{PCA by gradient descent on the points}\label{alg:cap}
-\begin{algorithmic}
-\Require Input: $X \in \mathbb{R}^{N \times D}$, n\_epochs, $\nu$
-\State $D^X \gets \text{pairwise\_dists}(X) \in \mathbb{R}^{N \times N}$
-\State $D^X \gets D^X - \text{row\_means}(D^X)$
-\State $D^X \gets D^X - \text{col\_means}(D^X)$
-\State $Y \gets \mathcal{N}_{(0, 1)} \in \mathbb{R}^{N \times d}$
-\While{$e < \text{n\_epochs}$}
-\State $V^Y \gets \text{pairwise\_vectors}(Y) \in \mathbb{R}^{N \times N \times 2}$
-\\
-\State $D^Y \gets \text{pairwise\_dists}(Y) \in \mathbb{R}^{N \times N}$
-\State $D^Y \gets D^Y - \text{row\_means}(D^Y)$
-\State $D^Y \gets D^Y - \text{col\_means}(D^Y)$
-\\
-\State $ \nabla_Y \gets -4 \cdot \text{SUM}\left(( D^X - D^Y ) V^Y, \; \text{axis}=1 \right)$
-\State $ Y \gets Y + \nu \nabla_Y$
-\State $e++$
-\EndWhile
-\\
-\Return $Y$
-\end{algorithmic}
-\end{algorithm}
+Our principle goal, then, is to determine what effect low-rank approximations $G'_X$ and $G'_Y$ will have on the gradient. Namely, we want low-rank
+approximations such that the approximate gradient
+\[ \nabla' g_{pca}(X, Y) = 2(G'_X - G'_Y) (Y \mathbbm{1}^T - \mathbbm{1} Y^T) \mathbbm{1} \]
+has the property that
+\[ \dfrac{\langle \nabla , \nabla' \rangle}{||\nabla|| \cdot ||\nabla'||} \]
+is maximized.
 
-Lastly, we note that we can separate the PCA gradient descent algorithm into a pair of alternating forces. For $\Lambda^X = \bar{X}^{\rightarrow}
-+ \bar{X}^{\downarrow}$ and $\Lambda^Y = - \bar{Y}^{\rightarrow} - \bar{Y}^{\downarrow}$ Namely, we have
-\begin{align*}
-    \nabla_{y_i} f(X, Y) &= -4 \sum_{i, j} ( ||x_i - x_j||^2 - ||y_i - y_j||^2 - \lambda_{ij}) (\vec{y}_i - \vec{y}_j) \\
-    &= 4 \sum_{i, j} (||x_i - x_j||^2 - \lambda^X_{ij}) (\vec{y}_i - \vec{y}_j) - 4 \sum_{i, j} (||y_i - y_j||^2 - \lambda^Y_{ij})(\vec{y}_i
-    - \vec{y}_j) \\
-    &= 4 \left( F_{X} - F_{Y} \right)
-\end{align*}
-Each force is dominated by the large and small distances. However, we can deconstruct these into clear attractive and repulsive forces. If points $x_i$
-and $x_j$ are one another's nearest neighbors in the high-dimensional space, then $||x_i - x_j||^2$ will always be less than its respective centering
-$\lambda^X_{ij}$. Thus, nearest neighbors in the high-dimensional space \textit{only} exert attractions on the embedding. Similarly, farthest
-neighbors in the high-dimensional space \textit{only} create repulsive forces. Inversely, nearest neighbors in the embedding exert repulsions while
-farthest neighbors exert attractions. PCA is the single convergence of these individual systems. Therefore, as one progresses from $x_i$'s nearest to its farthest neighbor, the force must this neighbor exerts on $x_i$ must change monotonically.
+\subsection{Simplifying $(Y \mathbbm{1}^T - \mathbbm{1} Y^T) \mathbbm{1}$}
+We start by working with the $(Y \mathbbm{1}^T - \mathbbm{1} Y^T) \mathbbm{1}$ term, which we distribute into $Y \mathbbm{1}^T \mathbbm{1} - \mathbbm{1} Y^T
+\mathbbm{1}$. Clearly, the first $\mathbbm{1}^T \mathbbm{1}$ term is just $n$. The $\mathbbm{1} Y^T \mathbbm{1}$ is similarly simple, as it is just the sum $\sum_{i=1}^n y_{i}$ in every cell. Their difference, then, can be written as
 
+\begin{equation} \label{scalar_matrix}
+(Y \mathbbm{1}^T - \mathbbm{1} Y^T) \mathbbm{1} = 
+\begin{bmatrix}
+    n \cdot y_1 - \sum_i^n y_i & \dots & n \cdot y_n - \sum_i^n y_i
+\end{bmatrix}^T
+\end{equation}
 
-\subsection{Vectorized PCA gradient}
-A different approach would be to rely on matrix differentiation using vectorizations and Kronecker products. We first establish the following preliminaries:
-\begin{enumerate}
-    \item Given Gram matrix $G_X = X^T X$, we can write $E^X$ as $E^X = \text{diag}(G_X) \mathbbm{1} + \mathbbm{1} \text{diag}(G_X)^T - 2G$ as the matrix of
-        pairwise squared distances
-    \begin{itemize}
-        \item We simplify notation by writing $\text{diag}(G_X) = g_x$, giving us
-            \[ E^X = g_X \mathbbm{1} + \mathbbm{1} g_X^T - 2G_X \]
-        \item $\mathbbm{1}$ is the vector consisting of all 1's
-    \end{itemize}
-    \item The product of three matrices $ABC$ can be \textit{vectorized} (transformed into a column vector by linear transformation) using the operation
-        $\textit{vec}(ABC) = (C^T \otimes A) \textit{vec}(B)$, where $\otimes$ represents the Kronecker product.
-    \item Vectorized matrices are transposed by appropriately sized \textit{commutation matrices} $K$ s.t. for any matrix $A \in \mathbb{R}^{n \times m}$ it is
-        the case that $K^{(m \times n)} \textit{vec}(A) = \textit{vec}(A^T)$, where $K \in \mathbb{R}^{mn \times mn}$
-\end{enumerate}
+Conveniently, this is just $nCY$ for centering matrix $C$ and can be calculated in linear time with respect to $n$. This means that $nCY$ is just the per-point scaling based on that point's deviation from the mean.
 
-We begin with the error function for PCA
-\[ f_{PCA}(X, Y) = ||L(E^X - E^Y)L||_F^2 \]
+Given this, our next step is to determine how this will interact with low-rank approximations of $G_X$ and $G_Y$. Plugging back in, our gradient is
+\[ \nabla g_{pca}(X, Y) = 2n(G_X - G_Y)CY \]
+where the gradient with respect to point $y_i$ has the form
+\[ n \cdot \sum_{j = 1}^n \left[ \left( \langle x_i, x_j \rangle - \langle y_i, y_j \rangle \right) (y_j - \mu_y) \right] \]
 
-By applying the first preliminary, we rearrange this by
-\begin{align*}
-    f_{PCA}(X, Y) &= ||L(E^X - E^Y)L||_F^2 \\
-    f_{PCA}(X, Y) &= ||L(g_X \mathbbm{1} + \mathbbm{1} g_X^T - 2G_X - g_Y \mathbbm{1} - \mathbbm{1} g_Y^T + 2G_Y)L||_F^2 
-\end{align*}
+Looking ahead, we make a prediction regarding the feasability of approximating this.
 
-But now notice that $L \mathbbm{1} = 0 = \mathbbm{1}^T L$. So we can simplify this expression into
-\[ f_{PCA}(X, Y) = ||L(2G_Y - 2G_X)L||_F^2 \]
+Given an arbitrary row (or column) $i$ of $G_X$ or $G_Y$, we see that each element in it is scaled by the norm of $y_i$. A low-rank approximation, then,
+would inherently be biased towards preserving those rows and columns whose diagonal entries are large. Indeed, this is specifically the property that the
+sublinear-time approximation algorithm exploits. We have the added component, however, of multiplying by $CY$, where each element $i$ is also linearly dependent
+on the norm of $y_i$.
+Our gradient's $i$-th element, then, should have a quadratic relationship with respect to $||y_i||$. Since this is what the low-rank approximation will
+attempt to preserve, intuition implies that our element-wise approximation factor should not worsen significantly when we multiply $(G_X - G_Y)$ by $(CY)$.
 
-The squared Frobenius norm $||M||_F^2$ can be rewritten as $tr(M^T M)$. Applying this gives us
-\begin{align*}
-    f_{PCA}(X, Y) &= tr \left( \left(L(2G_Y - 2G_X)L\right)^T L(2G_Y - 2G_X)L \right) \\
-    &= 4 tr \left( L (G_Y - G_X)^T L L(G_Y - G_X)L \right) \\
-    &= 4 tr \left( L (G_Y^T - G_X^T) L (G_Y - G_X)L \right) \\
-    &= 4 tr \left( L (G_Y^T L G_Y - G_X^T L G_Y - G_Y^T L G_X + G_X^T L G_X )L \right) \\
-\end{align*}
+\subsection{Gradient approximation}
+tbd
 
-We now separate this by the linearity of the trace operation to obtain
-\[ f_{PCA}(X, Y) = 4 \left[ tr \left( L G_Y^T L G_Y L \right) - tr \left( L G_X^T L G_Y L \right) - tr \left( L G_Y^T L G_X L \right) + tr \left( L G_X^T L G_X L \right) \right] \]
+\subsection{Bringing it back to the original problem}
+At first glance, reintroducing the double centering operation into the gradient calculation seems to complicate matters. First, it doesn't appear
+that double centering the Gram matrices retains their positive definiteness, so we cannot apply the low-rank approximation to their centered counterparts. This
+implies that the centering must be done on the low-rank approximations themselves. Second, exactly calculating the double centering is an $O(n^2)$ operation.
 
-The product is commutative within the trace operation, so we can cancel the outer centering matrices to obtain
-\begin{align*}
-f_{PCA}(X, Y) &= 4 \left[ tr \left( G_Y^T L G_Y \right) - tr \left( G_X^T L G_Y \right) - tr \left( G_Y^T L G_X \right) + tr \left( G_X^T L G_X \right) \right]
-\\
-f_{PCA}(X, Y) &= 4 tr \left( G_Y^T L G_Y - G_X^T L G_Y - G_Y^T L G_X + G_X^T L G_X \right) \\
-&\textit{By further commutative swaps and removing the transposes, we get} \rightarrow \\
-\rightarrow f_{PCA}(X, Y) &= 4 tr \left( L \left( G_Y G_Y - 2 G_X G_Y + G_X G_X \right) \right) \\
-&= 4 tr \left( L \left( G_Y - G_X \right)^2 \right)
-\end{align*}
-
-We now incorporate the fact that the trace of a product of symmetric matrices is the inner product of the vectorizations of those matrices
-\[ \rightarrow f_{PCA}(X, Y) = 4 \langle \text{vec}( (G_Y - G_X)^2 ), \text{vec}( L ) \rangle \]
-
-Taking the partial derivative with respect to $Y$ gives:
-\begin{align*}
-    d(f_{PCA}(X, Y)) &= 4\text{vec}(L)^T \text{vec}\left( d \left( (G_Y - G_X)^2 \right) \right) \\
-    &= 4\text{vec}(L)^T \text{vec}\left( d \left( G_Y^2 \right) - d \left( G_Y G_X \right) - d \left( G_X G_Y \right) \right) \\
-    &= 4\text{vec}(L)^T \text{vec}\left( d \left( G_Y^2 \right) - 2G_X \right) \\
-    &= 4\text{vec}(L)^T \text{vec}\left( 2 G_Y d \left( G_Y \right) - 2G_X \right) \\
-    &= 8\text{vec}(L)^T \text{vec}\left( G_Y (dY^T Y + Y^T dY) - G_X \right) \\
-    &= 8\text{vec}(L)^T \text{vec}\left( G_Y (dY^T Y + Y^T dY)\right) - 8\text{vec}(L)^T \text{vec} \left( 2G_X \right) \\
-    &= 8\text{vec}(L)^T \left( \text{vec} \left( G_Y dY^T Y \right) + \text{vec} \left( G_Y Y^T dY \right)\right) - 4\text{vec}(L)^T \text{vec} \left( 2G_X \right) \\
-\end{align*}
-
-We now extract the $dY$ vectors by performing the $\text{vec}(ABC) = (C^T \otimes A) \text{vec}(B)$ trick:
-\begin{align*}
-    df_{PCA}(X, Y) &= 8\text{vec}(L)^T \left( (Y^T \otimes G_Y)K dY + (I \otimes G_Y Y^T) dY \right) - 4\text{vec}(L)^T \text{vec} \left( 2G_X \right) \\
-    &= 8\text{vec}(L)^T \left[ \left( (Y^T \otimes G_Y)K + (I \otimes G_Y Y^T) \right) dY \right] - 4\text{vec}(L)^T \text{vec} \left( 2G_X \right) \\
-\end{align*}
+This may be straightforward to speed up, however, as we know that the maximum value of a PSD matrix must occur along the diagonal. Furthermore, we know by
+Cauchy-Schwarz that the sum of the norms of the diagonals is an upper bound on the Frobenius norm of a PSD matrix. So we have clear bounds that guide
+our sampling for row- and column-means.
 
 \end{document}
