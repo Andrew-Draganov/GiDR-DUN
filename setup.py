@@ -9,12 +9,17 @@ setup(
     install_requires=[
         'cython',
         'matplotlib',
+        'python-mnist',
         'numpy==1.21',
         'numba',
         'pynndescent',
         'sklearn',
         'scipy',
         # 'tensorflow',
-        'tensorflow_datasets'
+        'tqdm',
+        'tensorflow_datasets',
+        'umap-learn',
+
     ],
 )
+# Note that on the Apple M1, numba will not work with python >= 3.10

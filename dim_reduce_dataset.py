@@ -1,8 +1,8 @@
 import time
-from utils.metrics import classifier_accuracy, cluster_quality, cluster_distances
-from utils.general_utils import get_ab, make_plot
-from utils.get_data import get_dataset
-from utils.get_algorithm import get_algorithm
+from experiment_utils.metrics import classifier_accuracy, cluster_quality, cluster_distances
+from experiment_utils.general_utils import get_ab, make_plot
+from experiment_utils.get_data import get_dataset
+from experiment_utils.get_algorithm import get_algorithm
 import argparse
 
 def get_args():
