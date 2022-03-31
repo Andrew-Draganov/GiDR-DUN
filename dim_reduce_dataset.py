@@ -136,7 +136,7 @@ if __name__ == '__main__':
     if isinstance(dr_output, tuple):
         embedding, opt_time = dr_output
     else:
-        embedding = dr_outputs
+        embedding = dr_output
         opt_time = -1
     end = time.time()
     total_time = end - start
