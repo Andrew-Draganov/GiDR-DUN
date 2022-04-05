@@ -168,7 +168,7 @@ def cpu_analysis():
                     )
                     kmeans_score = cluster_quality(embedding, labels, cluster_model='kmeans')
                     dbscan_score = cluster_quality(embedding, labels, cluster_model='dbscan')
-                    if num_points < 100000:
+                    if num_points < 10000:
                         spectral_score = cluster_quality(embedding, labels, cluster_model='spectral')
                     else:
                         spectral_score = -1
