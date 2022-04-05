@@ -39,14 +39,13 @@ def read_outputs(base_path, npy_file='metrics', filter_strs=[], relevant_key=Non
 
 if __name__ == '__main__':
     # Comment out to read optimization_times for uniform_umap
-    # read_outputs(
-    #     'outputs',
-    #     npy_file='times',
-    #     filter_strs=['uniform_umap', 'dataset_size_timing'],
-    #     relevant_key='opt_time'
-    # )
     read_outputs(
         'outputs',
-        npy_file='metrics',
-        filter_strs=['cpu'],
+        npy_file='times',
+        filter_strs=['gpu'],
     )
+    # read_outputs(
+    #     'outputs',
+    #     npy_file='metrics',
+    #     filter_strs=['cpu'],
+    # )
