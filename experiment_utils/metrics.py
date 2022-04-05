@@ -2,7 +2,7 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, DBSCAN, SpectralClustering
 from sklearn.metrics.cluster import v_measure_score
 
 def cluster_distances(embedding, labels):
@@ -27,10 +27,29 @@ def cluster_distances(embedding, labels):
 
     return cluster_distances, normed_embeddings
 
-def cluster_quality(embedding, labels):
+def cluster_quality(embedding, labels, cluster_model='kmeans'):
     num_classes = int(np.unique(labels).shape[0])
-    model = KMeans(n_clusters=num_classes).fit(embedding)
-    return v_measure_score(labels, model.labels_)
+    if cluster_model == 'kmeans':
+        print('Fitting kmeans...')
+        model = KMeans(n_clusters=num_classes).fit(embedding)
+        pred_labels = model.labels_
+        true_labels = labels
+    elif cluster_model == 'dbscan':
+        print('Fitting dbscan...')
+        model = DBSCAN().fit(embedding)
+        pred_labels = model.labels_
+        nonnegative_inds = np.where(pred_labels >= 0)
+        pred_labels = pred_labels[nonnegative_inds]
+        true_labels = labels[nonnegative_inds]
+    elif cluster_model == 'spectral':
+        print('Fitting spectral clustering...')
+        model = SpectralClustering(n_clusters=num_classes).fit(embedding)
+        pred_labels = model.labels_
+        true_labels = labels
+    else:
+        raise ValueError('Unrecognized clustering algorithm %s' % cluster_model)
+
+    return v_measure_score(true_labels, pred_labels)
 
 def classifier_accuracy(embedding, labels, k=100, cross_val_steps=10):
     """ cross-validated kNN classifier accuracy """

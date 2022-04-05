@@ -15,7 +15,7 @@ def get_args():
     )
     parser.add_argument(
         '--dr-algorithm',
-        choices=['uniform_umap', 'original_umap', 'tsne', 'pca', 'kernel_pca'],
+        choices=['uniform_umap', 'original_umap', 'original_tsne', 'pca', 'kernel_pca'],
         default='uniform_umap',
         help='Which algorithm to use for performing dim reduction'
     )
@@ -62,6 +62,11 @@ def get_args():
         ],
         default='uniform_umap',
         help='Which embedding optimization algorithm to use'
+    )
+    parser.add_argument(
+        '--numba',
+        action='store_true',
+        help="If present, run under-optimized numba versions of the algorithm. NOTE: not compatible with Barnes-hut TSNE"
     )
     parser.add_argument(
         '--normalized',

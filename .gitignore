@@ -16,12 +16,9 @@ cython/optimize.cpp
 *.c
 *.swp
 */*.swp
-uniform_umap/__pycache__
-nndescent/nndescent/__pycache__
-cython/__pycache__
-uniform_umap/__pycache__
-utils/__pycache__
-datasets/
+*/__pycache__
+data/
+Dimensionality_Reduction_Analysis.egg-info/
 umap/.DS_Store
 umap/Images
 build/

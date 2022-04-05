@@ -1,55 +1,52 @@
 import os
 import numpy as np
 
-if __name__ == '__main__':
-    datasets = [
-        'mnist',
-        'fashion_mnist',
-        'cifar',
-        'swiss_roll',
-        'coil',
-        'google_news',
-    ]
-    algorithms = [
-        'umap',
-        'tsne',
-        'uniform_umap'
-    ]
-    modifiable_params = [
-        'default',
-        'neg_sample_rate',
-        'random_init',
-        'umap_metric',
-        'tsne_symmetrization',
-        'normalized',
-        'sym_attraction',
-        'frobenius',
-        'tsne_scalars'
-    ]
-    outputs_path = 'outputs'
-    for data_i, dataset in enumerate(datasets):
-        dataset_output_path = os.path.join(outputs_path, dataset)
-        if not os.path.isdir(dataset_output_path):
-            print('No dataset output path found for dataset {}'.format(dataset))
+def read_outputs(base_path, npy_file='metrics', filter_strs=[], relevant_key=None):
+    if not npy_file.endswith('.npy'):
+        npy_file += '.npy'
+
+    subdirs = [d[0] for d in os.walk(base_path)]
+    if filter_strs:
+        filtered_dirs = subdirs
+        for filter_str in filter_strs:
+            temp_filtered = []
+            for sd in filtered_dirs:
+                if filter_str in sd:
+                    temp_filtered += [sd]
+            filtered_dirs = temp_filtered
+    else:
+        filtered_dirs = subdirs
+
+    if not filtered_dirs:
+        raise ValueError("No output directories available after filtering")
+
+    for directory in filtered_dirs:
+        if not os.path.isfile(os.path.join(directory, npy_file)):
             continue
+        print(os.path.join(directory, npy_file))
+        metrics = np.load(os.path.join(directory, npy_file), allow_pickle=True)
+        metrics = metrics[()]
+        if relevant_key is None:
+            print(directory)
+            for metric, val in metrics.items():
+                print('%s:' % metric, val)
+            print()
+        else:
+            try:
+                print('%s --- %s =' % (directory, relevant_key), metrics[relevant_key])
+            except KeyError:
+                print('WARNING --- key %s not present in %s' % (relevant_key, os.path.join(directory, npy_file)))
 
-        for algorithm in algorithms:
-            alg_dataset_path = os.path.join(dataset_output_path, algorithm)
-            if not os.path.isdir(alg_dataset_path):
-                print('No dir found at {}'.format(alg_dataset_path))
-                continue
-
-            for param in modifiable_params:
-                param_path = os.path.join(alg_dataset_path, param)
-                if not os.path.isdir(param_path):
-                    print('No dir found at {}'.format(param_path))
-                    continue
-
-                try:
-                    metrics = np.load(os.path.join(param_path, 'metrics.npy'), allow_pickle=True)
-                    print('{} parameter in {} on {}'.format(param, algorithm, dataset))
-                    print(metrics[()])
-                    print()
-                except FileNotFoundError:
-                    print('Could not find metrics at {}'.format(param_path))
-                    continue
+if __name__ == '__main__':
+    # Comment out to read optimization_times for uniform_umap
+    # read_outputs(
+    #     'outputs',
+    #     npy_file='times',
+    #     filter_strs=['uniform_umap', 'dataset_size_timing'],
+    #     relevant_key='opt_time'
+    # )
+    read_outputs(
+        'outputs',
+        npy_file='metrics',
+        filter_strs=['cpu'],
+    )

@@ -1,3 +1,4 @@
+import os, csv
 import numpy as np
 import os
 from tqdm import tqdm
@@ -7,16 +8,31 @@ from mnist import MNIST
 # import tensorflow_datasets as tfds
 
 def load_mnist():
-    mnist_data_path = os.path.join('data')
+    mnist_data_path = os.path.join('data', 'mnist')
     if not os.path.isdir(mnist_data_path):
         import subprocess
         subprocess.call(os.path.join('utils', 'mnist_get_data.sh'))
-        print('Successfully downloaded MNIST into \'data\' folder')
 
     mndata = MNIST(mnist_data_path)
     points, labels = mndata.load_training()
     points = np.array(points)
     labels = np.array(labels)
+    return points, labels
+
+def upsample_dataset(num_points, points, labels):
+    # If the dataset doesn't have as many points as we want, make copies of the
+    #   dataset until it does
+    # Note -- this is only for timing purposes and resulting embeddings may be bogus
+    assert int(points.shape[0]) == int(labels.shape[0])
+    num_samples = int(points.shape[0])
+    while num_points > num_samples:
+        # add 1 to each dimension of the points when making copies of dataset
+        #   - want to make sure that optimization doesn't get arbitrarily faster
+        #     with identical copies of points
+        points = np.concatenate([points, points+1], axis=0)
+        labels = np.concatenate([labels, labels], axis=0)
+        num_samples = int(points.shape[0])
+        
     return points, labels
 
 def get_dataset(data_name, num_points, normalize=True):
@@ -33,10 +49,9 @@ def get_dataset(data_name, num_points, normalize=True):
         points, _ = make_swiss_roll(n_samples=num_samples, noise=0.01)
         labels = np.arange(num_samples)
     elif data_name == 'google_news':
-        import os, csv
         # To run this dataset, download https://data.world/jaredfern/googlenews-reduced-200-d
-        #   and place it into the directory 'datasets'
-        file = open(os.path.join('datasets', 'gnews_mod.csv'), 'r')
+        #   and place it into the directory 'data'
+        file = open(os.path.join('data', 'gnews_mod.csv'), 'r')
         reader = csv.reader(file)
         num_points = min(num_points, 350000)
         points = np.zeros([num_points, 200])
@@ -65,11 +80,8 @@ def get_dataset(data_name, num_points, normalize=True):
     else:
         raise ValueError("Unsupported dataset")
 
+    points, labels = upsample_dataset(num_points, points, labels)
     num_samples = int(points.shape[0])
-    if num_points > num_samples:
-        # FIXME - logger
-        print('WARNING: requested %d samples but dataset only has %d elements' % \
-              (num_points, num_samples))
     downsample_stride = int(float(num_samples) / num_points)
     points, labels = points[::downsample_stride], labels[::downsample_stride]
     num_samples = int(points.shape[0])

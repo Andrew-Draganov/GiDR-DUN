@@ -110,7 +110,7 @@ def apply_forces(
 
 
 
-def uniform_umap_opt_wrapper(
+def uniform_umap_numba_wrapper(
     normalized,
     angular,
     sym_attraction,

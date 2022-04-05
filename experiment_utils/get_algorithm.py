@@ -24,6 +24,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
                 pseudo_distance=params['umap_metric'],
                 tsne_symmetrization=params['tsne_symmetrization'],
                 optimize_method=params['optimize_method'],
+                numba=params['numba'],
                 negative_sample_rate=params['neg_sample_rate'],
                 normalized=int(params['normalized']),
                 sym_attraction=int(params['sym_attraction']),
@@ -47,7 +48,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
                 b=params['b'],
                 verbose=verbose
             )
-    elif algorithm_str == 'tsne':
+    elif algorithm_str == 'original_tsne':
         dr = TSNE(random_state=12345, verbose=3)
     elif algorithm_str == 'pca':
         dr = PCA()

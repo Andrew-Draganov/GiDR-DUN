@@ -29,7 +29,6 @@ import scipy.sparse.csgraph
 import numba
 
 from . import distances as dist
-
 from . import utils
 from . import spectral
 # from pynndescent import NNDescent
@@ -44,31 +43,6 @@ INT32_MAX = np.iinfo(np.int32).max - 1
 SMOOTH_K_TOLERANCE = 1e-5
 MIN_K_DIST_SCALE = 1e-3
 NPY_INFINITY = np.inf
-
-def breadth_first_search(adjmat, start, min_vertices):
-    explored = []
-    queue = [start]
-    levels = {}
-    levels[start] = 0
-    max_level = np.inf
-    visited = [start]
-
-    while queue:
-        node = queue.pop(0)
-        explored.append(node)
-        if max_level == np.inf and len(explored) > min_vertices:
-            max_level = max(levels.values())
-
-        if levels[node] + 1 < max_level:
-            neighbors = adjmat[node].indices
-            for neighbour in neighbors:
-                if neighbour not in visited:
-                    queue.append(neighbour)
-                    visited.append(neighbour)
-
-                    levels[neighbour] = levels[node] + 1
-
-    return np.array(explored)
 
 
 @numba.njit(
@@ -275,7 +249,7 @@ def nearest_neighbors(
             n_neighbors=n_neighbors,
             random_state=random_state,
             n_trees=n_trees,
-            distance_func=distance_func,
+            # distance_func=distance_func,
             n_iters=n_iters,
             max_candidates=20,
             n_jobs=num_threads,
@@ -582,6 +556,7 @@ def simplicial_set_embedding(
     euclidean,
     sym_attraction,
     frob,
+    numba,
     gpu,
     num_threads,
     amplify_grads,
@@ -747,6 +722,7 @@ def simplicial_set_embedding(
         euclidean,
         sym_attraction,
         frob,
+        numba,
         gpu,
         num_threads,
         amplify_grads,
@@ -767,7 +743,7 @@ def simplicial_set_embedding(
         verbose
     )
 
-    return embedding, {'opt_time': opt_time}
+    return embedding, opt_time
 
 
 def _optimize_layout_euclidean(
@@ -776,6 +752,7 @@ def _optimize_layout_euclidean(
         euclidean,
         sym_attraction,
         frob,
+        numba,
         gpu,
         num_threads,
         amplify_grads,
@@ -826,6 +803,13 @@ def _optimize_layout_euclidean(
         if optimize_method != 'uniform_umap':
             raise ValueError('GPU optimization can only be performed in the uniform umap setting')
         from optimize_gpu import gpu_opt_wrapper as optimizer
+    elif numba:
+        if optimize_method == 'umap':
+            from .numba_optimizers.umap import optimize_layout_euclidean as optimizer
+        elif optimize_method == 'uniform_umap':
+            from .numba_optimizers.uniform_umap import uniform_umap_numba_wrapper as optimizer
+        else:
+            raise ValueError('Numba optimization only works for umap and uniform umap')
     else:
         if optimize_method == 'umap':
             from umap_opt import umap_opt_wrapper as optimizer
@@ -1054,6 +1038,7 @@ class UniformUmap(BaseEstimator):
         euclidean=True,
         sym_attraction=True,
         frob=False,
+        numba=False,
         gpu=False,
         amplify_grads=False,
         min_dist=0.1,
@@ -1091,6 +1076,7 @@ class UniformUmap(BaseEstimator):
         self.euclidean = euclidean
         self.sym_attraction = sym_attraction
         self.frob = frob
+        self.numba = numba
         self.gpu = gpu
         self.euclidean = euclidean
         self.amplify_grads = amplify_grads
@@ -1242,7 +1228,7 @@ class UniformUmap(BaseEstimator):
                 self.embedding_ = np.zeros(
                     (1, self.n_components)
                 )  # needed to sklearn comparability
-                return self
+                return self, 0
 
             warn(
                 "n_neighbors is larger than the dataset size; truncating to "
@@ -1399,7 +1385,7 @@ class UniformUmap(BaseEstimator):
         if self.verbose:
             print(utils.ts(), "Construct embedding")
 
-        self.embedding_, aux_data = self._fit_embed_data(
+        self.embedding_, opt_time = self._fit_embed_data(
             self._raw_data[index],
             self.n_epochs,
             random_state,
@@ -1421,8 +1407,9 @@ class UniformUmap(BaseEstimator):
 
         numba.set_num_threads(self._original_n_threads)
         self._input_hash = joblib.hash(self._raw_data)
+        self.opt_time = opt_time
 
-        return self, aux_data['opt_time']
+        return self
 
     def _fit_embed_data(self, X, n_epochs, random_state):
         """A method wrapper for simplicial_set_embedding that can be
@@ -1434,6 +1421,7 @@ class UniformUmap(BaseEstimator):
             self.euclidean,
             self.sym_attraction,
             self.frob,
+            self.numba,
             self.gpu,
             self.num_threads,
             self.amplify_grads,
@@ -1469,8 +1457,8 @@ class UniformUmap(BaseEstimator):
         X_new : array, shape (n_samples, n_components)
             Embedding of the training data in low-dimensional space.
         """
-        _, opt_time = self.fit(X)
-        return self.embedding_, opt_time
+        _ = self.fit(X)
+        return self.embedding_
 
     def transform(self, X):
         """Transform X into the existing embedded space and return that
