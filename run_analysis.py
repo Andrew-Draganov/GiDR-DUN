@@ -11,11 +11,11 @@ from experiment_utils.get_algorithm import get_algorithm
 def cpu_analysis():
     datasets = [
         'mnist',
-#         'fashion_mnist',
-#         'cifar',
-#         'swiss_roll',
-#         'coil',
-#         'google_news',
+        'fashion_mnist',
+        'cifar',
+        'swiss_roll',
+        'coil',
+        'google_news',
     ]
     num_points_list = [
         60000,
@@ -504,6 +504,6 @@ def data_size_timings():
 
 
 if __name__ == '__main__':
-    cpu_analysis()
+    # cpu_analysis()
     # gpu_analysis()
-    # data_size_timings()
+    data_size_timings()
