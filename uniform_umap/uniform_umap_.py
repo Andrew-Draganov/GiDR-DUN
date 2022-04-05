@@ -814,7 +814,7 @@ def _optimize_layout_euclidean(
         if optimize_method == 'umap':
             from umap_opt import umap_opt_wrapper as optimizer
         elif optimize_method == 'tsne':
-            from tsne_opt import tsne_opt_wrapper as optimizer
+            from tsne_opt_two import tsne_opt_wrapper as optimizer
         elif optimize_method == 'uniform_umap':
             from uniform_umap_opt import uniform_umap_opt_wrapper as optimizer
         else:
