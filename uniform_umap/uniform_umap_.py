@@ -45,6 +45,17 @@ MIN_K_DIST_SCALE = 1e-3
 NPY_INFINITY = np.inf
 
 
+def plot_average_dists(average_grad_dists):
+    import matplotlib.pyplot as plt
+    n_epochs = int(average_grad_dists.shape[0])
+    plt.axhline(y=0, color='r', linestyle='-')
+    plt.scatter(np.arange(n_epochs), average_grad_dists, c='b')
+    plt.rc('xtick', labelsize=12)
+    plt.rc('ytick', labelsize=12)
+    plt.xlabel('Gradient Descent Epoch')
+    plt.show()
+    quit()
+
 @numba.njit(
     locals={
         "psum": numba.types.float32,
@@ -819,7 +830,8 @@ def _optimize_layout_euclidean(
             from uniform_umap_opt import uniform_umap_opt_wrapper as optimizer
         else:
             raise ValueError("Optimization method is unsupported at the current time")
-    embedding = optimizer(**args)
+    embedding, average_grad_dists = optimizer(**args)
+    plot_average_dists(average_grad_dists)
     end = time.time()
     opt_time = end - start
     # FIXME -- make into logger output
