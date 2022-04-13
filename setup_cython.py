@@ -4,11 +4,11 @@ from Cython.Build import cythonize, build_ext
 import os
 import numpy
 
-# os.environ['CC']='/usr/local/Cellar/gcc/11.2.0_3/bin/gcc-11'
-# os.environ['CXX']='/usr/local/Cellar/gcc/11.2.0_3/bin/g++-11'
+os.environ['CC']='/usr/local/Cellar/gcc/11.2.0_3/bin/gcc-11'
+os.environ['CXX']='/usr/local/Cellar/gcc/11.2.0_3/bin/g++-11'
 
 uniform_umap_build = Extension(
-    'uniform_umap_opt',
+    'uniform_umap_opt_two',
     ['cython/uniform_umap.pyx'],
     language=['c'],
 
@@ -20,7 +20,7 @@ uniform_umap_build = Extension(
 )
 
 umap_build = Extension(
-    'umap_opt',
+    'umap_opt_two',
     ['cython/umap.pyx'],
     language=['c'],
 
@@ -30,7 +30,7 @@ umap_build = Extension(
 )
 
 tsne_build = Extension(
-    'tsne_opt',
+    'tsne_opt_two',
     ['cython/tsne.pyx'],
     language=['c'],
 

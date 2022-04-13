@@ -124,6 +124,7 @@ def cpu_analysis():
             print('.')
             print('\n')
 
+        num_points = int(points.shape[0])
         dataset_output_path = os.path.join(outputs_path, dataset)
         if not os.path.isdir(dataset_output_path):
             os.makedirs(dataset_output_path, exist_ok=True)
@@ -157,8 +158,11 @@ def cpu_analysis():
                     if dataset == 'google_news':
                         instance_params['random_init'] = True
                         instance_params['angular'] = True
+                        if algorithm == 'tsne':
+                            print('Not running TSNE on Google News!')
+                            continue
 
-                    instance_params['optimize_method'] = algorithm
+                    # instance_params['optimize_method'] = algorithm
                     a, b = get_ab(instance_params['tsne_scalars'])
                     instance_params['a'] = a
                     instance_params['b'] = b
@@ -433,23 +437,23 @@ def data_size_timings():
             'num_threads': -1,
             'numba': False
         },
-        'uniform_umap': {
-            'optimize_method': 'uniform_umap',
-            'n_neighbors': 15,
-            'random_init': False,
-            'umap_metric': False,
-            'tsne_symmetrization': False,
-            'n_epochs': 500,
-            'neg_sample_rate': 1,
-            'normalized': False,
-            'sym_attraction': False,
-            'frobenius': False,
-            'angular': False,
-            'tsne_scalars': True,
-            'gpu': True,
-            'num_threads': -1,
-            'numba': False
-        }
+        # 'uniform_umap': {
+        #     'optimize_method': 'uniform_umap',
+        #     'n_neighbors': 15,
+        #     'random_init': False,
+        #     'umap_metric': False,
+        #     'tsne_symmetrization': False,
+        #     'n_epochs': 500,
+        #     'neg_sample_rate': 1,
+        #     'normalized': False,
+        #     'sym_attraction': False,
+        #     'frobenius': False,
+        #     'angular': False,
+        #     'tsne_scalars': True,
+        #     'gpu': True,
+        #     'num_threads': -1,
+        #     'numba': False
+        # }
     }
 
     outputs_path = os.path.join('outputs', 'dataset_size_timing')

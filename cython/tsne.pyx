@@ -9,6 +9,8 @@ from cython.parallel cimport prange, parallel
 from sklearn.neighbors._quad_tree cimport _QuadTree
 np.import_array()
 
+INF = py_np.inf
+
 cdef extern from "cython_utils.c" nogil:
     float clip(float value, float lower, float upper)
 cdef extern from "cython_utils.c" nogil:
