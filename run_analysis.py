@@ -25,11 +25,6 @@ def cpu_analysis():
         7200,
         350000,
     ]
-    algorithms = [
-        'umap',
-        'tsne',
-        'uniform_umap'
-    ]
 
     modifiable_params = [
         'default',
@@ -94,8 +89,26 @@ def cpu_analysis():
             'gpu': False,
             'num_threads': -1,
             'numba': False
+        },
+        'uniform_umap_tsne': {
+            'optimize_method': 'uniform_umap',
+            'n_neighbors': 15,
+            'random_init': False,
+            'umap_metric': False,
+            'tsne_symmetrization': False,
+            'n_epochs': 500,
+            'neg_sample_rate': 1,
+            'normalized': True,
+            'sym_attraction': False,
+            'frobenius': False,
+            'angular': False,
+            'tsne_scalars': True,
+            'gpu': False,
+            'num_threads': -1,
+            'numba': False
         }
     }
+    algorithms = list(default_params.keys())
 
     outputs_path = os.path.join('outputs', 'cpu')
     pbar = tqdm(enumerate(datasets), total=len(datasets))

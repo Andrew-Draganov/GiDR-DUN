@@ -15,7 +15,7 @@ def run_pymde(points):
     return embedding, total_time
 
 def get_algorithm(algorithm_str, params, verbose=True):
-    if algorithm_str == 'uniform_umap':
+    if 'uniform_umap' in algorithm_str:
         dr = UniformUmap(
                 n_neighbors=params['n_neighbors'],
                 n_epochs=params['n_epochs'],
