@@ -16,7 +16,7 @@ The script defaults to running Uniform UMAP in Cython on the MNIST dataset.
 
 ### Installation
 
-All installs begin with installing the base `setup.py` file from the home directory.
+All installs begin with the base `setup.py` file from the home directory.
 
 After this, you can compile the cython code by calling `python setup_cython.py install`. This requires
 a compiler with `OpenMP`, which is a default on Linux machines. For Mac, you first need to install a
@@ -24,6 +24,10 @@ version of `LLVM` with `OpenMP` and perform the compilation with this. This can 
 by calling `brew install llvm`. These can be defined in the `setup_cython.py` file in the commented area.
 
 Note, this does not work on the Mac M1, as these run on ARM chips.
+
+Installing the GPU code can be done after this similarly -- `python setup_cython_gpu.py install`.
+The GPU code is called in python by going python -> cython -> C++ -> CUDA.
+You will need to fill in the cuda path for the `setup_cython_gpu.py` file
 
 ### Hyperparameter Testing
 
@@ -37,4 +41,4 @@ Some specific hyperparameter experiment examples can be found below:
    `python dim_reduce_dataset.py --optimize-method tsne --frob`
  - To run UMAP with all of TSNE's params except the normalization, call
    `python dim_reduce_dataset.py --optimize-method umap --tsne-symmetrization --random-init
-    --tsne-scalars 
+    --tsne-scalars`
