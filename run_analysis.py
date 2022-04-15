@@ -10,17 +10,17 @@ from experiment_utils.get_algorithm import get_algorithm
 
 def cpu_analysis():
     datasets = [
-        'mnist',
-        'fashion_mnist',
-        'cifar',
+        # 'mnist',
+        # 'fashion_mnist',
+        # 'cifar',
         'swiss_roll',
         'coil',
         'google_news',
     ]
     num_points_list = [
-        60000,
-        60000,
-        50000,
+        # 60000,
+        # 60000,
+        # 50000,
         5000,
         7200,
         350000,
@@ -185,17 +185,12 @@ def cpu_analysis():
                     )
                     kmeans_score = cluster_quality(embedding, labels, cluster_model='kmeans')
                     dbscan_score = cluster_quality(embedding, labels, cluster_model='dbscan')
-                    if num_points < 10000:
-                        spectral_score = cluster_quality(embedding, labels, cluster_model='spectral')
-                    else:
-                        spectral_score = -1
 
                     metrics = {
                         # 'cluster_dists': cluster_distances(embedding, labels),
                         'knn_accuracy': classifier_accuracy(embedding, labels, 100),
                         'kmeans-v-score': kmeans_score,
                         'dbscan-v-score': dbscan_score,
-                        'spectral-v-score': spectral_score
                     }
                     times = {
                         'opt_time': opt_time,
@@ -521,6 +516,6 @@ def data_size_timings():
 
 
 if __name__ == '__main__':
-    # cpu_analysis()
+    cpu_analysis()
     # gpu_analysis()
     data_size_timings()
