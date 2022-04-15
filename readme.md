@@ -1,5 +1,7 @@
-## Gradient Dimensionality Reduction Differences and Unification Library
+# "GiDR-DUN: Gradient Dimensionality Reduction Differences and Unification" Library
 Written by Andrew Draganov, with help from Jakob Rødsgaard Jørgensen and Katrine Scheel Nellemann.
+
+## Overview
 
 This library has the following implementations of UMAP, TSNE, and Uniform UMAP
  - Numba \-\- UMAP, Uniform UMAP
@@ -14,10 +16,11 @@ for calling these below:
  - To run on the GPU, call `python dim_reduce_dataset.py --gpu`
 The script defaults to running Uniform UMAP in Cython on the MNIST dataset.
 
-### Installation
+## Installation
 
 All installs begin with the base `setup.py` file from the home directory.
 
+### Cython installation
 After this, you can compile the cython code by calling `python setup_cython.py install`. This requires
 a compiler with `OpenMP`, which is a default on Linux machines. For Mac, you first need to install a
 version of `LLVM` with `OpenMP` and perform the compilation with this. This can simply be done
@@ -25,11 +28,12 @@ by calling `brew install llvm`. These can be defined in the `setup_cython.py` fi
 
 Note, this does not work on the Mac M1, as these run on ARM chips.
 
+### GPU installation
 Installing the GPU code can be done after this similarly -- `python setup_cython_gpu.py install`.
 The GPU code is called in python by going python -> cython -> C++ -> CUDA.
 You will need to fill in the cuda path for the `setup_cython_gpu.py` file
 
-### Hyperparameter Testing
+## Hyperparameter Testing
 
 Part of the motivation for making an independent library to run TSNE and UMAP was to test all
 of the relevant hyperparameters. These can be evaluated using the other command-line parameters
@@ -42,3 +46,6 @@ Some specific hyperparameter experiment examples can be found below:
  - To run UMAP with all of TSNE's params except the normalization, call
    `python dim_reduce_dataset.py --optimize-method umap --tsne-symmetrization --random-init
     --tsne-scalars`
+
+##
+Contact -- for questions please raise an issue or (if you want a response) email draganovandrew@cs.au.dk
