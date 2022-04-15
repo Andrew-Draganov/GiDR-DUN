@@ -18,7 +18,7 @@ cdef extern from "cython_utils.c" nogil:
 cdef extern from "cython_utils.c" nogil:
     float ang_dist(float* x, float* y, int dim)
 cdef extern from "cython_utils.c" nogil:
-    float get_lr(float initial_lr, int i_epoch, int n_epochs, int amplify_grads) 
+    float get_lr(float initial_lr, int i_epoch, int n_epochs, int normalized) 
 cdef extern from "cython_utils.c" nogil:
     void print_status(int i_epoch, int n_epochs)
 cdef extern from "cython_utils.c" nogil:
@@ -58,7 +58,6 @@ cdef void _umap_epoch(
     int sym_attraction,
     int frob,
     int num_threads,
-    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -122,7 +121,7 @@ cdef void _umap_epoch(
                 else:
                     dist = sq_euc_dist(y1, y2, dim)
 
-                if amplify_grads and i_epoch < 250:
+                if normalized and i_epoch < 250:
                     weight_scalar = 4
                 else:
                     weight_scalar = 1
@@ -191,7 +190,7 @@ cdef void _umap_epoch(
                 index2 = v2 * dim + d6
                 grad_d3 = all_rep_grads[index2] / Z + all_attr_grads[index2]
                 all_updates[index2] = grad_d3 * lr + \
-                                      amplify_grads * 0.9 * all_updates[index2]
+                                      normalized * 0.9 * all_updates[index2]
                 head_embedding[v2, d6] += all_updates[index2]
 
     free(all_attr_grads)
@@ -204,7 +203,6 @@ cdef umap_optimize(
     int sym_attraction,
     int frob,
     int num_threads,
-    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -244,14 +242,13 @@ cdef umap_optimize(
             all_updates[v * dim + d] = 0
 
     for i_epoch in range(n_epochs):
-        lr = get_lr(initial_lr, i_epoch, n_epochs, amplify_grads)
+        lr = get_lr(initial_lr, i_epoch, n_epochs, normalized)
         _umap_epoch(
             normalized,
             angular,
             sym_attraction,
             frob,
             num_threads,
-            amplify_grads,
             head_embedding,
             tail_embedding,
             head,
@@ -285,7 +282,6 @@ def umap_opt_wrapper(
     int sym_attraction,
     int frob,
     int num_threads,
-    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -320,7 +316,6 @@ def umap_opt_wrapper(
         sym_attraction,
         frob,
         num_threads,
-        amplify_grads,
         head_embedding,
         tail_embedding,
         head,

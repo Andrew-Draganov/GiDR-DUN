@@ -27,7 +27,6 @@ def gather_gradients(
     weight_scalar,
     normalized,
     angular,
-    amplify_grads,
     frob,
     sym_attraction,
     num_threads,
@@ -82,7 +81,6 @@ def gather_gradients(
 
 @numba.njit(fastmath=True, parallel=True, boundscheck=False)
 def apply_forces(
-    amplify_grads,
     head_embedding,
     attr_grads,
     rep_grads,
@@ -105,7 +103,7 @@ def apply_forces(
             gains[v, d] = clip(gains[v, d], 0.01, 1000)
             grad_d = clip(grad_d * gains[v, d], -1, 1)
 
-            all_updates[v, d] = grad_d * lr + amplify_grads * 0.9 * all_updates[v, d]
+            all_updates[v, d] = grad_d * lr + normalized * 0.9 * all_updates[v, d]
             head_embedding[v, d] += all_updates[v, d]
 
 
@@ -116,7 +114,6 @@ def uniform_umap_numba_wrapper(
     sym_attraction,
     frob,
     num_threads,
-    amplify_grads,
     head_embedding,
     tail_embedding,
     head,
@@ -150,14 +147,14 @@ def uniform_umap_numba_wrapper(
     average_weight = get_avg_weight(weights, n_edges)
 
     for i_epoch in tqdm(range(n_epochs)):
-        lr = get_lr(initial_lr, i_epoch, n_epochs, amplify_grads)
+        lr = get_lr(initial_lr, i_epoch, n_epochs, normalized)
         for v in range(n_vertices):
             for d in range(dim):
                 attr_grads[v, d] = 0
                 rep_grads[v, d] = 0
 
         # t-SNE early exaggeration
-        if amplify_grads and i_epoch < 250:
+        if normalized and i_epoch < 250:
             weight_scalar = 4
         else:
             weight_scalar = 1
@@ -173,7 +170,7 @@ def uniform_umap_numba_wrapper(
             weight_scalar,
             normalized,
             angular,
-            amplify_grads,
+            normalized,
             frob,
             sym_attraction,
             num_threads,
@@ -189,7 +186,7 @@ def uniform_umap_numba_wrapper(
             Z = 1
 
         apply_forces(
-            amplify_grads,
+            normalized,
             head_embedding,
             attr_grads,
             rep_grads,

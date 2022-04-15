@@ -10,31 +10,31 @@ from experiment_utils.get_algorithm import get_algorithm
 
 def cpu_analysis():
     datasets = [
-        # 'mnist',
-        # 'fashion_mnist',
-        # 'cifar',
+        'mnist',
+        'fashion_mnist',
+        'cifar',
         'swiss_roll',
         'coil',
         'google_news',
     ]
     num_points_list = [
-        # 60000,
-        # 60000,
-        # 50000,
-        5000,
-        7200,
-        350000,
+        600,
+        600,
+        500,
+        500
+        72,
+        3500,
     ]
 
     modifiable_params = [
         'default',
-        'neg_sample_rate',
-        'random_init',
-        'umap_metric',
-        'tsne_symmetrization',
-        'normalized',
-        'sym_attraction',
-        'frobenius',
+        # 'neg_sample_rate',
+        # 'random_init',
+        # 'umap_metric',
+        # 'tsne_symmetrization',
+        # 'normalized',
+        # 'sym_attraction',
+        # 'frobenius',
         'tsne_scalars'
     ]
 
@@ -47,7 +47,7 @@ def cpu_analysis():
             'tsne_symmetrization': True,
             'neg_sample_rate': 1,
             'n_epochs': 500,
-            'normalized': True, # Also set amplify_grads to True
+            'normalized': True,
             'sym_attraction': False,
             'frobenius': False,
             'angular': False,
@@ -123,6 +123,7 @@ def cpu_analysis():
             print('.')
             print('.')
             print('\n')
+            continue
 
         num_points = int(points.shape[0])
         dataset_output_path = os.path.join(outputs_path, dataset)
@@ -145,14 +146,11 @@ def cpu_analysis():
                     instance_params = copy.copy(default_params[algorithm])
                     if param != 'default':
                         # Neg sample rate isn't a bool, so treat it differently
-                        # Only really applies for the original umap alg
+                        # Only applies for the original umap alg
                         if param == 'neg_sample_rate':
                             instance_params['neg_sample_rate'] = 1
                         else:
                             instance_params[param] = not instance_params[param]
-
-                    # normalized and amplify_grads go together
-                    instance_params['amplify_grads'] = instance_params['normalized']
 
                     # google-news dataset is cosine distance and too big for Lap. Eigenmaps
                     if dataset == 'google_news':
@@ -238,7 +236,7 @@ def gpu_analysis():
             'tsne_symmetrization': False,
             'neg_sample_rate': 1,
             'n_epochs': 500,
-            'normalized': True, # Also set amplify_grads to True
+            'normalized': True,
             'sym_attraction': False,
             'frobenius': False,
             'angular': False,
@@ -255,7 +253,7 @@ def gpu_analysis():
             'tsne_symmetrization': False,
             'neg_sample_rate': 1,
             'n_epochs': 500,
-            'normalized': False, # Also set amplify_grads to True
+            'normalized': False,
             'sym_attraction': False,
             'frobenius': False,
             'angular': False,
@@ -272,7 +270,7 @@ def gpu_analysis():
             'tsne_symmetrization': False,
             'neg_sample_rate': 1,
             'n_epochs': 500,
-            'normalized': True, # Also set amplify_grads to True
+            'normalized': True,
             'sym_attraction': False,
             'frobenius': True,
             'angular': False,
@@ -289,7 +287,7 @@ def gpu_analysis():
             'tsne_symmetrization': False,
             'neg_sample_rate': 1,
             'n_epochs': 500,
-            'normalized': False, # Also set amplify_grads to True
+            'normalized': False,
             'sym_attraction': False,
             'frobenius': True,
             'angular': False,
@@ -328,7 +326,6 @@ def gpu_analysis():
                 os.makedirs(experiment_path, exist_ok=True)
             try:
                 instance_params = copy.copy(experiment_params[experiment])
-                instance_params['amplify_grads'] = instance_params['normalized'] # normalized and amplify_grads go together
 
                 # google-news dataset requires cosine distance and is too big for Lap. Eigenmaps initialization
                 if dataset == 'google_news':
@@ -389,7 +386,7 @@ def data_size_timings():
             'tsne_symmetrization': True,
             'neg_sample_rate': 1,
             'n_epochs': 500,
-            'normalized': True, # Also set amplify_grads to True
+            'normalized': True,
             'sym_attraction': False,
             'frobenius': False,
             'angular': False,
@@ -477,7 +474,6 @@ def data_size_timings():
                     try:
                         os.makedirs(experiment_path, exist_ok=True)
                         instance_params = copy.copy(experiment_params[experiment])
-                        instance_params['amplify_grads'] = instance_params['normalized'] # normalized and amplify_grads go together
 
                         # google-news dataset requires cosine distance and is too big for Lap. Eigenmaps initialization
                         if dataset == 'google_news':

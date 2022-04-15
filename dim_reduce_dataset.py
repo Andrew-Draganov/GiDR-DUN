@@ -52,7 +52,6 @@ def get_args():
         default=-1,
         help='If running CPU optimization in parallel, specifies the number of threads used'
     )
-
     parser.add_argument(
         '--optimize-method',
         choices=[
@@ -114,7 +113,7 @@ def get_args():
         '--n-epochs',
         type=int,
         default=500,
-        help='Number of times to cycle through the dataset'
+        help='Number of gradient descent epochs to utilize'
     )
     args = parser.parse_args()
     return args
@@ -129,7 +128,6 @@ if __name__ == '__main__':
     args_dict['a'] = a
     args_dict['b'] = b
     # We amplify grads in case of normalization
-    args_dict['amplify_grads'] = args_dict['normalized']
     dr = get_algorithm(args.dr_algorithm, args_dict)
 
     print('fitting...')

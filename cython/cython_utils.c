@@ -48,8 +48,8 @@ static float ang_dist(float* x, float* y, int dim) {
     return result / (sqrt(x_len * y_len));
 }
 
-static float get_lr(float initial_lr, int i_epoch, int n_epochs, int amplify_grads){ 
-    if(amplify_grads == 1)
+static float get_lr(float initial_lr, int i_epoch, int n_epochs, int normalized){ 
+    if(normalized)
         return initial_lr;
     return initial_lr * (1.0 - (((float)i_epoch) / ((float)n_epochs)));
 }

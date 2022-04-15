@@ -18,7 +18,6 @@ def component_layout(
     n_components,
     component_labels,
     dim,
-    random_state,
     metric="euclidean",
 ):
     """Provide a layout relating the separate connected components. This is done
@@ -78,7 +77,8 @@ def component_layout(
     affinity_matrix = np.exp(-(distance_matrix ** 2))
 
     component_embedding = SpectralEmbedding(
-        n_components=dim, affinity="precomputed", random_state=random_state
+        n_components=dim,
+        affinity="precomputed"
     ).fit_transform(affinity_matrix)
     component_embedding /= component_embedding.max()
 
@@ -91,7 +91,6 @@ def multi_component_layout(
     n_components,
     component_labels,
     dim,
-    random_state,
     metric="euclidean",
 ):
     """Specialised layout algorithm for dealing with graphs with many connected components.
@@ -136,7 +135,6 @@ def multi_component_layout(
             n_components,
             component_labels,
             dim,
-            random_state,
             metric=metric,
         )
     else:
@@ -153,7 +151,7 @@ def multi_component_layout(
 
         if component_graph.shape[0] < 2 * dim or component_graph.shape[0] <= dim + 1:
             result[component_labels == label] = (
-                random_state.uniform(
+                np.random.uniform(
                     low=-data_range,
                     high=data_range,
                     size=(component_graph.shape[0], dim),
@@ -203,7 +201,7 @@ def multi_component_layout(
                 "Falling back to random initialisation!"
             )
             result[component_labels == label] = (
-                random_state.uniform(
+                np.random.uniform(
                     low=-data_range,
                     high=data_range,
                     size=(component_graph.shape[0], dim),
@@ -214,7 +212,7 @@ def multi_component_layout(
     return result
 
 
-def spectral_layout(data, graph, dim, random_state, metric="euclidean"):
+def spectral_layout(data, graph, dim, metric="euclidean"):
     """Given a graph compute the spectral embedding of the graph. This is
     simply the eigenvectors of the laplacian of the graph. Here we use the
     normalized laplacian.
@@ -229,9 +227,6 @@ def spectral_layout(data, graph, dim, random_state, metric="euclidean"):
 
     dim: int
         The dimension of the space into which to embed.
-
-    random_state: numpy RandomState or equivalent
-        A state capable being used as a numpy random state.
 
     Returns
     -------
@@ -248,7 +243,6 @@ def spectral_layout(data, graph, dim, random_state, metric="euclidean"):
             n_components,
             labels,
             dim,
-            random_state,
             metric=metric,
         )
 
@@ -274,7 +268,7 @@ def spectral_layout(data, graph, dim, random_state, metric="euclidean"):
             )
         else:
             eigenvalues, eigenvectors = scipy.sparse.linalg.lobpcg(
-                L, random_state.normal(size=(L.shape[0], k)), largest=False, tol=1e-8
+                L, np.random.normal(size=(L.shape[0], k)), largest=False, tol=1e-8
             )
         order = np.argsort(eigenvalues)[1:k]
         return eigenvectors[:, order]
@@ -285,4 +279,4 @@ def spectral_layout(data, graph, dim, random_state, metric="euclidean"):
             "adding some noise or jitter to your data.\n\n"
             "Falling back to random initialisation!"
         )
-        return random_state.uniform(low=-10.0, high=10.0, size=(graph.shape[0], dim))
+        return np.random.uniform(low=-10.0, high=10.0, size=(graph.shape[0], dim))

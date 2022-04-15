@@ -15,28 +15,9 @@ def run_pymde(points):
     return embedding, total_time
 
 def get_algorithm(algorithm_str, params, verbose=True):
+    params['verbose'] = verbose
     if 'uniform_umap' in algorithm_str:
-        dr = UniformUmap(
-                n_neighbors=params['n_neighbors'],
-                n_epochs=params['n_epochs'],
-                random_state=12345, # Comment this out to turn on parallelization
-                random_init=params['random_init'],
-                pseudo_distance=params['umap_metric'],
-                tsne_symmetrization=params['tsne_symmetrization'],
-                optimize_method=params['optimize_method'],
-                numba=params['numba'],
-                negative_sample_rate=params['neg_sample_rate'],
-                normalized=int(params['normalized']),
-                sym_attraction=int(params['sym_attraction']),
-                frob=int(params['frobenius']),
-                gpu=int(params['gpu']),
-                num_threads=params['num_threads'],
-                euclidean=not params['angular'],
-                amplify_grads=int(params['amplify_grads']),
-                a=params['a'],
-                b=params['b'],
-                verbose=verbose
-            )
+        dr = UniformUmap(**params)
     elif algorithm_str == 'original_umap':
         dr = UMAP(
                 n_neighbors=params['n_neighbors'],

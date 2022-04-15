@@ -19,7 +19,7 @@ cdef extern from "cython_utils.c" nogil:
 cdef extern from "cython_utils.c" nogil:
     float ang_dist(float* x, float* y, int dim)
 cdef extern from "cython_utils.c" nogil:
-    float get_lr(float initial_lr, int i_epoch, int n_epochs, int amplify_grads) 
+    float get_lr(float initial_lr, int i_epoch, int n_epochs, int normalized) 
 cdef extern from "cython_utils.c" nogil:
     void print_status(int i_epoch, int n_epochs)
 cdef extern from "cython_utils.c" nogil:
@@ -63,7 +63,6 @@ cdef void gather_gradients(
     float[:] weights,
     int normalized,
     int angular,
-    int amplify_grads,
     int frob,
     int sym_attraction,
     int num_threads,
@@ -102,7 +101,7 @@ cdef void gather_gradients(
                 dist = sq_euc_dist(y1, y2, dim)
 
             # t-SNE early exaggeration
-            if amplify_grads and i_epoch < 250:
+            if normalized and i_epoch < 250:
                 weight_scalar = 4
             else:
                 weight_scalar = 1
@@ -163,7 +162,6 @@ cdef void _uniform_umap_epoch(
     int sym_attraction,
     int frob,
     int num_threads,
-    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -212,7 +210,6 @@ cdef void _uniform_umap_epoch(
             weights,
             normalized,
             angular,
-            amplify_grads,
             frob,
             sym_attraction,
             num_threads,
@@ -243,7 +240,7 @@ cdef void _uniform_umap_epoch(
                 grad_d = clip(grad_d * gains[index], -1, 1)
 
                 all_updates[index] = grad_d * lr \
-                                   + amplify_grads * 0.9 * all_updates[index]
+                                   + normalized * 0.9 * all_updates[index]
                 head_embedding[v, d] += all_updates[index]
 
     free(attr_grads)
@@ -256,7 +253,6 @@ cdef uniform_umap_optimize(
     int sym_attraction,
     int frob,
     int num_threads,
-    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -285,14 +281,13 @@ cdef uniform_umap_optimize(
             gains[index] = 1
 
     for i_epoch in range(n_epochs):
-        lr = get_lr(initial_lr, i_epoch, n_epochs, amplify_grads)
+        lr = get_lr(initial_lr, i_epoch, n_epochs, normalized)
         _uniform_umap_epoch(
             normalized,
             angular,
             sym_attraction,
             frob,
             num_threads,
-            amplify_grads,
             head_embedding,
             tail_embedding,
             head,
@@ -326,7 +321,6 @@ def uniform_umap_opt_wrapper(
     int sym_attraction,
     int frob,
     int num_threads,
-    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -360,7 +354,6 @@ def uniform_umap_opt_wrapper(
         sym_attraction,
         frob,
         num_threads,
-        amplify_grads,
         head_embedding,
         tail_embedding,
         head,

@@ -24,7 +24,6 @@ def _optimize_layout_euclidean_single_epoch(
     epochs_per_sample,
     a,
     b,
-    rng_state,
     gamma,
     dim,
     move_other,
@@ -61,7 +60,7 @@ def _optimize_layout_euclidean_single_epoch(
             )
 
             for p in range(n_neg_samples):
-                k = tau_rand_int(rng_state) % n_vertices
+                k = np.randint(0, n_vertices)
                 other = tail_embedding[k]
                 dist_squared = sq_euc_dist(current, other, dim)
 
@@ -97,7 +96,6 @@ def optimize_layout_euclidean(
     epochs_per_sample,
     a,
     b,
-    rng_state,
     gamma=1.0,
     initial_alpha=1.0,
     negative_sample_rate=5.0,
@@ -129,7 +127,6 @@ def optimize_layout_euclidean(
             epochs_per_sample,
             a,
             b,
-            rng_state,
             gamma,
             dim,
             move_other,

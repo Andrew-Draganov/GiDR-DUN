@@ -18,7 +18,7 @@ cdef extern from "cython_utils.c" nogil:
 cdef extern from "cython_utils.c" nogil:
     float ang_dist(float* x, float* y, int dim)
 cdef extern from "cython_utils.c" nogil:
-    float get_lr(float initial_lr, int i_epoch, int n_epochs, int amplify_grads) 
+    float get_lr(float initial_lr, int i_epoch, int n_epochs, int normalized) 
 cdef extern from "cython_utils.c" nogil:
     void print_status(int i_epoch, int n_epochs)
 cdef extern from "cython_utils.c" nogil:
@@ -62,7 +62,6 @@ cdef void collect_attr_grads(
     float[:, :] tail_embedding,
     float[:] weights,
     int normalized,
-    int amplify_grads,
     int sym_attraction,
     int frob,
     int num_threads,
@@ -96,7 +95,7 @@ cdef void collect_attr_grads(
             dist = sq_euc_dist(y1, y2, dim)
 
             # t-SNE early exaggeration
-            if amplify_grads and i_epoch < 250:
+            if normalized and i_epoch < 250:
                 weight_scalar = 4
             else:
                 weight_scalar = 1
@@ -196,7 +195,6 @@ cdef void _tsne_epoch(
     int sym_attraction,
     int frob,
     int num_threads,
-    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -250,7 +248,6 @@ cdef void _tsne_epoch(
             tail_embedding,
             weights,
             normalized,
-            amplify_grads,
             sym_attraction,
             frob,
             num_threads,
@@ -303,7 +300,7 @@ cdef void _tsne_epoch(
                     gains[index] = clip(gains[index], 0.01, 1000)
                     grad_d = (all_rep_grads[index] + all_attr_grads[index]) * gains[index]
 
-                    if amplify_grads:
+                    if normalized:
                         all_updates[index] = grad_d * lr + 0.9 * all_updates[index]
                     else:
                         all_updates[index] = grad_d * lr
@@ -325,7 +322,6 @@ cdef tsne_optimize(
     int sym_attraction,
     int frob,
     int num_threads,
-    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -361,14 +357,13 @@ cdef tsne_optimize(
 
     for i_epoch in range(n_epochs):
         qt.build_tree(head_embedding)
-        lr = get_lr(initial_lr, i_epoch, n_epochs, amplify_grads)
+        lr = get_lr(initial_lr, i_epoch, n_epochs, normalized)
         _tsne_epoch(
             normalized,
             angular,
             sym_attraction,
             frob,
             num_threads,
-            amplify_grads,
             head_embedding,
             tail_embedding,
             head,
@@ -400,7 +395,6 @@ def tsne_opt_wrapper(
     int sym_attraction,
     int frob,
     int num_threads,
-    int amplify_grads,
     float[:, :] head_embedding,
     float[:, :] tail_embedding,
     int[:] head,
@@ -435,7 +429,6 @@ def tsne_opt_wrapper(
         sym_attraction,
         frob,
         num_threads,
-        amplify_grads,
         head_embedding,
         tail_embedding,
         head,

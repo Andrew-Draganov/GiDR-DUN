@@ -17,8 +17,11 @@ cython/optimize.cpp
 *.swp
 */*.swp
 */__pycache__
+*/*/__pycache__
 data/
 Dimensionality_Reduction_Analysis.egg-info/
+cython_dim_reduction.egg-info/
+dist/
 umap/.DS_Store
 umap/Images
 build/
