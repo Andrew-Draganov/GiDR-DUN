@@ -10,25 +10,20 @@ from experiment_utils.get_algorithm import get_algorithm
 
 def cpu_analysis():
     datasets = [
-        'mnist',
-        'fashion_mnist',
-        'cifar',
+        # 'mnist',
+        # 'fashion_mnist',
+        # 'cifar',
         'swiss_roll',
         'coil',
         'google_news',
     ]
     num_points_list = [
-        60000,
-        60000,
-        50000,
+        # 60000,
+        # 60000,
+        # 50000,
         5000,
         7200,
         350000,
-    ]
-    algorithms = [
-        'umap',
-        'tsne',
-        'uniform_umap'
     ]
 
     modifiable_params = [
@@ -94,8 +89,26 @@ def cpu_analysis():
             'gpu': False,
             'num_threads': -1,
             'numba': False
+        },
+        'uniform_umap_tsne': {
+            'optimize_method': 'uniform_umap',
+            'n_neighbors': 15,
+            'random_init': False,
+            'umap_metric': False,
+            'tsne_symmetrization': False,
+            'n_epochs': 500,
+            'neg_sample_rate': 1,
+            'normalized': True,
+            'sym_attraction': False,
+            'frobenius': False,
+            'angular': False,
+            'tsne_scalars': True,
+            'gpu': False,
+            'num_threads': -1,
+            'numba': False
         }
     }
+    algorithms = list(default_params.keys())
 
     outputs_path = os.path.join('outputs', 'cpu')
     pbar = tqdm(enumerate(datasets), total=len(datasets))
@@ -111,6 +124,7 @@ def cpu_analysis():
             print('.')
             print('\n')
 
+        num_points = int(points.shape[0])
         dataset_output_path = os.path.join(outputs_path, dataset)
         if not os.path.isdir(dataset_output_path):
             os.makedirs(dataset_output_path, exist_ok=True)
@@ -144,8 +158,11 @@ def cpu_analysis():
                     if dataset == 'google_news':
                         instance_params['random_init'] = True
                         instance_params['angular'] = True
+                        if algorithm == 'tsne':
+                            print('Not running TSNE on Google News!')
+                            continue
 
-                    instance_params['optimize_method'] = algorithm
+                    # instance_params['optimize_method'] = algorithm
                     a, b = get_ab(instance_params['tsne_scalars'])
                     instance_params['a'] = a
                     instance_params['b'] = b
@@ -168,17 +185,12 @@ def cpu_analysis():
                     )
                     kmeans_score = cluster_quality(embedding, labels, cluster_model='kmeans')
                     dbscan_score = cluster_quality(embedding, labels, cluster_model='dbscan')
-                    if num_points < 10000:
-                        spectral_score = cluster_quality(embedding, labels, cluster_model='spectral')
-                    else:
-                        spectral_score = -1
 
                     metrics = {
                         # 'cluster_dists': cluster_distances(embedding, labels),
                         'knn_accuracy': classifier_accuracy(embedding, labels, 100),
                         'kmeans-v-score': kmeans_score,
                         'dbscan-v-score': dbscan_score,
-                        'spectral-v-score': spectral_score
                     }
                     times = {
                         'opt_time': opt_time,
@@ -440,23 +452,23 @@ def data_size_timings():
             'num_threads': -1,
             'numba': False
         },
-        'uniform_umap': {
-            'optimize_method': 'uniform_umap',
-            'n_neighbors': 15,
-            'random_init': False,
-            'umap_metric': False,
-            'tsne_symmetrization': False,
-            'n_epochs': 500,
-            'neg_sample_rate': 1,
-            'normalized': False,
-            'sym_attraction': False,
-            'frobenius': False,
-            'angular': False,
-            'tsne_scalars': True,
-            'gpu': True,
-            'num_threads': -1,
-            'numba': False
-        }
+        # 'uniform_umap': {
+        #     'optimize_method': 'uniform_umap',
+        #     'n_neighbors': 15,
+        #     'random_init': False,
+        #     'umap_metric': False,
+        #     'tsne_symmetrization': False,
+        #     'n_epochs': 500,
+        #     'neg_sample_rate': 1,
+        #     'normalized': False,
+        #     'sym_attraction': False,
+        #     'frobenius': False,
+        #     'angular': False,
+        #     'tsne_scalars': True,
+        #     'gpu': True,
+        #     'num_threads': -1,
+        #     'numba': False
+        # }
     }
 
     outputs_path = os.path.join('outputs', 'dataset_size_timing')

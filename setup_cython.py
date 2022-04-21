@@ -4,11 +4,23 @@ from Cython.Build import cythonize, build_ext
 import os
 import numpy
 
+# MAC INSTALLATION
+# ----------------
+#
+# If you are installing on mac, you need to install a version of LLVM with openmp
+# You can then link it by uncommenting the lines below and filling in the path
+# to your version of LLVM
+#
+# os.environ['CC']='/path/to/llvm/gcc'
+# os.environ['CXX']='/path/to/llvm/g++'
+
+# Example below
+# -------------
 # os.environ['CC']='/usr/local/Cellar/gcc/11.2.0_3/bin/gcc-11'
 # os.environ['CXX']='/usr/local/Cellar/gcc/11.2.0_3/bin/g++-11'
 
 uniform_umap_build = Extension(
-    'uniform_umap_opt',
+    'uniform_umap_opt_two',
     ['cython/uniform_umap.pyx'],
     language=['c'],
 
@@ -20,7 +32,7 @@ uniform_umap_build = Extension(
 )
 
 umap_build = Extension(
-    'umap_opt',
+    'umap_opt_two',
     ['cython/umap.pyx'],
     language=['c'],
 
@@ -30,7 +42,7 @@ umap_build = Extension(
 )
 
 tsne_build = Extension(
-    'tsne_opt',
+    'tsne_opt_two',
     ['cython/tsne.pyx'],
     language=['c'],
 

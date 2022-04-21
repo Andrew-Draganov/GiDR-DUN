@@ -53,6 +53,8 @@ def get_dataset(data_name, num_points, normalize=True):
         #   and place it into the directory 'data'
         file = open(os.path.join('data', 'gnews_mod.csv'), 'r', encoding="utf-8")
         reader = csv.reader(file)
+        if num_points < 0:
+            num_points = 350000
         num_points = min(num_points, 350000)
         points = np.zeros([num_points, 200])
         for i, line in tqdm(enumerate(reader), total=num_points):
@@ -80,6 +82,8 @@ def get_dataset(data_name, num_points, normalize=True):
     else:
         raise ValueError("Unsupported dataset")
 
+    if num_points < 0:
+        num_points = int(points.shape[0])
     points, labels = upsample_dataset(num_points, points, labels)
     num_samples = int(points.shape[0])
     downsample_stride = int(float(num_samples) / num_points)

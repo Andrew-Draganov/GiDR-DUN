@@ -89,11 +89,6 @@ def get_args():
         help='When present, use cosine similarity metric on high-dimensional points'
     )
     parser.add_argument(
-        '--amplify-grads',
-        action='store_true',
-        help='If true, perform momentum gradient descent, keep learning rate constant, and perform early-exaggeration'
-    )
-    parser.add_argument(
         '--tsne-scalars',
         action='store_true',
         help='true => a = b = 1; false => determine a, b'
@@ -101,7 +96,7 @@ def get_args():
     parser.add_argument(
         '--num-points',
         type=int,
-        default=5000,
+        default=-1,
         help='Number of samples to use from the dataset'
     )
     parser.add_argument(
@@ -133,7 +128,9 @@ if __name__ == '__main__':
     args_dict = vars(args)
     args_dict['a'] = a
     args_dict['b'] = b
-    dr = get_algorithm(args.dr_algorithm, vars(args))
+    # We amplify grads in case of normalization
+    args_dict['amplify_grads'] = args_dict['normalized']
+    dr = get_algorithm(args.dr_algorithm, args_dict)
 
     print('fitting...')
     start = time.time()
@@ -148,7 +145,4 @@ if __name__ == '__main__':
     print('Optimization took {:.3f} seconds'.format(opt_time))
     print('Total time took {:.3f} seconds'.format(total_time))
 
-    # dists, embedding = cluster_distances(embedding, labels)
-    # print(classifier_accuracy(embedding, labels, 100))
-    # print(cluster_quality(embedding, labels))
     make_plot(embedding, labels, show_plot=True)
