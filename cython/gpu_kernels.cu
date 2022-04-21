@@ -961,19 +961,19 @@ void gpu_umap_full(int normalized, // unused
             (d_tmp_sum_1, d_tmp_sum_2, number_of_blocks_scalar);
     float average_weight = copy_last_D_to_H(d_tmp_sum_1, 1) / n_edges;
 
-    printf("\n\nParams:\n");
-//    printf("- CPU average_weight: %f\n", mean(h_weights, n_edges));
-    printf("- average_weight: %f\n", average_weight);
-    printf("- amplify_graps: %d\n", amplify_graps);
-    printf("- sym_attraction: %d\n", sym_attraction);
-    printf("- normalized: %d\n", normalized);
-    printf("- n_edges: %d\n", n_edges);
-    printf("- a: %f\n", a);
-    printf("- b: %f\n", b);
-    printf("- number_of_blocks_scalar: %d\n", number_of_blocks_scalar);
-    printf("- number_of_blocks_half: %d\n", number_of_blocks_half);
-    printf("- number_of_blocks: %d\n", number_of_blocks);
-    printf("\n\n");
+//     printf("\n\nParams:\n");
+// //    printf("- CPU average_weight: %f\n", mean(h_weights, n_edges));
+//     printf("- average_weight: %f\n", average_weight);
+//     printf("- amplify_graps: %d\n", amplify_graps);
+//     printf("- sym_attraction: %d\n", sym_attraction);
+//     printf("- normalized: %d\n", normalized);
+//     printf("- n_edges: %d\n", n_edges);
+//     printf("- a: %f\n", a);
+//     printf("- b: %f\n", b);
+//     printf("- number_of_blocks_scalar: %d\n", number_of_blocks_scalar);
+//     printf("- number_of_blocks_half: %d\n", number_of_blocks_half);
+//     printf("- number_of_blocks: %d\n", number_of_blocks);
+//     printf("\n\n");
 //    cudaDeviceSynchronize();
 //    gpuErrchk(cudaPeekAtLastError());
 
@@ -1030,9 +1030,9 @@ void gpu_umap_full(int normalized, // unused
 //        cudaDeviceSynchronize();
 //        gpuErrchk(cudaPeekAtLastError());
 
-        if ((i_epoch + 1) % 50 == 0) {
-            printf("Epoch %d/%d\n", i_epoch + 1, n_epochs);
-        }
+        // if ((i_epoch + 1) % 50 == 0) {
+        //     printf("Epoch %d/%d\n", i_epoch + 1, n_epochs);
+        // }
 
     }
 //    cudaStreamEndCapture(stream, &graph);
@@ -1152,7 +1152,7 @@ void gpu_umap_full_N(int normalized, // unused
     inclusive_scan(d_neighbor_counts, d_neighbor_ends, n_vertices);
 
     int k = gpu_max(d_neighbor_counts, n_vertices);
-    printf("k: %d\n", k);
+    // printf("k: %d\n", k);
 
 //    int *d_N_new = gpu_malloc_int(n_vertices * k);
 //    float *d_weights_new = gpu_malloc_float(n_vertices * k);
@@ -1167,20 +1167,20 @@ void gpu_umap_full_N(int normalized, // unused
             (d_tmp_sum_1, d_tmp_sum_2, number_of_blocks_scalar);
     float average_weight = copy_last_D_to_H(d_tmp_sum_1, 1) / n_edges;
 
-    printf("\n\nParams:\n");
-//    printf("- CPU average_weight: %f\n", mean(h_weights, n_edges));
-    printf("- average_weight: %f\n", average_weight);
-    printf("- amplify_graps: %d\n", amplify_graps);
-    printf("- sym_attraction: %d\n", sym_attraction);
-    printf("- normalized: %d\n", normalized);
-    printf("- n_edges: %d\n", n_edges);
-    printf("- negative_sample_rate: %d\n", negative_sample_rate);
-    printf("- a: %f\n", a);
-    printf("- b: %f\n", b);
-    printf("- number_of_blocks_scalar: %d\n", number_of_blocks_scalar);
-    printf("- number_of_blocks_half: %d\n", number_of_blocks_half);
-    printf("- number_of_blocks: %d\n", number_of_blocks);
-    printf("\n\n");
+//     printf("\n\nParams:\n");
+// //    printf("- CPU average_weight: %f\n", mean(h_weights, n_edges));
+//     printf("- average_weight: %f\n", average_weight);
+//     printf("- amplify_graps: %d\n", amplify_graps);
+//     printf("- sym_attraction: %d\n", sym_attraction);
+//     printf("- normalized: %d\n", normalized);
+//     printf("- n_edges: %d\n", n_edges);
+//     printf("- negative_sample_rate: %d\n", negative_sample_rate);
+//     printf("- a: %f\n", a);
+//     printf("- b: %f\n", b);
+//     printf("- number_of_blocks_scalar: %d\n", number_of_blocks_scalar);
+//     printf("- number_of_blocks_half: %d\n", number_of_blocks_half);
+//     printf("- number_of_blocks: %d\n", number_of_blocks);
+//     printf("\n\n");
 //    cudaDeviceSynchronize();
 //    gpuErrchk(cudaPeekAtLastError());
 
@@ -1247,9 +1247,9 @@ void gpu_umap_full_N(int normalized, // unused
 //        cudaDeviceSynchronize();
 //        gpuErrchk(cudaPeekAtLastError());
 
-        if ((i_epoch + 1) % 50 == 0) {
-            printf("Epoch %d/%d\n", i_epoch + 1, n_epochs);
-        }
+        // if ((i_epoch + 1) % 50 == 0) {
+        //     printf("Epoch %d/%d\n", i_epoch + 1, n_epochs);
+        // }
 
     }
 //    cudaStreamEndCapture(stream, &graph);

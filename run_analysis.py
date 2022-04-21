@@ -46,7 +46,7 @@ def cpu_analysis():
     default_params = {
         'tsne': {
             'optimize_method': 'tsne',
-            'n_neighbors': 90,
+            'n_neighbors': 90, ### ANDREW: why is it not 15? - Katrine
             'random_init': True,
             'umap_metric': False,
             'tsne_symmetrization': True,
@@ -68,7 +68,7 @@ def cpu_analysis():
             'umap_metric': True,
             'tsne_symmetrization': False,
             'n_epochs': 500,
-            'neg_sample_rate': 5,
+            'neg_sample_rate': 5, ### ANDREW: why is it not 1? - Katrine
             'normalized': False,
             'sym_attraction': True,
             'frobenius': False,
@@ -103,7 +103,7 @@ def cpu_analysis():
         try:
             points, labels = get_dataset(dataset, num_points_list[data_i])
         except Exception as E:
-            print('Could not fine dataset %s' % dataset)
+            print('Could not find dataset %s' % dataset)
             print('Error raised was:', str(E))
             print('Continuing')
             print('.')
@@ -202,17 +202,16 @@ def cpu_analysis():
 
 def gpu_analysis():
     datasets = [
-        'mnist',
-        'fashion_mnist',
-        'swiss_roll',
+        # 'mnist',
+        # 'fashion_mnist',
+        # 'swiss_roll',
         'coil',
         'google_news',
     ]
     num_points_list = [
-        60000,
-        60000,
-        50000,
-        5000,
+        # 60000,
+        # 60000,
+        # 5000,
         7200,
         350000,
     ]
@@ -286,25 +285,39 @@ def gpu_analysis():
             'num_threads': -1,
             'numba': False
         },
+        ### RAPIDS UMAP
+        'rapids_umap': {
+            'n_neighbors': 15,
+            'random_init': False,
+            'neg_sample_rate': 1,
+            'n_epochs': 500,
+            'normalized': False, # Also set amplify_grads to True
+        },
 
-        ### FIXME FIXME FIXME -- RAPIDS UMAP
+        ### RAPIDS TSNE
+        'rapids_tsne': {
+            'n_neighbors': 90,
+            'learning_rate': 1.0,
+            'n_epochs': 500,
+            'normalized': False, # Also set amplify_grads to True
+        },
 
-        ### FIXME FIXME FIXME -- RAPIDS TSNE
     }
 
     outputs_path = os.path.join('outputs', 'gpu')
     pbar = tqdm(enumerate(datasets), total=len(datasets))
     for data_i, dataset in pbar:
         try:
-            points, labels = get_dataset(dataset, num_points)
+            points, labels = get_dataset(dataset, num_points_list[data_i])
         except Exception as E:
-            print('Could not fine dataset %s' % dataset)
+            print('Could not find dataset %s' % dataset)
             print('Error raised was:', str(E))
             print('Continuing')
             print('.')
             print('.')
             print('.')
             print('\n')
+            break
 
         dataset_output_path = os.path.join(outputs_path, dataset)
         if not os.path.isdir(dataset_output_path):
@@ -325,14 +338,20 @@ def gpu_analysis():
 
                 instance_params['a'] = 1
                 instance_params['b'] = 1
-                dr = get_algorithm('uniform_umap', instance_params, verbose=False)
+
+                algorithm_str = 'uniform_umap'
+                if 'rapids' in experiment:
+                    algorithm_str = experiment
+
+                dr = get_algorithm(algorithm_str, instance_params, verbose=False)
 
                 start = time.time()
                 embedding = dr.fit_transform(points)
                 end = time.time()
                 total_time = end - start
                 try:
-                    opt_time = embedding.opt_time
+                    # opt_time = embedding.opt_time
+                    opt_time = dr.opt_time
                 except AttributeError:
                     opt_time = -1
 
@@ -340,6 +359,7 @@ def gpu_analysis():
                     'opt_time': opt_time,
                     'total_time': total_time
                 }
+                # print(experiment + " on " + dataset + " opt time " + opt_time)
                 np.save(os.path.join(experiment_path, "times.npy"), times)
                 np.save(os.path.join(experiment_path, "embedding.npy"), embedding)
                 np.save(os.path.join(experiment_path, "labels.npy"), labels)
@@ -449,7 +469,7 @@ def data_size_timings():
             try:
                 points, labels = get_dataset(dataset, num_points)
             except Exception as E:
-                print('Could not fine dataset %s' % dataset)
+                print('Could not find dataset %s' % dataset)
                 print('Error raised was:', str(E))
                 print('Continuing')
                 print('.')
@@ -505,5 +525,5 @@ def data_size_timings():
 
 if __name__ == '__main__':
     # cpu_analysis()
-    # gpu_analysis()
-    data_size_timings()
+    gpu_analysis()
+    # data_size_timings()

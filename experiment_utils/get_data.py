@@ -4,8 +4,8 @@ import os
 from tqdm import tqdm
 from sklearn.datasets import make_swiss_roll
 from mnist import MNIST
-# from tensorflow import keras as tfk
-# import tensorflow_datasets as tfds
+from tensorflow import keras as tfk
+import tensorflow_datasets as tfds
 
 def load_mnist():
     mnist_data_path = os.path.join('data', 'mnist')
@@ -51,7 +51,7 @@ def get_dataset(data_name, num_points, normalize=True):
     elif data_name == 'google_news':
         # To run this dataset, download https://data.world/jaredfern/googlenews-reduced-200-d
         #   and place it into the directory 'data'
-        file = open(os.path.join('data', 'gnews_mod.csv'), 'r')
+        file = open(os.path.join('data', 'gnews_mod.csv'), 'r', encoding="utf-8")
         reader = csv.reader(file)
         num_points = min(num_points, 350000)
         points = np.zeros([num_points, 200])

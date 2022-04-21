@@ -3,6 +3,7 @@ from sklearn.manifold import TSNE
 from umap import UMAP
 from sklearn.decomposition import PCA
 from sklearn.decomposition import KernelPCA
+from experiment_utils.decorator_rapids import * 
 
 def run_pymde(points):
     import pymde
@@ -54,6 +55,27 @@ def get_algorithm(algorithm_str, params, verbose=True):
         dr = PCA()
     elif algorithm_str == 'kernel_pca':
         dr = KernelPCA(n_components=2)
+    elif algorithm_str == 'rapids_umap':
+        dr = rapids_umap(
+            n_neighbors=params['n_neighbors'],
+            n_components=2,
+            n_epochs=params['n_epochs'],
+            negative_sample_rate=params['neg_sample_rate'],
+            a=params['a'],
+            b=params['b'],
+            random_state=12345,
+            # verbose=True
+            verbose=verbose
+        )
+    elif algorithm_str == 'rapids_tsne':
+        dr = rapids_tsne(
+            n_components=2,
+            learning_rate=params['learning_rate'],
+            n_epochs=params['n_epochs'], 
+            # verbose=True,
+            verbose=verbose,
+            random_state=12345,
+            n_neighbors=params['n_neighbors'])
     else:
         raise ValueError("Unsupported algorithm")
 
