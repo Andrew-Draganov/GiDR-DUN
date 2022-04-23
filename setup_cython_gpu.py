@@ -6,9 +6,9 @@ import numpy
 # GPU INSTALLATION REQUIRES FILLING IN THE BELOW VARIABLE!
 # Example:
 # CUDA_PATH = '/usr/local/cuda-11/targets/x86_64-linux/include/'
-CUDA_PATH = None
-If not CUDA_PATH:
-    raise ValueError("Must supply cuda path for the cython gpu compilation")
+CUDA_PATH = '/usr/local/cuda-11/targets/x86_64-linux/include/'
+# If not CUDA_PATH:
+#     raise ValueError("Must supply cuda path for the cython gpu compilation")
 
 optimize_gpu = Extension(
     'optimize_gpu',

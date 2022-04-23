@@ -214,17 +214,17 @@ def cpu_analysis():
 
 def gpu_analysis():
     datasets = [
-        # 'mnist',
-        # 'fashion_mnist',
-        # 'swiss_roll',
-        'coil',
+        'mnist',
+        'fashion_mnist',
+        'swiss_roll',
+        # 'coil',
         'google_news',
     ]
     num_points_list = [
-        # 60000,
-        # 60000,
-        # 5000,
-        7200,
+        60000,
+        60000,
+        5000,
+        # 7200,
         350000,
     ]
 
