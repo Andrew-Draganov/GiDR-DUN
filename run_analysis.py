@@ -13,16 +13,16 @@ def cpu_analysis():
         # 'mnist',
         # 'fashion_mnist',
         # 'cifar',
-        'swiss_roll',
-        'coil',
+        # 'swiss_roll',
+        # 'coil',
         'google_news',
     ]
     num_points_list = [
         # 60000,
         # 60000,
         # 50000,
-        5000,
-        7200,
+        # 5000,
+        # 7200,
         350000,
     ]
 
@@ -183,20 +183,20 @@ def cpu_analysis():
                         labels,
                         save_path=os.path.join(param_path, 'embedding.png')
                     )
-                    kmeans_score = cluster_quality(embedding, labels, cluster_model='kmeans')
-                    dbscan_score = cluster_quality(embedding, labels, cluster_model='dbscan')
+                    # kmeans_score = cluster_quality(embedding, labels, cluster_model='kmeans')
+                    # dbscan_score = cluster_quality(embedding, labels, cluster_model='dbscan')
 
                     metrics = {
                         # 'cluster_dists': cluster_distances(embedding, labels),
-                        'knn_accuracy': classifier_accuracy(embedding, labels, 100),
-                        'kmeans-v-score': kmeans_score,
-                        'dbscan-v-score': dbscan_score,
+                        # 'knn_accuracy': classifier_accuracy(embedding, labels, 100),
+                        # 'kmeans-v-score': kmeans_score,
+                        # 'dbscan-v-score': dbscan_score,
                     }
                     times = {
                         'opt_time': opt_time,
                         'total_time': total_time
                     }
-                    np.save(os.path.join(param_path, "metrics.npy"), metrics)
+                    # np.save(os.path.join(param_path, "metrics.npy"), metrics)
                     np.save(os.path.join(param_path, "times.npy"), times)
                     np.save(os.path.join(param_path, "embedding.npy"), embedding)
                     np.save(os.path.join(param_path, "labels.npy"), labels)

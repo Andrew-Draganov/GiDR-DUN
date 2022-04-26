@@ -29,6 +29,7 @@ def cluster_distances(embedding, labels):
 
 def cluster_quality(embedding, labels, cluster_model='kmeans'):
     num_classes = int(np.unique(labels).shape[0])
+    labels = np.squeeze(labels)
     if cluster_model == 'kmeans':
         print('Fitting kmeans...')
         model = KMeans(n_clusters=num_classes).fit(embedding)

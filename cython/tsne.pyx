@@ -308,7 +308,7 @@ cdef void _tsne_epoch(
                     else:
                         all_updates[index] = grad_d * lr
 
-                    head_embedding[v, d] += all_updates[index]
+                    head_embedding[v, d] += clip(all_updates[index], -1, 1)
 
     free(local_Z)
 

@@ -476,9 +476,9 @@ def fuzzy_simplicial_set(
     )
     result.eliminate_zeros()
 
-    # ANDREW - this is doing the UMAP symmetrization
+    # UMAP symmetrization:
     # Symmetrized = A + A^T - pointwise_mul(A, A^T)
-    # Add option to replace with t-SNE symmetrization
+    # TSNE symmetrization:
     # Symmetrized = (A + A^T) / 2
     transpose = result.transpose()
     if not tsne_symmetrization:
