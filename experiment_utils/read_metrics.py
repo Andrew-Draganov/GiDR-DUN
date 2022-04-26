@@ -116,6 +116,8 @@ def make_gpu_bar_plots(outputs):
     labels = [method_labels[opt_method] for opt_method in all_opt_methods]
     plt.legend(handles, labels)
     plt.ylabel('Runtime in seconds')
+    ax = plt.gca()
+    ax.set_yscale('log')
     plt.xticks(
         [i * (num_opt_methods + 1) + 2.5 - (num_opt_methods+1)/2 for i in dataset_loc_dict.values()],
         list(dataset_loc_dict.keys())
