@@ -377,7 +377,7 @@ def dim_timings():
         'recreate_tsne_gpu': {
             'optimize_method': 'uniform_umap',
             'n_neighbors': 15,
-            'random_init': False,
+            'random_init': True,
             'umap_metric': False,
             'tsne_symmetrization': False,
             'neg_sample_rate': 1,
@@ -394,7 +394,7 @@ def dim_timings():
         'recreate_umap_gpu': {
             'optimize_method': 'uniform_umap',
             'n_neighbors': 15,
-            'random_init': False,
+            'random_init': True,
             'umap_metric': False,
             'tsne_symmetrization': False,
             'neg_sample_rate': 1,
@@ -513,7 +513,7 @@ def data_size_timings():
         'recreate_tsne_gpu': {
             'optimize_method': 'uniform_umap',
             'n_neighbors': 15,
-            'random_init': False,
+            'random_init': True,
             'umap_metric': False,
             'tsne_symmetrization': False,
             'neg_sample_rate': 1,
@@ -530,7 +530,7 @@ def data_size_timings():
         'recreate_umap_gpu': {
             'optimize_method': 'uniform_umap',
             'n_neighbors': 15,
-            'random_init': False,
+            'random_init': True,
             'umap_metric': False,
             'tsne_symmetrization': False,
             'neg_sample_rate': 1,
