@@ -35,7 +35,14 @@ def upsample_dataset(num_points, points, labels):
         
     return points, labels
 
-def get_dataset(data_name, num_points, normalize=True):
+def resample_dim(desired_dim, points):
+    while dim < desired_dim:
+        points = np.concatenate([points, points], axis=-1)
+        dim = int(points.shape[1])
+    points = points[:, :desired_dim]
+    return points
+
+def get_dataset(data_name, num_points, normalize=True, desired_dim=-1):
     if data_name == 'mnist':
         points, labels = load_mnist()
     elif data_name == 'fashion_mnist':
@@ -96,6 +103,9 @@ def get_dataset(data_name, num_points, normalize=True):
         labels = np.ones([num_points])
     else:
         raise ValueError("Unsupported dataset")
+
+    if desired_dim > 0:
+        points = resample_dim(desired_dim, points)
 
     if num_points < 0:
         num_points = int(points.shape[0])

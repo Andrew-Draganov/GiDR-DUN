@@ -411,54 +411,41 @@ def data_size_timings():
         'mnist',
         'google_news',
     ]
-    num_points_list = [
-        1000,
-        4000,
-        16000,
-        64000,
-        256000,
-        1024000,
+    dimensionality = [
+        100,
+        400,
+        1600,
+        3200,
+        12800,
+        51200
     ]
 
     experiment_params = {
-        'tsne': {
-            'optimize_method': 'tsne',
+
+            # RAPIDS UMAP PARAMETERS
+
+            # RAPIDS TSNE PARAMETERS
+        'recreate_tsne_gpu': {
+            'optimize_method': 'uniform_umap',
             'n_neighbors': 90,
             'random_init': True,
             'umap_metric': False,
-            'tsne_symmetrization': True,
+            'tsne_symmetrization': False,
             'neg_sample_rate': 1,
             'n_epochs': 500,
-            'normalized': True, # Also set amplify_grads to True
+            'normalized': True,
             'sym_attraction': False,
             'frobenius': False,
             'angular': False,
             'tsne_scalars': True,
-            'gpu': False,
+            'gpu': True,
             'num_threads': -1,
             'numba': False
         },
-        'umap': {
-            'optimize_method': 'umap',
-            'n_neighbors': 15,
-            'random_init': False,
-            'umap_metric': True,
-            'tsne_symmetrization': False,
-            'n_epochs': 500,
-            'neg_sample_rate': 5,
-            'normalized': False,
-            'sym_attraction': True,
-            'frobenius': False,
-            'angular': False,
-            'tsne_scalars': False,
-            'gpu': False,
-            'num_threads': -1,
-            'numba': False
-        },
-        'uniform_umap': {
+        'recreate_umap_gpu': {
             'optimize_method': 'uniform_umap',
             'n_neighbors': 15,
-            'random_init': False,
+            'random_init': True,
             'umap_metric': False,
             'tsne_symmetrization': False,
             'n_epochs': 500,
@@ -468,27 +455,10 @@ def data_size_timings():
             'frobenius': False,
             'angular': False,
             'tsne_scalars': True,
-            'gpu': False,
+            'gpu': True,
             'num_threads': -1,
             'numba': False
-        },
-        # 'uniform_umap': {
-        #     'optimize_method': 'uniform_umap',
-        #     'n_neighbors': 15,
-        #     'random_init': False,
-        #     'umap_metric': False,
-        #     'tsne_symmetrization': False,
-        #     'n_epochs': 500,
-        #     'neg_sample_rate': 1,
-        #     'normalized': False,
-        #     'sym_attraction': False,
-        #     'frobenius': False,
-        #     'angular': False,
-        #     'tsne_scalars': True,
-        #     'gpu': True,
-        #     'num_threads': -1,
-        #     'numba': False
-        # }
+        }
     }
 
     outputs_path = os.path.join('outputs', 'dataset_size_timing')
@@ -559,3 +529,4 @@ if __name__ == '__main__':
     # cpu_analysis()
     gpu_analysis()
     # data_size_timings()
+    # dim_timings()
