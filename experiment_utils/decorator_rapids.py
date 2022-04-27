@@ -35,23 +35,23 @@ class rapids_umap:
         self.verbose = verbose
     
     def fit_transform(self, points):
-        if self.verbose:
-            print('loading data ...')
-        start = time.time()
-        gdf = cudf.DataFrame()
-        for i in range(points.shape[1]):
-            gdf['fea%d'%i] = points[:,i]
-        end = time.time()
-        if self.verbose:
-            print('Data load took {:.3f} seconds'.format(end - start))
-        print('Data load took {:.3f} seconds'.format(end - start))
+        # if self.verbose:
+        #     print('loading data ...')
+        # start = time.time()
+        # gdf = cudf.DataFrame()
+        # for i in range(points.shape[1]):
+        #     gdf['fea%d'%i] = points[:,i]
+        # end = time.time()
+        # self.opt_time = end -start
+        # if self.verbose:
+        #     print('Data load took {:.3f} seconds'.format(end - start))
 
         if self.verbose:
             print("making knn graph...")
         t0 = time.time()
         knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
-        knn_cuml.fit(gdf)
-        knn_graph_comp = knn_cuml.kneighbors_graph(gdf)
+        knn_cuml.fit(points)
+        knn_graph_comp = knn_cuml.kneighbors_graph(points)
         t1 = time.time()
         if self.verbose:
             print("knn graph took", t1 - t0)
@@ -59,17 +59,16 @@ class rapids_umap:
         if self.verbose:
             print('fitting...')
         start = time.time()
-        projection = self.dr.fit_transform(gdf, knn_graph=knn_graph_comp)
+        projection = self.dr.fit_transform(points, knn_graph=knn_graph_comp)
         end = time.time()
         if self.verbose:
             print('CUML UMAP took {:.3f} seconds'.format(end - start))
-        print('CUML UMAP took {:.3f} seconds'.format(end - start))
 
         self.opt_time = end - start
 
         del knn_cuml
         del knn_graph_comp
-        del gdf
+        # del gdf
 
         return projection
 
@@ -88,9 +87,9 @@ class rapids_tsne:
             #initstr ‘random’ (default ‘random’)
             verbose=verbose,
             random_state=random_state,
-            #methodstr ‘barnes_hut’, ‘fft’ or ‘exact’ (default ‘barnes_hut’)
+            method = 'barnes_hut', #methodstr ‘barnes_hut’, ‘fft’ or ‘exact’ (default ‘barnes_hut’)
             #anglefloat (default 0.5)
-            #learning_rate_methodstr ‘adaptive’, ‘none’ or None (default ‘adaptive’)
+            learning_rate_method = None, #learning_rate_methodstr ‘adaptive’, ‘none’ or None (default ‘adaptive’)
             n_neighbors=n_neighbors, #(default 90)
             #perplexity_max_iterint (default 100)
             #exaggeration_iterint (default 250)
@@ -104,23 +103,24 @@ class rapids_tsne:
         self.verbose = verbose
 
     def fit_transform(self, points):
-        if self.verbose:
-            print('loading data ...')
-        start = time.time()
-        gdf = cudf.DataFrame()
-        for i in range(points.shape[1]):
-            gdf['fea%d'%i] = points[:,i]
-        end = time.time()
-        if self.verbose:
-            print('Data load took {:.3f} seconds'.format(end - start))
-        print('Data load took {:.3f} seconds'.format(end - start))
+        # if self.verbose:
+        #     print('loading data ...')
+        # start = time.time()
+        # gdf = cudf.DataFrame()
+        # for i in range(points.shape[1]):
+        #     gdf['fea%d'%i] = points[:,i]
+        # end = time.time()
+        # self.opt_time = end -start
+
+        # if self.verbose:
+        #     print('Data load took {:.3f} seconds'.format(end - start))
 
         if self.verbose:
             print("making knn graph...")
         t0 = time.time()
         knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
-        knn_cuml.fit(gdf)
-        knn_graph_comp = knn_cuml.kneighbors_graph(gdf)
+        knn_cuml.fit(points)
+        knn_graph_comp = knn_cuml.kneighbors_graph(points)
         t1 = time.time()
         if self.verbose:
             print("knn graph took", t1 - t0)
@@ -128,17 +128,16 @@ class rapids_tsne:
         if self.verbose:
             print('fitting...')
         start = time.time()
-        projection = self.dr.fit_transform(gdf, knn_graph=knn_graph_comp)
+        projection = self.dr.fit_transform(points, knn_graph=knn_graph_comp)
         end = time.time()
         if self.verbose:
             print('CUML tsne took {:.3f} seconds'.format(end - start))
-        print('CUML tsne took {:.3f} seconds'.format(end - start))
 
         self.opt_time = end - start
 
         del knn_cuml
         del knn_graph_comp
-        del gdf
+        # del gdf
 
         return projection
     

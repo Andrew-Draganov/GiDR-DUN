@@ -76,6 +76,8 @@ def make_gpu_bar_plots(outputs):
             for opt_method in opt_methods:
                 if 'frob' in opt_method:
                     continue
+                if 'org' in opt_method:
+                    continue
                 if opt_method not in all_opt_methods:
                     all_opt_methods[opt_method] = {}
                 param_vals = np.array(list(opt_methods[opt_method].values()))
@@ -89,7 +91,8 @@ def make_gpu_bar_plots(outputs):
         'coil': 2,
         'mnist': 3,
         'fashion_mnist': 4,
-        'google_news': 5
+        'google_news': 5,
+        'coil_20':6
     }
     colors = {
         'rapids_tsne': 'red',
@@ -122,7 +125,7 @@ def make_gpu_bar_plots(outputs):
         [i * (num_opt_methods + 1) + 2.5 - (num_opt_methods+1)/2 for i in dataset_loc_dict.values()],
         list(dataset_loc_dict.keys())
     )
-    plt.show()
+    plt.savefig("outputs/gpu/figures/gpu_bar_plot.png")
 
 
 

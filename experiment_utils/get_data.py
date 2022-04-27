@@ -79,6 +79,21 @@ def get_dataset(data_name, num_points, normalize=True):
         for i, element in enumerate(dataset):
             points[i] = element['image']
             labels[i] = element['object_id']
+    elif data_name == 'coil_20':
+        # To run this dataset, download https://data.world/jaredfern/googlenews-reduced-200-d
+        #   and place it into the directory 'data'
+        file = open(os.path.join('data', 'coil_20.csv'), 'r')
+        reader = csv.reader(file)
+        if num_points < 0:
+            num_points = 1440
+        num_points = min(num_points, 1440)
+        points = np.zeros([num_points,  128*128])
+        for i, line in tqdm(enumerate(reader), total=num_points):
+            if i > num_points:
+                break
+            for j, element in enumerate(line):
+                points[i, j] = float(element)
+        labels = np.ones([num_points])
     else:
         raise ValueError("Unsupported dataset")
 
