@@ -15,8 +15,8 @@ class rapids_umap:
             n_components=n_components,
             n_epochs=n_epochs,
             # learning_rate=params['learning_rate'], #already default to 1.0 in rapids
-            #random_init=params['random_init'], #default spectral
-            #min_dist=params['min_dist'], #default 0.1
+            # init='random', #params['random_init'], #default spectral
+            #min_dist=params['min_dist'], #defau lt 0.1
             #spread=params['spread'], #default 1.0
             #set_op_mix_ratio=params['set_op_mix_ratio'], #default 1.0
             #local_connectivity=params['local_connectivity'], #default 1
@@ -89,7 +89,7 @@ class rapids_tsne:
             random_state=random_state,
             method = 'barnes_hut', #methodstr ‘barnes_hut’, ‘fft’ or ‘exact’ (default ‘barnes_hut’)
             #anglefloat (default 0.5)
-            learning_rate_method = None, #learning_rate_methodstr ‘adaptive’, ‘none’ or None (default ‘adaptive’)
+            learning_rate_method = None, #learning_rate_method str ‘adaptive’, ‘none’ or None (default ‘adaptive’)
             n_neighbors=n_neighbors, #(default 90)
             #perplexity_max_iterint (default 100)
             #exaggeration_iterint (default 250)

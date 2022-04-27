@@ -85,14 +85,14 @@ def make_gpu_bar_plots(outputs):
 
 
     # Rapids runs out of memory on COIL-100 dataset
-    all_opt_methods['rapids_tsne']['coil'] = 0
-    all_opt_methods['rapids_umap']['coil'] = 0
+    all_opt_methods['rapids_tsne']['coil_100'] = 0
+    all_opt_methods['rapids_umap']['coil_100'] = 0
     dataset_loc_dict = {
-        'coil': 2,
-        'mnist': 3,
-        'fashion_mnist': 4,
-        'google_news': 5,
-        'coil_20':6
+        'coil_20': 2,
+        'coil_100': 3,
+        'mnist': 4,
+        'fashion_mnist': 5,
+        'google_news': 6
     }
     colors = {
         'rapids_tsne': 'red',

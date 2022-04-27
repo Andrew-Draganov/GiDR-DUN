@@ -20,7 +20,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
         dr = UniformUmap(
                 n_neighbors=params['n_neighbors'],
                 n_epochs=params['n_epochs'],
-                random_state=12345, # Comment this out to turn on parallelization
+                random_state=98765, # Comment this out to turn on parallelization
                 random_init=params['random_init'],
                 pseudo_distance=params['umap_metric'],
                 tsne_symmetrization=params['tsne_symmetrization'],
@@ -42,7 +42,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
         dr = UMAP(
                 n_neighbors=params['n_neighbors'],
                 n_epochs=params['n_epochs'],
-                # random_state=12345, # Comment this out to turn on parallelization
+                # random_state=98765, # Comment this out to turn on parallelization
                 init='random' if params['random_init'] else 'spectral',
                 negative_sample_rate=params['neg_sample_rate'],
                 a=params['a'],
@@ -50,7 +50,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
                 verbose=verbose
             )
     elif algorithm_str == 'original_tsne':
-        dr = TSNE(random_state=12345, verbose=3)
+        dr = TSNE(random_state=98765, verbose=3)
     elif algorithm_str == 'pca':
         dr = PCA()
     elif algorithm_str == 'kernel_pca':
@@ -63,7 +63,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
             negative_sample_rate=params['neg_sample_rate'],
             a=params['a'],
             b=params['b'],
-            random_state=12345,
+            random_state=98765,
             # verbose=True
             verbose=verbose
         )
@@ -74,7 +74,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
             n_epochs=params['n_epochs'], 
             # verbose=True,
             verbose=verbose,
-            random_state=12345,
+            random_state=98765,
             n_neighbors=params['n_neighbors'])
     elif algorithm_str == 'rapids_umap_org':
         n_neighbors=params['n_neighbors']
@@ -83,7 +83,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
         negative_sample_rate=params['neg_sample_rate']
         a=params['a']
         b=params['b']
-        random_state=12345
+        random_state=98765
         # verbose=True
         verbose=verbose
 
@@ -113,7 +113,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
         n_epochs=params['n_epochs']
         # verbose=True
         verbose=verbose
-        random_state=12345
+        random_state=98765
         n_neighbors=params['n_neighbors']
 
         dr = cumlTSNE(

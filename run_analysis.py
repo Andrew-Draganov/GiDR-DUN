@@ -217,9 +217,9 @@ def gpu_analysis():
         'mnist',
         'fashion_mnist',
         'swiss_roll',
-        'coil',
+        'coil_100',
         'coil_20',
-        'google_news',
+        # 'google_news',
     ]
     num_points_list = [
         60000,
@@ -227,7 +227,7 @@ def gpu_analysis():
         5000,
         7200,
         1440,
-        350000,
+        # 350000,
     ]
 
     experiment_params = {
@@ -265,6 +265,40 @@ def gpu_analysis():
             'num_threads': -1,
             'numba': False
         },
+        # 'recreate_tsne_gpu': {
+        #     'optimize_method': 'uniform_umap',
+        #     'n_neighbors': 15,
+        #     'random_init': False,
+        #     'umap_metric': False,
+        #     'tsne_symmetrization': False,
+        #     'neg_sample_rate': 1,
+        #     'n_epochs': 500,
+        #     'normalized': True, # Also set amplify_grads to True
+        #     'sym_attraction': False,
+        #     'frobenius': False,
+        #     'angular': False,
+        #     'tsne_scalars': True,
+        #     'gpu': True,
+        #     'num_threads': -1,
+        #     'numba': False
+        # },
+        # 'recreate_umap_gpu': {
+        #     'optimize_method': 'uniform_umap',
+        #     'n_neighbors': 15,
+        #     'random_init': False,
+        #     'umap_metric': False,
+        #     'tsne_symmetrization': False,
+        #     'neg_sample_rate': 1,
+        #     'n_epochs': 500,
+        #     'normalized': False, # Also set amplify_grads to True
+        #     'sym_attraction': False,
+        #     'frobenius': False,
+        #     'angular': False,
+        #     'tsne_scalars': True,
+        #     'gpu': True,
+        #     'num_threads': -1,
+        #     'numba': False
+        # },
         # 'recreate_tsne_gpu_frob': {
         #     'optimize_method': 'uniform_umap',
         #     'n_neighbors': 15,
@@ -303,7 +337,7 @@ def gpu_analysis():
         'rapids_umap': {
             'n_neighbors': 15,
             'random_init': False,
-            'neg_sample_rate': 1,
+            'neg_sample_rate': 5,
             'n_epochs': 500,
             'normalized': False, # Also set amplify_grads to True
         },
@@ -372,7 +406,7 @@ def gpu_analysis():
                 algorithm_str = 'uniform_umap'
                 if 'rapids' in experiment:
                     algorithm_str = experiment
-                    if dataset == 'coil':
+                    if dataset == 'coil_100':
                         continue
 
                 dr = get_algorithm(algorithm_str, instance_params, verbose=False)
@@ -557,5 +591,5 @@ def data_size_timings():
 
 if __name__ == '__main__':
     # cpu_analysis()
-    gpu_analysis()
-    # data_size_timings()
+    # gpu_analysis()
+    data_size_timings()

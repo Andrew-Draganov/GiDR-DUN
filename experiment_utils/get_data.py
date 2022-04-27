@@ -79,6 +79,19 @@ def get_dataset(data_name, num_points, normalize=True):
         for i, element in enumerate(dataset):
             points[i] = element['image']
             labels[i] = element['object_id']
+    elif data_name == 'coil_100':
+            num_samples = 7200
+            dataset, _ = tfds.load(
+                'coil100',
+                split=['train'],
+                with_info=True
+            )
+            dataset = dataset[0].batch(1)
+            points = np.zeros([num_samples, 128, 128, 3])
+            labels = np.zeros([num_samples])
+            for i, element in enumerate(dataset):
+                points[i] = element['image']
+                labels[i] = element['object_id']
     elif data_name == 'coil_20':
         # To run this dataset, download https://data.world/jaredfern/googlenews-reduced-200-d
         #   and place it into the directory 'data'
