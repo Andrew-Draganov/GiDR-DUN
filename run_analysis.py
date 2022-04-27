@@ -217,9 +217,9 @@ def gpu_analysis():
         'mnist',
         'fashion_mnist',
         'swiss_roll',
-        'coil',
+        'coil_100',
         'coil_20',
-        'google_news',
+        # 'google_news',
     ]
     num_points_list = [
         60000,
@@ -227,7 +227,7 @@ def gpu_analysis():
         5000,
         7200,
         1440,
-        350000,
+        # 350000,
     ]
 
     experiment_params = {
@@ -265,57 +265,14 @@ def gpu_analysis():
             'num_threads': -1,
             'numba': False
         },
-        # 'recreate_tsne_gpu_frob': {
-        #     'optimize_method': 'uniform_umap',
-        #     'n_neighbors': 15,
-        #     'random_init': False,
-        #     'umap_metric': False,
-        #     'tsne_symmetrization': False,
-        #     'neg_sample_rate': 1,
-        #     'n_epochs': 500,
-        #     'normalized': True, # Also set amplify_grads to True
-        #     'sym_attraction': False,
-        #     'frobenius': True,
-        #     'angular': False,
-        #     'tsne_scalars': True,
-        #     'gpu': True,
-        #     'num_threads': -1,
-        #     'numba': False
-        # },
-        # 'recreate_umap_gpu_frob': {
-        #     'optimize_method': 'uniform_umap',
-        #     'n_neighbors': 15,
-        #     'random_init': False,
-        #     'umap_metric': False,
-        #     'tsne_symmetrization': False,
-        #     'neg_sample_rate': 1,
-        #     'n_epochs': 500,
-        #     'normalized': False, # Also set amplify_grads to True
-        #     'sym_attraction': False,
-        #     'frobenius': True,
-        #     'angular': False,
-        #     'tsne_scalars': True,
-        #     'gpu': True,
-        #     'num_threads': -1,
-        #     'numba': False
-        # },
-        ### RAPIDS UMAP WITH TIMING
+        ### RAPIDS UMAP
         'rapids_umap': {
             'n_neighbors': 15,
             'random_init': False,
-            'neg_sample_rate': 1,
+            'neg_sample_rate': 5,
             'n_epochs': 500,
             'normalized': False, # Also set amplify_grads to True
         },
-
-        # ### RAPIDS UMAP ORIGINAL SETUP NO TIMING
-        # 'rapids_umap_org': {
-        #     'n_neighbors': 15,
-        #     'random_init': False,
-        #     'neg_sample_rate': 1,
-        #     'n_epochs': 500,
-        #     'normalized': False, # Also set amplify_grads to True
-        # },
 
         ### RAPIDS TSNE
         'rapids_tsne': {
@@ -324,14 +281,6 @@ def gpu_analysis():
             'n_epochs': 500,
             'normalized': False, # Also set amplify_grads to True
         },
-
-        # ### RAPIDS TSNE ORIGINAL SETUP NO TIMING
-        # 'rapids_tsne_org': {
-        #     'n_neighbors': 90,
-        #     'learning_rate': 1.0,
-        #     'n_epochs': 500,
-        #     'normalized': False, # Also set amplify_grads to True
-        # },
     }
 
     outputs_path = os.path.join('outputs', 'gpu')
@@ -372,7 +321,7 @@ def gpu_analysis():
                 algorithm_str = 'uniform_umap'
                 if 'rapids' in experiment:
                     algorithm_str = experiment
-                    if dataset == 'coil':
+                    if dataset == 'coil_100':
                         continue
 
                 dr = get_algorithm(algorithm_str, instance_params, verbose=False)
@@ -406,12 +355,16 @@ def gpu_analysis():
                 continue
 
 
-def data_size_timings():
+def dim_timings():
     datasets = [
         'mnist',
-        'google_news',
+        # 'google_news',
     ]
-    dimensionality = [
+    num_points_list = [
+        60000,
+        # 350000,
+    ]
+    dims_list = [
         100,
         400,
         1600,
@@ -421,14 +374,10 @@ def data_size_timings():
     ]
 
     experiment_params = {
-
-            # RAPIDS UMAP PARAMETERS
-
-            # RAPIDS TSNE PARAMETERS
         'recreate_tsne_gpu': {
             'optimize_method': 'uniform_umap',
-            'n_neighbors': 90,
-            'random_init': True,
+            'n_neighbors': 15,
+            'random_init': False,
             'umap_metric': False,
             'tsne_symmetrization': False,
             'neg_sample_rate': 1,
@@ -445,11 +394,11 @@ def data_size_timings():
         'recreate_umap_gpu': {
             'optimize_method': 'uniform_umap',
             'n_neighbors': 15,
-            'random_init': True,
+            'random_init': False,
             'umap_metric': False,
             'tsne_symmetrization': False,
-            'n_epochs': 500,
             'neg_sample_rate': 1,
+            'n_epochs': 500,
             'normalized': False,
             'sym_attraction': False,
             'frobenius': False,
@@ -458,10 +407,162 @@ def data_size_timings():
             'gpu': True,
             'num_threads': -1,
             'numba': False
-        }
+        },
+        ### RAPIDS UMAP
+        'rapids_umap': {
+            'n_neighbors': 15,
+            'random_init': False,
+            'neg_sample_rate': 5,
+            'n_epochs': 500,
+            'normalized': False, # Also set amplify_grads to True
+        },
+
+        ### RAPIDS TSNE
+        'rapids_tsne': {
+            'n_neighbors': 90,
+            'learning_rate': 1.0,
+            'n_epochs': 500,
+            'normalized': False, # Also set amplify_grads to True
+        },
     }
 
-    outputs_path = os.path.join('outputs', 'dataset_size_timing')
+    outputs_path = os.path.join('outputs', 'dim_timing')
+    pbar = tqdm(enumerate(datasets), total=len(datasets))
+    for data_i, dataset in pbar:
+        dataset_output_path = os.path.join(outputs_path, dataset)
+        if not os.path.isdir(dataset_output_path):
+            os.makedirs(dataset_output_path, exist_ok=True)
+        for dim in dims_list:
+            try:
+                num_points = num_points_list[data_i]
+                points, labels = get_dataset(dataset, num_points, desired_dim=dim)
+                print(points.shape)
+            except Exception as E:
+                print('Could not find dataset %s' % dataset)
+                print('Error raised was:', str(E))
+                print('Continuing')
+                print('.')
+                print('.')
+                print('.')
+                print('\n')
+            dim_path = os.path.join(dataset_output_path, '%s_dim' % str(dim))
+            if not os.path.isdir(dim_path):
+                os.makedirs(dim_path, exist_ok=True)
+            for experiment in experiment_params:
+                experiment_path = os.path.join(dim_path, experiment)
+                if not os.path.isdir(experiment_path):
+                    try:
+                        os.makedirs(experiment_path, exist_ok=True)
+
+                        instance_params = copy.copy(experiment_params[experiment])
+                        instance_params['amplify_grads'] = instance_params['normalized'] # normalized and amplify_grads go together
+                        if dataset == 'google_news':
+                            instance_params['random_init'] = True
+                            instance_params['angular'] = True
+                        instance_params['a'] = 1
+                        instance_params['b'] = 1
+
+                        algorithm_str = 'uniform_umap'
+                        if 'rapids' in experiment:
+                            algorithm_str = experiment
+                            if dataset == 'coil_100':
+                                continue
+
+                        dr = get_algorithm(algorithm_str, instance_params, verbose=False)
+
+                        start = time.time()
+                        embedding = dr.fit_transform(points)
+                        end = time.time()
+                        total_time = end - start
+                        try:
+                            opt_time = embedding.opt_time
+                        except AttributeError:
+                            opt_time = -1
+
+                        times = {
+                            'opt_time': opt_time,
+                            'total_time': total_time
+                        }
+                        np.save(os.path.join(experiment_path, "times.npy"), times)
+                    except Exception as E:
+                        print('Could not run analysis for %s dim experiment on %s dataset' % (experiment, dataset))
+                        print('The following exception was raised:')
+                        print(str(E))
+                        print('continuing')
+                        print('.')
+                        print('.')
+                        print('.')
+                        continue
+
+def data_size_timings():
+    datasets = [
+        'mnist',
+        # 'google_news',
+    ]
+    num_points_list = [
+        10000,
+        20000,
+        40000,
+        80000,
+        160000,
+        320000,
+        640000
+    ]
+
+    experiment_params = {
+        'recreate_tsne_gpu': {
+            'optimize_method': 'uniform_umap',
+            'n_neighbors': 15,
+            'random_init': False,
+            'umap_metric': False,
+            'tsne_symmetrization': False,
+            'neg_sample_rate': 1,
+            'n_epochs': 500,
+            'normalized': True,
+            'sym_attraction': False,
+            'frobenius': False,
+            'angular': False,
+            'tsne_scalars': True,
+            'gpu': True,
+            'num_threads': -1,
+            'numba': False
+        },
+        'recreate_umap_gpu': {
+            'optimize_method': 'uniform_umap',
+            'n_neighbors': 15,
+            'random_init': False,
+            'umap_metric': False,
+            'tsne_symmetrization': False,
+            'neg_sample_rate': 1,
+            'n_epochs': 500,
+            'normalized': False,
+            'sym_attraction': False,
+            'frobenius': False,
+            'angular': False,
+            'tsne_scalars': True,
+            'gpu': True,
+            'num_threads': -1,
+            'numba': False
+        },
+        ### RAPIDS UMAP
+        'rapids_umap': {
+            'n_neighbors': 15,
+            'random_init': False,
+            'neg_sample_rate': 5,
+            'n_epochs': 500,
+            'normalized': False, # Also set amplify_grads to True
+        },
+
+        ### RAPIDS TSNE
+        'rapids_tsne': {
+            'n_neighbors': 90,
+            'learning_rate': 1.0,
+            'n_epochs': 500,
+            'normalized': False, # Also set amplify_grads to True
+        },
+    }
+
+    outputs_path = os.path.join('outputs', 'data_size_timing')
     pbar = tqdm(enumerate(datasets), total=len(datasets))
     for data_i, dataset in pbar:
         dataset_output_path = os.path.join(outputs_path, dataset)
@@ -486,19 +587,22 @@ def data_size_timings():
                 if not os.path.isdir(experiment_path):
                     try:
                         os.makedirs(experiment_path, exist_ok=True)
+
                         instance_params = copy.copy(experiment_params[experiment])
                         instance_params['amplify_grads'] = instance_params['normalized'] # normalized and amplify_grads go together
-
-                        # google-news dataset requires cosine distance and is too big for Lap. Eigenmaps initialization
                         if dataset == 'google_news':
                             instance_params['random_init'] = True
                             instance_params['angular'] = True
-                            if experiment == 'tsne' and num_points > 250000:
-                                raise ValueError("Too many points for Barnes-Hut TSNE")
-
                         instance_params['a'] = 1
                         instance_params['b'] = 1
-                        dr = get_algorithm('uniform_umap', instance_params, verbose=False)
+
+                        algorithm_str = 'uniform_umap'
+                        if 'rapids' in experiment:
+                            algorithm_str = experiment
+                            if dataset == 'coil_100':
+                                continue
+
+                        dr = get_algorithm(algorithm_str, instance_params, verbose=False)
 
                         start = time.time()
                         embedding = dr.fit_transform(points)
@@ -525,8 +629,10 @@ def data_size_timings():
                         continue
 
 
+
+
 if __name__ == '__main__':
     # cpu_analysis()
-    gpu_analysis()
-    # data_size_timings()
-    # dim_timings()
+    # gpu_analysis()
+    data_size_timings()
+    dim_timings()
