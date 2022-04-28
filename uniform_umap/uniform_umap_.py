@@ -1354,29 +1354,28 @@ class UniformUmap(BaseEstimator):
                     num_threads=self.num_threads,
                     verbose=self.verbose,
                 )
-
-                (
-                    self.graph_,
-                    self._sigmas,
-                    self._rhos,
-                    self.graph_dists_,
-                ) = fuzzy_simplicial_set(
-                    X[index],
-                    self.n_neighbors,
-                    random_state,
-                    self.metric,
-                    self._knn_indices,
-                    self._knn_dists,
-                    self.local_connectivity,
-                    self.verbose,
-                    pseudo_distance=self.pseudo_distance,
-                    euclidean=self.euclidean,
-                    tsne_symmetrization=self.tsne_symmetrization,
-                )
             else:
-                self.graph_ = knn_graph
-                self._sigmas = np.ones([X.shape[0]])
-                self._sigmas = np.zeros([X.shape[0]])
+                self._knn_indices = knn_graph.indices
+                self._knn_dists = knn_graph.data
+                self._knn_search_index = knn_graph.indptr
+            (
+                self.graph_,
+                self._sigmas,
+                self._rhos,
+                self.graph_dists_,
+            ) = fuzzy_simplicial_set(
+                X[index],
+                self.n_neighbors,
+                random_state,
+                self.metric,
+                self._knn_indices,
+                self._knn_dists,
+                self.local_connectivity,
+                self.verbose,
+                pseudo_distance=self.pseudo_distance,
+                euclidean=self.euclidean,
+                tsne_symmetrization=self.tsne_symmetrization,
+            )
             # Report the number of vertices with degree 0 in our our umap.graph_
             # This ensures that they were properly disconnected.
             vertices_disconnected = np.sum(
