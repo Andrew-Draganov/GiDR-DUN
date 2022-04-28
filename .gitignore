@@ -1,6 +1,5 @@
 *.png
 images/
-outputs/
 *.zip
 tex/*.bib
 tex/*.pdf
