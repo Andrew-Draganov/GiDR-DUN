@@ -1184,7 +1184,7 @@ class UniformUmap(BaseEstimator):
             raise ValueError("num_threads must be a postive integer, or -1 (for all cores)")
 
 
-    def fit(self, X):
+    def fit(self, X, knn_graph=None):
         """Fit X into an embedded space.
 
         Optionally use y for supervised dimension reduction.
@@ -1338,40 +1338,45 @@ class UniformUmap(BaseEstimator):
             # Standard case
 
             # ANDREW - this calls NN-descent on the input dataset X
-            (
-                self._knn_indices,
-                self._knn_dists,
-                self._knn_search_index,
-            ) = nearest_neighbors(
-                X[index],
-                self._n_neighbors,
-                self.metric,
-                self.euclidean,
-                random_state,
-                self.low_memory,
-                use_pynndescent=True,
-                num_threads=self.num_threads,
-                verbose=self.verbose,
-            )
+            if knn_graph is None:
+                (
+                    self._knn_indices,
+                    self._knn_dists,
+                    self._knn_search_index,
+                ) = nearest_neighbors(
+                    X[index],
+                    self._n_neighbors,
+                    self.metric,
+                    self.euclidean,
+                    random_state,
+                    self.low_memory,
+                    use_pynndescent=True,
+                    num_threads=self.num_threads,
+                    verbose=self.verbose,
+                )
 
-            (
-                self.graph_,
-                self._sigmas,
-                self._rhos,
-                self.graph_dists_,
-            ) = fuzzy_simplicial_set(
-                X[index],
-                self.n_neighbors,
-                random_state,
-                self.metric,
-                self._knn_indices,
-                self._knn_dists,
-                self.local_connectivity,
-                self.verbose,
-                pseudo_distance=self.pseudo_distance,
-                euclidean=self.euclidean,
-                tsne_symmetrization=self.tsne_symmetrization,
-            )
+                (
+                    self.graph_,
+                    self._sigmas,
+                    self._rhos,
+                    self.graph_dists_,
+                ) = fuzzy_simplicial_set(
+                    X[index],
+                    self.n_neighbors,
+                    random_state,
+                    self.metric,
+                    self._knn_indices,
+                    self._knn_dists,
+                    self.local_connectivity,
+                    self.verbose,
+                    pseudo_distance=self.pseudo_distance,
+                    euclidean=self.euclidean,
+                    tsne_symmetrization=self.tsne_symmetrization,
+                )
+            else:
+                self.graph_ = knn_graph
+                self._sigmas = np.ones([X.shape[0]])
+                self._sigmas = np.zeros([X.shape[0]])
             # Report the number of vertices with degree 0 in our our umap.graph_
             # This ensures that they were properly disconnected.
             vertices_disconnected = np.sum(
@@ -1442,7 +1447,7 @@ class UniformUmap(BaseEstimator):
             self.verbose,
         )
 
-    def fit_transform(self, X):
+    def fit_transform(self, X, knn_graph=None):
         """Fit X into an embedded space and return that transformed
         output.
 
@@ -1457,7 +1462,7 @@ class UniformUmap(BaseEstimator):
         X_new : array, shape (n_samples, n_components)
             Embedding of the training data in low-dimensional space.
         """
-        _ = self.fit(X)
+        _ = self.fit(X, knn_graph)
         return self.embedding_
 
     def transform(self, X):
