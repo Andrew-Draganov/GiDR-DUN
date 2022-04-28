@@ -1357,7 +1357,7 @@ class UniformUmap(BaseEstimator):
             else:
                 self._knn_indices = np.reshape(knn_graph.indices, [-1, self._n_neighbors])
                 self._knn_dists = np.reshape(knn_graph.data, [-1, self._n_neighbors])
-                self._knn_search_index = np.reshape(knn_graph.indptr, [-1, self._n_neighbors])
+                self._knn_search_index = knn_graph.indptr
             (
                 self.graph_,
                 self._sigmas,
