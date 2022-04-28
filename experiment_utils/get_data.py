@@ -40,6 +40,8 @@ def resample_dim(desired_dim, points):
     while dim < desired_dim:
         points = np.concatenate([points, points], axis=-1)
         dim = int(points.shape[1])
+    random_perm = np.random.permutation(np.arange(dim))
+    points = points[:, perm]
     points = points[:, :desired_dim]
     return points
 
