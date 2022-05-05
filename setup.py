@@ -19,7 +19,6 @@ setup(
         'tqdm',
         'tensorflow_datasets',
         'umap-learn',
-
     ],
 )
 # Note that on the Apple M1, numba will not work with python >= 3.10

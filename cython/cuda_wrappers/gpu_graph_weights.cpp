@@ -1,15 +1,6 @@
-//
-// Created by jakobrj on 5/4/22.
-//
 #import <stdio.h>
-#include "gpu_graph_cuda.cuh"
-#include "gpu_graph_weights.h"
-
-void gpu_graph_weights() {
-    printf("hello from the object file!\n");
-    cuda();
-}
-
+#include "../cuda_kernels/gpu_graph_cuda.cuh"
+#include "../cuda_wrappers/gpu_graph_weights.h"
 
 void compute_neighbor_graph(
         int *rows, //return val

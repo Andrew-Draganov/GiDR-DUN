@@ -1,14 +1,7 @@
-//
-// Created by jakobrj on 5/4/22.
-//
+#ifndef GIDR_DUN_GPU_GRAPH_WEIGHTS_H
+#define GIDR_DUN_GPU_GRAPH_WEIGHTS_H
 
-#ifndef GIDR_DUN_GPU_GRAPH_CUDA_CUH
-#define GIDR_DUN_GPU_GRAPH_CUDA_CUH
-
-void cuda();
-
-
-void compute_neighbor_graph_cuda(
+void compute_neighbor_graph(
         int *rows, //return val
         int *cols, //return val
         float *values, //return val
@@ -24,4 +17,4 @@ void compute_neighbor_graph_cuda(
         int pseudo_distance
 );
 
-#endif //GIDR_DUN_GPU_GRAPH_CUDA_CUH
+#endif //GIDR_DUN_GPU_GRAPH_WEIGHTS_H

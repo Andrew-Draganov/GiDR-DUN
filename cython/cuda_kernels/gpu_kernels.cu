@@ -2,7 +2,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #import "gpu_kernels.h"
-#import "GPU_utils.cuh"
+#import "../utils/gpu_utils.cuh"
 
 #define gpuErrchk(ans)                        \
     {                                         \
@@ -61,32 +61,6 @@ void init_random(curandState *d_random) {
     curand_init(seed, id, 0, &d_random[id]);
 }
 
-/// only for k = 1
-//__global__
-//void compute_grads(float *d_grads, float *d_P, int n, int *d_N, int k, float *d_D_embed,
-//                   int dims_embed, float lr, curandState *d_random) {
-//    int id = threadIdx.x + blockDim.x * blockIdx.x;
-//
-//    for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < n; i += blockDim.x * gridDim.x) {
-//        for (int l = 0; l < k; l++) {
-//            int j = d_N[i * k + l];
-//
-//            int g = curand(&d_random[id]) % n;//random int
-//
-//            float attr = q(dist(d_D_embed, dims_embed, i, j));
-//            attr = attr * attr * d_P[i * k + j];
-//
-//            float rep = q(dist(d_D_embed, dims_embed, i, g));
-//            rep = rep * rep * rep;
-//
-//            for (int h = 0; h < dims_embed; h++) {
-//                d_grads[i * dims_embed + h] +=
-//                        lr * (attr * (d_D_embed[i * dims_embed + h] - d_D_embed[j * dims_embed + h]) -
-//                              rep * (d_D_embed[i * dims_embed + h] - d_D_embed[g * dims_embed + h]));
-//            }
-//        }
-//    }
-//}
 
 __device__
 int get_start(const int *d_ends, int i) {
@@ -1301,9 +1275,6 @@ void gpu_umap(
         int negative_sample_rate
 ) {
     int k = n_edges / n_vertices;
-//    gpu_umap_2(normalized, n_vertices, head_embedding, dim, head, neighbor_counts, n_edges / n_vertices, weights,
-//               n_epochs,
-//               initial_lr, 1);
     gpu_umap_full_N(
             normalized, // unused
             sym_attraction, // unused
@@ -1326,14 +1297,4 @@ void gpu_umap(
             n_edges,
             negative_sample_rate
     );
-//    printf("head: ");
-//    for (int i = 0; i < 30; i++) {
-//        printf("%d ", head[i]);
-//    }
-//    printf("\n");
-//    printf("tail: ");
-//    for (int i = 0; i < 30; i++) {
-//        printf("%d ", tail[i]);
-//    }
-//    printf("\n");
 }

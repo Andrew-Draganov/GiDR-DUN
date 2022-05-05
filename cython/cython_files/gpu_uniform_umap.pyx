@@ -10,7 +10,7 @@ from cython.parallel cimport prange, parallel
 from sklearn.neighbors._quad_tree cimport _QuadTree
 np.import_array()
 
-cdef extern from "gpu_dim_reduction.cpp":
+cdef extern from "../cuda_wrappers/gpu_dim_reduction.cpp":
     void gpu_umap_wrap(
         int normalized,
         int sym_attraction,

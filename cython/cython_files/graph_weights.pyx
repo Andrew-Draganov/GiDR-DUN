@@ -3,7 +3,7 @@ cimport cython
 
 np.import_array()
 
-cdef extern from "gpu_graph_weights.cpp":
+cdef extern from "../cuda_wrappers/gpu_graph_weights.cpp":
     void compute_neighbor_graph(
         int*rows, #return val
         int*cols, #return val

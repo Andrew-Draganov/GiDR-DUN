@@ -20,8 +20,8 @@ import numpy
 # os.environ['CXX']='/usr/local/Cellar/gcc/11.2.0_3/bin/g++-11'
 
 uniform_umap_build = Extension(
-    'uniform_umap_opt_two',
-    ['cython/uniform_umap.pyx'],
+    'uniform_umap_opt',
+    ['cython/cython_files/uniform_umap.pyx'],
     language=['c'],
 
     extra_compile_args=['-fopenmp', '-O3', '-march=native', '-ffast-math'],
@@ -32,8 +32,8 @@ uniform_umap_build = Extension(
 )
 
 umap_build = Extension(
-    'umap_opt_two',
-    ['cython/umap.pyx'],
+    'umap_opt',
+    ['cython/cython_files/umap.pyx'],
     language=['c'],
 
     extra_compile_args=['-fopenmp', '-O3', '-march=native', '-ffast-math'],
@@ -42,8 +42,8 @@ umap_build = Extension(
 )
 
 tsne_build = Extension(
-    'tsne_opt_two',
-    ['cython/tsne.pyx'],
+    'tsne_opt',
+    ['cython/cython_files/tsne.pyx'],
     language=['c'],
 
     extra_compile_args=['-fopenmp', '-O3', '-march=native', '-ffast-math'],

@@ -1,10 +1,7 @@
-//
-// Created by jakobrj on 5/4/22.
-//
 #import <stdio.h>
 #include "gpu_graph_cuda.cuh"
-#include "util.h"
-#include "GPU_utils.cuh"
+#include "../utils/util.h"
+#include "../utils/gpu_utils.cuh"
 #import <limits>
 
 

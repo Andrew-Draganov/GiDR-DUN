@@ -11,21 +11,21 @@ np.import_array()
 
 INF = py_np.inf
 
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.c" nogil:
     float clip(float value, float lower, float upper)
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.c" nogil:
     float sq_euc_dist(float* x, float* y, int dim)
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.c" nogil:
     float ang_dist(float* x, float* y, int dim)
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.c" nogil:
     float get_lr(float initial_lr, int i_epoch, int n_epochs, int amplify_grads) 
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.c" nogil:
     void print_status(int i_epoch, int n_epochs)
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.c" nogil:
     float umap_repulsion_grad(float dist, float a, float b)
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.c" nogil:
     float kernel_function(float dist, float a, float b)
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.c" nogil:
     float attractive_force_func(
             int normalized,
             int frob,
@@ -34,7 +34,7 @@ cdef extern from "cython_utils.c" nogil:
             float b,
             float edge_weight
     )
-cdef extern from "cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.c" nogil:
     void repulsive_force_func(
             float* rep_func_outputs,
             int normalized,

@@ -2,7 +2,7 @@
 // Created by mrjak on 20-07-2021.
 //
 
-#include "GPU_utils.cuh"
+#include "gpu_utils.cuh"
 #include <cstdio>
 
 #define SECTION_SIZE 128
