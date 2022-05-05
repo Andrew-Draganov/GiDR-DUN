@@ -11,6 +11,11 @@ tex/*.bbl
 tex/*.blg
 tex/*.log
 tex/*.out
+nndescent/nndescent.egg-info/
+nndescent.egg-info/
+dist/
+gnews.csv.npy
+nndescent/py_files/__pycache__/
 cython/optimize.cpp
 *.html
 *.c
