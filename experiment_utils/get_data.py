@@ -4,8 +4,8 @@ import os
 from tqdm import tqdm
 from sklearn.datasets import make_swiss_roll
 from mnist import MNIST
-from tensorflow import keras as tfk
-import tensorflow_datasets as tfds
+#from tensorflow import keras as tfk
+#import tensorflow_datasets as tfds
 
 def load_mnist():
     mnist_data_path = os.path.join('data', 'mnist')

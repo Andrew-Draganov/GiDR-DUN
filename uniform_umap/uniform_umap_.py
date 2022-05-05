@@ -61,7 +61,7 @@ def smooth_knn_dist(
         local_connectivity=1.0,
         bandwidth=1.0,
         pseudo_distance=True,
-    ):
+):
     """Compute a continuous version of the distance to the kth nearest
     neighbor. That is, this is similar to knn-distance but allows continuous
     k values rather than requiring an integral k. In essence we are simply
@@ -107,10 +107,6 @@ def smooth_knn_dist(
     mean_distances = np.mean(distances)
 
     for i in range(distances.shape[0]):
-        lo = 0.0
-        hi = NPY_INFINITY
-        mid = 1.0
-
         # ANDREW - Calculate rho values
         ith_distances = distances[i]
         non_zero_dists = ith_distances[ith_distances > 0.0]
@@ -121,13 +117,16 @@ def smooth_knn_dist(
                 rho[i] = non_zero_dists[index - 1]
                 if interpolation > SMOOTH_K_TOLERANCE:
                     rho[i] += interpolation * (
-                        non_zero_dists[index] - non_zero_dists[index - 1]
+                            non_zero_dists[index] - non_zero_dists[index - 1]
                     )
             else:
                 rho[i] = interpolation * non_zero_dists[0]
         elif non_zero_dists.shape[0] > 0:
             rho[i] = np.max(non_zero_dists)
 
+        lo = 0.0
+        hi = NPY_INFINITY
+        mid = 1.0
         # ANDREW - Calculating sigma values
         for n in range(n_iter):
             psum = 0.0
@@ -175,15 +174,15 @@ def smooth_knn_dist(
 
 
 def nearest_neighbors(
-    X,
-    n_neighbors,
-    metric,
-    euclidean,
-    random_state,
-    low_memory=True,
-    use_pynndescent=True,
-    num_threads=-1,
-    verbose=False,
+        X,
+        n_neighbors,
+        metric,
+        euclidean,
+        random_state,
+        low_memory=True,
+        use_pynndescent=True,
+        num_threads=-1,
+        verbose=False,
 ):
     """Compute the ``n_neighbors`` nearest points for each data point in ``X``
     under ``metric``. This may be exact, but more likely is approximated via
@@ -274,13 +273,13 @@ def nearest_neighbors(
     fastmath=True,
 )
 def compute_membership_strengths(
-    knn_indices,
-    knn_dists,
-    sigmas,
-    rhos,
-    return_dists=False,
-    bipartite=False,
-    pseudo_distance=True,
+        knn_indices,
+        knn_dists,
+        sigmas,
+        rhos,
+        return_dists=False,
+        bipartite=False,
+        pseudo_distance=True,
 ):
     """Construct the membership strength data for the 1-skeleton of each local
     fuzzy simplicial set -- this is formed as a sparse matrix where each row is
@@ -362,18 +361,19 @@ def compute_membership_strengths(
 
 
 def fuzzy_simplicial_set(
-    X,
-    n_neighbors,
-    random_state,
-    metric,
-    knn_indices=None,
-    knn_dists=None,
-    local_connectivity=1.0,
-    verbose=False,
-    return_dists=True,
-    pseudo_distance=True,
-    euclidean=True,
-    tsne_symmetrization=False,
+        X,
+        n_neighbors,
+        random_state,
+        metric,
+        knn_indices=None,
+        knn_dists=None,
+        local_connectivity=1.0,
+        verbose=False,
+        return_dists=True,
+        pseudo_distance=True,
+        euclidean=True,
+        tsne_symmetrization=False,
+        gpu=False,
 ):
     """Given a set of data X, a neighborhood size, and a measure of distance
     compute the fuzzy simplicial set (here represented as a fuzzy graph in
@@ -443,33 +443,64 @@ def fuzzy_simplicial_set(
     #   - compute_membership_strengths should use the tSNE normalizations
     #       - row-wise and matrix-wise
     if knn_indices is None or knn_dists is None:
-        knn_indices, knn_dists, _ = nearest_neighbors(
-            X,
-            n_neighbors,
-            metric,
-            euclidean,
-            random_state,
-            verbose=verbose,
-        )
-
+        if gpu:
+            from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
+            knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
+            knn_cuml.fit(points)
+            knn_graph_comp = knn_cuml.kneighbors_graph(points)
+            knn_indices = knn_graph_comp.inds
+            knn_dists = knn_graph_comp.vals
+        else:
+            knn_indices, knn_dists, _ = nearest_neighbors(
+                X,
+                n_neighbors,
+                metric,
+                euclidean,
+                random_state,
+                verbose=verbose,
+            )
     knn_dists = knn_dists.astype(np.float32)
 
+    if not gpu:
     # ANDREW - t-SNE does NOT use rhos in its implementation
-    sigmas, rhos = smooth_knn_dist(
-        knn_dists,
-        float(n_neighbors),
-        local_connectivity=float(local_connectivity),
-        pseudo_distance=pseudo_distance,
-    )
+        cpu_sigmas, cpu_rhos = smooth_knn_dist(
+            knn_dists,
+            float(n_neighbors),
+            local_connectivity=float(local_connectivity),
+            pseudo_distance=pseudo_distance,
+        )
 
-    rows, cols, vals, dists = compute_membership_strengths(
-        knn_indices,
-        knn_dists,
-        sigmas,
-        rhos,
-        return_dists,
-        pseudo_distance=pseudo_distance,
-    )
+        cpu_rows, cpu_cols, cpu_vals, cpu_dists = compute_membership_strengths(
+            knn_indices,
+            knn_dists,
+            cpu_sigmas,
+            cpu_rhos,
+            return_dists,
+            pseudo_distance=pseudo_distance,
+        )
+    else:
+        from graph_weights_build import graph_weights
+        n_points = int(X.shape[0])
+        sigmas = np.zeros([n_points], dtype=np.float32, order='c')
+        rhos = np.zeros([n_points], dtype=np.float32, order='c')
+        rows = np.zeros([n_points * n_neighbors], dtype=np.int32, order='c')
+        cols = np.zeros([n_points * n_neighbors], dtype=np.int32, order='c')
+        vals = np.zeros([n_points * n_neighbors], dtype=np.float32, order='c')
+        dists = np.zeros([n_points * n_neighbors], dtype=np.float32, order='c')
+        graph_weights(
+            sigmas,
+            rhos,
+            rows,
+            cols,
+            vals,
+            dists,
+            knn_indices.astype(np.int32),
+            knn_dists,
+            int(n_neighbors),
+            int(return_dists),
+            float(local_connectivity),
+            int(pseudo_distance)
+        )
 
     result = scipy.sparse.coo_matrix(
         (vals, (rows, cols)), shape=(X.shape[0], X.shape[0])
@@ -491,18 +522,16 @@ def fuzzy_simplicial_set(
 
     if return_dists is None:
         return result, sigmas, rhos
+    if return_dists:
+        dmat = scipy.sparse.coo_matrix(
+            (dists, (rows, cols)), shape=(X.shape[0], X.shape[0])
+        )
+
+        dists = dmat.maximum(dmat.transpose()).todok()
     else:
-        if return_dists:
-            dmat = scipy.sparse.coo_matrix(
-                (dists, (rows, cols)), shape=(X.shape[0], X.shape[0])
-            )
+        dists = None
 
-            dists = dmat.maximum(dmat.transpose()).todok()
-        else:
-            dists = None
-
-        return result, sigmas, rhos, dists
-
+    return result, sigmas, rhos, dists
 
 def make_epochs_per_sample(weights, n_epochs):
     """Given a set of weights and number of epochs generate the number of
@@ -551,30 +580,30 @@ def standardize_neighbors(graph):
     )
 
 def simplicial_set_embedding(
-    optimize_method,
-    normalized,
-    euclidean,
-    sym_attraction,
-    frob,
-    numba,
-    gpu,
-    num_threads,
-    amplify_grads,
-    data,
-    graph,
-    n_components,
-    initial_lr,
-    a,
-    b,
-    negative_sample_rate,
-    n_epochs,
-    random_init,
-    random_state,
-    metric,
-    output_metric=dist.named_distances_with_gradients["euclidean"],
-    euclidean_output=True,
-    parallel=False,
-    verbose=False,
+        optimize_method,
+        normalized,
+        euclidean,
+        sym_attraction,
+        frob,
+        numba,
+        gpu,
+        num_threads,
+        amplify_grads,
+        data,
+        graph,
+        n_components,
+        initial_lr,
+        a,
+        b,
+        negative_sample_rate,
+        n_epochs,
+        random_init,
+        random_state,
+        metric,
+        output_metric=dist.named_distances_with_gradients["euclidean"],
+        euclidean_output=True,
+        parallel=False,
+        verbose=False,
 ):
     """Perform a fuzzy simplicial set embedding, using a specified
     initialisation method and then minimizing the fuzzy set cross entropy
@@ -705,9 +734,9 @@ def simplicial_set_embedding(
 
     # ANDREW - renormalize initial embedding to be in range [0, 10]
     embedding = (
-        10.0
-        * (embedding - np.min(embedding, 0))
-        / (np.max(embedding, 0) - np.min(embedding, 0))
+            10.0
+            * (embedding - np.min(embedding, 0))
+            / (np.max(embedding, 0) - np.min(embedding, 0))
     ).astype(np.float32, order="C")
 
     rng_state = random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
@@ -745,7 +774,6 @@ def simplicial_set_embedding(
 
     return embedding, opt_time
 
-
 def _optimize_layout_euclidean(
         optimize_method,
         normalized,
@@ -772,7 +800,7 @@ def _optimize_layout_euclidean(
         negative_sample_rate,
         parallel=False,
         verbose=True,
-    ):
+):
     weights = weights.astype(np.float32)
     args = {
         'optimize_method': optimize_method,
@@ -827,7 +855,6 @@ def _optimize_layout_euclidean(
         print('Optimization took {:.3f} seconds'.format(opt_time))
     return embedding, opt_time
 
-
 @numba.njit()
 def init_transform(indices, weights, embedding):
     """Given indices and weights and an original embeddings
@@ -874,7 +901,6 @@ def init_update(current_init, n_original_samples, indices):
 
     return
 
-
 def find_ab_params(spread, min_dist):
     """Fit a, b params for the differentiable curve used in lower
     dimensional fuzzy simplicial complex construction. We want the
@@ -891,7 +917,6 @@ def find_ab_params(spread, min_dist):
     yv[xv >= min_dist] = np.exp(-(xv[xv >= min_dist] - min_dist) / spread)
     params, covar = curve_fit(curve, xv, yv)
     return params[0], params[1]
-
 
 class UniformUmap(BaseEstimator):
     """Uniform Manifold Approximation and Projection
@@ -1022,42 +1047,42 @@ class UniformUmap(BaseEstimator):
     """
 
     def __init__(
-        self,
-        n_neighbors=15,
-        n_components=2,
-        # FIXME - we don't actually use this
-        metric="euclidean",
-        output_metric="euclidean",
-        n_epochs=None,
-        learning_rate=1.0,
-        random_init=False,
-        pseudo_distance=True,
-        tsne_symmetrization=False,
-        optimize_method='umap_sampling',
-        normalized=0,
-        euclidean=True,
-        sym_attraction=True,
-        frob=False,
-        numba=False,
-        gpu=False,
-        amplify_grads=False,
-        min_dist=0.1,
-        spread=1.0,
-        low_memory=True,
-        num_threads=-1,
-        local_connectivity=1.0,
-        negative_sample_rate=5,
-        transform_queue_size=4.0,
-        a=None,
-        b=None,
-        random_state=None,
-        target_n_neighbors=-1,
-        target_metric="categorical",
-        target_weight=0.5,
-        transform_seed=42,
-        force_approximation_algorithm=False,
-        verbose=False,
-        unique=False,
+            self,
+            n_neighbors=15,
+            n_components=2,
+            # FIXME - we don't actually use this
+            metric="euclidean",
+            output_metric="euclidean",
+            n_epochs=None,
+            learning_rate=1.0,
+            random_init=False,
+            pseudo_distance=True,
+            tsne_symmetrization=False,
+            optimize_method='umap_sampling',
+            normalized=0,
+            euclidean=True,
+            sym_attraction=True,
+            frob=False,
+            numba=False,
+            gpu=False,
+            amplify_grads=False,
+            min_dist=0.1,
+            spread=1.0,
+            low_memory=True,
+            num_threads=-1,
+            local_connectivity=1.0,
+            negative_sample_rate=5,
+            transform_queue_size=4.0,
+            a=None,
+            b=None,
+            random_state=None,
+            target_n_neighbors=-1,
+            target_metric="categorical",
+            target_weight=0.5,
+            transform_seed=42,
+            force_approximation_algorithm=False,
+            verbose=False,
+            unique=False,
     ):
         self.n_neighbors = n_neighbors
         self.metric = metric
@@ -1132,7 +1157,7 @@ class UniformUmap(BaseEstimator):
         if self.n_components < 1:
             raise ValueError("n_components must be greater than 0")
         if self.n_epochs is not None and (
-            self.n_epochs < 0 or not isinstance(self.n_epochs, int)
+                self.n_epochs < 0 or not isinstance(self.n_epochs, int)
         ):
             raise ValueError("n_epochs must be a nonnegative integer")
         # check sparsity of data upfront to set proper _input_distance_func &
@@ -1182,7 +1207,6 @@ class UniformUmap(BaseEstimator):
 
         if self.num_threads < -1 or self.num_threads == 0:
             raise ValueError("num_threads must be a postive integer, or -1 (for all cores)")
-
 
     def fit(self, X):
         """Fit X into an embedded space.
@@ -1287,6 +1311,7 @@ class UniformUmap(BaseEstimator):
                 pseudo_distance=self.pseudo_distance,
                 euclidean=self.euclidean,
                 tsne_symmetrization=self.tsne_symmetrization,
+                gpu=self.gpu,
             )
             # Report the number of vertices with degree 0 in our our umap.graph_
             # This ensures that they were properly disconnected.
@@ -1326,6 +1351,7 @@ class UniformUmap(BaseEstimator):
                 pseudo_distance=self.pseudo_distance,
                 euclidean=self.euclidean,
                 tsne_symmetrization=self.tsne_symmetrization,
+                gpu=self.gpu,
             )
             # Report the number of vertices with degree 0 in our our umap.graph_
             # This ensures that they were properly disconnected.
@@ -1338,21 +1364,25 @@ class UniformUmap(BaseEstimator):
             # Standard case
 
             # ANDREW - this calls NN-descent on the input dataset X
-            (
-                self._knn_indices,
-                self._knn_dists,
-                self._knn_search_index,
-            ) = nearest_neighbors(
-                X[index],
-                self._n_neighbors,
-                self.metric,
-                self.euclidean,
-                random_state,
-                self.low_memory,
-                use_pynndescent=True,
-                num_threads=self.num_threads,
-                verbose=self.verbose,
-            )
+            if self.gpu:
+                from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
+                knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
+                knn_cuml.fit(X[index])
+                knn_graph_comp = knn_cuml.kneighbors_graph(X)
+                self._knn_indices = np.reshape(knn_graph_comp.indices, [X.shape[0], self._n_neighbors])
+                self._knn_dists = np.reshape(knn_graph_comp.data, [X.shape[0], self._n_neighbors])
+            else:
+                self._knn_indices, self._knn_dists, self._knn_search_index = nearest_neighbors(
+                    X[index],
+                    self._n_neighbors,
+                    self.metric,
+                    self.euclidean,
+                    random_state,
+                    self.low_memory,
+                    use_pynndescent=True,
+                    num_threads=self.num_threads,
+                    verbose=True,
+                )
 
             (
                 self.graph_,
@@ -1371,6 +1401,7 @@ class UniformUmap(BaseEstimator):
                 pseudo_distance=self.pseudo_distance,
                 euclidean=self.euclidean,
                 tsne_symmetrization=self.tsne_symmetrization,
+                gpu=self.gpu,
             )
             # Report the number of vertices with degree 0 in our our umap.graph_
             # This ensures that they were properly disconnected.
