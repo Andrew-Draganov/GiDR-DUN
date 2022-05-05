@@ -15,7 +15,15 @@ def get_args():
     )
     parser.add_argument(
         '--dr-algorithm',
-        choices=['uniform_umap', 'original_umap', 'original_tsne', 'pca', 'kernel_pca'],
+        choices=[
+            'uniform_umap',
+            'original_umap',
+            'original_tsne',
+            'pca',
+            'kernel_pca',
+            'rapids_umap',
+            'rapids_tsne'
+        ],
         default='uniform_umap',
         help='Which algorithm to use for performing dim reduction'
     )

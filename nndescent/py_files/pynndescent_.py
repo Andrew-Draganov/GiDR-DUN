@@ -11,9 +11,9 @@ from sklearn.preprocessing import normalize
 
 import heapq
 
-import nndescent.distances as pynnd_dist
+import nndescent.py_files.distances as pynnd_dist
 
-from pynndescent.utils import (
+from nndescent.py_files.utils import (
     tau_rand_int,
     tau_rand,
     make_heap,
@@ -29,7 +29,7 @@ from pynndescent.utils import (
     initalize_heap_from_graph_indices,
 )
 
-from pynndescent.rp_trees import (
+from nndescent.py_files.rp_trees import (
     make_forest,
     rptree_leaf_array,
     FlatTree,

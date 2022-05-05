@@ -1,5 +1,6 @@
 import os, csv
 import numpy as np
+import pandas as pd
 import os
 from tqdm import tqdm
 from sklearn.datasets import make_swiss_roll
@@ -49,13 +50,13 @@ def get_dataset(data_name, num_points, normalize=True):
         points, _ = make_swiss_roll(n_samples=num_samples, noise=0.01)
         labels = np.arange(num_samples)
     elif data_name == 'google_news':
-        # To run this dataset, download https://data.world/jaredfern/googlenews-reduced-200-d
+        # To run this dataset, download the dataset from https://data.world/jaredfern/googlenews-reduced-200-d/
         #   and place it into the directory 'data'
         file = open(os.path.join('data', 'gnews_mod.csv'), 'r')
         reader = csv.reader(file)
+        num_points = min(num_points, 350000)
         if num_points < 0:
             num_points = 350000
-        num_points = min(num_points, 350000)
         points = np.zeros([num_points, 200])
         for i, line in tqdm(enumerate(reader), total=num_points):
             # First line is column descriptions

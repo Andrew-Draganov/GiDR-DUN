@@ -32,8 +32,8 @@ from . import distances as dist
 from . import utils
 from . import spectral
 # from pynndescent import NNDescent
-from nndescent.pynndescent_ import NNDescent
-import nndescent.distances as pynnd_dist
+from nndescent.py_files.pynndescent_ import NNDescent
+import nndescent.py_files.distances as pynnd_dist
 
 locale.setlocale(locale.LC_NUMERIC, "C")
 
