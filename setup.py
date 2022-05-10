@@ -13,6 +13,7 @@ setup(
         'numpy==1.21',
         'numba',
         'pynndescent',
+        'torch',
         'sklearn',
         'scipy',
         # 'tensorflow',

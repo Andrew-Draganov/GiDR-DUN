@@ -55,6 +55,11 @@ def get_args():
         help='If true, runs optimization on the GPU. Requires that GPU setup has been performed.'
     )
     parser.add_argument(
+        '--torch',
+        action='store_true',
+        help='If true, run optimization in pytorch rather than cython/numba/cuda'
+    )
+    parser.add_argument(
         '--num-threads',
         type=int,
         default=-1,
@@ -66,8 +71,7 @@ def get_args():
         choices=[
             'umap',
             'tsne',
-            'uniform_umap',
-        ],
+            'uniform_umap', ],
         default='uniform_umap',
         help='Which embedding optimization algorithm to use'
     )
@@ -115,7 +119,7 @@ def get_args():
     parser.add_argument(
         '--neg-sample-rate',
         type=int,
-        default=1,
+        default=5,
         help='How many negative samples to use for each positive sample'
     )
     parser.add_argument(
@@ -153,4 +157,4 @@ if __name__ == '__main__':
     print('Optimization took {:.3f} seconds'.format(opt_time))
     print('Total time took {:.3f} seconds'.format(total_time))
 
-    make_plot(embedding, labels, show_plot=True)
+    make_plot(embedding, labels, show_plot=True, save_path='test_image.png')

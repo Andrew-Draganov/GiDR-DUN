@@ -52,8 +52,7 @@ ctypedef np.int32_t DTYPE_INT
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef void gather_gradients(
-    float *local_Z,
+cdef float gather_gradients(
     float *attr_grads,
     float *rep_grads,
     int[:] head,
@@ -83,9 +82,9 @@ cdef void gather_gradients(
         float *y1
         float *y2
         float *rep_func_outputs
+        float Z = 0
 
     with parallel(num_threads=num_threads):
-        local_Z[0] = 0
         y1 = <float*> malloc(sizeof(float) * dim)
         y2 = <float*> malloc(sizeof(float) * dim)
         rep_func_outputs = <float*> malloc(sizeof(float) * 2)
@@ -143,7 +142,7 @@ cdef void gather_gradients(
                     average_weight,
                 )
                 rep_force = rep_func_outputs[0]
-                local_Z[0] += rep_func_outputs[1]
+                Z += rep_func_outputs[1]
 
                 for d in range(dim):
                     grad_d = rep_force * (y1[d] - y2[d])
@@ -152,6 +151,8 @@ cdef void gather_gradients(
         free(rep_func_outputs)
         free(y1)
         free(y2)
+
+    return Z
 
 
 @cython.boundscheck(False)
@@ -185,13 +186,11 @@ cdef void _uniform_umap_epoch(
         float *attr_grads
         float *rep_grads
         float *all_grads
-        float *local_Z
 
     cdef int n_edges = int(head.shape[0])
     cdef float Z = 0
     cdef float average_weight = get_avg_weight(&weights[0], n_edges)
 
-    local_Z = <float*> malloc(sizeof(float))
     attr_grads = <float*> malloc(sizeof(float) * n_edges * dim)
     rep_grads = <float*> malloc(sizeof(float) * n_edges * dim)
     with nogil:
@@ -200,9 +199,15 @@ cdef void _uniform_umap_epoch(
                 attr_grads[v * dim + d] = 0
                 rep_grads[v * dim + d] = 0
 
+    # Things that do NOT cause the slowdown on Freya/Odin
+    #   - Collecting Z outside of gather_gradients function
+    #   - parallel for loop processing of head_embedding updates
+    #   - making the attr_grads and rep_grads thread-local inside gather_gradients
+    #     and adding them up outside the threads
+
+
     with nogil:
-        gather_gradients(
-            local_Z,
+        Z += gather_gradients(
             attr_grads,
             rep_grads,
             head,
@@ -225,8 +230,6 @@ cdef void _uniform_umap_epoch(
             b,
             average_weight
         )
-        Z += local_Z[0]
-        free(local_Z)
         if not normalized:
             Z = 1
 
