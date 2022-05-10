@@ -461,6 +461,7 @@ def fuzzy_simplicial_set(
             )
     knn_dists = knn_dists.astype(np.float32)
 
+    print(1, "{:04f}".format(time.time()))
     if not gpu:
     # ANDREW - t-SNE does NOT use rhos in its implementation
         sigmas, rhos = smooth_knn_dist(
@@ -502,11 +503,13 @@ def fuzzy_simplicial_set(
             int(pseudo_distance)
         )
 
+    print(2, "{:04f}".format(time.time()))
     result = scipy.sparse.coo_matrix(
         (vals, (rows, cols)), shape=(X.shape[0], X.shape[0])
     )
     result.eliminate_zeros()
 
+    print(3, "{:04f}".format(time.time()))
     # UMAP symmetrization:
     # Symmetrized = A + A^T - pointwise_mul(A, A^T)
     # TSNE symmetrization:
@@ -520,6 +523,7 @@ def fuzzy_simplicial_set(
 
     result.eliminate_zeros()
 
+    print(4, "{:04f}".format(time.time()))
     if return_dists is None:
         return result, sigmas, rhos
     if return_dists:
@@ -684,6 +688,7 @@ def simplicial_set_embedding(
     graph.sum_duplicates()
     n_vertices = graph.shape[1]
 
+    print(5, "{:04f}".format(time.time()))
     start = time.time()
     # For smaller datasets we can use more epochs
     if graph.shape[0] <= 10000:
@@ -701,28 +706,30 @@ def simplicial_set_embedding(
 
     graph.eliminate_zeros()
 
-    if random_init:
-        embedding = random_state.multivariate_normal(
-            mean=np.zeros(n_components), cov=np.eye(n_components), size=(graph.shape[0])
-        ).astype(np.float32)
-    else:
-        # We add a little noise to avoid local minima for optimization to come
-        initialisation = spectral.spectral_layout(
-            data,
-            graph,
-            n_components,
-            random_state,
-            metric=metric,
-        )
-        expansion = 10.0 / np.abs(initialisation).max()
-        embedding = (initialisation * expansion).astype(
-            np.float32
-        ) + random_state.normal(
-            scale=0.0001, size=[graph.shape[0], n_components]
-        ).astype(
-            np.float32
-        )
+    print(6, "{:04f}".format(time.time()))
+    # if random_init:
+    embedding = random_state.multivariate_normal(
+        mean=np.zeros(n_components), cov=np.eye(n_components), size=(graph.shape[0])
+    ).astype(np.float32)
+    # else:
+    #     # We add a little noise to avoid local minima for optimization to come
+    #     initialisation = spectral.spectral_layout(
+    #         data,
+    #         graph,
+    #         n_components,
+    #         random_state,
+    #         metric=metric,
+    #     )
+    #     expansion = 10.0 / np.abs(initialisation).max()
+    #     embedding = (initialisation * expansion).astype(
+    #         np.float32
+    #     ) + random_state.normal(
+    #         scale=0.0001, size=[graph.shape[0], n_components]
+    #     ).astype(
+    #         np.float32
+    #     )
 
+    print(7, "{:04f}".format(time.time()))
     # ANDREW - head and tail here represent the indices of nodes that have edges in high-dim
     #        - So for each edge e_{ij}, head is low-dim embedding of point i and tail
     #          is low-dim embedding of point j
@@ -746,6 +753,7 @@ def simplicial_set_embedding(
         print('optimizing layout...')
     # FIXME FIXME -- need to make sure that all numpy matrices are in
     #   'c' format!
+    print(8, "{:04f}".format(time.time()))
     embedding, opt_time = _optimize_layout_euclidean(
         optimize_method,
         normalized,
@@ -774,6 +782,7 @@ def simplicial_set_embedding(
         verbose
     )
 
+    print(9, "{:04f}".format(time.time()))
     return embedding, opt_time
 
 def _optimize_layout_euclidean(
@@ -1367,22 +1376,30 @@ class UniformUmap(BaseEstimator):
             vertices_disconnected = np.sum(
                 np.array(self.graph_.sum(axis=1)).flatten() == 0
             )
+
         else:
             self._small_data = False
+            print(0, "{:04f}".format(time.time()))
             if self.gpu:
-                import faiss
-                # print([mn for mn in dir(faiss) if callable(getattr(faiss, mn))])
-                # quit()
-                cfg = faiss.GpuIndexFlatConfig()
-                cfg.useFloat16 = True
-
-                faiss_index = faiss.GpuIndexFlatL2(
-                    faiss.StandardGpuResources(),
-                    X.shape[1],
-                    cfg
-                )
-                faiss_index.add(X[index])
-                self._knn_dists, self._knn_indices = faiss_index.search(X, self.n_neighbors)
+            #     import faiss
+            #     # print([mn for mn in dir(faiss) if callable(getattr(faiss, mn))])
+            #     # quit()
+            #     cfg = faiss.GpuIndexFlatConfig()
+            #     cfg.useFloat16 = True
+            #
+            #     faiss_index = faiss.GpuIndexFlatL2(
+            #         faiss.StandardGpuResources(),
+            #         X.shape[1],
+            #         cfg
+            #     )
+            #     faiss_index.add(X[index])
+            #     self._knn_dists, self._knn_indices = faiss_index.search(X, self.n_neighbors)
+                from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
+                knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
+                knn_cuml.fit(X[index])
+                knn_graph_comp = knn_cuml.kneighbors_graph(X)
+                self._knn_indices = np.reshape(knn_graph_comp.indices, [X.shape[0], self._n_neighbors])
+                self._knn_dists = np.reshape(knn_graph_comp.data, [X.shape[0], self._n_neighbors])
             else:
                 self._knn_indices, self._knn_dists, self._knn_search_index = nearest_neighbors(
                     X[index],

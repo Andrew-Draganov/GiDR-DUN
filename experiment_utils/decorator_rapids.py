@@ -1,5 +1,5 @@
-# from cuml.manifold.umap import UMAP as cumlUMAP
-# from cuml.manifold import TSNE as cumlTSNE
+from cuml.manifold.umap import UMAP as cumlUMAP
+from cuml.manifold import TSNE as cumlTSNE
 import time
 import os
 
