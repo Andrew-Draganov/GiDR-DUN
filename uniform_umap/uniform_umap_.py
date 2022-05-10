@@ -463,18 +463,18 @@ def fuzzy_simplicial_set(
 
     if not gpu:
     # ANDREW - t-SNE does NOT use rhos in its implementation
-        cpu_sigmas, cpu_rhos = smooth_knn_dist(
+        sigmas, rhos = smooth_knn_dist(
             knn_dists,
             float(n_neighbors),
             local_connectivity=float(local_connectivity),
             pseudo_distance=pseudo_distance,
         )
 
-        cpu_rows, cpu_cols, cpu_vals, cpu_dists = compute_membership_strengths(
+        rows, cols, vals, dists = compute_membership_strengths(
             knn_indices,
             knn_dists,
-            cpu_sigmas,
-            cpu_rhos,
+            sigmas,
+            rhos,
             return_dists,
             pseudo_distance=pseudo_distance,
         )
@@ -586,6 +586,7 @@ def simplicial_set_embedding(
         sym_attraction,
         frob,
         numba,
+        torch,
         gpu,
         num_threads,
         amplify_grads,
@@ -752,6 +753,7 @@ def simplicial_set_embedding(
         sym_attraction,
         frob,
         numba,
+        torch,
         gpu,
         num_threads,
         amplify_grads,
@@ -781,6 +783,7 @@ def _optimize_layout_euclidean(
         sym_attraction,
         frob,
         numba,
+        torch,
         gpu,
         num_threads,
         amplify_grads,
@@ -831,6 +834,10 @@ def _optimize_layout_euclidean(
         if optimize_method != 'uniform_umap':
             raise ValueError('GPU optimization can only be performed in the uniform umap setting')
         from optimize_gpu import gpu_opt_wrapper as optimizer
+    elif torch:
+        if optimize_method != 'uniform_umap':
+            raise ValueError('PyTorch optimization can only be performed in the uniform umap setting')
+        from .pytorch_optimize import torch_optimize_layout as optimizer
     elif numba:
         if optimize_method == 'umap':
             from .numba_optimizers.umap import optimize_layout_euclidean as optimizer
@@ -1064,6 +1071,7 @@ class UniformUmap(BaseEstimator):
             sym_attraction=True,
             frob=False,
             numba=False,
+            torch=False,
             gpu=False,
             amplify_grads=False,
             min_dist=0.1,
@@ -1102,6 +1110,7 @@ class UniformUmap(BaseEstimator):
         self.sym_attraction = sym_attraction
         self.frob = frob
         self.numba = numba
+        self.torch = torch
         self.gpu = gpu
         self.euclidean = euclidean
         self.amplify_grads = amplify_grads
@@ -1359,18 +1368,21 @@ class UniformUmap(BaseEstimator):
                 np.array(self.graph_.sum(axis=1)).flatten() == 0
             )
         else:
-            # Standard case
             self._small_data = False
-            # Standard case
-
-            # ANDREW - this calls NN-descent on the input dataset X
             if self.gpu:
-                from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
-                knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
-                knn_cuml.fit(X[index])
-                knn_graph_comp = knn_cuml.kneighbors_graph(X)
-                self._knn_indices = np.reshape(knn_graph_comp.indices, [X.shape[0], self._n_neighbors])
-                self._knn_dists = np.reshape(knn_graph_comp.data, [X.shape[0], self._n_neighbors])
+                import faiss
+                # print([mn for mn in dir(faiss) if callable(getattr(faiss, mn))])
+                # quit()
+                cfg = faiss.GpuIndexFlatConfig()
+                cfg.useFloat16 = True
+
+                faiss_index = faiss.GpuIndexFlatL2(
+                    faiss.StandardGpuResources(),
+                    X.shape[1],
+                    cfg
+                )
+                faiss_index.add(X[index])
+                self._knn_dists, self._knn_indices = faiss_index.search(X, self.n_neighbors)
             else:
                 self._knn_indices, self._knn_dists, self._knn_search_index = nearest_neighbors(
                     X[index],
@@ -1453,6 +1465,7 @@ class UniformUmap(BaseEstimator):
             self.sym_attraction,
             self.frob,
             self.numba,
+            self.torch,
             self.gpu,
             self.num_threads,
             self.amplify_grads,
