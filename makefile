@@ -79,7 +79,9 @@ run_analysis: install_cython_env
 	python3 experiment_utils/read_metrics.py
 
 run_gpu_analysis: install_cuda_code
-	python3 run_gpu_analysis.py
+	python3 run_gpu_analysis.py --analysis-type runtimes
+	python3 run_gpu_analysis.py --analysis-type data_size_sweep
+	python3 run_gpu_analysis.py --analysis-type dim_size_sweep
 	python3 experiment_utils/read_gpu_metrics.py
 
 clean:

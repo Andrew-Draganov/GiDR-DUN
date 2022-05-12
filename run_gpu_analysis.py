@@ -1,3 +1,4 @@
+import argparse
 import os
 import copy
 import time
@@ -300,7 +301,10 @@ def data_size_timings():
         8000,
         16000,
         32000,
-        64000
+        64000,
+        128000,
+        256000,
+        512000
     ]
 
     experiment_params = {
@@ -380,53 +384,65 @@ def data_size_timings():
             for experiment in experiment_params:
                 experiment_path = os.path.join(num_points_path, experiment)
                 if not os.path.isdir(experiment_path):
-                    # try:
-                    os.makedirs(experiment_path, exist_ok=True)
-                    print(experiment_path)
-
-                    instance_params = copy.copy(experiment_params[experiment])
-                    instance_params['amplify_grads'] = instance_params['normalized'] # normalized and amplify_grads go together
-                    if dataset == 'google_news':
-                        instance_params['random_init'] = True
-                        instance_params['angular'] = True
-                    instance_params['a'] = 1
-                    instance_params['b'] = 1
-
-                    algorithm_str = 'gidr_dun'
-                    if 'rapids' in experiment:
-                        algorithm_str = experiment
-                        if dataset == 'coil':
-                            continue
-
-                    dr = get_algorithm(algorithm_str, instance_params, verbose=False)
-
-                    start = time.time()
-                    embedding = dr.fit_transform(points)
-                    end = time.time()
-                    total_time = end - start
                     try:
-                        opt_time = embedding.opt_time
-                    except AttributeError:
-                        opt_time = -1
+                        os.makedirs(experiment_path, exist_ok=True)
+                        print(experiment_path)
 
-                    times = {
-                        'opt_time': opt_time,
-                        'total_time': total_time
-                    }
-                    np.save(os.path.join(experiment_path, "times.npy"), times)
-                    # except Exception as E:
-                    #     print('Could not run analysis for %s data_size experiment on %s dataset' % (experiment, dataset))
-                    #     print('The following exception was raised:')
-                    #     print(str(E))
-                    #     print('continuing')
-                    #     print('.')
-                    #     print('.')
-                    #     print('.')
-                    #     continue
+                        instance_params = copy.copy(experiment_params[experiment])
+                        instance_params['amplify_grads'] = instance_params['normalized'] # normalized and amplify_grads go together
+                        if dataset == 'google_news':
+                            instance_params['random_init'] = True
+                            instance_params['angular'] = True
+                        instance_params['a'] = 1
+                        instance_params['b'] = 1
+
+                        algorithm_str = 'gidr_dun'
+                        if 'rapids' in experiment:
+                            algorithm_str = experiment
+                            if dataset == 'coil':
+                                continue
+
+                        dr = get_algorithm(algorithm_str, instance_params, verbose=False)
+
+                        start = time.time()
+                        embedding = dr.fit_transform(points)
+                        end = time.time()
+                        total_time = end - start
+                        try:
+                            opt_time = embedding.opt_time
+                        except AttributeError:
+                            opt_time = -1
+
+                        times = {
+                            'opt_time': opt_time,
+                            'total_time': total_time
+                        }
+                        np.save(os.path.join(experiment_path, "times.npy"), times)
+                    except Exception as E:
+                        print('Could not run analysis for %s data_size experiment on %s dataset' % (experiment, dataset))
+                        print('The following exception was raised:')
+                        print(str(E))
+                        print('continuing')
+                        print('.')
+                        print('.')
+                        print('.')
+                        continue
 
 
 
 if __name__ == '__main__':
-    # gpu_analysis()
-    # data_size_timings()
-    dim_timings()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--analysis-type',
+        choices=['runtimes', 'data_size_sweep', 'dim_size_sweep'],
+        required=True,
+    )
+    args = parser.parse_args()
+    if args.analysis_type == 'runtimes':
+        gpu_analysis()
+    elif args.analysis_type == 'data_size_sweep':
+        data_size_timings()
+    elif args.analysis_type == 'dim_size_sweep':
+        dim_timings()
+    else:
+        raise ValueError('Unknown experiment type')
