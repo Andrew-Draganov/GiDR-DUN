@@ -73,8 +73,8 @@ def cpu_analysis():
             'num_threads': -1,
             'numba': False
         },
-        'uniform_umap': {
-            'optimize_method': 'uniform_umap',
+        'gidr_dun': {
+            'optimize_method': 'gidr_dun',
             'n_neighbors': 15,
             'random_init': False,
             'umap_metric': False,
@@ -90,8 +90,8 @@ def cpu_analysis():
             'num_threads': -1,
             'numba': False
         },
-        'uniform_umap_tsne': {
-            'optimize_method': 'uniform_umap',
+        'gidr_dun_tsne': {
+            'optimize_method': 'gidr_dun',
             'n_neighbors': 15,
             'random_init': False,
             'umap_metric': False,
@@ -167,7 +167,7 @@ def cpu_analysis():
                     instance_params['a'] = a
                     instance_params['b'] = b
 
-                    dr = get_algorithm('uniform_umap', instance_params, verbose=False)
+                    dr = get_algorithm('gidr_dun', instance_params, verbose=False)
 
                     start = time.time()
                     embedding = dr.fit_transform(points)
@@ -231,7 +231,7 @@ def gpu_analysis():
 
     experiment_params = {
         'recreate_tsne_gpu': {
-            'optimize_method': 'uniform_umap',
+            'optimize_method': 'gidr_dun',
             'n_neighbors': 15,
             'random_init': False,
             'umap_metric': False,
@@ -248,7 +248,7 @@ def gpu_analysis():
             'numba': False
         },
         'recreate_umap_gpu': {
-            'optimize_method': 'uniform_umap',
+            'optimize_method': 'gidr_dun',
             'n_neighbors': 15,
             'random_init': False,
             'umap_metric': False,
@@ -265,7 +265,7 @@ def gpu_analysis():
             'numba': False
         },
         'recreate_tsne_gpu_frob': {
-            'optimize_method': 'uniform_umap',
+            'optimize_method': 'gidr_dun',
             'n_neighbors': 15,
             'random_init': False,
             'umap_metric': False,
@@ -282,7 +282,7 @@ def gpu_analysis():
             'numba': False
         },
         'recreate_umap_gpu_frob': {
-            'optimize_method': 'uniform_umap',
+            'optimize_method': 'gidr_dun',
             'n_neighbors': 15,
             'random_init': False,
             'umap_metric': False,
@@ -337,7 +337,7 @@ def gpu_analysis():
 
                 instance_params['a'] = 1
                 instance_params['b'] = 1
-                dr = get_algorithm('uniform_umap', instance_params, verbose=False)
+                dr = get_algorithm('gidr_dun', instance_params, verbose=False)
 
                 start = time.time()
                 embedding = dr.fit_transform(points)
@@ -415,8 +415,8 @@ def data_size_timings():
             'num_threads': -1,
             'numba': False
         },
-        'uniform_umap': {
-            'optimize_method': 'uniform_umap',
+        'gidr_dun': {
+            'optimize_method': 'gidr_dun',
             'n_neighbors': 15,
             'random_init': False,
             'umap_metric': False,
@@ -432,8 +432,8 @@ def data_size_timings():
             'num_threads': -1,
             'numba': False
         },
-        # 'uniform_umap': {
-        #     'optimize_method': 'uniform_umap',
+        # 'gidr_dun': {
+        #     'optimize_method': 'gidr_dun',
         #     'n_neighbors': 15,
         #     'random_init': False,
         #     'umap_metric': False,
@@ -488,7 +488,7 @@ def data_size_timings():
 
                         instance_params['a'] = 1
                         instance_params['b'] = 1
-                        dr = get_algorithm('uniform_umap', instance_params, verbose=False)
+                        dr = get_algorithm('gidr_dun', instance_params, verbose=False)
 
                         start = time.time()
                         embedding = dr.fit_transform(points)

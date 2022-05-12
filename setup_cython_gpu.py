@@ -12,7 +12,7 @@ CUDA_PATH = '/usr/local/cuda-11/targets/x86_64-linux/include/'
 
 optimize_gpu = Extension(
     'optimize_gpu',
-    ['cython/cython_files/gpu_uniform_umap.pyx'],
+    ['cython/cython_files/gpu_gidr_dun.pyx'],
     libraries=['gpu_dim_reduction'],
     library_dirs=[
         'cython',

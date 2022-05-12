@@ -16,7 +16,7 @@ nndescent.egg-info/
 dist/
 gnews.csv.npy
 nndescent/py_files/__pycache__/
-cython/optimize.cpp
+cython/cython_files/*.cpp
 *.html
 *.c
 *.swp
@@ -24,6 +24,8 @@ cython/optimize.cpp
 */__pycache__
 data/
 Dimensionality_Reduction_Analysis.egg-info/
+cython_dim_reduction.egg-info/
+gidr_dun/numba_optimizers/__pycache__/
 umap/.DS_Store
 umap/Images
 build/

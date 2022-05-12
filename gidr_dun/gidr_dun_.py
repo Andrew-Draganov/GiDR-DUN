@@ -840,18 +840,19 @@ def _optimize_layout_euclidean(
     }
     start = time.time()
     if gpu:
-        if optimize_method != 'uniform_umap':
+        print(optimize_method)
+        if optimize_method != 'gidr_dun':
             raise ValueError('GPU optimization can only be performed in the uniform umap setting')
         from optimize_gpu import gpu_opt_wrapper as optimizer
     elif torch:
-        if optimize_method != 'uniform_umap':
+        if optimize_method != 'gidr_dun':
             raise ValueError('PyTorch optimization can only be performed in the uniform umap setting')
         from .pytorch_optimize import torch_optimize_layout as optimizer
     elif numba:
         if optimize_method == 'umap':
             from .numba_optimizers.umap import optimize_layout_euclidean as optimizer
-        elif optimize_method == 'uniform_umap':
-            from .numba_optimizers.uniform_umap import uniform_umap_numba_wrapper as optimizer
+        elif optimize_method == 'gidr_dun':
+            from .numba_optimizers.gidr_dun import gidr_dun_numba_wrapper as optimizer
         else:
             raise ValueError('Numba optimization only works for umap and uniform umap')
     else:
@@ -859,8 +860,8 @@ def _optimize_layout_euclidean(
             from umap_opt import umap_opt_wrapper as optimizer
         elif optimize_method == 'tsne':
             from tsne_opt import tsne_opt_wrapper as optimizer
-        elif optimize_method == 'uniform_umap':
-            from uniform_umap_opt import uniform_umap_opt_wrapper as optimizer
+        elif optimize_method == 'gidr_dun':
+            from gidr_dun_opt import gidr_dun_opt_wrapper as optimizer
         else:
             raise ValueError("Optimization method is unsupported at the current time")
     embedding = optimizer(**args)
@@ -1381,19 +1382,6 @@ class UniformUmap(BaseEstimator):
             self._small_data = False
             print(0, "{:04f}".format(time.time()))
             if self.gpu:
-            #     import faiss
-            #     # print([mn for mn in dir(faiss) if callable(getattr(faiss, mn))])
-            #     # quit()
-            #     cfg = faiss.GpuIndexFlatConfig()
-            #     cfg.useFloat16 = True
-            #
-            #     faiss_index = faiss.GpuIndexFlatL2(
-            #         faiss.StandardGpuResources(),
-            #         X.shape[1],
-            #         cfg
-            #     )
-            #     faiss_index.add(X[index])
-            #     self._knn_dists, self._knn_indices = faiss_index.search(X, self.n_neighbors)
                 from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
                 knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
                 knn_cuml.fit(X[index])

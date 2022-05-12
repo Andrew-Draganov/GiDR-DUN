@@ -38,9 +38,7 @@ class rapids_umap:
         end = time.time()
         if self.verbose:
             print('CUML UMAP took {:.3f} seconds'.format(end - start))
-
         self.opt_time = end - start
-
         return projection
 
 class rapids_tsne:
@@ -69,28 +67,11 @@ class rapids_tsne:
     def fit_transform(self, points):
         if self.verbose:
             print("making knn graph...")
-        t0 = time.time()
-        knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
-        knn_cuml.fit(points)
-        knn_graph_comp = knn_cuml.kneighbors_graph(points)
-        t1 = time.time()
-        if self.verbose:
-            print("knn graph took", t1 - t0)
-
-        if self.verbose:
             print('fitting...')
         start = time.time()
-        projection = self.dr.fit_transform(points, knn_graph=knn_graph_comp)
+        projection = self.dr.fit_transform(points)
         end = time.time()
         if self.verbose:
             print('CUML tsne took {:.3f} seconds'.format(end - start))
-
         self.opt_time = end - start
-
-        del knn_cuml
-        del knn_graph_comp
-        # del gdf
-
         return projection
-    
-

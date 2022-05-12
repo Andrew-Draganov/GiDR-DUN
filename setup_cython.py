@@ -19,9 +19,9 @@ import numpy
 # os.environ['CC']='/usr/local/Cellar/gcc/11.2.0_3/bin/gcc-11'
 # os.environ['CXX']='/usr/local/Cellar/gcc/11.2.0_3/bin/g++-11'
 
-uniform_umap_build = Extension(
-    'uniform_umap_opt',
-    ['cython/cython_files/uniform_umap.pyx'],
+gidr_dun_build = Extension(
+    'gidr_dun_opt',
+    ['cython/cython_files/gidr_dun.pyx'],
     language=['c'],
 
     extra_compile_args=['-fopenmp', '-O3', '-march=native', '-ffast-math'],
@@ -52,5 +52,5 @@ tsne_build = Extension(
 )
 CySetup(
     name='cython_dim_reduction',
-    ext_modules=cythonize([uniform_umap_build, umap_build, tsne_build])
+    ext_modules=cythonize([gidr_dun_build, umap_build, tsne_build])
 )

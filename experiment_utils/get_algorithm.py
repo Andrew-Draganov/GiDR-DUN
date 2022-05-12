@@ -1,4 +1,4 @@
-from uniform_umap.uniform_umap_ import UniformUmap
+from gidr_dun.gidr_dun_ import UniformUmap
 from sklearn.manifold import TSNE
 from umap import UMAP
 from sklearn.decomposition import PCA
@@ -16,7 +16,7 @@ def run_pymde(points):
     return embedding, total_time
 
 def get_algorithm(algorithm_str, params, verbose=True):
-    if 'uniform_umap' in algorithm_str:
+    if 'gidr_dun' in algorithm_str:
         dr = UniformUmap(
                 n_neighbors=params['n_neighbors'],
                 n_epochs=params['n_epochs'],

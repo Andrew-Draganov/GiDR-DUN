@@ -6,6 +6,8 @@ setup(
     description='A package for evaluating dimensionality reduction algorithms',
     author='Andrew Draganov',
     author_email='draganovandrew@cs.au.dk',
+    packages=['nndescent'],
+    package_dir={'nndescent': 'nndescent'},
     install_requires=[
         'cython',
         'matplotlib',
@@ -18,8 +20,7 @@ setup(
         'scipy',
         # 'tensorflow',
         'tqdm',
-        'tensorflow_datasets',
+        # 'tensorflow_datasets',
         'umap-learn',
     ],
 )
-# Note that on the Apple M1, numba will not work with python >= 3.10
