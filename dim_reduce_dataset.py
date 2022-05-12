@@ -120,7 +120,7 @@ def get_args():
         '--neg-sample-rate',
         type=int,
         default=5,
-        help='How many negative samples to use for each positive sample'
+        help='How many negative samples to use for each positive sample. Only applies for original UMAP'
     )
     parser.add_argument(
         '--n-epochs',

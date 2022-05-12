@@ -1,5 +1,3 @@
-from cuml.manifold.umap import UMAP as cumlUMAP
-from cuml.manifold import TSNE as cumlTSNE
 import time
 import os
 
@@ -15,6 +13,7 @@ class rapids_umap:
         random_state,
         verbose=True
     ):
+        from cuml.manifold.umap import UMAP as cumlUMAP
         self.dr = cumlUMAP(
             n_neighbors=n_neighbors,
             n_components=n_components,
@@ -39,20 +38,20 @@ class rapids_umap:
         if self.verbose:
             print('CUML UMAP took {:.3f} seconds'.format(end - start))
         self.opt_time = end - start
+        del self.dr
         return projection
 
 class rapids_tsne:
     def __init__(
         self,
         n_components,
-        n_epochs,
         random_state,
         n_neighbors,
         verbose=True
     ):
+        from cuml.manifold import TSNE as cumlTSNE
         self.dr = cumlTSNE(
             n_components=n_components,
-            n_iter=n_epochs,
             verbose=verbose,
             random_state=random_state,
             method = 'barnes_hut',
@@ -74,4 +73,5 @@ class rapids_tsne:
         if self.verbose:
             print('CUML tsne took {:.3f} seconds'.format(end - start))
         self.opt_time = end - start
+        del self.dr
         return projection

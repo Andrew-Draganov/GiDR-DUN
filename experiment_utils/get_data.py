@@ -1,12 +1,11 @@
 import os, csv
 import numpy as np
-import pandas as pd
 import os
 from tqdm import tqdm
 from sklearn.datasets import make_swiss_roll
 from mnist import MNIST
-#from tensorflow import keras as tfk
-#import tensorflow_datasets as tfds
+from tensorflow import keras as tfk
+import tensorflow_datasets as tfds
 
 def load_mnist():
     mnist_data_path = os.path.join('data', 'mnist')
@@ -36,7 +35,17 @@ def upsample_dataset(num_points, points, labels):
         
     return points, labels
 
-def get_dataset(data_name, num_points, normalize=True):
+def resample_dim(desired_dim, points):
+    dim = int(points.shape[1])
+    while dim < desired_dim:
+        points = np.concatenate([points, points], axis=-1)
+        dim = int(points.shape[1])
+    random_perm = np.random.permutation(np.arange(dim))
+    points = points[:, random_perm]
+    points = points[:, :desired_dim]
+    return points
+
+def get_dataset(data_name, num_points, normalize=True, desired_dim=-1):
     if data_name == 'mnist':
         points, labels = load_mnist()
     elif data_name == 'fashion_mnist':
@@ -50,13 +59,13 @@ def get_dataset(data_name, num_points, normalize=True):
         points, _ = make_swiss_roll(n_samples=num_samples, noise=0.01)
         labels = np.arange(num_samples)
     elif data_name == 'google_news':
-        # To run this dataset, download the dataset from https://data.world/jaredfern/googlenews-reduced-200-d/
+        # To run this dataset, download https://data.world/jaredfern/googlenews-reduced-200-d
         #   and place it into the directory 'data'
-        file = open(os.path.join('data', 'gnews_mod.csv'), 'r')
+        file = open(os.path.join('data', 'gnews_mod.csv'), 'r', encoding="utf-8")
         reader = csv.reader(file)
-        num_points = min(num_points, 350000)
         if num_points < 0:
             num_points = 350000
+        num_points = min(num_points, 350000)
         points = np.zeros([num_points, 200])
         for i, line in tqdm(enumerate(reader), total=num_points):
             # First line is column descriptions
@@ -80,8 +89,37 @@ def get_dataset(data_name, num_points, normalize=True):
         for i, element in enumerate(dataset):
             points[i] = element['image']
             labels[i] = element['object_id']
+    elif data_name == 'coil_100':
+            num_samples = 7200
+            dataset, _ = tfds.load(
+                'coil100',
+                split=['train'],
+                with_info=True
+            )
+            dataset = dataset[0].batch(1)
+            points = np.zeros([num_samples, 128, 128, 3])
+            labels = np.zeros([num_samples])
+            for i, element in enumerate(dataset):
+                points[i] = element['image']
+                labels[i] = element['object_id']
+    elif data_name == 'coil_20':
+        file = open(os.path.join('data', 'coil_20.csv'), 'r')
+        reader = csv.reader(file)
+        if num_points < 0:
+            num_points = 1440
+        num_points = min(num_points, 1440)
+        points = np.zeros([num_points,  128*128])
+        for i, line in tqdm(enumerate(reader), total=num_points):
+            if i > num_points:
+                break
+            for j, element in enumerate(line):
+                points[i, j] = float(element)
+        labels = np.ones([num_points])
     else:
         raise ValueError("Unsupported dataset")
+
+    if desired_dim > 0:
+        points = resample_dim(desired_dim, points)
 
     if num_points < 0:
         num_points = int(points.shape[0])

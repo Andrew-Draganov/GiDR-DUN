@@ -14,8 +14,10 @@ if [ $HAS_CONDA = True ]; then
         echo ">>> Found ${CONDA_ENV_NAME} environment in ${MY_ENV_DIR}. Skipping installation...";
     else
         echo ">>> Detected conda, but ${CONDA_ENV_NAME} is missing in ${ENV_DIR}. Installing ...";
+        echo ">>> (This will take a while)"
+        # FIXME -- this should run on user's preferred cuda
         conda clean -a
-        conda create -n GiDR_DUN \
+        conda create -n $CONDA_ENV_NAME \
             -c rapidsai \
             -c nvidia \
             -c conda-forge cuml=22.04 python=3.8 cudatoolkit=11.5;

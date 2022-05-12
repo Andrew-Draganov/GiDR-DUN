@@ -6,7 +6,6 @@ from libc.math cimport sqrt
 from libc.stdlib cimport rand
 from libc.stdlib cimport malloc, free
 from cython.parallel cimport prange, parallel
-
 from sklearn.neighbors._quad_tree cimport _QuadTree
 np.import_array()
 
@@ -158,7 +157,7 @@ cdef float gather_gradients(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef void _uniform_umap_epoch(
+cdef void _gidr_dun_epoch(
     int normalized,
     int angular,
     int sym_attraction,
@@ -253,7 +252,7 @@ cdef void _uniform_umap_epoch(
     free(rep_grads)
 
 
-cdef uniform_umap_optimize(
+cdef gidr_dun_optimize(
     int normalized,
     int angular,
     int sym_attraction,
@@ -289,7 +288,7 @@ cdef uniform_umap_optimize(
 
     for i_epoch in range(n_epochs):
         lr = get_lr(initial_lr, i_epoch, n_epochs, amplify_grads)
-        _uniform_umap_epoch(
+        _gidr_dun_epoch(
             normalized,
             angular,
             sym_attraction,
@@ -323,7 +322,7 @@ cdef uniform_umap_optimize(
 @cython.cdivision(True)
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def uniform_umap_opt_wrapper(
+def gidr_dun_opt_wrapper(
     int normalized,
     int angular,
     int sym_attraction,
@@ -357,7 +356,7 @@ def uniform_umap_opt_wrapper(
             weights[i] /= weight_sum
         initial_lr = n_vertices / 500
 
-    uniform_umap_optimize(
+    gidr_dun_optimize(
         normalized,
         angular,
         sym_attraction,

@@ -31,511 +31,13 @@ import numba
 from . import distances as dist
 from . import utils
 from . import spectral
-# from pynndescent import NNDescent
-from nndescent.py_files.pynndescent_ import NNDescent
-import nndescent.py_files.distances as pynnd_dist
+from . import graph_weights
 
 locale.setlocale(locale.LC_NUMERIC, "C")
 
 INT32_MIN = np.iinfo(np.int32).min + 1
 INT32_MAX = np.iinfo(np.int32).max - 1
 
-SMOOTH_K_TOLERANCE = 1e-5
-MIN_K_DIST_SCALE = 1e-3
-NPY_INFINITY = np.inf
-
-
-@numba.njit(
-    locals={
-        "psum": numba.types.float32,
-        "lo": numba.types.float32,
-        "mid": numba.types.float32,
-        "hi": numba.types.float32,
-    },
-    fastmath=True,
-)  # benchmarking `parallel=True` shows it to *decrease* performance
-def smooth_knn_dist(
-        distances,
-        k,
-        n_iter=64,
-        local_connectivity=1.0,
-        bandwidth=1.0,
-        pseudo_distance=True,
-):
-    """Compute a continuous version of the distance to the kth nearest
-    neighbor. That is, this is similar to knn-distance but allows continuous
-    k values rather than requiring an integral k. In essence we are simply
-    computing the distance such that the cardinality of fuzzy set we generate
-    is k.
-
-    Parameters
-    ----------
-    distances: array of shape (n_samples, n_neighbors)
-        Distances to nearest neighbors for each samples. Each row should be a
-        sorted list of distances to a given samples nearest neighbors.
-
-    k: float
-        The number of nearest neighbors to approximate for.
-
-    n_iter: int (optional, default 64)
-        We need to binary search for the correct distance value. This is the
-        max number of iterations to use in such a search.
-
-    local_connectivity: int (optional, default 1)
-        The local connectivity required -- i.e. the number of nearest
-        neighbors that should be assumed to be connected at a local level.
-        The higher this value the more connected the manifold becomes
-        locally. In practice this should be not more than the local intrinsic
-        dimension of the manifold.
-
-    bandwidth: float (optional, default 1)
-        The target bandwidth of the kernel, larger values will produce
-        larger return values.
-
-    Returns
-    -------
-    knn_dist: array of shape (n_samples,)
-        The distance to kth nearest neighbor, as suitably approximated.
-
-    nn_dist: array of shape (n_samples,)
-        The distance to the 1st nearest neighbor for each point.
-    """
-    target = np.log2(k) * bandwidth
-    rho = np.zeros(distances.shape[0], dtype=np.float32)
-    sigmas = np.zeros(distances.shape[0], dtype=np.float32)
-
-    mean_distances = np.mean(distances)
-
-    for i in range(distances.shape[0]):
-        # ANDREW - Calculate rho values
-        ith_distances = distances[i]
-        non_zero_dists = ith_distances[ith_distances > 0.0]
-        if non_zero_dists.shape[0] >= local_connectivity:
-            index = int(np.floor(local_connectivity))
-            interpolation = local_connectivity - index
-            if index > 0:
-                rho[i] = non_zero_dists[index - 1]
-                if interpolation > SMOOTH_K_TOLERANCE:
-                    rho[i] += interpolation * (
-                            non_zero_dists[index] - non_zero_dists[index - 1]
-                    )
-            else:
-                rho[i] = interpolation * non_zero_dists[0]
-        elif non_zero_dists.shape[0] > 0:
-            rho[i] = np.max(non_zero_dists)
-
-        lo = 0.0
-        hi = NPY_INFINITY
-        mid = 1.0
-        # ANDREW - Calculating sigma values
-        for n in range(n_iter):
-            psum = 0.0
-            for j in range(1, distances.shape[1]):
-                # ANDREW - when adding option for turning UMAP pseudo distance on/off,
-                #   an equivalent change needs to occur here!!
-                # FIXME - this if-statement broke the nndescent_umap_test
-                #       - it appears that it simply rotates the images around?
-                if pseudo_distance:
-                    d = distances[i, j] - rho[i]
-                else:
-                    d = distances[i, j]
-
-                if d > 0:
-                    psum += np.exp(-(d / mid))
-                else:
-                    psum += 1.0
-
-            if np.fabs(psum - target) < SMOOTH_K_TOLERANCE:
-                break
-
-            if psum > target:
-                hi = mid
-                mid = (lo + hi) / 2.0
-            else:
-                lo = mid
-                if hi == NPY_INFINITY:
-                    mid *= 2
-                else:
-                    mid = (lo + hi) / 2.0
-        sigmas[i] = mid
-
-        # TODO: This is very inefficient, but will do for now. FIXME
-        if rho[i] > 0.0:
-            mean_ith_distances = np.mean(ith_distances)
-            if sigmas[i] < MIN_K_DIST_SCALE * mean_ith_distances:
-                # ANDREW - this never gets called on mnist
-                sigmas[i] = MIN_K_DIST_SCALE * mean_ith_distances
-        else:
-            # ANDREW - this never gets called on mnist either
-            if sigmas[i] < MIN_K_DIST_SCALE * mean_distances:
-                sigmas[i] = MIN_K_DIST_SCALE * mean_distances
-
-    return sigmas, rho
-
-
-def nearest_neighbors(
-        X,
-        n_neighbors,
-        metric,
-        euclidean,
-        random_state,
-        low_memory=True,
-        use_pynndescent=True,
-        num_threads=-1,
-        verbose=False,
-):
-    """Compute the ``n_neighbors`` nearest points for each data point in ``X``
-    under ``metric``. This may be exact, but more likely is approximated via
-    nearest neighbor descent.
-
-    Parameters
-    ----------
-    X: array of shape (n_samples, n_features)
-        The input data to compute the k-neighbor graph of.
-
-    n_neighbors: int
-        The number of nearest neighbors to compute for each sample in ``X``.
-
-    metric: string or callable
-        The metric to use for the computation.
-
-    random_state: np.random state
-        The random state to use for approximate NN computations.
-
-    low_memory: bool (optional, default True)
-        Whether to pursue lower memory NNdescent.
-
-    verbose: bool (optional, default False)
-        Whether to print status data during the computation.
-
-    Returns
-    -------
-    knn_indices: array of shape (n_samples, n_neighbors)
-        The indices on the ``n_neighbors`` closest points in the dataset.
-
-    knn_dists: array of shape (n_samples, n_neighbors)
-        The distances to the ``n_neighbors`` closest points in the dataset.
-
-    rp_forest: list of trees
-        The random projection forest used for searching (if used, None otherwise)
-    """
-    if verbose:
-        print(utils.ts(), "Finding Nearest Neighbors")
-
-    if metric == "precomputed":
-        # Compute indices of n nearest neighbors
-        knn_indices = utils.fast_knn_indices(X, n_neighbors)
-        # Compute the nearest neighbor distances
-        #   (equivalent to np.sort(X)[:,:n_neighbors])
-        knn_dists = X[np.arange(X.shape[0])[:, None], knn_indices].copy()
-        # Prune any nearest neighbours that are infinite distance apart.
-        disconnected_index = knn_dists == np.inf
-        knn_indices[disconnected_index] = -1
-
-        knn_search_index = None
-    else:
-        # TODO: Hacked values for now
-        n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
-        n_iters = max(5, int(round(np.log2(X.shape[0]))))
-
-        if euclidean:
-            distance_func = pynnd_dist.euclidean
-        else:
-            distance_func = pynnd_dist.cosine
-
-        knn_search_index = NNDescent(
-            X,
-            n_neighbors=n_neighbors,
-            random_state=random_state,
-            n_trees=n_trees,
-            # distance_func=distance_func,
-            n_iters=n_iters,
-            max_candidates=20,
-            n_jobs=num_threads,
-            verbose=verbose,
-        )
-        knn_indices, knn_dists = knn_search_index.neighbor_graph
-
-    if verbose:
-        print(utils.ts(), "Finished Nearest Neighbor Search")
-    return knn_indices, knn_dists, knn_search_index
-
-
-@numba.njit(
-    locals={
-        "knn_dists": numba.types.float32[:, ::1],
-        "sigmas": numba.types.float32[::1],
-        "rhos": numba.types.float32[::1],
-        "val": numba.types.float32,
-    },
-    # FIXME FIXME
-    # parallel=True,
-    fastmath=True,
-)
-def compute_membership_strengths(
-        knn_indices,
-        knn_dists,
-        sigmas,
-        rhos,
-        return_dists=False,
-        bipartite=False,
-        pseudo_distance=True,
-):
-    """Construct the membership strength data for the 1-skeleton of each local
-    fuzzy simplicial set -- this is formed as a sparse matrix where each row is
-    a local fuzzy simplicial set, with a membership strength for the
-    1-simplex to each other data point.
-
-    Parameters
-    ----------
-    knn_indices: array of shape (n_samples, n_neighbors)
-        The indices on the ``n_neighbors`` closest points in the dataset.
-
-    knn_dists: array of shape (n_samples, n_neighbors)
-        The distances to the ``n_neighbors`` closest points in the dataset.
-
-    sigmas: array of shape(n_samples)
-        The normalization factor derived from the metric tensor approximation.
-
-    rhos: array of shape(n_samples)
-        The local connectivity adjustment.
-
-    return_dists: bool (optional, default False)
-        Whether to return the pairwise distance associated with each edge
-
-    bipartite: bool (optional, default False)
-        Does the nearest neighbour set represent a bipartite graph?  That is are the
-        nearest neighbour indices from the same point set as the row indices?
-
-    Returns
-    -------
-    rows: array of shape (n_samples * n_neighbors)
-        Row data for the resulting sparse matrix (coo format)
-
-    cols: array of shape (n_samples * n_neighbors)
-        Column data for the resulting sparse matrix (coo format)
-
-    vals: array of shape (n_samples * n_neighbors)
-        Entries for the resulting sparse matrix (coo format)
-
-    dists: array of shape (n_samples * n_neighbors)
-        Distance associated with each entry in the resulting sparse matrix
-    """
-    n_samples = knn_indices.shape[0]
-    n_neighbors = knn_indices.shape[1]
-
-    rows = np.zeros(knn_indices.size, dtype=np.int32)
-    cols = np.zeros(knn_indices.size, dtype=np.int32)
-    vals = np.zeros(knn_indices.size, dtype=np.float32)
-    if return_dists:
-        dists = np.zeros(knn_indices.size, dtype=np.float32)
-    else:
-        dists = None
-
-    for i in range(n_samples):
-        for j in range(n_neighbors):
-            if knn_indices[i, j] == -1:
-                continue  # We didn't get the full knn for i
-            # If applied to an adjacency matrix points shouldn't be similar to themselves.
-            # If applied to an incidence matrix (or bipartite) then the row and column indices are different.
-            if (bipartite == False) & (knn_indices[i, j] == i):
-                val = 0.0
-            elif knn_dists[i, j] - rhos[i] <= 0.0 or sigmas[i] == 0.0:
-                val = 1.0
-            else:
-                # ANDREW - this is where the rhos are subtracted for the UMAP
-                # pseudo distance metric
-                # The sigmas are equivalent to those found for tSNE
-                if pseudo_distance:
-                    val = np.exp(-((knn_dists[i, j] - rhos[i]) / (sigmas[i])))
-                else:
-                    val = np.exp(-((knn_dists[i, j]) / (sigmas[i])))
-
-            rows[i * n_neighbors + j] = i
-            cols[i * n_neighbors + j] = knn_indices[i, j]
-            vals[i * n_neighbors + j] = val
-            if return_dists:
-                dists[i * n_neighbors + j] = knn_dists[i, j]
-
-    return rows, cols, vals, dists
-
-
-def fuzzy_simplicial_set(
-        X,
-        n_neighbors,
-        random_state,
-        metric,
-        knn_indices=None,
-        knn_dists=None,
-        local_connectivity=1.0,
-        verbose=False,
-        return_dists=True,
-        pseudo_distance=True,
-        euclidean=True,
-        tsne_symmetrization=False,
-        gpu=False,
-):
-    """Given a set of data X, a neighborhood size, and a measure of distance
-    compute the fuzzy simplicial set (here represented as a fuzzy graph in
-    the form of a sparse matrix) associated to the data. This is done by
-    locally approximating geodesic distance at each point, creating a fuzzy
-    simplicial set for each such point, and then combining all the local
-    fuzzy simplicial sets into a global one via a fuzzy union.
-
-    Parameters
-    ----------
-    X: array of shape (n_samples, n_features)
-        The data to be modelled as a fuzzy simplicial set.
-
-    n_neighbors: int
-        The number of neighbors to use to approximate geodesic distance.
-        Larger numbers induce more global estimates of the manifold that can
-        miss finer detail, while smaller values will focus on fine manifold
-        structure to the detriment of the larger picture.
-
-    random_state: numpy RandomState or equivalent
-        A state capable being used as a numpy random state.
-
-    metric: string or function (optional, default 'euclidean')
-        The metric to use to compute distances in high dimensional space.
-        If a string is passed it must match a valid predefined metric. If
-        a general metric is required a function that takes two 1d arrays and
-        returns a float can be provided. For performance purposes it is
-        required that this be a numba jit'd function. Valid string metrics
-        include:
-            * euclidean (or l2)
-
-    knn_indices: array of shape (n_samples, n_neighbors) (optional)
-        If the k-nearest neighbors of each point has already been calculated
-        you can pass them in here to save computation time. This should be
-        an array with the indices of the k-nearest neighbors as a row for
-        each data point.
-
-    knn_dists: array of shape (n_samples, n_neighbors) (optional)
-        If the k-nearest neighbors of each point has already been calculated
-        you can pass them in here to save computation time. This should be
-        an array with the distances of the k-nearest neighbors as a row for
-        each data point.
-
-    local_connectivity: int (optional, default 1)
-        The local connectivity required -- i.e. the number of nearest
-        neighbors that should be assumed to be connected at a local level.
-        The higher this value the more connected the manifold becomes
-        locally. In practice this should be not more than the local intrinsic
-        dimension of the manifold.
-
-    verbose: bool (optional, default False)
-        Whether to report information on the current progress of the algorithm.
-
-    return_dists: bool or None (optional, default None)
-        Whether to return the pairwise distance associated with each edge.
-
-    Returns
-    -------
-    fuzzy_simplicial_set: coo_matrix
-        A fuzzy simplicial set represented as a sparse matrix. The (i,
-        j) entry of the matrix represents the membership strength of the
-        1-simplex between the ith and jth sample points.
-    """
-    # To replace UMAP code with tSNE, we want to
-    #   - Make nearest neighbors instead do Barnes-Hut approximations
-    #   - Calculate distances to all nearest neighbors w/ Barnes-Hut
-    #   - compute_membership_strengths should use the tSNE normalizations
-    #       - row-wise and matrix-wise
-    if knn_indices is None or knn_dists is None:
-        if gpu:
-            from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
-            knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
-            knn_cuml.fit(points)
-            knn_graph_comp = knn_cuml.kneighbors_graph(points)
-            knn_indices = knn_graph_comp.inds
-            knn_dists = knn_graph_comp.vals
-        else:
-            knn_indices, knn_dists, _ = nearest_neighbors(
-                X,
-                n_neighbors,
-                metric,
-                euclidean,
-                random_state,
-                verbose=verbose,
-            )
-    knn_dists = knn_dists.astype(np.float32)
-
-    print(1, "{:04f}".format(time.time()))
-    if not gpu:
-    # ANDREW - t-SNE does NOT use rhos in its implementation
-        sigmas, rhos = smooth_knn_dist(
-            knn_dists,
-            float(n_neighbors),
-            local_connectivity=float(local_connectivity),
-            pseudo_distance=pseudo_distance,
-        )
-
-        rows, cols, vals, dists = compute_membership_strengths(
-            knn_indices,
-            knn_dists,
-            sigmas,
-            rhos,
-            return_dists,
-            pseudo_distance=pseudo_distance,
-        )
-    else:
-        from graph_weights_build import graph_weights
-        n_points = int(X.shape[0])
-        sigmas = np.zeros([n_points], dtype=np.float32, order='c')
-        rhos = np.zeros([n_points], dtype=np.float32, order='c')
-        rows = np.zeros([n_points * n_neighbors], dtype=np.int32, order='c')
-        cols = np.zeros([n_points * n_neighbors], dtype=np.int32, order='c')
-        vals = np.zeros([n_points * n_neighbors], dtype=np.float32, order='c')
-        dists = np.zeros([n_points * n_neighbors], dtype=np.float32, order='c')
-        graph_weights(
-            sigmas,
-            rhos,
-            rows,
-            cols,
-            vals,
-            dists,
-            knn_indices.astype(np.int32),
-            knn_dists,
-            int(n_neighbors),
-            int(return_dists),
-            float(local_connectivity),
-            int(pseudo_distance)
-        )
-
-    print(2, "{:04f}".format(time.time()))
-    result = scipy.sparse.coo_matrix(
-        (vals, (rows, cols)), shape=(X.shape[0], X.shape[0])
-    )
-    result.eliminate_zeros()
-
-    print(3, "{:04f}".format(time.time()))
-    # UMAP symmetrization:
-    # Symmetrized = A + A^T - pointwise_mul(A, A^T)
-    # TSNE symmetrization:
-    # Symmetrized = (A + A^T) / 2
-    transpose = result.transpose()
-    if not tsne_symmetrization:
-        prod_matrix = result.multiply(transpose)
-        result = result + transpose - prod_matrix
-    else:
-        result = (result + transpose) / 2
-
-    result.eliminate_zeros()
-
-    print(4, "{:04f}".format(time.time()))
-    if return_dists is None:
-        return result, sigmas, rhos
-    if return_dists:
-        dmat = scipy.sparse.coo_matrix(
-            (dists, (rows, cols)), shape=(X.shape[0], X.shape[0])
-        )
-
-        dists = dmat.maximum(dmat.transpose()).todok()
-    else:
-        dists = None
-
-    return result, sigmas, rhos, dists
 
 def make_epochs_per_sample(weights, n_epochs):
     """Given a set of weights and number of epochs generate the number of
@@ -610,80 +112,6 @@ def simplicial_set_embedding(
         parallel=False,
         verbose=False,
 ):
-    """Perform a fuzzy simplicial set embedding, using a specified
-    initialisation method and then minimizing the fuzzy set cross entropy
-    between the 1-skeletons of the high and low dimensional fuzzy simplicial
-    sets.
-
-    Parameters
-    ----------
-    data: array of shape (n_samples, n_features)
-        The source data to be embedded by UMAP.
-
-    graph: sparse matrix
-        The 1-skeleton of the high dimensional fuzzy simplicial set as
-        represented by a graph for which we require a sparse matrix for the
-        (weighted) adjacency matrix.
-
-    n_components: int
-        The dimensionality of the euclidean space into which to embed the data.
-
-    initial_lr: float
-        Initial learning rate for the SGD.
-
-    a: float
-        Parameter of differentiable approximation of right adjoint functor
-
-    b: float
-        Parameter of differentiable approximation of right adjoint functor
-
-    negative_sample_rate: int (optional, default 5)
-        The number of negative samples to select per positive sample
-        in the optimization process. Increasing this value will result
-        in greater repulsive force being applied, greater optimization
-        cost, but slightly more accuracy.
-
-    n_epochs: int (optional, default 0)
-        The number of training epochs to be used in optimizing the
-        low dimensional embedding. Larger values result in more accurate
-        embeddings. If 0 is specified a value will be selected based on
-        the size of the input dataset (200 for large datasets, 500 for small).
-
-    random_init: float
-        How to initialize the low dimensional embedding. Options are:
-            * 'spectral': use a spectral embedding of the fuzzy 1-skeleton
-            * 'random': assign initial embedding positions at random.
-            * A numpy array of initial embedding positions.
-
-    random_state: numpy RandomState or equivalent
-        A state capable being used as a numpy random state.
-
-    metric: string or callable
-        The metric used to measure distance in high dimensional space; used if
-        multiple connected components need to be layed out.
-
-    output_metric: function
-        Function returning the distance between two points in embedding space and
-        the gradient of the distance wrt the first argument.
-
-    euclidean_output: bool
-        Whether to use the faster code specialised for euclidean output metrics
-
-    parallel: bool (optional, default False)
-        Whether to run the computation using numba parallel.
-
-    verbose: bool (optional, default False)
-        Whether to report information on the current progress of the algorithm.
-
-    Returns
-    -------
-    embedding: array of shape (n_samples, n_components)
-        The optimized of ``graph`` into an ``n_components`` dimensional
-        euclidean space.
-
-    aux_data: dict
-        Auxiliary output returned with the embedding.
-    """
     graph = graph.tocoo()
     graph.sum_duplicates()
     n_vertices = graph.shape[1]
@@ -707,27 +135,27 @@ def simplicial_set_embedding(
     graph.eliminate_zeros()
 
     print(6, "{:04f}".format(time.time()))
-    # if random_init:
-    embedding = random_state.multivariate_normal(
-        mean=np.zeros(n_components), cov=np.eye(n_components), size=(graph.shape[0])
-    ).astype(np.float32)
-    # else:
-    #     # We add a little noise to avoid local minima for optimization to come
-    #     initialisation = spectral.spectral_layout(
-    #         data,
-    #         graph,
-    #         n_components,
-    #         random_state,
-    #         metric=metric,
-    #     )
-    #     expansion = 10.0 / np.abs(initialisation).max()
-    #     embedding = (initialisation * expansion).astype(
-    #         np.float32
-    #     ) + random_state.normal(
-    #         scale=0.0001, size=[graph.shape[0], n_components]
-    #     ).astype(
-    #         np.float32
-    #     )
+    if random_init:
+        embedding = random_state.multivariate_normal(
+            mean=np.zeros(n_components), cov=np.eye(n_components), size=(graph.shape[0])
+        ).astype(np.float32)
+    else:
+        # We add a little noise to avoid local minima for optimization to come
+        initialisation = spectral.spectral_layout(
+            data,
+            graph,
+            n_components,
+            random_state,
+            metric=metric,
+        )
+        expansion = 10.0 / np.abs(initialisation).max()
+        embedding = (initialisation * expansion).astype(
+            np.float32
+        ) + random_state.normal(
+            scale=0.0001, size=[graph.shape[0], n_components]
+        ).astype(
+            np.float32
+        )
 
     print(7, "{:04f}".format(time.time()))
     # ANDREW - head and tail here represent the indices of nodes that have edges in high-dim
@@ -840,13 +268,12 @@ def _optimize_layout_euclidean(
     }
     start = time.time()
     if gpu:
-        print(optimize_method)
         if optimize_method != 'gidr_dun':
-            raise ValueError('GPU optimization can only be performed in the uniform umap setting')
+            raise ValueError('GPU optimization can only be performed in the gidr_dun setting')
         from optimize_gpu import gpu_opt_wrapper as optimizer
     elif torch:
         if optimize_method != 'gidr_dun':
-            raise ValueError('PyTorch optimization can only be performed in the uniform umap setting')
+            raise ValueError('PyTorch optimization can only be performed in the gidr_dun setting')
         from .pytorch_optimize import torch_optimize_layout as optimizer
     elif numba:
         if optimize_method == 'umap':
@@ -854,7 +281,7 @@ def _optimize_layout_euclidean(
         elif optimize_method == 'gidr_dun':
             from .numba_optimizers.gidr_dun import gidr_dun_numba_wrapper as optimizer
         else:
-            raise ValueError('Numba optimization only works for umap and uniform umap')
+            raise ValueError('Numba optimization only works for umap and gidr_dun')
     else:
         if optimize_method == 'umap':
             from umap_opt import umap_opt_wrapper as optimizer
@@ -1256,11 +683,12 @@ class UniformUmap(BaseEstimator):
         if self.verbose:
             print(str(self))
 
-        self._original_n_threads = numba.get_num_threads()
-        if self.num_threads > 0 and self.num_threads is not None:
-            numba.set_num_threads(self.num_threads)
-        else:
-            self.num_threads = self._original_n_threads
+        if self.numba:
+            self._original_n_threads = numba.get_num_threads()
+            if self.num_threads > 0 and self.num_threads is not None:
+                numba.set_num_threads(self.num_threads)
+            else:
+                self.num_threads = self._original_n_threads
 
         index = list(range(X.shape[0]))
         inverse = list(range(X.shape[0]))
@@ -1284,148 +712,60 @@ class UniformUmap(BaseEstimator):
         random_state = check_random_state(self.random_state)
 
         if self.verbose:
-            print("Construct fuzzy simplicial set")
+            print("Constructing nearest neighbor graph...")
 
         start = time.time()
-        if self.metric == "precomputed":
-            # For sparse precomputed distance matrices, we just argsort the rows to find
-            # nearest neighbors. To make this easier, we expect matrices that are
-            # symmetrical (so we can find neighbors by looking at rows in isolation,
-            # rather than also having to consider that sample's column too).
-            # print("Computing KNNs for sparse precomputed distances...")
-            if sparse_tril(X).getnnz() != sparse_triu(X).getnnz():
-                raise ValueError(
-                    "Sparse precomputed distance matrices should be symmetrical!"
-                )
-            if not np.all(X.diagonal() == 0):
-                raise ValueError("Non-zero distances from samples to themselves!")
-            self._knn_indices = np.zeros((X.shape[0], self.n_neighbors), dtype=np.int)
-            self._knn_dists = np.zeros(self._knn_indices.shape, dtype=np.float)
-            for row_id in range(X.shape[0]):
-                # Find KNNs row-by-row
-                row_data = X[row_id].data
-                row_indices = X[row_id].indices
-                if len(row_data) < self._n_neighbors:
-                    raise ValueError(
-                        "Some rows contain fewer than n_neighbors distances!"
-                    )
-                row_nn_data_indices = np.argsort(row_data)[: self._n_neighbors]
-                self._knn_indices[row_id] = row_indices[row_nn_data_indices]
-                self._knn_dists[row_id] = row_data[row_nn_data_indices]
 
-            (
-                self.graph_,
-                self._sigmas,
-                self._rhos,
-                self.graph_dists_,
-            ) = fuzzy_simplicial_set(
-                X[index],
-                self.n_neighbors,
-                random_state,
-                "precomputed",
-                self._knn_indices,
-                self._knn_dists,
-                self.local_connectivity,
-                self.verbose,
-                pseudo_distance=self.pseudo_distance,
-                euclidean=self.euclidean,
-                tsne_symmetrization=self.tsne_symmetrization,
-                gpu=self.gpu,
-            )
-            # Report the number of vertices with degree 0 in our our umap.graph_
-            # This ensures that they were properly disconnected.
-            vertices_disconnected = np.sum(
-                np.array(self.graph_.sum(axis=1)).flatten() == 0
-            )
         # Handle small cases efficiently by computing all distances
-        elif X[index].shape[0] < 4096 and not self.force_approximation_algorithm:
-            self._small_data = True
-            try:
-                # sklearn pairwise_distances fails for callable metric on sparse data
-                dmat = pairwise_distances(X[index], metric=self.metric)
-            except (ValueError, TypeError) as e:
-                # metric is numba.jit'd or not supported by sklearn,
-                # fallback to pairwise special
-                dmat = dist.pairwise_special_metric(
-                    X[index],
-                    metric=self._input_distance_func,
-                )
-
-            # ANDREW - if the input is too small, the metric is PRECOMPUTED
-            # This means we will NOT do nearest neighbor descent
-            (
-                self.graph_,
-                self._sigmas,
-                self._rhos,
-                self.graph_dists_,
-            ) = fuzzy_simplicial_set(
-                dmat,
-                self._n_neighbors,
-                random_state,
-                "precomputed",
-                None,
-                None,
-                self.local_connectivity,
-                self.verbose,
-                pseudo_distance=self.pseudo_distance,
-                euclidean=self.euclidean,
-                tsne_symmetrization=self.tsne_symmetrization,
-                gpu=self.gpu,
-            )
-            # Report the number of vertices with degree 0 in our our umap.graph_
-            # This ensures that they were properly disconnected.
-            vertices_disconnected = np.sum(
-                np.array(self.graph_.sum(axis=1)).flatten() == 0
-            )
-
+        self._small_data = False
+        print(0, "{:04f}".format(time.time()))
+        if self.gpu:
+            from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
+            import cudf
+            knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
+            cu_X = cudf.DataFrame(X[index])
+            knn_cuml.fit(cu_X)
+            dists, inds = knn_cuml.kneighbors(X)
+            self._knn_dists = np.reshape(dists, [X.shape[0], self._n_neighbors])
+            self._knn_indices = np.reshape(inds, [X.shape[0], self._n_neighbors])
         else:
-            self._small_data = False
-            print(0, "{:04f}".format(time.time()))
-            if self.gpu:
-                from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
-                knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
-                knn_cuml.fit(X[index])
-                knn_graph_comp = knn_cuml.kneighbors_graph(X)
-                self._knn_indices = np.reshape(knn_graph_comp.indices, [X.shape[0], self._n_neighbors])
-                self._knn_dists = np.reshape(knn_graph_comp.data, [X.shape[0], self._n_neighbors])
-            else:
-                self._knn_indices, self._knn_dists, self._knn_search_index = nearest_neighbors(
-                    X[index],
-                    self._n_neighbors,
-                    self.metric,
-                    self.euclidean,
-                    random_state,
-                    self.low_memory,
-                    use_pynndescent=True,
-                    num_threads=self.num_threads,
-                    verbose=True,
-                )
-
-            (
-                self.graph_,
-                self._sigmas,
-                self._rhos,
-                self.graph_dists_,
-            ) = fuzzy_simplicial_set(
+            self._knn_indices, self._knn_dists, self._knn_search_index = graph_weights.nearest_neighbors(
                 X[index],
-                self.n_neighbors,
-                random_state,
+                self._n_neighbors,
                 self.metric,
-                self._knn_indices,
-                self._knn_dists,
-                self.local_connectivity,
-                self.verbose,
-                pseudo_distance=self.pseudo_distance,
-                euclidean=self.euclidean,
-                tsne_symmetrization=self.tsne_symmetrization,
-                gpu=self.gpu,
+                self.euclidean,
+                random_state,
+                self.low_memory,
+                use_pynndescent=True,
+                num_threads=self.num_threads,
+                verbose=True,
             )
-            # Report the number of vertices with degree 0 in our our umap.graph_
-            # This ensures that they were properly disconnected.
-            vertices_disconnected = np.sum(
-                np.array(self.graph_.sum(axis=1)).flatten() == 0
-            )
-        self._supervised = False
+
+        (
+            self.graph_,
+            self._sigmas,
+            self._rhos,
+            self.graph_dists_,
+        ) = graph_weights.fuzzy_simplicial_set(
+            X[index],
+            self.n_neighbors,
+            random_state,
+            self.metric,
+            self._knn_indices,
+            self._knn_dists,
+            self.local_connectivity,
+            self.verbose,
+            pseudo_distance=self.pseudo_distance,
+            euclidean=self.euclidean,
+            tsne_symmetrization=self.tsne_symmetrization,
+            gpu=self.gpu,
+        )
+        # Report the number of vertices with degree 0 in our our umap.graph_
+        # This ensures that they were properly disconnected.
+        vertices_disconnected = np.sum(
+            np.array(self.graph_.sum(axis=1)).flatten() == 0
+        )
+
         end = time.time()
         if self.verbose:
             print('Calculating high dim similarities took {:.3f} seconds'.format(end - start))
@@ -1453,7 +793,8 @@ class UniformUmap(BaseEstimator):
         if self.verbose:
             print(utils.ts() + " Finished embedding")
 
-        numba.set_num_threads(self._original_n_threads)
+        if self.numba:
+            numba.set_num_threads(self._original_n_threads)
         self._input_hash = joblib.hash(self._raw_data)
         self.opt_time = opt_time
 
@@ -1508,101 +849,3 @@ class UniformUmap(BaseEstimator):
         """
         _ = self.fit(X)
         return self.embedding_
-
-    def transform(self, X):
-        """Transform X into the existing embedded space and return that
-        transformed output.
-
-        Parameters
-        ----------
-        X : array, shape (n_samples, n_features)
-            New data to be transformed.
-
-        Returns
-        -------
-        X_new : array, shape (n_samples, n_components)
-            Embedding of the new data in low-dimensional space.
-        """
-        # If we fit just a single instance then error
-        if self._raw_data.shape[0] == 1:
-            raise ValueError(
-                "Transform unavailable when model was fit with only a single data sample."
-            )
-        # If we just have the original input then short circuit things
-        X = check_array(X, dtype=np.float32, accept_sparse="csr", order="C")
-        x_hash = joblib.hash(X)
-        if x_hash == self._input_hash:
-            if self.transform_mode == "embedding":
-                return self.embedding_
-            elif self.transform_mode == "graph":
-                return self.graph_
-            else:
-                raise ValueError(
-                    "Unrecognized transform mode {}; should be one of 'embedding' or 'graph'".format(
-                        self.transform_mode
-                    )
-                )
-
-        random_state = check_random_state(self.transform_seed)
-        rng_state = random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
-
-        if self.metric == 'precomputed':
-            warn("Transforming new data with precomputed metric. "
-                 "We are assuming the input data is a matrix of distances from the new points "
-                 "to the points in the training set. If the input matrix is sparse, it should "
-                 "contain distances from the new points to their nearest neighbours "
-                 "or approximate nearest neighbours in the training set.")
-            assert X.shape[1] == self._raw_data.shape[0]
-            if scipy.sparse.issparse(X):
-                indices = np.full((X.shape[0], self._n_neighbors), dtype=np.int32, fill_value=-1)
-                dists = np.full_like(indices, dtype=np.float32, fill_value=-1)
-                for i in range(X.shape[0]):
-                    data_indices = np.argsort(X[i].data)
-                    if len(data_indices) < self._n_neighbors:
-                        raise ValueError(f"Need at least n_neighbors ({self.n_neighbors}) distances for each row!")
-                    indices[i] = X[i].indices[data_indices[:self._n_neighbors]]
-                    dists[i] = X[i].data[data_indices[:self._n_neighbors]]
-            else:
-                indices = np.argsort(X, axis=1)[:, :self._n_neighbors].astype(np.int32)
-                dists = np.take_along_axis(X, indices, axis=1)
-            assert np.min(indices) >= 0 and np.min(dists) >= 0.
-        elif self._small_data:
-            try:
-                # sklearn pairwise_distances fails for callable metric on sparse data
-                dmat = pairwise_distances(X, self._raw_data, metric=self.metric)
-            except (TypeError, ValueError):
-                dmat = dist.pairwise_special_metric(
-                    X,
-                    self._raw_data,
-                    metric=self._input_distance_func,
-                )
-            indices = np.argpartition(dmat, self._n_neighbors)[:, : self._n_neighbors]
-            dmat_shortened = utils.submatrix(dmat, indices, self._n_neighbors)
-            indices_sorted = np.argsort(dmat_shortened)
-            indices = utils.submatrix(indices, indices_sorted, self._n_neighbors)
-            dists = utils.submatrix(dmat_shortened, indices_sorted, self._n_neighbors)
-        else:
-            epsilon = 0.12
-            indices, dists = self._knn_search_index.query(
-                X, self.n_neighbors, epsilon=epsilon
-            )
-
-        dists = dists.astype(np.float32, order="C")
-        adjusted_local_connectivity = max(0.0, self.local_connectivity - 1.0)
-        sigmas, rhos = smooth_knn_dist(
-            dists,
-            float(self._n_neighbors),
-            local_connectivity=float(adjusted_local_connectivity),
-            pseudo_distance=self.pseudo_distance,
-        )
-
-        rows, cols, vals, dists = compute_membership_strengths(
-            indices, dists, sigmas, rhos, bipartite=True
-        )
-
-        graph = scipy.sparse.coo_matrix(
-            (vals, (rows, cols)), shape=(X.shape[0], self._raw_data.shape[0])
-        )
-
-        if self.transform_mode == "graph":
-            return graph

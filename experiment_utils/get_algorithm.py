@@ -3,7 +3,7 @@ from sklearn.manifold import TSNE
 from umap import UMAP
 from sklearn.decomposition import PCA
 from sklearn.decomposition import KernelPCA
-from experiment_utils.decorator_rapids import * 
+from experiment_utils.decorator_rapids import rapids_tsne, rapids_umap 
 
 def run_pymde(points):
     import pymde
@@ -70,7 +70,6 @@ def get_algorithm(algorithm_str, params, verbose=True):
     elif algorithm_str == 'rapids_tsne':
         dr = rapids_tsne(
             n_components=2,
-            n_epochs=params['n_epochs'], 
             verbose=verbose,
             random_state=98765,
             n_neighbors=params['n_neighbors'])

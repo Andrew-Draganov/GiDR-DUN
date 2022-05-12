@@ -1,19 +1,24 @@
-build_rapids_env:
+create_rapids_env:
 	scripts/rapids_conda.sh
 
-build_torch_env:
+create_torch_env:
 	scripts/torch_conda.sh
 
-build_cython_env:
-	scripts/cython_conda.sh
+create_python_env:
+	scripts/basic_conda.sh
 
-build_python:
+install_python_env:
+	scripts/check_conda_env.sh GiDR_DUN
 	python3 setup.py install --user
 
-build_cython: build_python
-	python3 setup_cython.py install #https://stavshamir.github.io/python/making-your-c-library-callable-from-python-by-wrapping-it-with-cython/
+install_cython_env: install_python_env
+	# https://stavshamir.github.io/python/making-your-c-library-callable-from-python-by-wrapping-it-with-cython/ 
+	scripts/check_conda_env.sh GiDR_DUN
+	python3 setup_cython.py install --user
 
-build_cuda_code: build_rapids_env build_python build_cython
+install_cuda_code:
+	scripts/check_conda_env.sh GiDR_DUN_rapids
+	# FIXME -- this should run on user's preferred cuda
 	/usr/local/cuda-11.5/bin/nvcc --shared -o libgpu_dim_reduction.so \
 		cython/cuda_wrappers/gpu_dim_reduction.cpp \
 		cython/cuda_kernels/gpu_kernels.cu \
@@ -28,11 +33,11 @@ build_cuda_code: build_rapids_env build_python build_cython
 		-Xcompiler -fPIC
 	python3 setup_cython_gpu.py install
 
-# Create test across datasets
-# Create test across parameters
-# Create make targets that will produce all plots
+# FIXME Create test across datasets
+# FIXME Create test across parameters
+# FIXME Create make targets that will produce all plots
 
-run_cpu_test: build_python build_cython
+run_cpu_test: install_cython_env
 	# FIXME -- make into a unit test
 	# Basic test to make sure that every algorithm can be run on CPU
 	### GIDR_DUN
@@ -59,7 +64,7 @@ run_cpu_test: build_python build_cython
 	# 	- `optimize-method` means that we run the UMAP optimization protocol
 	python3 dim_reduce_dataset.py --dr-algorithm gidr_dun --optimize-method tsne --num-points 6000
 
-run_gpu_test: build_cuda_code
+run_gpu_test: install_cuda_code
 	# FIXME -- make into a unit test
 	# Basic test to make sure that every algorithm can be run on GPU
 	### GIDR_DUN
@@ -68,6 +73,14 @@ run_gpu_test: build_cuda_code
 	python3 dim_reduce_dataset.py --dr-algorithm rapids_umap --num-points 60000
 	### RAPIDS TSNE
 	python3 dim_reduce_dataset.py --dr-algorithm rapids_tsne --num-points 60000
+
+run_analysis:
+	python3 run_analysis.py
+	python3 experiment_utils/read_metrics.py
+
+run_gpu_analysis:
+	python3 run_gpu_analysis.py
+	python3 experiment_utils/read_gpu_metrics.py
 
 clean:
 	rm *.so *.o *.egg-info

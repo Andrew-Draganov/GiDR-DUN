@@ -1,8 +1,9 @@
+import re
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-def make_bar_plots(outputs):
+def make_cpu_bar_plots(outputs):
     all_opt_methods = {}
     for metric, datasets in outputs.items():
         num_datasets = len(datasets)
@@ -60,6 +61,7 @@ def make_bar_plots(outputs):
         list(dataset_loc_dict.keys())
     )
     plt.show()
+
 
 def print_row_means(outputs):
     for metric, metric_dict in outputs.items():
@@ -192,20 +194,18 @@ def read_outputs(
     return gathered_outputs
 
 if __name__ == '__main__':
-    # Comment out to make bar-plots of optimization_times for cpu
     cpu_times = read_outputs(
-        'outputs',
+        'outputs/cpu',
         npy_file='times',
         filter_strs=['cpu'],
         relevant_key='total_time'
     )
-    make_bar_plots(cpu_times)
+    make_cpu_bar_plots(cpu_times)
 
-
-    # outputs = read_outputs(
-    #     'outputs',
-    #     npy_file='metrics',
-    #     filter_strs=['cpu'],
-    # )
-    # print_row_means(outputs)
-    # print_col_means(outputs)
+    outputs = read_outputs(
+        'outputs/cpu',
+        npy_file='metrics',
+        filter_strs=['cpu'],
+    )
+    print_row_means(outputs)
+    print_col_means(outputs)

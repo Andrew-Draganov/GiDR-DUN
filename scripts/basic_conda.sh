@@ -1,4 +1,4 @@
-CONDA_ENV_NAME="GiDR_DUN_rapids"
+CONDA_ENV_NAME="GiDR_DUN"
 CONDA_FILE=$(which conda)
 
 if [ ! -f "$CONDA_FILE" ]; then
@@ -15,7 +15,7 @@ if [ $HAS_CONDA = True ]; then
     else
         echo ">>> Detected conda, but ${CONDA_ENV_NAME} is missing in ${ENV_DIR}. Installing ...";
         conda clean -a
-        conda create -n GiDR_DUN python=3.8;
+        conda create -n $CONDA_ENV_NAME python=3.8;
     fi;
 else
     echo ">>> Install conda first.";
