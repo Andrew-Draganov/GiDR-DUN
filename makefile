@@ -74,11 +74,11 @@ run_gpu_test: install_cuda_code
 	### RAPIDS TSNE
 	python3 dim_reduce_dataset.py --dr-algorithm rapids_tsne --num-points 60000
 
-run_analysis:
+run_analysis: install_cython_env
 	python3 run_analysis.py
 	python3 experiment_utils/read_metrics.py
 
-run_gpu_analysis:
+run_gpu_analysis: install_cuda_code
 	python3 run_gpu_analysis.py
 	python3 experiment_utils/read_gpu_metrics.py
 
