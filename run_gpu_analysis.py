@@ -74,6 +74,7 @@ def gpu_analysis():
         ### RAPIDS TSNE
         'rapids_tsne': {
             'n_neighbors': 90,
+            'n_epochs': 500,
             'normalized': False, # Also set amplify_grads to True
         },
     }
@@ -216,6 +217,7 @@ def dim_timings():
         ### RAPIDS TSNE
         'rapids_tsne': {
             'n_neighbors': 90,
+            'n_epochs': 500,
             'normalized': False, # Also set amplify_grads to True
         },
     }
@@ -357,6 +359,7 @@ def data_size_timings():
         'rapids_tsne': {
             'n_neighbors': 90,
             'learning_rate': 1.0,
+            'n_epochs': 500,
             'normalized': False, # Also set amplify_grads to True
         },
     }

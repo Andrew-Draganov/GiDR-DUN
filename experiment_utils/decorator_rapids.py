@@ -53,6 +53,7 @@ class rapids_tsne:
         self.dr = cumlTSNE(
             n_components=n_components,
             verbose=verbose,
+            n_iter=n_epochs,
             random_state=random_state,
             method = 'barnes_hut',
             learning_rate_method=None,
