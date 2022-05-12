@@ -1,4 +1,4 @@
-CONDA_ENV_NAME="GiDR_DUN"
+CONDA_ENV_NAME="GiDR_DUN_rapids"
 CONDA_FILE=$(which conda)
 
 if [ ! -f "$CONDA_FILE" ]; then
@@ -15,10 +15,7 @@ if [ $HAS_CONDA = True ]; then
     else
         echo ">>> Detected conda, but ${CONDA_ENV_NAME} is missing in ${ENV_DIR}. Installing ...";
         conda clean -a
-        conda create -n GiDR_DUN \
-            -c rapidsai \
-            -c nvidia \
-            -c conda-forge cuml=22.04 python=3.8 cudatoolkit=11.5;
+        conda create -n GiDR_DUN python=3.8;
     fi;
 else
     echo ">>> Install conda first.";

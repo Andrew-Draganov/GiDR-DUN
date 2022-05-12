@@ -1,8 +1,11 @@
 build_rapids_env:
-	scripts/install_conda.sh
+	scripts/rapids_conda.sh
 
 build_torch_env:
-	scripts/torch_conda_env.sh
+	scripts/torch_conda.sh
+
+build_cython_env:
+	scripts/cython_conda.sh
 
 build_python:
 	python3 setup.py install --user
