@@ -5,22 +5,12 @@ from sklearn.decomposition import PCA
 from sklearn.decomposition import KernelPCA
 from experiment_utils.decorator_rapids import rapids_tsne, rapids_umap 
 
-def run_pymde(points):
-    import pymde
-    # If pyMDE, we can't use the same .fit() and .transform() methods
-    # So we just have a separate case for it
-    start = time.time()
-    embedding = pymde.preserve_neighbors(points).embed(verbose=True)
-    end = time.time()
-    total_time = end - start
-    return embedding, total_time
-
 def get_algorithm(algorithm_str, params, verbose=True):
     if 'gidr_dun' in algorithm_str:
         dr = UniformUmap(
                 n_neighbors=params['n_neighbors'],
                 n_epochs=params['n_epochs'],
-                random_state=98765, # Comment this out to turn on parallelization
+                random_state=98765,
                 random_init=params['random_init'],
                 pseudo_distance=params['umap_metric'],
                 tsne_symmetrization=params['tsne_symmetrization'],
@@ -43,7 +33,6 @@ def get_algorithm(algorithm_str, params, verbose=True):
         dr = UMAP(
                 n_neighbors=params['n_neighbors'],
                 n_epochs=params['n_epochs'],
-                # random_state=98765, # Comment this out to turn on parallelization
                 init='random' if params['random_init'] else 'spectral',
                 negative_sample_rate=params['neg_sample_rate'],
                 a=params['a'],
@@ -65,6 +54,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
             a=params['a'],
             b=params['b'],
             random_state=98765,
+            umap=True,
             verbose=verbose
         )
     elif algorithm_str == 'rapids_tsne':
@@ -72,7 +62,9 @@ def get_algorithm(algorithm_str, params, verbose=True):
             n_components=2,
             verbose=verbose,
             random_state=98765,
-            n_neighbors=params['n_neighbors'])
+            n_neighbors=params['n_neighbors'],
+            umap=False,
+        )
     else:
         raise ValueError("Unsupported algorithm")
 
