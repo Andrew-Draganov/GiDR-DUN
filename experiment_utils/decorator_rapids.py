@@ -1,16 +1,17 @@
 import time
 import os
+from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
 
 class rapids_wrapper:
     def __init__(
         self,
         n_neighbors,
         n_components,
-        n_epochs,
-        negative_sample_rate,
-        a,
-        b,
         random_state,
+        negative_sample_rate=5,
+        n_epochs=500,
+        a=None,
+        b=None,
         umap=True,
         barnes_hut=True,
         verbose=True
@@ -45,7 +46,7 @@ class rapids_wrapper:
         self.verbose = verbose
 
     def fit_transform(self, points):
-		if self.verbose:
+        if self.verbose:
             print("making knn graph...")
         # Have to make the KNN graph separately so that we can free resources at the end
         # of this method
