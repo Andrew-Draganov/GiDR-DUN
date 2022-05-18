@@ -693,7 +693,7 @@ class UniformUmap(BaseEstimator):
 
         # Handle small cases efficiently by computing all distances
         print(0, "{:04f}".format(time.time()))
-        if self.gpu and X.shape[0] < 100000:
+        if self.gpu and X.shape[0] < 100000 and X.shape[1] < 30000:
             from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
             import cudf
             knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
