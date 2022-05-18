@@ -60,31 +60,6 @@ def make_epochs_per_sample(weights, n_epochs):
     result[n_samples > 0] = float(n_epochs) / n_samples[n_samples > 0]
     return result
 
-def standardize_neighbors(graph):
-    """
-    FIXME
-    """
-    data = graph.data
-    head = graph.row
-    tail = graph.col
-    min_neighbors = np.min(np.unique(tail, return_counts=True)[1])
-    new_head, new_tail, new_data = [], [], []
-    current_point = 0
-    counter = 0
-    for edge in range(head.shape[0]):
-        if tail[edge] > current_point:
-            current_point = tail[edge]
-            counter = 0
-        if counter < min_neighbors:
-            new_head.append(head[edge])
-            new_tail.append(tail[edge])
-            new_data.append(data[edge])
-            counter += 1
-    return scipy.sparse.coo_matrix(
-        (new_data, (new_head, new_tail)),
-        shape=graph.shape
-    )
-
 def simplicial_set_embedding(
         optimize_method,
         normalized,
@@ -719,7 +694,7 @@ class UniformUmap(BaseEstimator):
         # Handle small cases efficiently by computing all distances
         self._small_data = False
         print(0, "{:04f}".format(time.time()))
-        if self.gpu:
+        if self.gpu and X.shape[0] < 100000 and X.shape[1] < 30000:
             from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
             import cudf
             knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
