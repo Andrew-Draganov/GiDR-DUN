@@ -16,7 +16,7 @@ install_cython_env: install_python_env
 	scripts/check_conda_env.sh GiDR_DUN
 	python3 setup_cython.py install --user
 
-install_cuda_code:
+install_cuda_code: install_cython_env
 	scripts/check_conda_env.sh GiDR_DUN_rapids
 	# FIXME -- this should run on user's preferred cuda
 	/usr/local/cuda-11.5/bin/nvcc --shared -o libgpu_dim_reduction.so \
@@ -32,10 +32,6 @@ install_cuda_code:
 		cython/utils/mem_util.cpp \
 		-Xcompiler -fPIC
 	python3 setup_cython_gpu.py install
-
-# FIXME Create test across datasets
-# FIXME Create test across parameters
-# FIXME Create make targets that will produce all plots
 
 run_cpu_test: install_cython_env
 	# FIXME -- make into a unit test
