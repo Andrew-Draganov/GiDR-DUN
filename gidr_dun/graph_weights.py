@@ -248,46 +248,45 @@ def fuzzy_simplicial_set(
     knn_dists = knn_dists.astype(np.float32)
 
     print(1, "{:04f}".format(time.time()))
-    # if not gpu:
-    #     sigmas, rhos = smooth_knn_dist(
-    #         knn_dists,
-    #         float(n_neighbors),
-    #         local_connectivity=float(local_connectivity),
-    #         pseudo_distance=pseudo_distance,
-    #     )
+    if not gpu:
+        sigmas, rhos = smooth_knn_dist(
+            knn_dists,
+            float(n_neighbors),
+            local_connectivity=float(local_connectivity),
+            pseudo_distance=pseudo_distance,
+        )
 
-    #     rows, cols, vals, dists = compute_membership_strengths(
-    #         knn_indices,
-    #         knn_dists,
-    #         sigmas,
-    #         rhos,
-    #         return_dists,
-    #         pseudo_distance=pseudo_distance,
-    #     )
-    # else:
-    ##### THIS PART WORKS!!!
-    from graph_weights_build import graph_weights
-    n_points = int(X.shape[0])
-    sigmas = np.zeros([n_points], dtype=np.float32, order='c')
-    rhos = np.zeros([n_points], dtype=np.float32, order='c')
-    rows = np.zeros([n_points * n_neighbors], dtype=np.int32, order='c')
-    cols = np.zeros([n_points * n_neighbors], dtype=np.int32, order='c')
-    vals = np.zeros([n_points * n_neighbors], dtype=np.float32, order='c')
-    dists = np.zeros([n_points * n_neighbors], dtype=np.float32, order='c')
-    graph_weights(
-        sigmas,
-        rhos,
-        rows,
-        cols,
-        vals,
-        dists,
-        knn_indices.astype(np.int32),
-        knn_dists,
-        int(n_neighbors),
-        int(return_dists),
-        float(local_connectivity),
-        int(pseudo_distance)
-    )
+        rows, cols, vals, dists = compute_membership_strengths(
+            knn_indices,
+            knn_dists,
+            sigmas,
+            rhos,
+            return_dists,
+            pseudo_distance=pseudo_distance,
+        )
+    else:
+        from graph_weights_build import graph_weights
+        n_points = int(X.shape[0])
+        sigmas = np.zeros([n_points], dtype=np.float32, order='c')
+        rhos = np.zeros([n_points], dtype=np.float32, order='c')
+        rows = np.zeros([n_points * n_neighbors], dtype=np.int32, order='c')
+        cols = np.zeros([n_points * n_neighbors], dtype=np.int32, order='c')
+        vals = np.zeros([n_points * n_neighbors], dtype=np.float32, order='c')
+        dists = np.zeros([n_points * n_neighbors], dtype=np.float32, order='c')
+        graph_weights(
+            sigmas,
+            rhos,
+            rows,
+            cols,
+            vals,
+            dists,
+            knn_indices.astype(np.int32),
+            knn_dists,
+            int(n_neighbors),
+            int(return_dists),
+            float(local_connectivity),
+            int(pseudo_distance)
+        )
 
     print(2, "{:04f}".format(time.time()))
     result = scipy.sparse.coo_matrix(
@@ -316,7 +315,6 @@ def fuzzy_simplicial_set(
         dmat = scipy.sparse.coo_matrix(
             (dists, (rows, cols)), shape=(X.shape[0], X.shape[0])
         )
-
         dists = dmat.maximum(dmat.transpose()).todok()
     else:
         dists = None
