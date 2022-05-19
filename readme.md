@@ -1,5 +1,5 @@
 # "GiDR-DUN: Gradient Dimensionality Reduction Differences and Unification" Library
-Written by Andrew Draganov, with help from Jakob Rødsgaard Jørgensen and Katrine Scheel Nellemann.
+Written by Andrew Draganov, Jakob Rødsgaard Jørgensen and Katrine Scheel Nellemann.
 
 ## Overview
 
