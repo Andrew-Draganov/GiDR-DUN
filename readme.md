@@ -9,16 +9,6 @@ This library has the following implementations of UMAP, TSNE, and GiDR\_DUN
  - Cuda \-\- GiDR\_DUN
  - Pytorch \-\- GiDR\_DUN
 
-You can test each of the above by running the `dim_reduce_dataset.py` script. Command-line params
-will dictate whether you run the numba, cython, or GPU implementation. We list some examples
-for calling these below:
- - To run our implementation of TSNE with Cython, call `python dim_reduce_dataset.py --optimize-method tsne --normalized`
- - To run our implementation of UMAP in cython, call `python dim_reduce_dataset.py --optimize-method umap --sym-attraction`
- - To instead run our implementation of UMAP in numba, call `python dim_reduce_dataset.py --optimize-method umap --numba --sym-attraction`
- - To run GiDR\_DUN on the GPU, call `python dim_reduce_dataset.py --gpu`
- - To run GiDR\_DUN on the GPU with pytorch, call `python dim_reduce_dataset.py --gpu --torch`
-
-Further examples are listed in the `run_cpu_test` make target, which performs several quick experiments.
 
 The script defaults to running GiDR\_DUN in Cython on the MNIST dataset.
 
@@ -57,6 +47,20 @@ Part of the motivation for making an independent library to run TSNE and UMAP wa
 of the relevant hyperparameters. These can be evaluated using command-line parameters
 in `dim_reduce_dataset.py`.
 
+You can test each of the numba/cython/cuda/torch optimizers by running the `dim_reduce_dataset.py` script.
+Command-line params dictate which optimizer you use and what the hyperparameter values are. We list some examples
+for choosing the optimizers below:
+ - To run our implementation of TSNE with Cython, call `python dim_reduce_dataset.py --optimize-method tsne --normalized`
+ - To run our implementation of UMAP in cython, call `python dim_reduce_dataset.py --optimize-method umap --sym-attraction`
+ - To instead run our implementation of UMAP in numba, call `python dim_reduce_dataset.py --optimize-method umap --numba --sym-attraction`
+ - To run GiDR\_DUN on the GPU, call `python dim_reduce_dataset.py --gpu`
+ - To run GiDR\_DUN on the GPU with pytorch, call `python dim_reduce_dataset.py --gpu --torch`
+
+If you'd instead like to run the ORIGINAL umap-learn and sklearn umap and tsne, these can be chosen by the `--dr-algorithm`
+flag to `dim_reduce_dataset.py`. Note that this overrides all other optimizer flags such as `--numba`, `--gpu`, and `--torch`.
+For further clarity on how the algorithm gets loaded, refer to `experiment_utils/get_algorithm.py`.
+
+Further examples are listed in the `run_cpu_test` make target, which performs several quick experiments.
 Some specific hyperparameter experiment examples:
  - To run TSNE with the Frobenius norm and UMAP's normalization, call
    `python dim_reduce_dataset.py --optimize-method tsne --frob`
