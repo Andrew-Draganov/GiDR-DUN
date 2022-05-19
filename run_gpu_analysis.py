@@ -247,49 +247,49 @@ def dim_timings():
             for experiment in experiment_params:
                 experiment_path = os.path.join(dim_path, experiment)
                 if not os.path.isdir(experiment_path):
-                    # try:
-                    os.makedirs(experiment_path, exist_ok=True)
-                    print(experiment_path)
-
-                    instance_params = copy.copy(experiment_params[experiment])
-                    instance_params['amplify_grads'] = instance_params['normalized'] # normalized and amplify_grads go together
-                    if dataset == 'google_news':
-                        instance_params['random_init'] = True
-                        instance_params['angular'] = True
-                    instance_params['a'] = 1
-                    instance_params['b'] = 1
-
-                    algorithm_str = 'gidr_dun'
-                    if 'rapids' in experiment:
-                        algorithm_str = experiment
-                        if dataset == 'coil':
-                            continue
-
-                    dr = get_algorithm(algorithm_str, instance_params, verbose=False)
-
-                    start = time.time()
-                    embedding = dr.fit_transform(points)
-                    end = time.time()
-                    total_time = end - start
                     try:
-                        opt_time = embedding.opt_time
-                    except AttributeError:
-                        opt_time = -1
+                        os.makedirs(experiment_path, exist_ok=True)
+                        print(experiment_path)
 
-                    times = {
-                        'opt_time': opt_time,
-                        'total_time': total_time
-                    }
-                    np.save(os.path.join(experiment_path, "times.npy"), times)
-                    # except Exception as E:
-                    #     print('Could not run analysis for %s dim experiment on %s dataset' % (experiment, dataset))
-                    #     print('The following exception was raised:')
-                    #     print(str(E))
-                    #     print('continuing')
-                    #     print('.')
-                    #     print('.')
-                    #     print('.')
-                    #     continue
+                        instance_params = copy.copy(experiment_params[experiment])
+                        instance_params['amplify_grads'] = instance_params['normalized'] # normalized and amplify_grads go together
+                        if dataset == 'google_news':
+                            instance_params['random_init'] = True
+                            instance_params['angular'] = True
+                        instance_params['a'] = 1
+                        instance_params['b'] = 1
+
+                        algorithm_str = 'gidr_dun'
+                        if 'rapids' in experiment:
+                            algorithm_str = experiment
+                            if dataset == 'coil':
+                                continue
+
+                        dr = get_algorithm(algorithm_str, instance_params, verbose=False)
+
+                        start = time.time()
+                        embedding = dr.fit_transform(points)
+                        end = time.time()
+                        total_time = end - start
+                        try:
+                            opt_time = embedding.opt_time
+                        except AttributeError:
+                            opt_time = -1
+
+                        times = {
+                            'opt_time': opt_time,
+                            'total_time': total_time
+                        }
+                        np.save(os.path.join(experiment_path, "times.npy"), times)
+                    except Exception as E:
+                        print('Could not run analysis for %s dim experiment on %s dataset' % (experiment, dataset))
+                        print('The following exception was raised:')
+                        print(str(E))
+                        print('continuing')
+                        print('.')
+                        print('.')
+                        print('.')
+                        continue
 
 def data_size_timings():
     datasets = [
