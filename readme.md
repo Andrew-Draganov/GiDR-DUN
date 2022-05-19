@@ -15,8 +15,9 @@ for calling these below:
  - To run our implementation of TSNE with Cython, call `python dim_reduce_dataset.py --optimize-method tsne --normalized`
  - To run our implementation of UMAP in cython, call `python dim_reduce_dataset.py --optimize-method umap --sym-attraction`
  - To instead run our implementation of UMAP in numba, call `python dim_reduce_dataset.py --optimize-method umap --numba --sym-attraction`
- - To run on the GPU, call `python dim_reduce_dataset.py --gpu`
- - To run on the GPU with pytorch, call `python dim_reduce_dataset.py --gpu --torch`
+ - To run GiDR\_DUN on the GPU, call `python dim_reduce_dataset.py --gpu`
+ - To run GiDR\_DUN on the GPU with pytorch, call `python dim_reduce_dataset.py --gpu --torch`
+
 Further examples are listed in the `run_cpu_test` make target, which performs several quick experiments.
 
 The script defaults to running GiDR\_DUN in Cython on the MNIST dataset.
