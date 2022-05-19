@@ -35,9 +35,10 @@ We suggest using the targets in the attached `makefile`. The steps are as follow
      - `conda activate GiDR_DUN_rapids`
      - `conda activate GiDR_DUN_torch`
  - We now install the relevant libraries and compile the C code:
-     - `make insall_python_env` will allow you to run the numba and torch optimizations
-     - `make insall_cython_env` will allow you to do the default cython optimizations
-     - `make insall_cuda_code` will install the cuda wrappers for the gpu implementation
+     - `make insall_python_env` will allow you to run the numba optimizations
+     - `make insall_cython_env` will allow you to do the default cython optimizations as well as the numba ones
+     - `make insall_cuda_code` will install the cuda wrappers for the gpu implementation as well as the cython and numba ones
+     - If you'd like to run the pytorch GPU optimizer, simply enter the `GiDR_DUN_torch` conda environment and install the setup.py
  - If you have installed the cython code, you can check that everything works by calling `make run_cpu_test`
      - Similarly for cuda code, `make run_gpu_test`
  - You can then remake the plots from the paper by `make run_analysis` and `make run_gpu_analysis`
@@ -46,6 +47,9 @@ If you intend to only run the basic numba implementations, then it is sufficient
 This requires that you add the `--numba` flag/parameter when invoking GiDR\_DUN. Note that this does NOT implement
 the original TSNE optimization protocol, as the Barnes\_ Hut tree data structure cannot be re-made in numba.
 However, you can use GiDR\_DUN to obtain TSNE embeddings by adding the `--optimize-method tsne` flag.
+
+Note that on highly distributed systems, cython does a terrible job with the parallelization. We find that numba
+is more consistent across server sizes but that cython outperforms numba on small systems.
 
 ## Hyperparameter Testing
 
