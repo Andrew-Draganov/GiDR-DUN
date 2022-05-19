@@ -3,44 +3,56 @@ Written by Andrew Draganov, with help from Jakob Rødsgaard Jørgensen and Katri
 
 ## Overview
 
-This library has the following implementations of UMAP, TSNE, and Uniform UMAP
- - Numba \-\- UMAP, Uniform UMAP
- - Cython \-\- UMAP, TSNE, Uniform UMAP
- - Cuda \-\- Uniform UMAP
+This library has the following implementations of UMAP, TSNE, and GiDR\_DUN
+ - Numba \-\- UMAP, GiDR\_DUN
+ - Cython \-\- UMAP, TSNE, GiDR\_DUN
+ - Cuda \-\- GiDR\_DUN
+ - Pytorch \-\- GiDR\_DUN
 
 You can test each of the above by running the `dim_reduce_dataset.py` script. Command-line params
 will dictate whether you run the numba, cython, or GPU implementation. We list some examples
 for calling these below:
- - To run TSNE with Cython, call `python dim_reduce_dataset.py --optimize-method tsne --normalized`
- - To run Uniform UMAP in numba, call `python dim_reduce_dataset.py --optimize-method umap --numba --sym-attraction`
+ - To run our implementation of TSNE with Cython, call `python dim_reduce_dataset.py --optimize-method tsne --normalized`
+ - To run our implementation of UMAP in cython, call `python dim_reduce_dataset.py --optimize-method umap --sym-attraction`
+ - To instead run our implementation of UMAP in numba, call `python dim_reduce_dataset.py --optimize-method umap --numba --sym-attraction`
  - To run on the GPU, call `python dim_reduce_dataset.py --gpu`
-The script defaults to running Uniform UMAP in Cython on the MNIST dataset.
+ - To run on the GPU with pytorch, call `python dim_reduce_dataset.py --gpu --torch`
+Further examples are listed in the `run_cpu_test` make target, which performs several quick experiments.
+
+The script defaults to running GiDR\_DUN in Cython on the MNIST dataset.
 
 ## Installation
 
-All installs begin with the base `setup.py` file from the home directory.
+We suggest using the targets in the attached `makefile`. The steps are as follows:
+ - Make sure conda is installed
+ - Create the conda environment using `make create_BLANK_env`. Your options are creating a python, cuda, or pytorch environment.
+     - For the regular python environment, call `make create_python_env`
+     - For the cuda environment, call `make create_rapids_env`
+     - For the torch environment, call `make create_torch_env`
+ - Enter into the conda environment you made. These commands should respectively be:
+     - `conda activate GiDR_DUN`
+     - `conda activate GiDR_DUN_rapids`
+     - `conda activate GiDR_DUN_torch`
+ - We now install the relevant libraries and compile the C code:
+     - `make insall_python_env` will allow you to run the numba and torch optimizations
+     - `make insall_cython_env` will allow you to do the default cython optimizations
+     - `make insall_cuda_code` will install the cuda wrappers for the gpu implementation
+ - If you have installed the cython code, you can check that everything works by calling `make run_cpu_test`
+     - Similarly for cuda code, `make run_gpu_test`
+ - You can then remake the plots from the paper by `make run_analysis` and `make run_gpu_analysis`
 
-### Cython installation
-After this, you can compile the cython code by calling `python setup_cython.py install`. This requires
-a compiler with `OpenMP`, which is a default on Linux machines. For Mac, you first need to install a
-version of `LLVM` with `OpenMP` and perform the compilation with this. This can simply be done
-by calling `brew install llvm`. These can be defined in the `setup_cython.py` file in the commented area.
-
-Note, this does not work on the Mac M1, as these run on ARM chips.
-
-### GPU installation
-Installing the GPU code can be done after this similarly -- `python setup_cython_gpu.py install`.
-The GPU code is called in python by going python -> cython -> C++ -> CUDA.
-You will need to fill in the cuda path for the `setup_cython_gpu.py` file
+If you intend to only run the basic numba implementations, then it is sufficient to just pip install the setup.py file.
+This requires that you add the `--numba` flag/parameter when invoking GiDR\_DUN. Note that this does NOT implement
+the original TSNE optimization protocol, as the Barnes\_ Hut tree data structure cannot be re-made in numba.
+However, you can use GiDR\_DUN to obtain TSNE embeddings by adding the `--optimize-method tsne` flag.
 
 ## Hyperparameter Testing
 
 Part of the motivation for making an independent library to run TSNE and UMAP was to test all
-of the relevant hyperparameters. These can be evaluated using the other command-line parameters
-in `dim_reduce_dataset.py`. All experiments in the paper can be reproduced using the
-`run_analysis.py` script.
+of the relevant hyperparameters. These can be evaluated using command-line parameters
+in `dim_reduce_dataset.py`.
 
-Some specific hyperparameter experiment examples can be found below:
+Some specific hyperparameter experiment examples:
  - To run TSNE with the Frobenius norm and UMAP's normalization, call
    `python dim_reduce_dataset.py --optimize-method tsne --frob`
  - To run UMAP with all of TSNE's params except the normalization, call

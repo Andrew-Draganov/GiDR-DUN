@@ -297,6 +297,7 @@ def data_size_timings():
         'google_news',
     ]
     num_points_list = [
+        250,
         1000,
         2000,
         4000,
@@ -352,7 +353,7 @@ def data_size_timings():
             'random_init': False,
             'neg_sample_rate': 5,
             'n_epochs': 500,
-            'normalized': False, # Also set amplify_grads to True
+            'normalized': False,
         },
 
         ### RAPIDS TSNE
@@ -360,7 +361,7 @@ def data_size_timings():
             'n_neighbors': 90,
             'learning_rate': 1.0,
             'n_epochs': 500,
-            'normalized': False, # Also set amplify_grads to True
+            'normalized': False,
         },
     }
 

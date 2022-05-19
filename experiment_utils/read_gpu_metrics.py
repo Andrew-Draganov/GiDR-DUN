@@ -191,7 +191,8 @@ def make_line_plots(outputs, x_axis_title='', plot_save_dir=''):
     }
     num_opt_methods = len(all_opt_methods)
     for i, (opt_method, times_dict) in enumerate(all_opt_methods.items()):
-        opt_sweep_params = sorted(list(times_dict.keys()))
+        # The first runtime includes the time to start up the GPU, so we exclude it from the plots
+        opt_sweep_params = sorted(list(times_dict.keys()))[1:]
         opt_method_times = [times_dict[d] for d in opt_sweep_params]
         plt.plot(
             range(len(opt_sweep_params)),
@@ -206,7 +207,7 @@ def make_line_plots(outputs, x_axis_title='', plot_save_dir=''):
     plt.xlabel(x_axis_title)
     ax = plt.gca()
     ax.set_yscale('log')
-    plt.xticks(range(len(all_sweep_params)), all_sweep_params)
+    plt.xticks(range(len(all_sweep_params) - 1), all_sweep_params[1:])
     plt.savefig(os.path.join(plot_save_dir, 'gpu_line_plot_{}.png'.format(x_axis_title)))
     plt.show()
     plt.close()
