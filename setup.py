@@ -18,7 +18,7 @@ setup(
         'pynndescent',
         'sklearn',
         'scipy',
-        'tensorflow',
+        'tensorflow-cpu',
         'tqdm',
         'tensorflow_datasets',
         'umap-learn',

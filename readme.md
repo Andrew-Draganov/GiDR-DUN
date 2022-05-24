@@ -9,14 +9,13 @@ This library has the following implementations of UMAP, TSNE, and GiDR\_DUN
  - Cuda \-\- GiDR\_DUN
  - Pytorch \-\- GiDR\_DUN
 
-
-The script defaults to running GiDR\_DUN in Cython on the MNIST dataset.
+The script defaults to running GiDR\_DUN in Cython on the MNIST dataset. We note that GiDR\_DUN can recreate both TSNE and UMAP outputs at UMAP speeds.
 
 ## Installation
 
 We suggest using the targets in the attached `makefile`. The steps are as follows:
  - Make sure conda is installed
- - Create the conda environment using `make create_BLANK_env`. Your options are creating a python, cuda, or pytorch environment.
+ - Create the conda environment using one of the make targets. Your options are creating a python, cuda, or pytorch environment.
      - For the regular python environment, call `make create_python_env`
      - For the cuda environment, call `make create_rapids_env`
      - For the torch environment, call `make create_torch_env`
@@ -28,7 +27,7 @@ We suggest using the targets in the attached `makefile`. The steps are as follow
      - `make insall_python_env` will allow you to run the numba optimizations
      - `make insall_cython_env` will allow you to do the default cython optimizations as well as the numba ones
      - `make insall_cuda_code` will install the cuda wrappers for the gpu implementation as well as the cython and numba ones
-         - ~NOTE~ we default to cuda 11.5 in the makefile. If you'd like to change this, changes must be made in the make target and the corresponding
+         - **NOTE** we default to cuda 11.5 in the makefile. If you'd like to change this, changes must be made in the make target and the corresponding
 `setup_cython_gpu.py` script.
      - If you'd like to run the pytorch GPU optimizer, simply enter the `GiDR_DUN_torch` conda environment and install the setup.py
  - If you have installed the cython code, you can check that everything works by calling `make run_cpu_test`
