@@ -399,6 +399,10 @@ def data_size_timings():
                         instance_params['a'] = 1
                         instance_params['b'] = 1
 
+                        # tsne crashes on large datasets
+                        if num_points > 60000 and experiment == 'rapids_tsne':
+                            continue
+
                         algorithm_str = 'gidr_dun'
                         if 'rapids' in experiment:
                             algorithm_str = experiment
