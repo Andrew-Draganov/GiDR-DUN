@@ -110,7 +110,8 @@ def simplicial_set_embedding(
     graph.eliminate_zeros()
 
     print(6, "{:04f}".format(time.time()))
-    if random_init:
+    print("random_init", random_init)
+    if random_init or gpu:
         embedding = random_state.multivariate_normal(
             mean=np.zeros(n_components), cov=np.eye(n_components), size=(graph.shape[0])
         ).astype(np.float32)
@@ -567,6 +568,7 @@ class GidrDun(BaseEstimator):
         # Handle small cases efficiently by computing all distances
         print(0, "{:04f}".format(time.time()))
         if self.gpu and X.shape[0] < 100000 and X.shape[1] < 30000:
+            print("doing GPU KNN")
             from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
             import cudf
             knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)

@@ -431,7 +431,7 @@ void gpu_umap_full_N(int normalized, // unused
                      int negative_sample_rate
 ) {
     cudaDeviceSynchronize();
-    int number_of_blocks_scalar = 32;//32 can be replace with something smaller then BLOCK_SIZE
+    int number_of_blocks_scalar = 128;//32 can be replace with something smaller then BLOCK_SIZE
     int number_of_threads_in_total = BLOCK_SIZE * 2 * number_of_blocks_scalar;
 
     //allocated and copy memory to the gpu
@@ -510,6 +510,9 @@ void gpu_umap_full_N(int normalized, // unused
             weight_scalar = 4;
         else
             weight_scalar = 1;
+
+        int number_of_blocks_n = n_vertices/BLOCK_SIZE;
+        if (n_vertices % BLOCK_SIZE) number_of_blocks++;
 
         cudaDeviceSynchronize();
         gpuErrchk(cudaPeekAtLastError());
@@ -609,4 +612,40 @@ void gpu_umap(
             n_edges,
             negative_sample_rate
     );
+}
+
+
+
+__global__
+void KNN(int *d_neighbors, float *d_distances, float *d_data, int n, int d, int k) {
+    extern __shared__ float s_array[];
+    float *s_distances = &s_array[2 * k * threadIdx.x];
+    int *s_neighbors = (int *) &s_distances[k];
+    for (int i_point = threadIdx.x + blockIdx.x * blockDim.x; i_point < n; i_point += blockDim.x * gridDim.x) {
+
+        for (int i = 0; i < k; i++) {
+            s_distances[i] = 0.;
+        }
+
+        for (int j_point = 0; j_point < n; j_point) {
+            float distance = 0.;
+            for (int i_dim = 0; i_dim < d; i_dim++) {
+                float diff = d_data[i_point * d + i_dim] - d_data[j_point * d + i_dim];
+                distance += diff * diff;
+            }
+            distance = sqrt(distance);
+        }
+    }
+}
+
+void GPU_KNN(int *h_neighbors, float *h_distances, float *h_data, int n, int d, int k) {
+
+
+    ///test
+    int *d_neighbors = gpu_malloc_int(n * k);
+    float *d_distances = gpu_malloc_float(n * k);
+    float *d_data = copy_H_to_D(h_data, n * d);
+    int number_of_blocks = n / BLOCK_SIZE;
+    if (n % BLOCK_SIZE)number_of_blocks++;
+    KNN<<<number_of_blocks, BLOCK_SIZE>>>(d_neighbors, d_distances, d_data, n, d, k);
 }
