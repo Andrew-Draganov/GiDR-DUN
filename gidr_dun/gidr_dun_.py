@@ -91,7 +91,6 @@ def simplicial_set_embedding(
     graph.sum_duplicates()
     n_vertices = graph.shape[1]
 
-    print(5, "{:04f}".format(time.time()))
     start = time.time()
     # For smaller datasets we can use more epochs
     if graph.shape[0] <= 10000:
@@ -109,7 +108,6 @@ def simplicial_set_embedding(
 
     graph.eliminate_zeros()
 
-    print(6, "{:04f}".format(time.time()))
     if random_init:
         embedding = random_state.multivariate_normal(
             mean=np.zeros(n_components), cov=np.eye(n_components), size=(graph.shape[0])
@@ -132,7 +130,6 @@ def simplicial_set_embedding(
             np.float32
         )
 
-    print(7, "{:04f}".format(time.time()))
     # ANDREW - head and tail here represent the indices of nodes that have edges in high-dim
     #        - So for each edge e_{ij}, head is low-dim embedding of point i and tail
     #          is low-dim embedding of point j
@@ -156,7 +153,6 @@ def simplicial_set_embedding(
         print('optimizing layout...')
     # FIXME FIXME -- need to make sure that all numpy matrices are in
     #   'c' format!
-    print(8, "{:04f}".format(time.time()))
     embedding, opt_time = _optimize_layout_euclidean(
         optimize_method,
         normalized,
@@ -185,7 +181,6 @@ def simplicial_set_embedding(
         verbose
     )
 
-    print(9, "{:04f}".format(time.time()))
     return embedding, opt_time
 
 def _optimize_layout_euclidean(
@@ -563,9 +558,7 @@ class GidrDun(BaseEstimator):
             print("Constructing nearest neighbor graph...")
 
         start = time.time()
-
-        # Handle small cases efficiently by computing all distances
-        print(0, "{:04f}".format(time.time()))
+        # Only run GPU nearest neighbors if the dataset is small enough
         if self.gpu and X.shape[0] < 100000 and X.shape[1] < 30000:
             from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
             import cudf

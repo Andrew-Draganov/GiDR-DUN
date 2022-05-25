@@ -1,3 +1,4 @@
+import os
 import time
 from experiment_utils.metrics import classifier_accuracy, cluster_quality, cluster_distances
 from experiment_utils.general_utils import get_ab, make_plot
@@ -125,7 +126,7 @@ def get_args():
     parser.add_argument(
         '--n-epochs',
         type=int,
-        default=500,
+        default=-1,
         help='Number of times to cycle through the dataset'
     )
     args = parser.parse_args()
@@ -140,6 +141,8 @@ if __name__ == '__main__':
     args_dict = vars(args)
     args_dict['a'] = a
     args_dict['b'] = b
+    if args_dict['n_epochs'] < 0:
+        args_dict['n_epochs'] = None
     # We amplify grads in case of normalization
     args_dict['amplify_grads'] = args_dict['normalized']
     dr = get_algorithm(args.dr_algorithm, args_dict)
@@ -157,4 +160,7 @@ if __name__ == '__main__':
     print('Optimization took {:.3f} seconds'.format(opt_time))
     print('Total time took {:.3f} seconds'.format(total_time))
 
-    make_plot(embedding, labels, show_plot=True, save_path='test_image.png')
+    save_dir = os.path.join('outputs', 'scratch')
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, 'embedding.png')
+    make_plot(embedding, labels, show_plot=True, save_path=save_path)

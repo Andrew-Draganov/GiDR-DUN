@@ -193,19 +193,98 @@ def read_outputs(
 
     return gathered_outputs
 
+def make_line_plots(outputs, x_axis_title='', plot_save_dir=''):
+    all_opt_methods = {
+        'tsne': {},
+        'umap': {},
+        'gidr_dun_tsne': {},
+        'gidr_dun': {}
+    }
+    all_sweep_params = []
+    for metric, datasets in outputs.items():
+        for i, (dataset, dataset_dict) in enumerate(datasets.items()):
+            for dim_str, dim_dict in dataset_dict.items():
+                dim = int(re.search(r'\d+', dim_str).group())
+                if dim not in all_sweep_params:
+                    all_sweep_params.append(dim)
+                for opt_method in dim_dict:
+                    if opt_method not in all_opt_methods:
+                        all_opt_methods[opt_method] = {}
+                    all_opt_methods[opt_method][dim] = dim_dict[opt_method]
+    all_sweep_params = sorted(all_sweep_params)
+
+    colors = {
+        'tsne': 'red',
+        'umap': 'blue',
+        'gidr_dun': 'green',
+        'gidr_dun_tsne': 'purple',
+    }
+    method_labels = {
+        'tsne': 'TSNE',
+        'umap': 'UMAP',
+        'gidr_dun': 'GDR-umap',
+        'gidr_dun_tsne': 'GDR-tsne'
+    }
+    markers = {
+        'tsne': '+',
+        'umap': 'o',
+        'gidr_dun': '.',
+        'gidr_dun_tsne': 'X'
+    }
+    num_opt_methods = len(all_opt_methods)
+    for i, (opt_method, times_dict) in enumerate(all_opt_methods.items()):
+        # The first runtime includes the time to start up the GPU, so we exclude it from the plots
+        opt_sweep_params = sorted(list(times_dict.keys()))[2:]
+        opt_method_times = [times_dict[d] for d in opt_sweep_params]
+        plt.plot(
+            range(len(opt_sweep_params)),
+            opt_method_times,
+            color=colors[opt_method],
+            marker=markers[opt_method]
+        )
+    handles = [plt.Rectangle((0, 0), 1, 1, color=colors[opt_method]) for opt_method in all_opt_methods]
+    labels = [method_labels[opt_method] for opt_method in all_opt_methods]
+    plt.legend(handles, labels)
+    plt.ylabel('Runtime in seconds')
+    plt.xlabel(x_axis_title)
+    ax = plt.gca()
+    ax.set_yscale('log')
+    plt.xticks(range(len(all_sweep_params) - 2), all_sweep_params[2:])
+    plt.savefig(os.path.join(plot_save_dir, 'gpu_line_plot_{}.png'.format(x_axis_title)))
+    plt.show()
+    plt.close()
+
+
+
 if __name__ == '__main__':
-    cpu_times = read_outputs(
-        'outputs/cpu',
+    # cpu_times = read_outputs(
+    #     'outputs/cpu',
+    #     npy_file='times',
+    #     filter_strs=['cpu'],
+    #     relevant_key='total_time'
+    # )
+    # make_cpu_bar_plots(cpu_times)
+
+    plot_save_dir = os.path.join('outputs/figures')
+    os.makedirs(plot_save_dir, exist_ok=True)
+    dim_times = read_outputs(
+        'outputs/dim_timing/mnist',
         npy_file='times',
-        filter_strs=['cpu'],
         relevant_key='total_time'
     )
-    make_cpu_bar_plots(cpu_times)
+    make_line_plots(dim_times, 'X dimensionality', plot_save_dir)
 
-    outputs = read_outputs(
-        'outputs/cpu',
-        npy_file='metrics',
-        filter_strs=['cpu'],
+    data_size_times = read_outputs(
+        'outputs/data_size_timing/mnist',
+        npy_file='times',
+        relevant_key='total_time'
     )
-    print_row_means(outputs)
-    print_col_means(outputs)
+    make_line_plots(data_size_times, 'Number of points', plot_save_dir)
+
+    # outputs = read_outputs(
+    #     'outputs/cpu',
+    #     npy_file='metrics',
+    #     filter_strs=['cpu'],
+    # )
+    # print_row_means(outputs)
+    # print_col_means(outputs)

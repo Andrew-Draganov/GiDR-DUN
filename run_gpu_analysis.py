@@ -294,7 +294,6 @@ def dim_timings():
 def data_size_timings():
     datasets = [
         'mnist',
-        'google_news',
     ]
     num_points_list = [
         250,

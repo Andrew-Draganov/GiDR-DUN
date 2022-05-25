@@ -8,7 +8,6 @@ from libc.stdlib cimport malloc, free
 from cython.parallel cimport prange, parallel
 from sklearn.neighbors._quad_tree cimport _QuadTree
 np.import_array()
-
 INF = py_np.inf
 
 cdef extern from "../utils/cython_utils.c" nogil:

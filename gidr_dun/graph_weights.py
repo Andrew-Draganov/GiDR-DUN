@@ -247,7 +247,6 @@ def fuzzy_simplicial_set(
             )
     knn_dists = knn_dists.astype(np.float32)
 
-    print(1, "{:04f}".format(time.time()))
     if not gpu:
         sigmas, rhos = smooth_knn_dist(
             knn_dists,
@@ -288,13 +287,11 @@ def fuzzy_simplicial_set(
             int(pseudo_distance)
         )
 
-    print(2, "{:04f}".format(time.time()))
     result = scipy.sparse.coo_matrix(
         (vals, (rows, cols)), shape=(X.shape[0], X.shape[0])
     )
     result.eliminate_zeros()
 
-    print(3, "{:04f}".format(time.time()))
     # UMAP symmetrization:
     # Symmetrized = A + A^T - pointwise_mul(A, A^T)
     # TSNE symmetrization:
@@ -308,7 +305,6 @@ def fuzzy_simplicial_set(
 
     result.eliminate_zeros()
 
-    print(4, "{:04f}".format(time.time()))
     if return_dists is None:
         return result, sigmas, rhos
     if return_dists:

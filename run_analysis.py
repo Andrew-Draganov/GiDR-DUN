@@ -1,3 +1,4 @@
+import argparse
 import os
 import copy
 import time
@@ -269,24 +270,24 @@ def dim_timings():
             'num_threads': -1,
             'numba': True
         },
-        'tsne': {
-            'optimize_method': 'tsne',
-            'n_neighbors': 90,
-            'random_init': True,
-            'umap_metric': False,
-            'tsne_symmetrization': True,
-            'neg_sample_rate': 1,
-            'n_epochs': 500,
-            'normalized': True,
-            'sym_attraction': False,
-            'frobenius': False,
-            'angular': False,
-            'tsne_scalars': True,
-            'gpu': False,
-            'torch': False,
-            'num_threads': -1,
-            'numba': True
-        },
+        # 'tsne': {
+        #     'optimize_method': 'tsne',
+        #     'n_neighbors': 90,
+        #     'random_init': True,
+        #     'umap_metric': False,
+        #     'tsne_symmetrization': True,
+        #     'neg_sample_rate': 1,
+        #     'n_epochs': 500,
+        #     'normalized': True,
+        #     'sym_attraction': False,
+        #     'frobenius': False,
+        #     'angular': False,
+        #     'tsne_scalars': True,
+        #     'gpu': False,
+        #     'torch': False,
+        #     'num_threads': -1,
+        #     'numba': True
+        # },
         'umap': {
             'optimize_method': 'umap',
             'n_neighbors': 15,
@@ -317,7 +318,6 @@ def dim_timings():
             try:
                 num_points = num_points_list[data_i]
                 points, labels = get_dataset(dataset, num_points, desired_dim=dim)
-                print(points.shape)
             except Exception as E:
                 print('Could not find dataset %s' % dataset)
                 print('Error raised was:', str(E))
@@ -440,7 +440,7 @@ def data_size_timings():
             'gpu': False,
             'torch': False,
             'num_threads': -1,
-            'numba': False
+            'numba': True
         },
         'umap': {
             'optimize_method': 'umap',
@@ -458,7 +458,7 @@ def data_size_timings():
             'gpu': False,
             'torch': False,
             'num_threads': -1,
-            'numba': False
+            'numba': True
         },
     }
 

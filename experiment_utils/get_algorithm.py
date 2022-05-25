@@ -6,6 +6,7 @@ from sklearn.decomposition import KernelPCA
 from experiment_utils.decorator_rapids import rapids_wrapper
 
 def get_algorithm(algorithm_str, params, verbose=True):
+    print(algorithm_str)
     if 'gidr_dun' in algorithm_str:
         dr = GidrDun(
                 n_neighbors=params['n_neighbors'],
