@@ -30,7 +30,7 @@ configuration = {
     "maintainer": "Leland McInnes",
     "maintainer_email": "leland.mcinnes@gmail.com",
     "license": "BSD",
-    "packages": ["nndescent"],
+    "packages": ["py_files"],
     "install_requires": [
         "scikit-learn >= 0.18",
         "scipy >= 1.0",
