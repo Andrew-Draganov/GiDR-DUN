@@ -3,7 +3,6 @@ from sklearn.manifold import TSNE
 from umap import UMAP
 from sklearn.decomposition import PCA
 from sklearn.decomposition import KernelPCA
-from experiment_utils.decorator_rapids import rapids_wrapper
 
 def get_algorithm(algorithm_str, params, verbose=True):
     if 'gidr_dun' in algorithm_str:
@@ -46,6 +45,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
     elif algorithm_str == 'kernel_pca':
         dr = KernelPCA(n_components=2)
     elif algorithm_str == 'rapids_umap':
+        from experiment_utils.decorator_rapids import rapids_wrapper
         dr = rapids_wrapper(
             n_neighbors=params['n_neighbors'],
             n_components=2,
@@ -58,6 +58,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
             verbose=verbose
         )
     elif algorithm_str == 'rapids_tsne':
+        from experiment_utils.decorator_rapids import rapids_wrapper
         dr = rapids_wrapper(
             n_components=2,
             verbose=verbose,
