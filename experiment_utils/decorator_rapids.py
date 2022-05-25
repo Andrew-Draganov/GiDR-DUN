@@ -27,7 +27,8 @@ class rapids_wrapper:
                 b=b,
                 random_state=random_state,
                 verbose=verbose,
-                output_type='numpy'
+                output_type='numpy',
+                init="random"
             )
         else:
             from cuml.manifold import TSNE as cumlTSNE
@@ -51,7 +52,7 @@ class rapids_wrapper:
         # Have to make the KNN graph separately so that we can free resources at the end
         # of this method
         knn_start = time.time()
-        knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors, init="random")
+        knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
         knn_cuml.fit(points)
         knn_graph_comp = knn_cuml.kneighbors_graph(points)
         knn_end = time.time()

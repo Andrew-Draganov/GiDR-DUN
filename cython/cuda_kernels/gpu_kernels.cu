@@ -137,6 +137,7 @@ float attractive_force_func(
 
 
 }
+
 __device__
 float norm_rep_force(
         float *d_Z,
@@ -511,7 +512,7 @@ void gpu_umap_full_N(int normalized, // unused
         else
             weight_scalar = 1;
 
-        int number_of_blocks_n = n_vertices/BLOCK_SIZE;
+        int number_of_blocks_n = n_vertices / BLOCK_SIZE;
         if (n_vertices % BLOCK_SIZE) number_of_blocks_n++;
 
         cudaDeviceSynchronize();
@@ -615,7 +616,6 @@ void gpu_umap(
 }
 
 
-
 __global__
 void KNN(int *d_neighbors, float *d_distances, float *d_data, int n, int d, int k) {
     extern __shared__ float s_array[];
@@ -639,13 +639,18 @@ void KNN(int *d_neighbors, float *d_distances, float *d_data, int n, int d, int 
 }
 
 void GPU_KNN(int *h_neighbors, float *h_distances, float *h_data, int n, int d, int k) {
-
-
-    ///test
     int *d_neighbors = gpu_malloc_int(n * k);
     float *d_distances = gpu_malloc_float(n * k);
     float *d_data = copy_H_to_D(h_data, n * d);
+
     int number_of_blocks = n / BLOCK_SIZE;
     if (n % BLOCK_SIZE)number_of_blocks++;
     KNN<<<number_of_blocks, BLOCK_SIZE>>>(d_neighbors, d_distances, d_data, n, d, k);
+
+    copy_D_to_H(h_neighbors, d_neighbors, n * k);
+    copy_D_to_H(h_distances, d_distances, n * k);
+
+    cudaFree(d_neighbors);
+    cudaFree(d_distances);
+    cudaFree(d_data);
 }
