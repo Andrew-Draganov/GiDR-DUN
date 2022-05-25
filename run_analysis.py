@@ -250,7 +250,7 @@ def dim_timings():
             'gpu': False,
             'torch': False,
             'num_threads': -1,
-            'numba': True
+            'numba': False
         },
         'gidr_dun_tsne': {
             'optimize_method': 'gidr_dun',
@@ -268,7 +268,7 @@ def dim_timings():
             'gpu': False,
             'torch': False,
             'num_threads': -1,
-            'numba': True
+            'numba': False
         },
         # 'tsne': {
         #     'optimize_method': 'tsne',
@@ -304,7 +304,7 @@ def dim_timings():
             'gpu': False,
             'torch': False,
             'num_threads': -1,
-            'numba': True
+            'numba': False
         },
     }
 
@@ -404,7 +404,7 @@ def data_size_timings():
             'gpu': False,
             'torch': False,
             'num_threads': -1,
-            'numba': True
+            'numba': False
         },
         'gidr_dun_tsne': {
             'optimize_method': 'gidr_dun',
@@ -422,7 +422,7 @@ def data_size_timings():
             'gpu': False,
             'torch': False,
             'num_threads': -1,
-            'numba': True
+            'numba': False
         },
         'tsne': {
             'optimize_method': 'tsne',

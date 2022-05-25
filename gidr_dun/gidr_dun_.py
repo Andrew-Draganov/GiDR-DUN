@@ -15,6 +15,8 @@ from sklearn.metrics import pairwise_distances
 from sklearn.preprocessing import normalize
 from sklearn.neighbors import KDTree
 
+from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
+import cudf
 try:
     import joblib
 except ImportError:
@@ -108,7 +110,7 @@ def simplicial_set_embedding(
 
     graph.eliminate_zeros()
 
-    if random_init:
+    if random_init or gpu:
         embedding = random_state.multivariate_normal(
             mean=np.zeros(n_components), cov=np.eye(n_components), size=(graph.shape[0])
         ).astype(np.float32)
@@ -560,8 +562,7 @@ class GidrDun(BaseEstimator):
         start = time.time()
         # Only run GPU nearest neighbors if the dataset is small enough
         if self.gpu and X.shape[0] < 100000 and X.shape[1] < 30000:
-            from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
-            import cudf
+            print("doing GPU KNN")
             knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
             cu_X = cudf.DataFrame(X[index])
             knn_cuml.fit(cu_X)

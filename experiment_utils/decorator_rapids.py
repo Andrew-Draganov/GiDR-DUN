@@ -27,7 +27,8 @@ class rapids_wrapper:
                 b=b,
                 random_state=random_state,
                 verbose=verbose,
-                output_type='numpy'
+                output_type='numpy',
+                init="random"
             )
         else:
             from cuml.manifold import TSNE as cumlTSNE

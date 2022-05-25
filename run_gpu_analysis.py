@@ -420,6 +420,7 @@ def data_size_timings():
                             'opt_time': opt_time,
                             'total_time': total_time
                         }
+                        print("opt_time", opt_time, "total_time", total_time)
                         np.save(os.path.join(experiment_path, "times.npy"), times)
                     except Exception as E:
                         print('Could not run analysis for %s data_size experiment on %s dataset' % (experiment, dataset))
