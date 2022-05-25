@@ -431,7 +431,7 @@ void gpu_umap_full_N(int normalized, // unused
                      int negative_sample_rate
 ) {
     cudaDeviceSynchronize();
-    int number_of_blocks_scalar = 32;//32 can be replace with something smaller then BLOCK_SIZE
+    int number_of_blocks_scalar = 64;//32 can be replace with something smaller then BLOCK_SIZE
     int number_of_threads_in_total = BLOCK_SIZE * 2 * number_of_blocks_scalar;
 
     //allocated and copy memory to the gpu
@@ -512,7 +512,7 @@ void gpu_umap_full_N(int normalized, // unused
             weight_scalar = 1;
 
         int number_of_blocks_n = n_vertices/BLOCK_SIZE;
-        if (n_vertices % BLOCK_SIZE) number_of_blocks++;
+        if (n_vertices % BLOCK_SIZE) number_of_blocks_n++;
 
         cudaDeviceSynchronize();
         gpuErrchk(cudaPeekAtLastError());
