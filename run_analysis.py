@@ -74,7 +74,7 @@ def cpu_analysis():
             'gpu': False,
             'torch': False,
             'num_threads': -1,
-            'numba': False
+            'numba': True
         },
         'gidr_dun': {
             'optimize_method': 'gidr_dun',
@@ -92,7 +92,7 @@ def cpu_analysis():
             'gpu': False,
             'torch': False,
             'num_threads': -1,
-            'numba': False
+            'numba': True
         },
         'gidr_dun_tsne': {
             'optimize_method': 'gidr_dun',
@@ -110,7 +110,7 @@ def cpu_analysis():
             'gpu': False,
             'torch': False,
             'num_threads': -1,
-            'numba': False
+            'numba': True
         }
     }
     algorithms = list(default_params.keys())
@@ -170,8 +170,12 @@ def cpu_analysis():
                     a, b = get_ab(instance_params['tsne_scalars'])
                     instance_params['a'] = a
                     instance_params['b'] = b
+                    if algorithm == 'tsne':
+                        method = 'original_tsne'
+                    else:
+                        method = 'gidr_dun'
 
-                    dr = get_algorithm('gidr_dun', instance_params, verbose=False)
+                    dr = get_algorithm(method, instance_params, verbose=False)
 
                     start = time.time()
                     embedding = dr.fit_transform(points)
@@ -237,7 +241,7 @@ def dim_timings():
         'gidr_dun': {
             'optimize_method': 'gidr_dun',
             'n_neighbors': 15,
-            'random_init': True,
+            'random_init': False,
             'umap_metric': False,
             'tsne_symmetrization': False,
             'neg_sample_rate': 1,
@@ -250,12 +254,12 @@ def dim_timings():
             'gpu': False,
             'torch': False,
             'num_threads': -1,
-            'numba': False
+            'numba': True
         },
         'gidr_dun_tsne': {
             'optimize_method': 'gidr_dun',
             'n_neighbors': 15,
-            'random_init': True,
+            'random_init': False,
             'umap_metric': False,
             'tsne_symmetrization': False,
             'neg_sample_rate': 1,
@@ -268,26 +272,8 @@ def dim_timings():
             'gpu': False,
             'torch': False,
             'num_threads': -1,
-            'numba': False
+            'numba': True
         },
-        # 'tsne': {
-        #     'optimize_method': 'tsne',
-        #     'n_neighbors': 90,
-        #     'random_init': True,
-        #     'umap_metric': False,
-        #     'tsne_symmetrization': True,
-        #     'neg_sample_rate': 1,
-        #     'n_epochs': 500,
-        #     'normalized': True,
-        #     'sym_attraction': False,
-        #     'frobenius': False,
-        #     'angular': False,
-        #     'tsne_scalars': True,
-        #     'gpu': False,
-        #     'torch': False,
-        #     'num_threads': -1,
-        #     'numba': True
-        # },
         'umap': {
             'optimize_method': 'umap',
             'n_neighbors': 15,
@@ -304,7 +290,7 @@ def dim_timings():
             'gpu': False,
             'torch': False,
             'num_threads': -1,
-            'numba': False
+            'numba': True
         },
     }
 
@@ -372,7 +358,6 @@ def dim_timings():
 def data_size_timings():
     datasets = [
         'mnist',
-        'google_news',
     ]
     num_points_list = [
         250,
@@ -385,13 +370,12 @@ def data_size_timings():
         64000,
         128000,
         256000,
-        512000
     ]
     experiment_params = {
         'gidr_dun': {
             'optimize_method': 'gidr_dun',
             'n_neighbors': 15,
-            'random_init': True,
+            'random_init': False,
             'umap_metric': False,
             'tsne_symmetrization': False,
             'neg_sample_rate': 1,
@@ -404,32 +388,14 @@ def data_size_timings():
             'gpu': False,
             'torch': False,
             'num_threads': -1,
-            'numba': False
+            'numba': True
         },
         'gidr_dun_tsne': {
             'optimize_method': 'gidr_dun',
             'n_neighbors': 15,
-            'random_init': True,
+            'random_init': False,
             'umap_metric': False,
             'tsne_symmetrization': False,
-            'neg_sample_rate': 1,
-            'n_epochs': 500,
-            'normalized': True,
-            'sym_attraction': False,
-            'frobenius': False,
-            'angular': False,
-            'tsne_scalars': True,
-            'gpu': False,
-            'torch': False,
-            'num_threads': -1,
-            'numba': False
-        },
-        'tsne': {
-            'optimize_method': 'tsne',
-            'n_neighbors': 90,
-            'random_init': True,
-            'umap_metric': False,
-            'tsne_symmetrization': True,
             'neg_sample_rate': 1,
             'n_epochs': 500,
             'normalized': True,

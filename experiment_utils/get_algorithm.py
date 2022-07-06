@@ -40,7 +40,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
                 verbose=verbose
             )
     elif algorithm_str == 'original_tsne':
-        dr = TSNE(random_state=98765, verbose=3)
+        dr = TSNE(random_state=98765, n_iter=params['n_epochs'])
     elif algorithm_str == 'pca':
         dr = PCA()
     elif algorithm_str == 'kernel_pca':

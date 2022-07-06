@@ -102,7 +102,6 @@ def print_col_means(outputs):
                     column_means[metric][dataset][param].append(value - np.mean(param_outputs))
 
     for metric, metric_dict in column_means.items():
-        print(metric)
         for dataset, dataset_dict in metric_dict.items():
             print(dataset)
             for param, value_list in dataset_dict.items():
@@ -141,7 +140,6 @@ def read_outputs(
         current_path = os.path.join(directory, npy_file)
         if not os.path.isfile(current_path):
             continue
-        print(current_path)
         subsets = current_path.split('/')
         dataset = subsets[2]
         opt_method = subsets[3]
@@ -195,7 +193,6 @@ def read_outputs(
 
 def make_line_plots(outputs, x_axis_title='', plot_save_dir=''):
     all_opt_methods = {
-        'tsne': {},
         'umap': {},
         'gidr_dun_tsne': {},
         'gidr_dun': {}
@@ -214,19 +211,16 @@ def make_line_plots(outputs, x_axis_title='', plot_save_dir=''):
     all_sweep_params = sorted(all_sweep_params)
 
     colors = {
-        'tsne': 'red',
         'umap': 'blue',
         'gidr_dun': 'green',
         'gidr_dun_tsne': 'purple',
     }
     method_labels = {
-        'tsne': 'TSNE',
         'umap': 'UMAP',
         'gidr_dun': 'GDR-umap',
         'gidr_dun_tsne': 'GDR-tsne'
     }
     markers = {
-        'tsne': '+',
         'umap': 'o',
         'gidr_dun': '.',
         'gidr_dun_tsne': 'X'
@@ -234,7 +228,7 @@ def make_line_plots(outputs, x_axis_title='', plot_save_dir=''):
     num_opt_methods = len(all_opt_methods)
     for i, (opt_method, times_dict) in enumerate(all_opt_methods.items()):
         # The first runtime includes the time to start up the GPU, so we exclude it from the plots
-        opt_sweep_params = sorted(list(times_dict.keys()))[2:]
+        opt_sweep_params = sorted(list(times_dict.keys()))[1:]
         opt_method_times = [times_dict[d] for d in opt_sweep_params]
         plt.plot(
             range(len(opt_sweep_params)),
@@ -248,8 +242,8 @@ def make_line_plots(outputs, x_axis_title='', plot_save_dir=''):
     plt.ylabel('Runtime in seconds')
     plt.xlabel(x_axis_title)
     ax = plt.gca()
-    ax.set_yscale('log')
-    plt.xticks(range(len(all_sweep_params) - 2), all_sweep_params[2:])
+    # ax.set_yscale('log')
+    plt.xticks(range(len(all_sweep_params) - 1), all_sweep_params[1:])
     plt.savefig(os.path.join(plot_save_dir, 'gpu_line_plot_{}.png'.format(x_axis_title)))
     plt.show()
     plt.close()

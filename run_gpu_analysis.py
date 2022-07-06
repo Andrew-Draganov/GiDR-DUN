@@ -265,6 +265,10 @@ def dim_timings():
                             if dataset == 'coil':
                                 continue
 
+                        # tsne crashes on large datasets
+                        if dim > 10000 and experiment == 'rapids_tsne':
+                            continue
+
                         dr = get_algorithm(algorithm_str, instance_params, verbose=False)
 
                         start = time.time()
@@ -280,6 +284,7 @@ def dim_timings():
                             'opt_time': opt_time,
                             'total_time': total_time
                         }
+                        print("opt_time", opt_time, "total_time", total_time)
                         np.save(os.path.join(experiment_path, "times.npy"), times)
                     except Exception as E:
                         print('Could not run analysis for %s dim experiment on %s dataset' % (experiment, dataset))

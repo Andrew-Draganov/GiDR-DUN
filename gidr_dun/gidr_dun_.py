@@ -17,6 +17,7 @@ from sklearn.neighbors import KDTree
 
 from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
 import cudf
+import cupy as cp
 try:
     import joblib
 except ImportError:
@@ -566,9 +567,9 @@ class GidrDun(BaseEstimator):
             knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
             cu_X = cudf.DataFrame(X[index])
             knn_cuml.fit(cu_X)
-            dists, inds = knn_cuml.kneighbors(X)
-            self._knn_dists = np.reshape(dists, [X.shape[0], self._n_neighbors])
-            self._knn_indices = np.reshape(inds, [X.shape[0], self._n_neighbors])
+            dists, inds = knn_cuml.kneighbors(cu_X)
+            self._knn_dists = np.reshape(dists.to_numpy(), [X.shape[0], self._n_neighbors])
+            self._knn_indices = np.reshape(inds.to_numpy(), [X.shape[0], self._n_neighbors])
         else:
             self._knn_indices, self._knn_dists, self._knn_search_index = graph_weights.nearest_neighbors(
                 X[index],

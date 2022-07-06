@@ -26,13 +26,13 @@ def upsample_dataset(num_points, points, labels):
     assert int(points.shape[0]) == int(labels.shape[0])
     num_samples = int(points.shape[0])
     while num_points > num_samples:
-        # add 1 to each dimension of the points when making copies of dataset
+        # Multiply by 2 on each dimension of the points when making copies of dataset
         #   - want to make sure that optimization doesn't get arbitrarily faster
         #     with identical copies of points
-        points = np.concatenate([points, points+1], axis=0)
-        labels = np.concatenate([labels, labels], axis=0)
+        points = np.concatenate([points, points*2], axis=0)[:num_points]
+        labels = np.concatenate([labels, labels], axis=0)[:num_points]
         num_samples = int(points.shape[0])
-        
+
     return points, labels
 
 def resample_dim(desired_dim, points):
