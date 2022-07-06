@@ -106,7 +106,6 @@ def nearest_neighbors(
         n_neighbors,
         euclidean,
         random_state,
-        use_pynndescent=True,
         num_threads=-1,
         verbose=False,
 ):
@@ -122,7 +121,7 @@ def nearest_neighbors(
     else:
         distance_func = pynnd_dist.cosine
 
-    knn_search_index = NNDescent(
+    knn_indices, knn_dists = NNDescent(
         X,
         n_neighbors=n_neighbors,
         random_state=random_state,
@@ -132,12 +131,11 @@ def nearest_neighbors(
         max_candidates=20,
         n_jobs=num_threads,
         verbose=verbose,
-    )
-    knn_indices, knn_dists = knn_search_index.neighbor_graph
+    ).neighbor_graph
 
     if verbose:
         print(utils.ts(), "Finished Nearest Neighbor Search")
-    return knn_indices, knn_dists, knn_search_index
+    return knn_indices, knn_dists
 
 
 @numba.njit(
@@ -196,8 +194,8 @@ def fuzzy_simplicial_set(
         X,
         n_neighbors,
         random_state,
-        knn_indices=None,
-        knn_dists=None,
+        knn_indices,
+        knn_dists,
         local_connectivity=1.0,
         verbose=False,
         pseudo_distance=True,
@@ -206,23 +204,6 @@ def fuzzy_simplicial_set(
         gpu=False,
 ):
     # FIXME -- We shouldn't have this and the exact same thing in the .fit() method
-    if knn_indices is None or knn_dists is None:
-        if gpu:
-            from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
-            knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
-            knn_cuml.fit(points)
-            knn_graph_comp = knn_cuml.kneighbors_graph(points)
-            knn_indices = knn_graph_comp.inds
-            knn_dists = knn_graph_comp.vals
-        else:
-            knn_indices, knn_dists, _ = nearest_neighbors(
-                X,
-                n_neighbors,
-                metric, # FIXME -- no longer using this variable
-                euclidean,
-                random_state,
-                verbose=verbose,
-            )
     knn_dists = knn_dists.astype(np.float32)
 
     if not gpu:

@@ -38,7 +38,6 @@ locale.setlocale(locale.LC_NUMERIC, "C")
 INT32_MIN = np.iinfo(np.int32).min + 1
 INT32_MAX = np.iinfo(np.int32).max - 1
 
-
 def make_epochs_per_sample(weights, n_epochs):
     """Given a set of weights and number of epochs generate the number of
     epochs per sample for each weight.
@@ -89,15 +88,6 @@ def simplicial_set_embedding(
     n_vertices = graph.shape[1]
 
     start = time.time()
-    # For smaller datasets we can use more epochs
-    if graph.shape[0] <= 10000:
-        default_epochs = 500
-    else:
-        default_epochs = 200
-
-    if n_epochs is None:
-        n_epochs = default_epochs
-
     if n_epochs > 10:
         graph.data[graph.data < (graph.data.max() / float(n_epochs))] = 0.0
     else:
@@ -289,7 +279,6 @@ class GidrDun(BaseEstimator):
             self,
             n_neighbors=15,
             n_components=2,
-            # FIXME - we don't actually use this
             n_epochs=None,
             learning_rate=1.0,
             random_init=False,
@@ -315,7 +304,6 @@ class GidrDun(BaseEstimator):
             verbose=False,
     ):
         self.n_neighbors = n_neighbors
-        self.n_epochs = n_epochs
         self.random_init = random_init
         self.n_components = n_components
         self.learning_rate = learning_rate
@@ -343,8 +331,19 @@ class GidrDun(BaseEstimator):
 
         self.num_threads = num_threads
 
-        self.a = a
-        self.b = b
+        if a is None or b is None:
+            self.a, self.b = find_ab_params(self.spread, self.min_dist)
+        else:
+            self.a = a
+            self.b = b
+
+        if n_epochs is None:
+            if normalized:
+                self.n_epochs = 500 # TSNE has weaker gradients and needs more steps to converge
+            else:
+                self.n_epochs = 200
+        else:
+            self.n_epochs = n_epochs
 
     def _validate_parameters(self):
         """ Legacy UMAP parameter validation """
@@ -356,7 +355,7 @@ class GidrDun(BaseEstimator):
             raise ValueError("init must be a bool")
         if self.negative_sample_rate < 0:
             raise ValueError("negative sample rate must be positive")
-        if self._initial_lr < 0.0:
+        if self.learning_rate < 0.0:
             raise ValueError("learning_rate must be positive")
         if self.n_neighbors < 2:
             raise ValueError("n_neighbors must be greater than 1")
@@ -396,16 +395,8 @@ class GidrDun(BaseEstimator):
         """
 
         X = check_array(X, dtype=np.float32, accept_sparse="csr", order="C")
-        self._raw_data = X
 
         # Handle all the optional arguments, setting default
-        if self.a is None or self.b is None:
-            self._a, self._b = find_ab_params(self.spread, self.min_dist)
-        else:
-            self._a = self.a
-            self._b = self.b
-
-        self._initial_lr = self.learning_rate
         self._validate_parameters()
         if self.verbose:
             print(str(self))
@@ -417,12 +408,9 @@ class GidrDun(BaseEstimator):
             else:
                 self.num_threads = self._original_n_threads
 
-        index = list(range(X.shape[0]))
-        inverse = list(range(X.shape[0]))
-
         # Error check n_neighbors based on data size
-        if X[index].shape[0] <= self.n_neighbors:
-            if X[index].shape[0] == 1:
+        if X.shape[0] <= self.n_neighbors:
+            if X.shape[0] == 1:
                 self.embedding_ = np.zeros(
                     (1, self.n_components)
                 )  # needed to sklearn comparability
@@ -432,7 +420,7 @@ class GidrDun(BaseEstimator):
                 "n_neighbors is larger than the dataset size; truncating to "
                 "X.shape[0] - 1"
             )
-            self._n_neighbors = X[index].shape[0] - 1
+            self._n_neighbors = X.shape[0] - 1
         else:
             self._n_neighbors = self.n_neighbors
 
@@ -449,18 +437,17 @@ class GidrDun(BaseEstimator):
             import cudf
             import cupy as cp
             knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
-            cu_X = cudf.DataFrame(X[index])
+            cu_X = cudf.DataFrame(X)
             knn_cuml.fit(cu_X)
             dists, inds = knn_cuml.kneighbors(cu_X)
             self._knn_dists = np.reshape(dists.to_numpy(), [X.shape[0], self._n_neighbors])
             self._knn_indices = np.reshape(inds.to_numpy(), [X.shape[0], self._n_neighbors])
         else:
-            self._knn_indices, self._knn_dists, self._knn_search_index = graph_weights.nearest_neighbors(
-                X[index],
+            self._knn_indices, self._knn_dists = graph_weights.nearest_neighbors(
+                X,
                 self._n_neighbors,
                 self.euclidean,
                 random_state,
-                use_pynndescent=True,
                 num_threads=self.num_threads,
                 verbose=True,
             )
@@ -470,7 +457,7 @@ class GidrDun(BaseEstimator):
             self._sigmas,
             self._rhos,
         ) = graph_weights.fuzzy_simplicial_set(
-            X[index],
+            X,
             self.n_neighbors,
             random_state,
             self._knn_indices,
@@ -482,12 +469,6 @@ class GidrDun(BaseEstimator):
             tsne_symmetrization=self.tsne_symmetrization,
             gpu=self.gpu,
         )
-        # Report the number of vertices with degree 0 in our our umap.graph_
-        # This ensures that they were properly disconnected.
-        vertices_disconnected = np.sum(
-            np.array(self.graph_.sum(axis=1)).flatten() == 0
-        )
-
         end = time.time()
         if self.verbose:
             print('Calculating high dim similarities took {:.3f} seconds'.format(end - start))
@@ -495,11 +476,8 @@ class GidrDun(BaseEstimator):
         if self.verbose:
             print(utils.ts(), "Construct embedding")
 
-        self.embedding_, opt_time = self._fit_embed_data(
-            self._raw_data[index],
-            self.n_epochs,
-            random_state,
-        )
+        self.embedding_, opt_time = self._fit_embed_data(X, self.n_epochs, random_state)
+
         # Assign any points that are fully disconnected from our manifold(s) to have embedding
         # coordinates of np.nan.  These will be filtered by our plotting functions automatically.
         # They also prevent users from being deceived a distance query to one of these points.
@@ -510,20 +488,18 @@ class GidrDun(BaseEstimator):
                 self.n_components, np.nan
             )
 
-        self.embedding_ = self.embedding_[inverse]
-
         if self.verbose:
             print(utils.ts() + " Finished embedding")
 
         if self.numba:
             numba.set_num_threads(self._original_n_threads)
-        self._input_hash = joblib.hash(self._raw_data)
         self.opt_time = opt_time
 
         return self
 
     def _fit_embed_data(self, X, n_epochs, random_state):
-        """A method wrapper for simplicial_set_embedding that can be
+        """
+        A method wrapper for simplicial_set_embedding that can be
         replaced by subclasses.
         """
         return simplicial_set_embedding(
@@ -540,9 +516,9 @@ class GidrDun(BaseEstimator):
             X,
             self.graph_,
             self.n_components,
-            self._initial_lr,
-            self._a,
-            self._b,
+            self.learning_rate,
+            self.a,
+            self.b,
             self.negative_sample_rate,
             n_epochs,
             self.random_init,
