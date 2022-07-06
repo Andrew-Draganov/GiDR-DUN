@@ -33,7 +33,7 @@ install_cuda_code: install_cython_env
 		-Xcompiler -fPIC
 	python3 setup_cython_gpu.py install
 
-run_cpu_test: install_cython_env
+run_cython_test: install_cython_env
 	# FIXME -- make into a unit test
 	# Basic test to make sure that every algorithm can be run on CPU
 	### GIDR_DUN
@@ -45,16 +45,16 @@ run_cpu_test: install_cython_env
 	python3 dim_reduce_dataset.py --num-points 6000 --numba
 	### UMAP
 	# Run the original UMAP algorithm that gets installed with `pip install umap-learn`
-	python3 dim_reduce_dataset.py --num-points 6000 --dr-algorithm umap
+	python3 dim_reduce_dataset.py --num-points 6000 --dr-algorithm original_umap
 	# Run OUR implementation of UMAP in cython
 	# 	- `dr-algorithm` means that we run the GIDR_DUN implementations
 	# 	- `optimize-method` means that we run the UMAP optimization protocol
 	python3 dim_reduce_dataset.py --dr-algorithm gidr_dun --optimize-method umap --num-points 6000
 	# Run OUR implementation of UMAP in numba
-	python3 dim_reduce_dataset.py --num-points 6000 --numba --umap
+	python3 dim_reduce_dataset.py --num-points 6000 --numba --optimize-method umap
 	### TSNE
 	# Run the original TSNE algorithm that gets installed with `pip install scikit-learn`
-	python3 dim_reduce_dataset.py --num-points 6000 --dr-algorithm tsne
+	python3 dim_reduce_dataset.py --num-points 6000 --dr-algorithm original_tsne
 	# Run OUR implementation of TSNE in cython
 	# 	- `dr-algorithm` means that we run the GIDR_DUN implementations
 	# 	- `optimize-method` means that we run the UMAP optimization protocol
