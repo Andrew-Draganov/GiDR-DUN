@@ -104,7 +104,6 @@ def smooth_knn_dist(
 def nearest_neighbors(
         X,
         n_neighbors,
-        metric,
         euclidean,
         random_state,
         use_pynndescent=True,
@@ -114,39 +113,27 @@ def nearest_neighbors(
     if verbose:
         print(utils.ts(), "Finding Nearest Neighbors")
 
-    if metric == "precomputed":
-        # Compute indices of n nearest neighbors
-        knn_indices = utils.fast_knn_indices(X, n_neighbors)
-        # Compute the nearest neighbor distances
-        #   (equivalent to np.sort(X)[:,:n_neighbors])
-        knn_dists = X[np.arange(X.shape[0])[:, None], knn_indices].copy()
-        # Prune any nearest neighbours that are infinite distance apart.
-        disconnected_index = knn_dists == np.inf
-        knn_indices[disconnected_index] = -1
+    # TODO: Hacked values for now
+    n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
+    n_iters = max(5, int(round(np.log2(X.shape[0]))))
 
-        knn_search_index = None
+    if euclidean:
+        distance_func = pynnd_dist.euclidean
     else:
-        # TODO: Hacked values for now
-        n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
-        n_iters = max(5, int(round(np.log2(X.shape[0]))))
+        distance_func = pynnd_dist.cosine
 
-        if euclidean:
-            distance_func = pynnd_dist.euclidean
-        else:
-            distance_func = pynnd_dist.cosine
-
-        knn_search_index = NNDescent(
-            X,
-            n_neighbors=n_neighbors,
-            random_state=random_state,
-            n_trees=n_trees,
-            distance_func=distance_func,
-            n_iters=n_iters,
-            max_candidates=20,
-            n_jobs=num_threads,
-            verbose=verbose,
-        )
-        knn_indices, knn_dists = knn_search_index.neighbor_graph
+    knn_search_index = NNDescent(
+        X,
+        n_neighbors=n_neighbors,
+        random_state=random_state,
+        n_trees=n_trees,
+        distance_func=distance_func,
+        n_iters=n_iters,
+        max_candidates=20,
+        n_jobs=num_threads,
+        verbose=verbose,
+    )
+    knn_indices, knn_dists = knn_search_index.neighbor_graph
 
     if verbose:
         print(utils.ts(), "Finished Nearest Neighbor Search")
@@ -209,7 +196,6 @@ def fuzzy_simplicial_set(
         X,
         n_neighbors,
         random_state,
-        metric,
         knn_indices=None,
         knn_dists=None,
         local_connectivity=1.0,
@@ -232,7 +218,7 @@ def fuzzy_simplicial_set(
             knn_indices, knn_dists, _ = nearest_neighbors(
                 X,
                 n_neighbors,
-                metric,
+                metric, # FIXME -- no longer using this variable
                 euclidean,
                 random_state,
                 verbose=verbose,

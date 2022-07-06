@@ -290,7 +290,6 @@ class GidrDun(BaseEstimator):
             n_neighbors=15,
             n_components=2,
             # FIXME - we don't actually use this
-            metric="euclidean",
             n_epochs=None,
             learning_rate=1.0,
             random_init=False,
@@ -316,7 +315,6 @@ class GidrDun(BaseEstimator):
             verbose=False,
     ):
         self.n_neighbors = n_neighbors
-        self.metric = metric
         self.n_epochs = n_epochs
         self.random_init = random_init
         self.n_components = n_components
@@ -356,8 +354,6 @@ class GidrDun(BaseEstimator):
             raise ValueError("min_dist cannot be negative")
         if not isinstance(self.random_init, bool):
             raise ValueError("init must be a bool")
-        if not isinstance(self.metric, str) and not callable(self.metric):
-            raise ValueError("metric must be string or callable")
         if self.negative_sample_rate < 0:
             raise ValueError("negative sample rate must be positive")
         if self._initial_lr < 0.0:
@@ -462,7 +458,6 @@ class GidrDun(BaseEstimator):
             self._knn_indices, self._knn_dists, self._knn_search_index = graph_weights.nearest_neighbors(
                 X[index],
                 self._n_neighbors,
-                self.metric,
                 self.euclidean,
                 random_state,
                 use_pynndescent=True,
@@ -478,7 +473,6 @@ class GidrDun(BaseEstimator):
             X[index],
             self.n_neighbors,
             random_state,
-            self.metric,
             self._knn_indices,
             self._knn_dists,
             self.local_connectivity,
@@ -558,19 +552,8 @@ class GidrDun(BaseEstimator):
         )
 
     def fit_transform(self, X):
-        """Fit X into an embedded space and return that transformed
-        output.
-
-        Parameters
-        ----------
-        X : array, shape (n_samples, n_features) or (n_samples, n_samples)
-            If the metric is 'precomputed' X must be a square distance
-            matrix. Otherwise it contains a sample per row.
-
-        Returns
-        -------
-        X_new : array, shape (n_samples, n_components)
-            Embedding of the training data in low-dimensional space.
+        """
+        FIXME
         """
         self.fit(X)
         return self.embedding_
