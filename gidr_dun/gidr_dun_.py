@@ -5,54 +5,29 @@
 from __future__ import print_function
 
 import locale
-from warnings import warn
 import time
 
 from scipy.optimize import curve_fit
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state, check_array
-from sklearn.metrics import pairwise_distances
-from sklearn.preprocessing import normalize
-from sklearn.neighbors import KDTree
-
-try:
-    import joblib
-except ImportError:
-    # sklearn.externals.joblib is deprecated in 0.21, will be removed in 0.23
-    from sklearn.externals import joblib
-
 import numpy as np
 import scipy
-import scipy.sparse
-from scipy.sparse import tril as sparse_tril, triu as sparse_triu
-import scipy.sparse.csgraph
 import numba
 
 from . import distances as dist
 from . import utils
 from . import spectral
-from . import graph_weights
+from .graph_weights import get_similarities, get_sigmas_and_rhos
+from nndescent.py_files.pynndescent_ import NNDescent
+import nndescent.py_files.distances as pynnd_dist
 
 locale.setlocale(locale.LC_NUMERIC, "C")
-
 INT32_MIN = np.iinfo(np.int32).min + 1
 INT32_MAX = np.iinfo(np.int32).max - 1
 
 def make_epochs_per_sample(weights, n_epochs):
-    """Given a set of weights and number of epochs generate the number of
-    epochs per sample for each weight.
-
-    Parameters
-    ----------
-    weights: array of shape (n_1_simplices)
-        The weights ofhow much we wish to sample each 1-simplex.
-
-    n_epochs: int
-        The total number of epochs we want to train for.
-
-    Returns
-    -------
-    An array of number of epochs per sample, one for each 1-simplex.
+    """
+    UMAP legacy function for finding number of epochs between sample optimizations
     """
     result = -1.0 * np.ones(weights.shape[0], dtype=np.float32)
     n_samples = n_epochs * (weights / weights.max())
@@ -60,10 +35,8 @@ def make_epochs_per_sample(weights, n_epochs):
     return result
 
 def find_ab_params(spread, min_dist):
-    """Fit a, b params for the differentiable curve used in lower
-    dimensional fuzzy simplicial complex construction. We want the
-    smooth curve (from a pre-defined family with simple gradient) that
-    best matches an offset exponential decay.
+    """
+    UMAP legacy function to find a,b parameters in low-dimensional similarity measure
     """
 
     def curve(x, a, b):
@@ -80,7 +53,7 @@ class GidrDun(BaseEstimator):
     def __init__(
             self,
             n_neighbors=15,
-            n_components=2,
+            dim=2,
             n_epochs=None,
             learning_rate=1.0,
             random_init=False,
@@ -106,7 +79,7 @@ class GidrDun(BaseEstimator):
     ):
         self.n_neighbors = n_neighbors
         self.random_init = random_init
-        self.n_components = n_components
+        self.dim = dim
         self.learning_rate = learning_rate
 
         # ANDREW - options for flipping between tSNE and UMAP
@@ -154,19 +127,19 @@ class GidrDun(BaseEstimator):
             raise ValueError("learning_rate must be positive")
         if self.n_neighbors < 2:
             raise ValueError("n_neighbors must be greater than 1")
-        if not isinstance(self.n_components, int):
-            if isinstance(self.n_components, str):
-                raise ValueError("n_components must be an int")
-            if self.n_components % 1 != 0:
-                raise ValueError("n_components must be a whole number")
+        if not isinstance(self.dim, int):
+            if isinstance(self.dim, str):
+                raise ValueError("dim must be an int")
+            if self.dim % 1 != 0:
+                raise ValueError("dim must be a whole number")
             try:
                 # this will convert other types of int (eg. numpy int64)
                 # to Python int
-                self.n_components = int(self.n_components)
+                self.dim = int(self.dim)
             except ValueError:
-                raise ValueError("n_components must be an int")
-        if self.n_components < 1:
-            raise ValueError("n_components must be greater than 0")
+                raise ValueError("dim must be an int")
+        if self.dim < 1:
+            raise ValueError("dim must be greater than 0")
         if self.n_epochs is not None and (
                 self.n_epochs < 0 or not isinstance(self.n_epochs, int)
         ):
@@ -187,45 +160,37 @@ class GidrDun(BaseEstimator):
         if self.numba:
             numba.set_num_threads(self._original_n_threads)
 
-
-    def fit(self, X):
-        """Fit X into an embedded space.
-
-        Optionally use y for supervised dimension reduction.
-
-        Parameters
-        ----------
-        X : array, shape (n_samples, n_features) or (n_samples, n_samples)
-            If the metric is 'precomputed' X must be a square distance
-            matrix. Otherwise it contains a sample per row. If the method
-            is 'exact', X may be a sparse matrix of type 'csr', 'csc'
-            or 'coo'.
-        """
-
-        X = check_array(X, dtype=np.float32, order="C")
-
-        # Handle all the optional arguments, setting default
-        self._validate_parameters()
+    def nearest_neighbors(self, X):
         if self.verbose:
-            print(str(self))
+            print(utils.ts(), "Finding Nearest Neighbors")
 
-        self.set_num_threads()
+        # Legacy values from UMAP implementation
+        n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
+        n_iters = max(5, int(round(np.log2(X.shape[0]))))
 
-        # Error check n_neighbors based on data size
-        if X.shape[0] <= self.n_neighbors:
-            if X.shape[0] == 1:
-                self.embedding_ = np.zeros(
-                    (1, self.n_components)
-                )  # needed to sklearn comparability
-                return self, 0
+        if self.angular:
+            distance_func = pynnd_dist.cosine
+        else:
+            distance_func = pynnd_dist.euclidean
 
-            self.n_neighbors = X.shape[0] - 1
+        knn_indices, knn_dists = NNDescent(
+            X,
+            n_neighbors=self.n_neighbors,
+            random_state=self.random_state,
+            n_trees=n_trees,
+            distance_func=distance_func,
+            n_iters=n_iters,
+            max_candidates=20,
+            n_jobs=self.num_threads,
+            verbose=self.verbose,
+        ).neighbor_graph
 
-        self.random_state = check_random_state(self.random_state)
         if self.verbose:
-            print("Constructing nearest neighbor graph...")
+            print(utils.ts(), "Finished Nearest Neighbor Search")
 
-        start = time.time()
+        return knn_indices, knn_dists
+
+    def get_nearest_neighbors(self, X):
         # Only run GPU nearest neighbors if the dataset is small enough
         # It is exact, so it scales at n^2 vs. NNDescent's nlogn
         if self.gpu and X.shape[0] < 100000 and X.shape[1] < 30000:
@@ -240,37 +205,116 @@ class GidrDun(BaseEstimator):
             self._knn_dists = np.reshape(dists.to_numpy(), [X.shape[0], self.n_neighbors])
             self._knn_indices = np.reshape(inds.to_numpy(), [X.shape[0], self.n_neighbors])
         else:
-            self._knn_indices, self._knn_dists = graph_weights.nearest_neighbors(
-                X,
-                self.n_neighbors,
-                self.angular,
-                self.random_state,
-                num_threads=self.num_threads,
-                verbose=True,
+            self._knn_indices, self._knn_dists = self.nearest_neighbors(X)
+
+    def compute_P_matrix(self, X):
+        self._knn_dists = self._knn_dists.astype(np.float32)
+
+        # Calculate likelihood of point x_j with respect to point_i
+        if not self.gpu:
+            # Get umap p(x_j | x_i) constants
+            sigmas, rhos = get_sigmas_and_rhos(
+                self._knn_dists,
+                float(self.n_neighbors),
+                pseudo_distance=self.pseudo_distance,
             )
 
-        self.graph = graph_weights.compute_P_matrix(
-            X,
-            self.n_neighbors,
-            self.random_state,
-            self._knn_indices,
-            self._knn_dists,
-            self.verbose,
-            pseudo_distance=self.pseudo_distance,
-            tsne_symmetrization=self.tsne_symmetrization,
-            gpu=self.gpu,
+            # Calculate weights in the similarity graph
+            rows, cols, vals = get_similarities(
+                self._knn_indices,
+                self._knn_dists,
+                sigmas,
+                rhos,
+                pseudo_distance=self.pseudo_distance,
+            )
+        else:
+            from graph_weights_build import graph_weights
+            n_points = int(X.shape[0])
+            # Initialize memory that will be passed to Cuda as pointers
+            # The Cuda functions will then fill these with the appropriate values
+            sigmas = np.zeros([n_points], dtype=np.float32, order='c')
+            rhos = np.zeros([n_points], dtype=np.float32, order='c')
+            rows = np.zeros([n_points * self.n_neighbors], dtype=np.int32, order='c')
+            cols = np.zeros([n_points * self.n_neighbors], dtype=np.int32, order='c')
+            vals = np.zeros([n_points * self.n_neighbors], dtype=np.float32, order='c')
+            dists = np.zeros([n_points * self.n_neighbors], dtype=np.float32, order='c')
+            graph_weights(
+                sigmas,
+                rhos,
+                rows,
+                cols,
+                vals,
+                dists,
+                self._knn_indices.astype(np.int32),
+                self._knn_dists,
+                int(self.n_neighbors),
+                0, # FIXME -- this was the return_dists variable, but it is always zero. Remove from C/Cuda files
+                1, # FIXME -- this was the local_connectivity variable, but it is always one
+                int(self.pseudo_distance)
+            )
+
+        # Put p_{i|j} similarities into a sparse matrix format
+        result = scipy.sparse.coo_matrix(
+            (vals, (rows, cols)), shape=(X.shape[0], X.shape[0])
         )
+        result.eliminate_zeros()
+
+        # Symmetrize the similarities
+        # UMAP symmetrization:
+        # Symmetrized = A + A^T - pointwise_mul(A, A^T)
+        # TSNE symmetrization:
+        # Symmetrized = (A + A^T) / 2
+        transpose = result.transpose()
+        if not self.tsne_symmetrization:
+            prod_matrix = result.multiply(transpose)
+            result = result + transpose - prod_matrix
+        else:
+            result = (result + transpose) / 2
+        result.eliminate_zeros()
+
+        return result
+
+    def fit(self, X):
+        """
+        FIXME
+        """
+        X = check_array(X, dtype=np.float32, order="C")
+
+        # Handle all the optional arguments, setting default
+        self._validate_parameters()
+        if self.verbose:
+            print(str(self))
+
+        self.set_num_threads()
+
+        # Error check n_neighbors based on data size
+        if X.shape[0] <= self.n_neighbors:
+            if X.shape[0] == 1:
+                self.embedding_ = np.zeros(
+                    (1, self.dim)
+                )  # needed to sklearn comparability
+                return self, 0
+
+            self.n_neighbors = X.shape[0] - 1
+
+        self.random_state = check_random_state(self.random_state)
+
+        if self.verbose:
+            print("Constructing nearest neighbor graph...")
+        start = time.time()
+
+        # Get nearest neighbors in high-dimensional space
+        self.get_nearest_neighbors(X)
+
+        # Get similarity of high-dimensional points to one another
+        self.graph = self.compute_P_matrix(X)
+
         end = time.time()
         if self.verbose:
             print('Calculating high dim similarities took {:.3f} seconds'.format(end - start))
 
-        if self.verbose:
-            print(utils.ts(), "Constructing embedding")
-
+        # Move around low-dimensional points such that they match the high-dim ones
         self._fit_embed_data(X)
-
-        if self.verbose:
-            print(utils.ts() + " Finished embedding")
 
         self.reset_num_threads()
 
@@ -279,23 +323,23 @@ class GidrDun(BaseEstimator):
     def initialize_embedding(self, X):
         if self.random_init or self.gpu:
             embedding = self.random_state.multivariate_normal(
-                mean=np.zeros(n_components), cov=np.eye(n_components), size=(graph.shape[0])
+                mean=np.zeros(dim), cov=np.eye(dim), size=(graph.shape[0])
             ).astype(np.float32)
         else:
             # We add a little noise to avoid local minima for optimization to come
             initialisation = spectral.spectral_layout(
                 X,
                 self.graph,
-                self.n_components,
+                self.dim,
                 self.random_state,
                 metric=dist.euclidean,
             )
             expansion = 10.0 / np.abs(initialisation).max()
             embedding = (initialisation * expansion).astype(np.float32)
-            noise_shape = [self.graph.shape[0], self.n_components]
+            noise_shape = [self.graph.shape[0], self.dim]
             embedding += self.random_state.normal(scale=0.0001, size=noise_shape).astype(np.float32)
 
-        # ANDREW - renormalize initial embedding to be in range [0, 10]
+        # Renormalize initial embedding to be in range [0, 10]
         embedding -= np.min(embedding, 0)
         embedding /= np.max(embedding) / 10
         self.embedding = embedding.astype(np.float32, order="C")
@@ -305,6 +349,9 @@ class GidrDun(BaseEstimator):
         """
         FIXME
         """
+        if self.verbose:
+            print(utils.ts(), "Constructing embedding")
+
         self.graph = self.graph.tocoo()
         self.graph.sum_duplicates()
         start = time.time()
@@ -318,10 +365,12 @@ class GidrDun(BaseEstimator):
         self.initialize_embedding(X)
 
         # ANDREW - head and tail here represent the indices of nodes that have edges in high-dim
-        #        - So for each edge e_{ij}, head is low-dim embedding of point i and tail
-        #          is low-dim embedding of point j
+        #        - So for each edge e_{ij} in the nearest neighbor graph,
+        #          head is reference to point i and tail is reference to point j
         self.head = self.graph.row
         self.tail = self.graph.col
+
+        # neighbor_counts are used to speed up GPU calculations by standardizing block sizes
         self.neighbor_counts = np.unique(self.tail, return_counts=True)[1].astype(np.long)
 
         # ANDREW - get number of epochs that we will optimize this EDGE for
@@ -330,11 +379,14 @@ class GidrDun(BaseEstimator):
         self.rng_state = self.random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
 
         if self.verbose:
-            print('optimizing layout...')
+            print(utils.ts() + ' Optimizing layout...')
         self._optimize_layout()
 
+        if self.verbose:
+            print(utils.ts() + " Finished embedding")
+
+
     def _optimize_layout(self):
-        weights = self.graph.data.astype(np.float32)
         args = {
             'optimize_method': self.optimize_method,
             'normalized': self.normalized,
@@ -347,7 +399,7 @@ class GidrDun(BaseEstimator):
             'tail_embedding': self.embedding,
             'head': self.head,
             'tail': self.tail,
-            'weights': weights,
+            'weights': self.graph.data.astype(np.float32),
             'neighbor_counts': self.neighbor_counts,
             'n_epochs': self.n_epochs,
             'n_vertices': self.graph.shape[1],
@@ -387,10 +439,8 @@ class GidrDun(BaseEstimator):
         self.embedding = optimizer(**args)
         end = time.time()
         self.opt_time = end - start
-        # FIXME -- make into logger output
         if self.verbose:
             print('Optimization took {:.3f} seconds'.format(self.opt_time))
-
 
     def fit_transform(self, X):
         """

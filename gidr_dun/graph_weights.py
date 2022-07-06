@@ -5,8 +5,6 @@ import numpy as np
 import scipy
 
 from . import utils
-from nndescent.py_files.pynndescent_ import NNDescent
-import nndescent.py_files.distances as pynnd_dist
 
 SMOOTH_K_TOLERANCE = 1e-5
 MIN_K_DIST_SCALE = 1e-3
@@ -45,21 +43,17 @@ def get_sigmas_and_rhos(
         lo = 0.0
         hi = NPY_INFINITY
         mid = 1.0
-        # ANDREW - Calculating sigma values
+        # ANDREW - Calculating sigma values with binary search
         for n in range(n_iter):
             psum = 0.0
             for j in range(1, distances.shape[1]):
-                # ANDREW - when adding option for turning UMAP pseudo distance on/off,
-                #   an equivalent change needs to occur here!!
-                # FIXME - this if-statement broke the nndescent_umap_test
-                #       - it appears that it simply rotates the images around?
                 if pseudo_distance:
                     d = distances[i, j] - rho[i]
                 else:
                     d = distances[i, j]
 
                 if d > 0:
-                    psum += np.exp(-(d / mid))
+                    psum += np.exp(-d / mid)
                 else:
                     psum += 1.0
 
@@ -75,56 +69,10 @@ def get_sigmas_and_rhos(
                     mid *= 2
                 else:
                     mid = (lo + hi) / 2.0
+
         sigmas[i] = mid
 
-        # TODO: This is very inefficient, but will do for now. FIXME
-        if rho[i] > 0.0:
-            mean_ith_distances = np.mean(ith_distances)
-            if sigmas[i] < MIN_K_DIST_SCALE * mean_ith_distances:
-                # ANDREW - this never gets called on mnist
-                sigmas[i] = MIN_K_DIST_SCALE * mean_ith_distances
-        else:
-            # ANDREW - this never gets called on mnist either
-            if sigmas[i] < MIN_K_DIST_SCALE * mean_distances:
-                sigmas[i] = MIN_K_DIST_SCALE * mean_distances
-
     return sigmas, rho
-
-def nearest_neighbors(
-        X,
-        n_neighbors,
-        angular,
-        random_state,
-        num_threads=-1,
-        verbose=False,
-):
-    if verbose:
-        print(utils.ts(), "Finding Nearest Neighbors")
-
-    # Default values from UMAP implementation
-    n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
-    n_iters = max(5, int(round(np.log2(X.shape[0]))))
-
-    if angular:
-        distance_func = pynnd_dist.cosine
-    else:
-        distance_func = pynnd_dist.euclidean
-
-    knn_indices, knn_dists = NNDescent(
-        X,
-        n_neighbors=n_neighbors,
-        random_state=random_state,
-        n_trees=n_trees,
-        distance_func=distance_func,
-        n_iters=n_iters,
-        max_candidates=20,
-        n_jobs=num_threads,
-        verbose=verbose,
-    ).neighbor_graph
-
-    if verbose:
-        print(utils.ts(), "Finished Nearest Neighbor Search")
-    return knn_indices, knn_dists
 
 
 @numba.njit(
@@ -134,8 +82,6 @@ def nearest_neighbors(
         "rhos": numba.types.float32[::1],
         "val": numba.types.float32,
     },
-    # FIXME FIXME
-    # parallel=True,
     fastmath=True,
 )
 def get_similarities(
@@ -175,77 +121,3 @@ def get_similarities(
             vals[i * n_neighbors + j] = val
 
     return rows, cols, vals
-
-
-def compute_P_matrix(
-    X,
-    n_neighbors,
-    random_state,
-    knn_indices,
-    knn_dists,
-    verbose=False,
-    pseudo_distance=True,
-    tsne_symmetrization=False,
-    gpu=False,
-):
-    knn_dists = knn_dists.astype(np.float32)
-
-    if not gpu:
-        sigmas, rhos = get_sigmas_and_rhos(
-            knn_dists,
-            float(n_neighbors),
-            pseudo_distance=pseudo_distance,
-        )
-
-        rows, cols, vals = get_similarities(
-            knn_indices,
-            knn_dists,
-            sigmas,
-            rhos,
-            pseudo_distance=pseudo_distance,
-        )
-    else:
-        from graph_weights_build import graph_weights
-        n_points = int(X.shape[0])
-        # Initialize memory that will be passed to Cuda as pointers
-        # The Cuda functions will then fill these with the appropriate values
-        sigmas = np.zeros([n_points], dtype=np.float32, order='c')
-        rhos = np.zeros([n_points], dtype=np.float32, order='c')
-        rows = np.zeros([n_points * n_neighbors], dtype=np.int32, order='c')
-        cols = np.zeros([n_points * n_neighbors], dtype=np.int32, order='c')
-        vals = np.zeros([n_points * n_neighbors], dtype=np.float32, order='c')
-        dists = np.zeros([n_points * n_neighbors], dtype=np.float32, order='c')
-        graph_weights(
-            sigmas,
-            rhos,
-            rows,
-            cols,
-            vals,
-            dists,
-            knn_indices.astype(np.int32),
-            knn_dists,
-            int(n_neighbors),
-            0, # FIXME -- this was the return_dists variable, but it is always zero. Remove from C/Cuda files
-            1, # FIXME -- this was the local_connectivity variable, but it is always one
-            int(pseudo_distance)
-        )
-
-    # Put p_{i|j} similarities into a sparse matrix format
-    result = scipy.sparse.coo_matrix(
-        (vals, (rows, cols)), shape=(X.shape[0], X.shape[0])
-    )
-    result.eliminate_zeros()
-
-    # UMAP symmetrization:
-    # Symmetrized = A + A^T - pointwise_mul(A, A^T)
-    # TSNE symmetrization:
-    # Symmetrized = (A + A^T) / 2
-    transpose = result.transpose()
-    if not tsne_symmetrization:
-        prod_matrix = result.multiply(transpose)
-        result = result + transpose - prod_matrix
-    else:
-        result = (result + transpose) / 2
-    result.eliminate_zeros()
-
-    return result
