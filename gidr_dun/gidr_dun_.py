@@ -15,9 +15,6 @@ from sklearn.metrics import pairwise_distances
 from sklearn.preprocessing import normalize
 from sklearn.neighbors import KDTree
 
-from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
-import cudf
-import cupy as cp
 try:
     import joblib
 except ImportError:
@@ -564,6 +561,9 @@ class GidrDun(BaseEstimator):
         # Only run GPU nearest neighbors if the dataset is small enough
         if self.gpu and X.shape[0] < 100000 and X.shape[1] < 30000:
             print("doing GPU KNN")
+            from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
+            import cudf
+            import cupy as cp
             knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
             cu_X = cudf.DataFrame(X[index])
             knn_cuml.fit(cu_X)
