@@ -18,9 +18,7 @@ setup(
         'pynndescent',
         'sklearn',
         'scipy',
-        'tensorflow', #todo JRJ: changed from ternsorflow-cpu
         'tqdm',
-        'tensorflow_datasets',
         'umap-learn',
     ],
 )
