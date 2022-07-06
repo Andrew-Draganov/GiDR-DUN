@@ -107,7 +107,6 @@ def nearest_neighbors(
         metric,
         euclidean,
         random_state,
-        low_memory=True,
         use_pynndescent=True,
         num_threads=-1,
         verbose=False,
@@ -170,7 +169,6 @@ def compute_membership_strengths(
         knn_dists,
         sigmas,
         rhos,
-        return_dists=False,
         bipartite=False,
         pseudo_distance=True,
 ):
@@ -180,10 +178,6 @@ def compute_membership_strengths(
     rows = np.zeros(knn_indices.size, dtype=np.int32)
     cols = np.zeros(knn_indices.size, dtype=np.int32)
     vals = np.zeros(knn_indices.size, dtype=np.float32)
-    if return_dists:
-        dists = np.zeros(knn_indices.size, dtype=np.float32)
-    else:
-        dists = None
 
     for i in range(n_samples):
         for j in range(n_neighbors):
@@ -207,10 +201,8 @@ def compute_membership_strengths(
             rows[i * n_neighbors + j] = i
             cols[i * n_neighbors + j] = knn_indices[i, j]
             vals[i * n_neighbors + j] = val
-            if return_dists:
-                dists[i * n_neighbors + j] = knn_dists[i, j]
 
-    return rows, cols, vals, dists
+    return rows, cols, vals
 
 
 def fuzzy_simplicial_set(
@@ -222,12 +214,12 @@ def fuzzy_simplicial_set(
         knn_dists=None,
         local_connectivity=1.0,
         verbose=False,
-        return_dists=True,
         pseudo_distance=True,
         euclidean=True,
         tsne_symmetrization=False,
         gpu=False,
 ):
+    # FIXME -- We shouldn't have this and the exact same thing in the .fit() method
     if knn_indices is None or knn_dists is None:
         if gpu:
             from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
@@ -255,12 +247,11 @@ def fuzzy_simplicial_set(
             pseudo_distance=pseudo_distance,
         )
 
-        rows, cols, vals, dists = compute_membership_strengths(
+        rows, cols, vals = compute_membership_strengths(
             knn_indices,
             knn_dists,
             sigmas,
             rhos,
-            return_dists,
             pseudo_distance=pseudo_distance,
         )
     else:
@@ -282,7 +273,7 @@ def fuzzy_simplicial_set(
             knn_indices.astype(np.int32),
             knn_dists,
             int(n_neighbors),
-            int(return_dists),
+            0, # FIXME -- this was the return_dists variable, but it is always zero. Remove from C/Cuda files
             float(local_connectivity),
             int(pseudo_distance)
         )
@@ -305,16 +296,4 @@ def fuzzy_simplicial_set(
 
     result.eliminate_zeros()
 
-    if return_dists is None:
-        return result, sigmas, rhos
-    if return_dists:
-        dmat = scipy.sparse.coo_matrix(
-            (dists, (rows, cols)), shape=(X.shape[0], X.shape[0])
-        )
-        dists = dmat.maximum(dmat.transpose()).todok()
-    else:
-        dists = None
-
-    return result, sigmas, rhos, dists
-
-
+    return result, sigmas, rhos

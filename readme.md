@@ -76,3 +76,5 @@ relatively clean library.
 
 ##
 Contact -- for questions please raise an issue or (if you want a response) email draganovandrew@cs.au.dk
+
+If you use this code, please cite our paper Gradient Dimensionality Reduction; Differences and Unification

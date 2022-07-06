@@ -81,9 +81,6 @@ def simplicial_set_embedding(
         n_epochs,
         random_init,
         random_state,
-        metric,
-        output_metric=dist.named_distances_with_gradients["euclidean"],
-        euclidean_output=True,
         parallel=False,
         verbose=False,
 ):
@@ -119,7 +116,7 @@ def simplicial_set_embedding(
             graph,
             n_components,
             random_state,
-            metric=metric,
+            metric=dist.euclidean,
         )
         expansion = 10.0 / np.abs(initialisation).max()
         embedding = (initialisation * expansion).astype(
@@ -138,6 +135,7 @@ def simplicial_set_embedding(
     neighbor_counts = np.unique(tail, return_counts=True)[1].astype(np.long)
 
     # ANDREW - get number of epochs that we will optimize this EDGE for
+    # These are only used in the UMAP algorithm -- GDR doesn't care
     epochs_per_sample = make_epochs_per_sample(graph.data, n_epochs)
 
     # ANDREW - renormalize initial embedding to be in range [0, 10]
@@ -269,52 +267,6 @@ def _optimize_layout_euclidean(
         print('Optimization took {:.3f} seconds'.format(opt_time))
     return embedding, opt_time
 
-@numba.njit()
-def init_transform(indices, weights, embedding):
-    """Given indices and weights and an original embeddings
-    initialize the positions of new points relative to the
-    indices and weights (of their neighbors in the source data).
-
-    Parameters
-    ----------
-    indices: array of shape (n_new_samples, n_neighbors)
-        The indices of the neighbors of each new sample
-
-    weights: array of shape (n_new_samples, n_neighbors)
-        The membership strengths of associated 1-simplices
-        for each of the new samples.
-
-    embedding: array of shape (n_samples, dim)
-        The original embedding of the source data.
-
-    Returns
-    -------
-    new_embedding: array of shape (n_new_samples, dim)
-        An initial embedding of the new sample points.
-    """
-    result = np.zeros((indices.shape[0], embedding.shape[1]), dtype=np.float32)
-
-    for i in range(indices.shape[0]):
-        for j in range(indices.shape[1]):
-            for d in range(embedding.shape[1]):
-                result[i, d] += weights[i, j] * embedding[indices[i, j], d]
-
-    return result
-
-@numba.njit()
-def init_update(current_init, n_original_samples, indices):
-    for i in range(n_original_samples, indices.shape[0]):
-        n = 0
-        for j in range(indices.shape[1]):
-            for d in range(current_init.shape[1]):
-                if indices[i, j] < n_original_samples:
-                    n += 1
-                    current_init[i, d] += current_init[indices[i, j], d]
-        for d in range(current_init.shape[1]):
-            current_init[i, d] /= n
-
-    return
-
 def find_ab_params(spread, min_dist):
     """Fit a, b params for the differentiable curve used in lower
     dimensional fuzzy simplicial complex construction. We want the
@@ -339,7 +291,6 @@ class GidrDun(BaseEstimator):
             n_components=2,
             # FIXME - we don't actually use this
             metric="euclidean",
-            output_metric="euclidean",
             n_epochs=None,
             learning_rate=1.0,
             random_init=False,
@@ -356,26 +307,16 @@ class GidrDun(BaseEstimator):
             amplify_grads=False,
             min_dist=0.1,
             spread=1.0,
-            low_memory=True,
             num_threads=-1,
             local_connectivity=1.0,
             negative_sample_rate=5,
-            transform_queue_size=4.0,
             a=None,
             b=None,
             random_state=None,
-            target_n_neighbors=-1,
-            target_metric="categorical",
-            target_weight=0.5,
-            transform_seed=42,
-            force_approximation_algorithm=False,
             verbose=False,
-            unique=False,
     ):
         self.n_neighbors = n_neighbors
         self.metric = metric
-        self.output_metric = output_metric
-        self.target_metric = target_metric
         self.n_epochs = n_epochs
         self.random_init = random_init
         self.n_components = n_components
@@ -397,18 +338,10 @@ class GidrDun(BaseEstimator):
 
         self.spread = spread
         self.min_dist = min_dist
-        self.low_memory = low_memory
         self.local_connectivity = local_connectivity
         self.negative_sample_rate = negative_sample_rate
         self.random_state = random_state
-        self.transform_queue_size = transform_queue_size
-        self.target_n_neighbors = target_n_neighbors
-        self.target_metric = target_metric
-        self.target_weight = target_weight
-        self.transform_seed = transform_seed
-        self.force_approximation_algorithm = force_approximation_algorithm
         self.verbose = verbose
-        self.unique = unique
 
         self.num_threads = num_threads
 
@@ -416,6 +349,7 @@ class GidrDun(BaseEstimator):
         self.b = b
 
     def _validate_parameters(self):
+        """ Legacy UMAP parameter validation """
         if self.min_dist > self.spread:
             raise ValueError("min_dist must be less than or equal to spread")
         if self.min_dist < 0.0:
@@ -430,8 +364,6 @@ class GidrDun(BaseEstimator):
             raise ValueError("learning_rate must be positive")
         if self.n_neighbors < 2:
             raise ValueError("n_neighbors must be greater than 1")
-        if self.target_n_neighbors < 2 and self.target_n_neighbors != -1:
-            raise ValueError("target_n_neighbors must be greater than 1")
         if not isinstance(self.n_components, int):
             if isinstance(self.n_components, str):
                 raise ValueError("n_components must be an int")
@@ -449,50 +381,6 @@ class GidrDun(BaseEstimator):
                 self.n_epochs < 0 or not isinstance(self.n_epochs, int)
         ):
             raise ValueError("n_epochs must be a nonnegative integer")
-        # check sparsity of data upfront to set proper _input_distance_func &
-        # save repeated checks later on
-        # set input distance metric & inverse_transform distance metric
-        if self.metric == "precomputed":
-            if self.unique:
-                raise ValueError("unique is poorly defined on a precomputed metric")
-            warn(
-                "using precomputed metric; inverse_transform will be unavailable"
-            )
-            self._input_distance_func = self.metric
-            self._inverse_distance_func = None
-        elif self.metric in dist.named_distances:
-            # ANDREW - Euclidean metric leads us into this branch of the if statements
-            self._input_distance_func = dist.named_distances[self.metric]
-            try:
-                self._inverse_distance_func = dist.named_distances_with_gradients[self.metric]
-            except KeyError:
-                warn(
-                    "gradient function is not yet implemented for {} distance metric; "
-                    "inverse_transform will be unavailable".format(self.metric)
-                )
-                self._inverse_distance_func = None
-        else:
-            raise ValueError("metric is neither callable nor a recognised string")
-
-        # set output distance metric
-        if callable(self.output_metric):
-            self._output_distance_func = self.output_metric
-        elif self.output_metric == "precomputed":
-            raise ValueError("output_metric cannnot be 'precomputed'")
-        elif self.output_metric in dist.named_distances_with_gradients:
-            self._output_distance_func = dist.named_distances_with_gradients[
-                self.output_metric
-            ]
-        elif self.output_metric in dist.named_distances:
-            raise ValueError(
-                "gradient function is not yet implemented for {}.".format(
-                    self.output_metric
-                )
-            )
-        else:
-            raise ValueError(
-                "output_metric is neither callable nor a recognised string"
-            )
 
         if self.num_threads < -1 or self.num_threads == 0:
             raise ValueError("num_threads must be a postive integer, or -1 (for all cores)")
@@ -577,7 +465,6 @@ class GidrDun(BaseEstimator):
                 self.metric,
                 self.euclidean,
                 random_state,
-                self.low_memory,
                 use_pynndescent=True,
                 num_threads=self.num_threads,
                 verbose=True,
@@ -587,7 +474,6 @@ class GidrDun(BaseEstimator):
             self.graph_,
             self._sigmas,
             self._rhos,
-            self.graph_dists_,
         ) = graph_weights.fuzzy_simplicial_set(
             X[index],
             self.n_neighbors,
@@ -667,9 +553,6 @@ class GidrDun(BaseEstimator):
             n_epochs,
             self.random_init,
             random_state,
-            self._input_distance_func,
-            self._output_distance_func,
-            self.output_metric in ("euclidean", "l2"),
             self.random_state is None,
             self.verbose,
         )
@@ -689,5 +572,5 @@ class GidrDun(BaseEstimator):
         X_new : array, shape (n_samples, n_components)
             Embedding of the training data in low-dimensional space.
         """
-        _ = self.fit(X)
+        self.fit(X)
         return self.embedding_
