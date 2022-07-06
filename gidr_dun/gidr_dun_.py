@@ -59,204 +59,6 @@ def make_epochs_per_sample(weights, n_epochs):
     result[n_samples > 0] = float(n_epochs) / n_samples[n_samples > 0]
     return result
 
-def simplicial_set_embedding(
-        optimize_method,
-        normalized,
-        euclidean,
-        sym_attraction,
-        frob,
-        numba,
-        torch,
-        gpu,
-        num_threads,
-        amplify_grads,
-        data,
-        graph,
-        n_components,
-        initial_lr,
-        a,
-        b,
-        negative_sample_rate,
-        n_epochs,
-        random_init,
-        random_state,
-        parallel=False,
-        verbose=False,
-):
-    graph = graph.tocoo()
-    graph.sum_duplicates()
-    n_vertices = graph.shape[1]
-
-    start = time.time()
-    if n_epochs > 10:
-        graph.data[graph.data < (graph.data.max() / float(n_epochs))] = 0.0
-    else:
-        graph.data[graph.data < (graph.data.max() / float(default_epochs))] = 0.0
-
-    graph.eliminate_zeros()
-
-    if random_init or gpu:
-        embedding = random_state.multivariate_normal(
-            mean=np.zeros(n_components), cov=np.eye(n_components), size=(graph.shape[0])
-        ).astype(np.float32)
-    else:
-        # We add a little noise to avoid local minima for optimization to come
-        initialisation = spectral.spectral_layout(
-            data,
-            graph,
-            n_components,
-            random_state,
-            metric=dist.euclidean,
-        )
-        expansion = 10.0 / np.abs(initialisation).max()
-        embedding = (initialisation * expansion).astype(
-            np.float32
-        ) + random_state.normal(
-            scale=0.0001, size=[graph.shape[0], n_components]
-        ).astype(
-            np.float32
-        )
-
-    # ANDREW - head and tail here represent the indices of nodes that have edges in high-dim
-    #        - So for each edge e_{ij}, head is low-dim embedding of point i and tail
-    #          is low-dim embedding of point j
-    head = graph.row
-    tail = graph.col
-    neighbor_counts = np.unique(tail, return_counts=True)[1].astype(np.long)
-
-    # ANDREW - get number of epochs that we will optimize this EDGE for
-    # These are only used in the UMAP algorithm -- GDR doesn't care
-    epochs_per_sample = make_epochs_per_sample(graph.data, n_epochs)
-
-    # ANDREW - renormalize initial embedding to be in range [0, 10]
-    embedding = (
-            10.0
-            * (embedding - np.min(embedding, 0))
-            / (np.max(embedding, 0) - np.min(embedding, 0))
-    ).astype(np.float32, order="C")
-
-    rng_state = random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
-
-    if verbose:
-        print('optimizing layout...')
-    # FIXME FIXME -- need to make sure that all numpy matrices are in
-    #   'c' format!
-    embedding, opt_time = _optimize_layout_euclidean(
-        optimize_method,
-        normalized,
-        euclidean,
-        sym_attraction,
-        frob,
-        numba,
-        torch,
-        gpu,
-        num_threads,
-        amplify_grads,
-        embedding,
-        embedding,
-        head,
-        tail,
-        graph.data,
-        neighbor_counts,
-        n_epochs,
-        n_vertices,
-        epochs_per_sample,
-        a,
-        b,
-        rng_state,
-        initial_lr,
-        negative_sample_rate,
-        verbose
-    )
-
-    return embedding, opt_time
-
-def _optimize_layout_euclidean(
-        optimize_method,
-        normalized,
-        euclidean,
-        sym_attraction,
-        frob,
-        numba,
-        torch,
-        gpu,
-        num_threads,
-        amplify_grads,
-        head_embedding,
-        tail_embedding,
-        head,
-        tail,
-        weights,
-        neighbor_counts,
-        n_epochs,
-        n_vertices,
-        epochs_per_sample,
-        a,
-        b,
-        rng_state,
-        initial_lr,
-        negative_sample_rate,
-        parallel=False,
-        verbose=True,
-):
-    weights = weights.astype(np.float32)
-    args = {
-        'optimize_method': optimize_method,
-        'normalized': normalized,
-        'angular': not euclidean,
-        'sym_attraction': int(sym_attraction),
-        'frob': int(frob),
-        'num_threads': num_threads,
-        'amplify_grads': int(amplify_grads),
-        'head_embedding': head_embedding,
-        'tail_embedding': tail_embedding,
-        'head': head,
-        'tail': tail,
-        'weights': weights,
-        'neighbor_counts': neighbor_counts,
-        'n_epochs': n_epochs,
-        'n_vertices': n_vertices,
-        'epochs_per_sample': epochs_per_sample,
-        'a': a,
-        'b': b,
-        'initial_lr': initial_lr,
-        'negative_sample_rate': negative_sample_rate,
-        'rng_state': rng_state,
-        'verbose': int(verbose)
-    }
-    start = time.time()
-    if gpu:
-        if optimize_method != 'gidr_dun':
-            raise ValueError('GPU optimization can only be performed in the gidr_dun setting')
-        from optimize_gpu import gpu_opt_wrapper as optimizer
-    elif torch:
-        if optimize_method != 'gidr_dun':
-            raise ValueError('PyTorch optimization can only be performed in the gidr_dun setting')
-        from .pytorch_optimize import torch_optimize_layout as optimizer
-    elif numba:
-        if optimize_method == 'umap':
-            from .numba_optimizers.umap import optimize_layout_euclidean as optimizer
-        elif optimize_method == 'gidr_dun':
-            from .numba_optimizers.gidr_dun import gidr_dun_numba_wrapper as optimizer
-        else:
-            raise ValueError('Numba optimization only works for umap and gidr_dun')
-    else:
-        if optimize_method == 'umap':
-            from umap_opt import umap_opt_wrapper as optimizer
-        elif optimize_method == 'tsne':
-            from tsne_opt import tsne_opt_wrapper as optimizer
-        elif optimize_method == 'gidr_dun':
-            from gidr_dun_opt import gidr_dun_opt_wrapper as optimizer
-        else:
-            raise ValueError("Optimization method is unsupported at the current time")
-    embedding = optimizer(**args)
-    end = time.time()
-    opt_time = end - start
-    # FIXME -- make into logger output
-    if verbose:
-        print('Optimization took {:.3f} seconds'.format(opt_time))
-    return embedding, opt_time
-
 def find_ab_params(spread, min_dist):
     """Fit a, b params for the differentiable curve used in lower
     dimensional fuzzy simplicial complex construction. We want the
@@ -286,7 +88,7 @@ class GidrDun(BaseEstimator):
             tsne_symmetrization=False,
             optimize_method='umap_sampling',
             normalized=0,
-            euclidean=True,
+            angular=False,
             sym_attraction=True,
             frob=False,
             numba=False,
@@ -296,7 +98,6 @@ class GidrDun(BaseEstimator):
             min_dist=0.1,
             spread=1.0,
             num_threads=-1,
-            local_connectivity=1.0,
             negative_sample_rate=5,
             a=None,
             b=None,
@@ -313,24 +114,22 @@ class GidrDun(BaseEstimator):
         self.pseudo_distance = pseudo_distance
         self.optimize_method = optimize_method
         self.normalized = normalized
-        self.euclidean = euclidean
+        self.angular = angular
         self.sym_attraction = sym_attraction
         self.frob = frob
         self.numba = numba
         self.torch = torch
         self.gpu = gpu
-        self.euclidean = euclidean
         self.amplify_grads = amplify_grads
 
-        self.spread = spread
-        self.min_dist = min_dist
-        self.local_connectivity = local_connectivity
         self.negative_sample_rate = negative_sample_rate
         self.random_state = random_state
         self.verbose = verbose
 
         self.num_threads = num_threads
 
+        self.min_dist = min_dist
+        self.spread = spread
         if a is None or b is None:
             self.a, self.b = find_ab_params(self.spread, self.min_dist)
         else:
@@ -347,10 +146,6 @@ class GidrDun(BaseEstimator):
 
     def _validate_parameters(self):
         """ Legacy UMAP parameter validation """
-        if self.min_dist > self.spread:
-            raise ValueError("min_dist must be less than or equal to spread")
-        if self.min_dist < 0.0:
-            raise ValueError("min_dist cannot be negative")
         if not isinstance(self.random_init, bool):
             raise ValueError("init must be a bool")
         if self.negative_sample_rate < 0:
@@ -380,6 +175,19 @@ class GidrDun(BaseEstimator):
         if self.num_threads < -1 or self.num_threads == 0:
             raise ValueError("num_threads must be a postive integer, or -1 (for all cores)")
 
+    def set_num_threads(self):
+        if self.numba:
+            self._original_n_threads = numba.get_num_threads()
+            if self.num_threads > 0 and self.num_threads is not None:
+                numba.set_num_threads(self.num_threads)
+            else:
+                self.num_threads = self._original_n_threads
+
+    def reset_num_threads(self):
+        if self.numba:
+            numba.set_num_threads(self._original_n_threads)
+
+
     def fit(self, X):
         """Fit X into an embedded space.
 
@@ -394,19 +202,14 @@ class GidrDun(BaseEstimator):
             or 'coo'.
         """
 
-        X = check_array(X, dtype=np.float32, accept_sparse="csr", order="C")
+        X = check_array(X, dtype=np.float32, order="C")
 
         # Handle all the optional arguments, setting default
         self._validate_parameters()
         if self.verbose:
             print(str(self))
 
-        if self.numba:
-            self._original_n_threads = numba.get_num_threads()
-            if self.num_threads > 0 and self.num_threads is not None:
-                numba.set_num_threads(self.num_threads)
-            else:
-                self.num_threads = self._original_n_threads
+        self.set_num_threads()
 
         # Error check n_neighbors based on data size
         if X.shape[0] <= self.n_neighbors:
@@ -416,21 +219,15 @@ class GidrDun(BaseEstimator):
                 )  # needed to sklearn comparability
                 return self, 0
 
-            warn(
-                "n_neighbors is larger than the dataset size; truncating to "
-                "X.shape[0] - 1"
-            )
-            self._n_neighbors = X.shape[0] - 1
-        else:
-            self._n_neighbors = self.n_neighbors
+            self.n_neighbors = X.shape[0] - 1
 
-        random_state = check_random_state(self.random_state)
-
+        self.random_state = check_random_state(self.random_state)
         if self.verbose:
             print("Constructing nearest neighbor graph...")
 
         start = time.time()
         # Only run GPU nearest neighbors if the dataset is small enough
+        # It is exact, so it scales at n^2 vs. NNDescent's nlogn
         if self.gpu and X.shape[0] < 100000 and X.shape[1] < 30000:
             print("doing GPU KNN")
             from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
@@ -440,32 +237,26 @@ class GidrDun(BaseEstimator):
             cu_X = cudf.DataFrame(X)
             knn_cuml.fit(cu_X)
             dists, inds = knn_cuml.kneighbors(cu_X)
-            self._knn_dists = np.reshape(dists.to_numpy(), [X.shape[0], self._n_neighbors])
-            self._knn_indices = np.reshape(inds.to_numpy(), [X.shape[0], self._n_neighbors])
+            self._knn_dists = np.reshape(dists.to_numpy(), [X.shape[0], self.n_neighbors])
+            self._knn_indices = np.reshape(inds.to_numpy(), [X.shape[0], self.n_neighbors])
         else:
             self._knn_indices, self._knn_dists = graph_weights.nearest_neighbors(
                 X,
-                self._n_neighbors,
-                self.euclidean,
-                random_state,
+                self.n_neighbors,
+                self.angular,
+                self.random_state,
                 num_threads=self.num_threads,
                 verbose=True,
             )
 
-        (
-            self.graph_,
-            self._sigmas,
-            self._rhos,
-        ) = graph_weights.fuzzy_simplicial_set(
+        self.graph = graph_weights.compute_P_matrix(
             X,
             self.n_neighbors,
-            random_state,
+            self.random_state,
             self._knn_indices,
             self._knn_dists,
-            self.local_connectivity,
             self.verbose,
             pseudo_distance=self.pseudo_distance,
-            euclidean=self.euclidean,
             tsne_symmetrization=self.tsne_symmetrization,
             gpu=self.gpu,
         )
@@ -474,62 +265,136 @@ class GidrDun(BaseEstimator):
             print('Calculating high dim similarities took {:.3f} seconds'.format(end - start))
 
         if self.verbose:
-            print(utils.ts(), "Construct embedding")
+            print(utils.ts(), "Constructing embedding")
 
-        self.embedding_, opt_time = self._fit_embed_data(X, self.n_epochs, random_state)
-
-        # Assign any points that are fully disconnected from our manifold(s) to have embedding
-        # coordinates of np.nan.  These will be filtered by our plotting functions automatically.
-        # They also prevent users from being deceived a distance query to one of these points.
-        # Might be worth moving this into simplicial_set_embedding or _fit_embed_data
-        disconnected_vertices = np.array(self.graph_.sum(axis=1)).flatten() == 0
-        if len(disconnected_vertices) > 0:
-            self.embedding_[disconnected_vertices] = np.full(
-                self.n_components, np.nan
-            )
+        self._fit_embed_data(X)
 
         if self.verbose:
             print(utils.ts() + " Finished embedding")
 
-        if self.numba:
-            numba.set_num_threads(self._original_n_threads)
-        self.opt_time = opt_time
+        self.reset_num_threads()
 
         return self
 
-    def _fit_embed_data(self, X, n_epochs, random_state):
+    def initialize_embedding(self, X):
+        if self.random_init or self.gpu:
+            embedding = self.random_state.multivariate_normal(
+                mean=np.zeros(n_components), cov=np.eye(n_components), size=(graph.shape[0])
+            ).astype(np.float32)
+        else:
+            # We add a little noise to avoid local minima for optimization to come
+            initialisation = spectral.spectral_layout(
+                X,
+                self.graph,
+                self.n_components,
+                self.random_state,
+                metric=dist.euclidean,
+            )
+            expansion = 10.0 / np.abs(initialisation).max()
+            embedding = (initialisation * expansion).astype(np.float32)
+            noise_shape = [self.graph.shape[0], self.n_components]
+            embedding += self.random_state.normal(scale=0.0001, size=noise_shape).astype(np.float32)
+
+        # ANDREW - renormalize initial embedding to be in range [0, 10]
+        embedding -= np.min(embedding, 0)
+        embedding /= np.max(embedding) / 10
+        self.embedding = embedding.astype(np.float32, order="C")
+
+
+    def _fit_embed_data(self, X):
         """
-        A method wrapper for simplicial_set_embedding that can be
-        replaced by subclasses.
+        FIXME
         """
-        return simplicial_set_embedding(
-            self.optimize_method,
-            self.normalized,
-            self.euclidean,
-            self.sym_attraction,
-            self.frob,
-            self.numba,
-            self.torch,
-            self.gpu,
-            self.num_threads,
-            self.amplify_grads,
-            X,
-            self.graph_,
-            self.n_components,
-            self.learning_rate,
-            self.a,
-            self.b,
-            self.negative_sample_rate,
-            n_epochs,
-            self.random_init,
-            random_state,
-            self.random_state is None,
-            self.verbose,
-        )
+        self.graph = self.graph.tocoo()
+        self.graph.sum_duplicates()
+        start = time.time()
+
+        if self.n_epochs > 10:
+            self.graph.data[self.graph.data < (self.graph.data.max() / float(self.n_epochs))] = 0.0
+        else:
+            self.graph.data[graph.data < (self.graph.data.max() / float(self.default_epochs))] = 0.0
+        self.graph.eliminate_zeros()
+
+        self.initialize_embedding(X)
+
+        # ANDREW - head and tail here represent the indices of nodes that have edges in high-dim
+        #        - So for each edge e_{ij}, head is low-dim embedding of point i and tail
+        #          is low-dim embedding of point j
+        self.head = self.graph.row
+        self.tail = self.graph.col
+        self.neighbor_counts = np.unique(self.tail, return_counts=True)[1].astype(np.long)
+
+        # ANDREW - get number of epochs that we will optimize this EDGE for
+        # These are only used in the UMAP algorithm
+        self.epochs_per_sample = make_epochs_per_sample(self.graph.data, self.n_epochs)
+        self.rng_state = self.random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
+
+        if self.verbose:
+            print('optimizing layout...')
+        self._optimize_layout()
+
+    def _optimize_layout(self):
+        weights = self.graph.data.astype(np.float32)
+        args = {
+            'optimize_method': self.optimize_method,
+            'normalized': self.normalized,
+            'angular': self.angular,
+            'sym_attraction': int(self.sym_attraction),
+            'frob': int(self.frob),
+            'num_threads': self.num_threads,
+            'amplify_grads': int(self.amplify_grads),
+            'head_embedding': self.embedding,
+            'tail_embedding': self.embedding,
+            'head': self.head,
+            'tail': self.tail,
+            'weights': weights,
+            'neighbor_counts': self.neighbor_counts,
+            'n_epochs': self.n_epochs,
+            'n_vertices': self.graph.shape[1],
+            'epochs_per_sample': self.epochs_per_sample,
+            'a': self.a,
+            'b': self.b,
+            'initial_lr': self.learning_rate,
+            'negative_sample_rate': self.negative_sample_rate,
+            'rng_state': self.rng_state,
+            'verbose': int(self.verbose)
+        }
+        start = time.time()
+        if self.gpu:
+            if self.optimize_method != 'gidr_dun':
+                raise ValueError('GPU optimization can only be performed in the gidr_dun setting')
+            from optimize_gpu import gpu_opt_wrapper as optimizer
+        elif self.torch:
+            if self.optimize_method != 'gidr_dun':
+                raise ValueError('PyTorch optimization can only be performed in the gidr_dun setting')
+            from .pytorch_optimize import torch_optimize_layout as optimizer
+        elif self.numba:
+            if self.optimize_method == 'umap':
+                from .numba_optimizers.umap import optimize_layout_euclidean as optimizer
+            elif self.optimize_method == 'gidr_dun':
+                from .numba_optimizers.gidr_dun import gidr_dun_numba_wrapper as optimizer
+            else:
+                raise ValueError('Numba optimization only works for umap and gidr_dun')
+        else:
+            if self.optimize_method == 'umap':
+                from umap_opt import umap_opt_wrapper as optimizer
+            elif self.optimize_method == 'tsne':
+                from tsne_opt import tsne_opt_wrapper as optimizer
+            elif self.optimize_method == 'gidr_dun':
+                from gidr_dun_opt import gidr_dun_opt_wrapper as optimizer
+            else:
+                raise ValueError("Optimization method is unsupported at the current time")
+        self.embedding = optimizer(**args)
+        end = time.time()
+        self.opt_time = end - start
+        # FIXME -- make into logger output
+        if self.verbose:
+            print('Optimization took {:.3f} seconds'.format(self.opt_time))
+
 
     def fit_transform(self, X):
         """
         FIXME
         """
         self.fit(X)
-        return self.embedding_
+        return self.embedding

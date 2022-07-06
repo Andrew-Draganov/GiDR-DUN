@@ -10,9 +10,6 @@ from sklearn.metrics import pairwise_distances
 from sklearn.metrics.pairwise import _VALID_METRICS as SKLEARN_PAIRWISE_VALID_METRICS
 
 
-# ANDREW - This is the laplacian eigenmaps initialization
-# t-SNE does NOT use this, so add option for removing
-
 def component_layout(
     data,
     n_components,

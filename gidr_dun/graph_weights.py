@@ -20,16 +20,14 @@ NPY_INFINITY = np.inf
         "hi": numba.types.float32,
     },
     fastmath=True,
-)  # benchmarking `parallel=True` shows it to *decrease* performance
-def smooth_knn_dist(
+)
+def get_sigmas_and_rhos(
         distances,
         k,
         n_iter=64,
-        local_connectivity=1.0,
-        bandwidth=1.0,
         pseudo_distance=True,
 ):
-    target = np.log2(k) * bandwidth
+    target = np.log2(k)
     rho = np.zeros(distances.shape[0], dtype=np.float32)
     sigmas = np.zeros(distances.shape[0], dtype=np.float32)
 
@@ -39,17 +37,8 @@ def smooth_knn_dist(
         # ANDREW - Calculate rho values
         ith_distances = distances[i]
         non_zero_dists = ith_distances[ith_distances > 0.0]
-        if non_zero_dists.shape[0] >= local_connectivity:
-            index = int(np.floor(local_connectivity))
-            interpolation = local_connectivity - index
-            if index > 0:
-                rho[i] = non_zero_dists[index - 1]
-                if interpolation > SMOOTH_K_TOLERANCE:
-                    rho[i] += interpolation * (
-                            non_zero_dists[index] - non_zero_dists[index - 1]
-                    )
-            else:
-                rho[i] = interpolation * non_zero_dists[0]
+        if non_zero_dists.shape[0] >= 1:
+            rho[i] = non_zero_dists[0]
         elif non_zero_dists.shape[0] > 0:
             rho[i] = np.max(non_zero_dists)
 
@@ -104,7 +93,7 @@ def smooth_knn_dist(
 def nearest_neighbors(
         X,
         n_neighbors,
-        euclidean,
+        angular,
         random_state,
         num_threads=-1,
         verbose=False,
@@ -112,14 +101,14 @@ def nearest_neighbors(
     if verbose:
         print(utils.ts(), "Finding Nearest Neighbors")
 
-    # TODO: Hacked values for now
+    # Default values from UMAP implementation
     n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
     n_iters = max(5, int(round(np.log2(X.shape[0]))))
 
-    if euclidean:
-        distance_func = pynnd_dist.euclidean
-    else:
+    if angular:
         distance_func = pynnd_dist.cosine
+    else:
+        distance_func = pynnd_dist.euclidean
 
     knn_indices, knn_dists = NNDescent(
         X,
@@ -149,12 +138,11 @@ def nearest_neighbors(
     # parallel=True,
     fastmath=True,
 )
-def compute_membership_strengths(
+def get_similarities(
         knn_indices,
         knn_dists,
         sigmas,
         rhos,
-        bipartite=False,
         pseudo_distance=True,
 ):
     n_samples = knn_indices.shape[0]
@@ -169,8 +157,7 @@ def compute_membership_strengths(
             if knn_indices[i, j] == -1:
                 continue  # We didn't get the full knn for i
             # If applied to an adjacency matrix points shouldn't be similar to themselves.
-            # If applied to an incidence matrix (or bipartite) then the row and column indices are different.
-            if (bipartite == False) & (knn_indices[i, j] == i):
+            if knn_indices[i, j] == i:
                 val = 0.0
             elif knn_dists[i, j] - rhos[i] <= 0.0 or sigmas[i] == 0.0:
                 val = 1.0
@@ -190,31 +177,27 @@ def compute_membership_strengths(
     return rows, cols, vals
 
 
-def fuzzy_simplicial_set(
-        X,
-        n_neighbors,
-        random_state,
-        knn_indices,
-        knn_dists,
-        local_connectivity=1.0,
-        verbose=False,
-        pseudo_distance=True,
-        euclidean=True,
-        tsne_symmetrization=False,
-        gpu=False,
+def compute_P_matrix(
+    X,
+    n_neighbors,
+    random_state,
+    knn_indices,
+    knn_dists,
+    verbose=False,
+    pseudo_distance=True,
+    tsne_symmetrization=False,
+    gpu=False,
 ):
-    # FIXME -- We shouldn't have this and the exact same thing in the .fit() method
     knn_dists = knn_dists.astype(np.float32)
 
     if not gpu:
-        sigmas, rhos = smooth_knn_dist(
+        sigmas, rhos = get_sigmas_and_rhos(
             knn_dists,
             float(n_neighbors),
-            local_connectivity=float(local_connectivity),
             pseudo_distance=pseudo_distance,
         )
 
-        rows, cols, vals = compute_membership_strengths(
+        rows, cols, vals = get_similarities(
             knn_indices,
             knn_dists,
             sigmas,
@@ -224,6 +207,8 @@ def fuzzy_simplicial_set(
     else:
         from graph_weights_build import graph_weights
         n_points = int(X.shape[0])
+        # Initialize memory that will be passed to Cuda as pointers
+        # The Cuda functions will then fill these with the appropriate values
         sigmas = np.zeros([n_points], dtype=np.float32, order='c')
         rhos = np.zeros([n_points], dtype=np.float32, order='c')
         rows = np.zeros([n_points * n_neighbors], dtype=np.int32, order='c')
@@ -241,10 +226,11 @@ def fuzzy_simplicial_set(
             knn_dists,
             int(n_neighbors),
             0, # FIXME -- this was the return_dists variable, but it is always zero. Remove from C/Cuda files
-            float(local_connectivity),
+            1, # FIXME -- this was the local_connectivity variable, but it is always one
             int(pseudo_distance)
         )
 
+    # Put p_{i|j} similarities into a sparse matrix format
     result = scipy.sparse.coo_matrix(
         (vals, (rows, cols)), shape=(X.shape[0], X.shape[0])
     )
@@ -260,7 +246,6 @@ def fuzzy_simplicial_set(
         result = result + transpose - prod_matrix
     else:
         result = (result + transpose) / 2
-
     result.eliminate_zeros()
 
-    return result, sigmas, rhos
+    return result
