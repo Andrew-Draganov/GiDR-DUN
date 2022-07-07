@@ -7,6 +7,7 @@ from libc.stdlib cimport rand
 from libc.stdlib cimport malloc, free
 from cython.parallel cimport prange, parallel
 
+
 from sklearn.neighbors._quad_tree cimport _QuadTree
 np.import_array()
 
