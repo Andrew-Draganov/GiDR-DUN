@@ -160,37 +160,9 @@ class GidrDun(BaseEstimator):
         if self.numba:
             numba.set_num_threads(self._original_n_threads)
 
-    def nearest_neighbors(self, X):
+    def get_nearest_neighbors(self, X):
         if self.verbose:
             print(utils.ts(), "Finding Nearest Neighbors")
-
-        # Legacy values from UMAP implementation
-        n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
-        n_iters = max(5, int(round(np.log2(X.shape[0]))))
-
-        if self.angular:
-            distance_func = pynnd_dist.cosine
-        else:
-            distance_func = pynnd_dist.euclidean
-
-        knn_indices, knn_dists = NNDescent(
-            X,
-            n_neighbors=self.n_neighbors,
-            random_state=self.random_state,
-            n_trees=n_trees,
-            distance_func=distance_func,
-            n_iters=n_iters,
-            max_candidates=20,
-            n_jobs=self.num_threads,
-            verbose=self.verbose,
-        ).neighbor_graph
-
-        if self.verbose:
-            print(utils.ts(), "Finished Nearest Neighbor Search")
-
-        return knn_indices, knn_dists
-
-    def get_nearest_neighbors(self, X):
         # Only run GPU nearest neighbors if the dataset is small enough
         # It is exact, so it scales at n^2 vs. NNDescent's nlogn
         if self.gpu and X.shape[0] < 100000 and X.shape[1] < 30000:
@@ -205,7 +177,29 @@ class GidrDun(BaseEstimator):
             self._knn_dists = np.reshape(dists.to_numpy(), [X.shape[0], self.n_neighbors])
             self._knn_indices = np.reshape(inds.to_numpy(), [X.shape[0], self.n_neighbors])
         else:
-            self._knn_indices, self._knn_dists = self.nearest_neighbors(X)
+            # Legacy values from UMAP implementation
+            n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
+            n_iters = max(5, int(round(np.log2(X.shape[0]))))
+
+            if self.angular:
+                distance_func = pynnd_dist.cosine
+            else:
+                distance_func = pynnd_dist.euclidean
+
+            self._knn_indices, self._knn_dists = NNDescent(
+                X,
+                n_neighbors=self.n_neighbors,
+                random_state=self.random_state,
+                n_trees=n_trees,
+                distance_func=distance_func,
+                n_iters=n_iters,
+                max_candidates=20,
+                n_jobs=self.num_threads,
+                verbose=self.verbose,
+            ).neighbor_graph
+
+        if self.verbose:
+            print(utils.ts(), "Finished Nearest Neighbor Search")
 
     def compute_P_matrix(self, X):
         self._knn_dists = self._knn_dists.astype(np.float32)
@@ -323,7 +317,9 @@ class GidrDun(BaseEstimator):
     def initialize_embedding(self, X):
         if self.random_init or self.gpu:
             embedding = self.random_state.multivariate_normal(
-                mean=np.zeros(dim), cov=np.eye(dim), size=(graph.shape[0])
+                mean=np.zeros(self.dim),
+                cov=np.eye(self.dim),
+                size=(self.graph.shape[0])
             ).astype(np.float32)
         else:
             # We add a little noise to avoid local minima for optimization to come
