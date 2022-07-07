@@ -21,7 +21,7 @@ import numpy
 
 gidr_dun_build = Extension(
     'gidr_dun_opt',
-    ['cython/cython_files/gidr_dun.pyx'],
+    ['GiDR-DUN/cython/cython_files/gidr_dun.pyx'],
     language=['c'],
 
     extra_compile_args=['-fopenmp', '-O3', '-march=native', '-ffast-math'],
@@ -33,7 +33,7 @@ gidr_dun_build = Extension(
 
 umap_build = Extension(
     'umap_opt',
-    ['cython/cython_files/umap.pyx'],
+    ['GiDR-DUN/cython/cython_files/umap.pyx'],
     language=['c'],
 
     extra_compile_args=['-fopenmp', '-O3', '-march=native', '-ffast-math'],
@@ -43,7 +43,7 @@ umap_build = Extension(
 
 tsne_build = Extension(
     'tsne_opt',
-    ['cython/cython_files/tsne.pyx'],
+    ['GiDR-DUN/cython/cython_files/tsne.pyx'],
     language=['c'],
 
     extra_compile_args=['-fopenmp', '-O3', '-march=native', '-ffast-math'],

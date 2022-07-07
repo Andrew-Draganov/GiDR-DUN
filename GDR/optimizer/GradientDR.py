@@ -49,7 +49,7 @@ def find_ab_params(spread, min_dist):
     params, covar = curve_fit(curve, xv, yv)
     return params[0], params[1]
 
-class GidrDun(BaseEstimator):
+class GradientDR(BaseEstimator):
     def __init__(
             self,
             n_neighbors=15,
@@ -222,6 +222,7 @@ class GidrDun(BaseEstimator):
                 pseudo_distance=self.pseudo_distance,
             )
         else:
+            # FIXME
             from graph_weights_build import graph_weights
             n_points = int(X.shape[0])
             # Initialize memory that will be passed to Cuda as pointers
@@ -418,9 +419,9 @@ class GidrDun(BaseEstimator):
             from .pytorch_optimize import torch_optimize_layout as optimizer
         elif self.numba:
             if self.optimize_method == 'umap':
-                from .numba_optimizers.umap import optimize_layout_euclidean as optimizer
+                from GDR.optimizer.numba_optimizers import umap_numba_wrapper as optimizer
             elif self.optimize_method == 'gidr_dun':
-                from .numba_optimizers.gidr_dun import gidr_dun_numba_wrapper as optimizer
+                from GDR.optimizer.numba_optimizers import gdr_numba_wrapper as optimizer
             else:
                 raise ValueError('Numba optimization only works for umap and gidr_dun')
         else:

@@ -15,7 +15,7 @@ from .numba_utils import (
     repulsive_force_func
 )
 
-def _optimize_layout_euclidean_single_epoch(
+def umap_single_epoch(
     head_embedding,
     tail_embedding,
     head,
@@ -87,7 +87,7 @@ def _optimize_layout_euclidean_single_epoch(
             )
 
 
-def optimize_layout_euclidean(
+def umap_numba_wrapper(
     head_embedding,
     tail_embedding,
     head,
@@ -116,9 +116,8 @@ def optimize_layout_euclidean(
     epoch_of_next_negative_sample = epochs_per_negative_sample.copy()
     epoch_of_next_sample = epochs_per_sample.copy()
 
-    optimize_fn = numba.njit(
-        _optimize_layout_euclidean_single_epoch, fastmath=True, parallel=True
-    )
+    optimize_fn = numba.njit(umap_single_epoch, fastmath=True, parallel=True)
+
     for n in tqdm(range(n_epochs)):
         optimize_fn(
             head_embedding,

@@ -6,10 +6,10 @@ from sklearn.datasets import make_swiss_roll
 from mnist import MNIST
 
 def load_mnist():
-    mnist_data_path = os.path.join('data', 'mnist')
+    mnist_data_path = os.path.join('GDR', 'data', 'mnist')
     if not os.path.isdir(mnist_data_path):
         import subprocess
-        subprocess.call(os.path.join('scripts', 'mnist_get_data.sh'))
+        subprocess.call(os.path.join('GDR', 'scripts', 'mnist_get_data.sh'))
 
     mndata = MNIST(mnist_data_path)
     points, labels = mndata.load_training()
@@ -83,11 +83,11 @@ def load_cifar_data(directory=None):
         return d
 
     if directory is None:
-        directory = os.path.join('data', 'cifar')
+        directory = os.path.join('GDR', 'data', 'cifar')
 
     if not os.path.isdir(directory):
         import subprocess
-        subprocess.call(os.path.join('scripts', 'cifar_get_data.sh'))
+        subprocess.call(os.path.join('GDR', 'scripts', 'cifar_get_data.sh'))
 
     filelist = glob.glob(os.path.join(directory, 'data_batch_*'))
     if not filelist:

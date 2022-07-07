@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='Dimensionality Reduction Analysis',
+    name='GradientDimReduction',
     version='0.1.0',
     description='A package for evaluating dimensionality reduction algorithms',
     author='Andrew Draganov',
@@ -15,7 +15,6 @@ setup(
         'python-mnist',
         'numpy==1.21',
         'pandas',
-        'pynndescent',
         'sklearn',
         'scipy',
         'tqdm',

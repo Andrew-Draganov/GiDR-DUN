@@ -1,13 +1,12 @@
-from gidr_dun.gidr_dun_ import GidrDun
+from GDR.optimizer.GradientDR import GradientDR
 from sklearn.manifold import TSNE
 from umap import UMAP
 from sklearn.decomposition import PCA
 from sklearn.decomposition import KernelPCA
 
 def get_algorithm(algorithm_str, params, verbose=True):
-    print(algorithm_str)
     if 'gidr_dun' in algorithm_str:
-        dr = GidrDun(
+        dr = GradientDR(
                 n_neighbors=params['n_neighbors'],
                 n_epochs=params['n_epochs'],
                 random_state=98765,
