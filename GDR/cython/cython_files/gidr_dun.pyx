@@ -43,7 +43,6 @@ cdef extern from "../utils/cython_utils.c" nogil:
             float average_weight
     )
 
-
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
 

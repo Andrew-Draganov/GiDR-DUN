@@ -16,16 +16,17 @@ import numpy
 
 # Example below
 # -------------
-# os.environ['CC']='/usr/local/Cellar/gcc/11.2.0_3/bin/gcc-11'
-# os.environ['CXX']='/usr/local/Cellar/gcc/11.2.0_3/bin/g++-11'
+os.environ['CC']='/usr/bin/gcc'
+os.environ['CFLAGS'] = '-fopenmp -O3 -march=native -ffast-math'
+# os.environ['CXX']='/usr/bin/gcc++'
 
 gidr_dun_build = Extension(
     'gidr_dun_opt',
-    ['GiDR-DUN/cython/cython_files/gidr_dun.pyx'],
+    ['GDR/cython/cython_files/gidr_dun.pyx'],
     language=['c'],
 
-    extra_compile_args=['-fopenmp', '-O3', '-march=native', '-ffast-math'],
-    extra_link_args=['-fopenmp'],
+    # compile_args=,
+    extra_link_args=[],
     include_dirs=[
         numpy.get_include(),
     ],
@@ -33,7 +34,7 @@ gidr_dun_build = Extension(
 
 umap_build = Extension(
     'umap_opt',
-    ['GiDR-DUN/cython/cython_files/umap.pyx'],
+    ['GDR/cython/cython_files/umap.pyx'],
     language=['c'],
 
     extra_compile_args=['-fopenmp', '-O3', '-march=native', '-ffast-math'],
@@ -43,7 +44,7 @@ umap_build = Extension(
 
 tsne_build = Extension(
     'tsne_opt',
-    ['GiDR-DUN/cython/cython_files/tsne.pyx'],
+    ['GDR/cython/cython_files/tsne.pyx'],
     language=['c'],
 
     extra_compile_args=['-fopenmp', '-O3', '-march=native', '-ffast-math'],
