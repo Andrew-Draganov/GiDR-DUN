@@ -888,7 +888,7 @@ void gpu_umap_full(int normalized, // unused
                    int n_edges
 ) {
     cudaDeviceSynchronize();
-    int number_of_blocks_scalar = 32;//16 can be replace with something smaller then BLOCK_SIZE
+    int number_of_blocks_scalar = 128;//16 can be replace with something smaller then BLOCK_SIZE
     int number_of_threads_in_total = BLOCK_SIZE * 2 * number_of_blocks_scalar;
 
     //allocated and copy memory to the gpu

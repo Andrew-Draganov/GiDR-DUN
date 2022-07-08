@@ -5,8 +5,8 @@ import numpy as np
 import scipy
 
 from . import utils
-from nndescent.py_files.pynndescent_ import NNDescent
-import nndescent.py_files.distances as pynnd_dist
+from pynndescent.pynndescent_ import NNDescent
+# import nndescent.py_files.distances as pynnd_dist
 
 SMOOTH_K_TOLERANCE = 1e-5
 MIN_K_DIST_SCALE = 1e-3
@@ -131,17 +131,17 @@ def nearest_neighbors(
         n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
         n_iters = max(5, int(round(np.log2(X.shape[0]))))
 
-        if euclidean:
-            distance_func = pynnd_dist.euclidean
-        else:
-            distance_func = pynnd_dist.cosine
+        # if euclidean:
+        #     distance_func = pynnd_dist.euclidean
+        # else:
+        #     distance_func = pynnd_dist.cosine
 
         knn_search_index = NNDescent(
             X,
             n_neighbors=n_neighbors,
             random_state=random_state,
             n_trees=n_trees,
-            distance_func=distance_func,
+            # distance_func=distance_func,
             n_iters=n_iters,
             max_candidates=20,
             n_jobs=num_threads,
