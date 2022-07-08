@@ -1,4 +1,4 @@
-CONDA_ENV_NAME="GiDR_DUN_rapids"
+CONDA_ENV_NAME="GDR_gpu"
 CONDA_FILE=$(which conda)
 
 if [ ! -f "$CONDA_FILE" ]; then

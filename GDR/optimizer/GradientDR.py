@@ -167,9 +167,9 @@ class GradientDR(BaseEstimator):
         # It is exact, so it scales at n^2 vs. NNDescent's nlogn
         if self.gpu and X.shape[0] < 100000 and X.shape[1] < 30000:
             print("doing GPU KNN")
+            # FIXME -- make this a try-except. If cudf/cupy didn't install, run on cpu
             from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
             import cudf
-            import cupy as cp
             knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
             cu_X = cudf.DataFrame(X)
             knn_cuml.fit(cu_X)
@@ -223,7 +223,7 @@ class GradientDR(BaseEstimator):
             )
         else:
             # FIXME
-            from graph_weights_build import graph_weights
+            from gpu_graph_build import graph_weights
             n_points = int(X.shape[0])
             # Initialize memory that will be passed to Cuda as pointers
             # The Cuda functions will then fill these with the appropriate values
@@ -426,11 +426,11 @@ class GradientDR(BaseEstimator):
                 raise ValueError('Numba optimization only works for umap and gidr_dun')
         else:
             if self.optimize_method == 'umap':
-                from umap_opt import umap_opt_wrapper as optimizer
+                from umap_cython import umap_opt_wrapper as optimizer
             elif self.optimize_method == 'tsne':
-                from tsne_opt import tsne_opt_wrapper as optimizer
+                from tsne_cython import tsne_opt_wrapper as optimizer
             elif self.optimize_method == 'gidr_dun':
-                from gidr_dun_opt import gidr_dun_opt_wrapper as optimizer
+                from gdr_cython import gidr_dun_opt_wrapper as optimizer
             else:
                 raise ValueError("Optimization method is unsupported at the current time")
         self.embedding = optimizer(**args)

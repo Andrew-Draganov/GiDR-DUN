@@ -1,23 +1,23 @@
-create_rapids_env:
-	scripts/rapids_conda.sh
+create_gpu_env:
+	GDR/scripts/rapids_conda.sh
 
 create_torch_env:
-	scripts/torch_conda.sh
+	GDR/scripts/torch_conda.sh
 
 create_python_env:
-	scripts/basic_conda.sh
+	GDR/scripts/basic_conda.sh
 
 install_python_env:
-	GDR/scripts/check_conda_env.sh GiDR_DUN
+	GDR/scripts/check_conda_env.sh GDR
 	python3 setup.py install --user
 
 install_cython_env: install_python_env
 	# https://stavshamir.github.io/python/making-your-c-library-callable-from-python-by-wrapping-it-with-cython/ 
-	GDR/scripts/check_conda_env.sh GiDR_DUN
+	GDR/scripts/check_conda_env.sh GDR
 	python3 setup_cython.py install --user
 
-install_cuda_code: install_cython_env
-	GDR/scripts/check_conda_env.sh GiDR_DUN_rapids
+install_cuda_code: install_python_env
+	GDR/scripts/check_conda_env.sh GDR_gpu
 	# FIXME -- this should run on user's preferred cuda
 	/usr/local/cuda-11.5/bin/nvcc --shared -o libgpu_dim_reduction.so \
 		GDR/cython/cuda_wrappers/gpu_dim_reduction.cpp \
@@ -33,42 +33,29 @@ install_cuda_code: install_cython_env
 		-Xcompiler -fPIC
 	python3 setup_cython_gpu.py build_ext --inplace
 
+run_numba_test: install_python_env
+	# FIXME -- make into a unit test
+	python -m GDR.dim_reduce_dataset --num-points 5000 --numba
+	python -m GDR.dim_reduce_dataset --num-points 5000 --numba --optimize-method umap
+
 run_cython_test: install_cython_env
 	# FIXME -- make into a unit test
-	# Basic test to make sure that every algorithm can be run on CPU
+	# Basic test to make sure that every algorithm can be run with cython
 	### GIDR_DUN
 	# Basic gidr_dun implementation
-	python3 dim_reduce_dataset.py --num-points 6000
-	# Gidr_dun for obtaining TSNE outputs
-	python3 dim_reduce_dataset.py --optimize-method gidr_dun --num-points 6000 --normalized --momentum
-	# Gidr_dun running on numba -- this is faster on large distributed systems than cython
-	python3 dim_reduce_dataset.py --num-points 6000 --numba
-	### UMAP
-	# Run the original UMAP algorithm that gets installed with `pip install umap-learn`
-	python3 dim_reduce_dataset.py --num-points 6000 --dr-algorithm original_umap
-	# Run OUR implementation of UMAP in cython
-	# 	- `dr-algorithm` means that we run the GIDR_DUN implementations
-	# 	- `optimize-method` means that we run the UMAP optimization protocol
-	python3 dim_reduce_dataset.py --dr-algorithm gidr_dun --optimize-method umap --num-points 6000
-	# Run OUR implementation of UMAP in numba
-	python3 dim_reduce_dataset.py --num-points 6000 --numba --optimize-method umap
-	### TSNE
-	# Run the original TSNE algorithm that gets installed with `pip install scikit-learn`
-	python3 dim_reduce_dataset.py --num-points 6000 --dr-algorithm original_tsne
-	# Run OUR implementation of TSNE in cython
-	# 	- `dr-algorithm` means that we run the GIDR_DUN implementations
-	# 	- `optimize-method` means that we run the UMAP optimization protocol
-	python3 dim_reduce_dataset.py --dr-algorithm gidr_dun --optimize-method tsne --num-points 6000
+	python -m GDR.dim_reduce_dataset --num-threads 1 --num-points 5000 --optimize-method gidr_dun
+	python -m GDR.dim_reduce_dataset --num-threads 1 --num-points 5000 --optimize-method umap
+	python -m GDR.dim_reduce_dataset --num-threads 1 --num-points 5000 --optimize-method tsne
 
 run_gpu_test: install_cuda_code
 	# FIXME -- make into a unit test
 	# Basic test to make sure that every algorithm can be run on GPU
 	### GIDR_DUN
-	python3 dim_reduce_dataset.py --gpu --num-points 60000
+	python -m GDR.dim_reduce_dataset --gpu --num-points 60000
 	### RAPIDS UMAP
-	python3 dim_reduce_dataset.py --dr-algorithm rapids_umap --num-points 60000
+	python -m GDR.dim_reduce_dataset --dr-algorithm rapids_umap --num-points 60000
 	### RAPIDS TSNE
-	python3 dim_reduce_dataset.py --dr-algorithm rapids_tsne --num-points 60000
+	python -m GDR.dim_reduce_dataset --dr-algorithm rapids_tsne --num-points 60000
 
 clean:
 	rm *.so *.o *.egg-info

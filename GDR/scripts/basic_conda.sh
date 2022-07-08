@@ -1,4 +1,4 @@
-CONDA_ENV_NAME="GiDR_DUN"
+CONDA_ENV_NAME="GDR"
 CONDA_FILE=$(which conda)
 
 if [ ! -f "$CONDA_FILE" ]; then

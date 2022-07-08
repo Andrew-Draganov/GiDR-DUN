@@ -1,4 +1,6 @@
+import numpy as np
 from setuptools import setup
+from distutils.core import Extension
 
 setup(
     name='GradientDimReduction',
@@ -9,6 +11,9 @@ setup(
     packages=['nndescent'],
     package_dir={'nndescent': 'nndescent'},
     extras_require={'pytorch': 'torch'},
+    include_dirs=[
+        np.get_include(),
+    ],
     install_requires=[
         'cython',
         'matplotlib',

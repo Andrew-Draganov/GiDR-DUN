@@ -1,6 +1,5 @@
 cimport numpy as np
 cimport cython
-
 np.import_array()
 
 cdef extern from "../cuda_wrappers/gpu_graph_weights.cpp":
