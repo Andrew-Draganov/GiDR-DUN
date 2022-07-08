@@ -173,9 +173,9 @@ class GradientDR(BaseEstimator):
             knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
             cu_X = cudf.DataFrame(X)
             knn_cuml.fit(cu_X)
-            dists, inds = knn_cuml.kneighbors(cu_X)
-            self._knn_dists = np.reshape(dists.to_numpy(), [X.shape[0], self.n_neighbors])
-            self._knn_indices = np.reshape(inds.to_numpy(), [X.shape[0], self.n_neighbors])
+            dists, inds = knn_cuml.kneighbors(X)
+            self._knn_dists = np.reshape(dists, [X.shape[0], self.n_neighbors])
+            self._knn_indices = np.reshape(inds, [X.shape[0], self.n_neighbors])
         else:
             # Legacy values from UMAP implementation
             n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
