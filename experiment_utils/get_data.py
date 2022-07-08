@@ -11,7 +11,7 @@ def load_mnist():
     mnist_data_path = os.path.join('data', 'mnist')
     if not os.path.isdir(mnist_data_path):
         import subprocess
-        subprocess.call(os.path.join('utils', 'mnist_get_data.sh'))
+        subprocess.call(os.path.join('scripts', 'mnist_get_data.sh'))
 
     mndata = MNIST(mnist_data_path)
     points, labels = mndata.load_training()

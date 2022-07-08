@@ -5,8 +5,8 @@ import numpy as np
 import scipy
 
 from . import utils
-from nndescent.py_files.pynndescent_ import NNDescent
-import nndescent.py_files.distances as pynnd_dist
+# from nndescent.py_files.pynndescent_ import NNDescent
+# import nndescent.py_files.distances as pynnd_dist
 
 SMOOTH_K_TOLERANCE = 1e-5
 MIN_K_DIST_SCALE = 1e-3

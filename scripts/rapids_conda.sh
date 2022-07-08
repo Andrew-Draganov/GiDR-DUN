@@ -20,7 +20,7 @@ if [ $HAS_CONDA = True ]; then
         conda create -n $CONDA_ENV_NAME \
             -c rapidsai \
             -c nvidia \
-            -c conda-forge cuml=22.04 python=3.8 cudatoolkit=11.5;
+            -c conda-forge cuml=22.04 python=3.8 cudatoolkit=11.5 cuda-python=11.7.0;
     fi;
 else
     echo ">>> Install conda first.";
