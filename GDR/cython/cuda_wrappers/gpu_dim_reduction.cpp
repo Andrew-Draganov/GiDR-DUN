@@ -46,7 +46,3 @@ void gpu_umap_wrap(
             negative_sample_rate
     );
 }
-
-void GPU_KNN_wrap(int *h_neighbors, float *h_distances, float *h_data, int n, int d, int k){
-    GPU_KNN(h_neighbors,h_distances,h_data, n, d, k);
-}

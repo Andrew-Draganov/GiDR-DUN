@@ -309,6 +309,10 @@ apply_grads_full(float *d_Z, float *d_D_embed, float *d_rep_grads, float *d_attr
                 d_gains[index] *= 0.8;
             d_gains[index] = clip(d_gains[index], 0.01, 100);
             grad *= d_gains[index];
+            if (grad > 4.0)
+                grad = 4.0;
+            else if (grad < -4.0)
+                grad = -4.0;
 
             d_all_grads[index] *= (float) amplify_graps * 0.9;
             d_all_grads[index] += grad * lr;
@@ -460,7 +464,6 @@ void gpu_umap_full_N(int normalized, // unused
     int number_of_blocks_half = (number_of_threads_in_total / 2) / BLOCK_SIZE;
     if ((number_of_threads_in_total / 2) % BLOCK_SIZE) number_of_blocks_half++;
 
-
     //random
     curandState *d_random;
     cudaMalloc((void **) &d_random, number_of_threads * sizeof(curandState));
@@ -478,20 +481,6 @@ void gpu_umap_full_N(int normalized, // unused
     reduced_sum<<<1, number_of_blocks_scalar, number_of_blocks_scalar * sizeof(float)>>>
             (d_tmp_sum_1, d_tmp_sum_2, number_of_blocks_scalar);
     float average_weight = copy_last_D_to_H(d_tmp_sum_1, 1) / n_edges;
-
-//    printf("\n\nParams:\n");
-//    printf("- average_weight: %f\n", average_weight);
-//    printf("- amplify_graps: %d\n", amplify_graps);
-//    printf("- sym_attraction: %d\n", sym_attraction);
-//    printf("- normalized: %d\n", normalized);
-//    printf("- n_edges: %d\n", n_edges);
-//    printf("- negative_sample_rate: %d\n", negative_sample_rate);
-//    printf("- a: %f\n", a);
-//    printf("- b: %f\n", b);
-//    printf("- number_of_blocks_scalar: %d\n", number_of_blocks_scalar);
-//    printf("- number_of_blocks_half: %d\n", number_of_blocks_half);
-//    printf("- number_of_blocks: %d\n", number_of_blocks);
-//    printf("\n\n");
 
     gpu_set_all(d_tmp_sum_2, 1, 1.);
     cudaDeviceSynchronize();
@@ -613,44 +602,4 @@ void gpu_umap(
             n_edges,
             negative_sample_rate
     );
-}
-
-
-__global__
-void KNN(int *d_neighbors, float *d_distances, float *d_data, int n, int d, int k) {
-    extern __shared__ float s_array[];
-    float *s_distances = &s_array[2 * k * threadIdx.x];
-    int *s_neighbors = (int *) &s_distances[k];
-    for (int i_point = threadIdx.x + blockIdx.x * blockDim.x; i_point < n; i_point += blockDim.x * gridDim.x) {
-
-        for (int i = 0; i < k; i++) {
-            s_distances[i] = 0.;
-        }
-
-        for (int j_point = 0; j_point < n; j_point) {
-            float distance = 0.;
-            for (int i_dim = 0; i_dim < d; i_dim++) {
-                float diff = d_data[i_point * d + i_dim] - d_data[j_point * d + i_dim];
-                distance += diff * diff;
-            }
-            distance = sqrt(distance);
-        }
-    }
-}
-
-void GPU_KNN(int *h_neighbors, float *h_distances, float *h_data, int n, int d, int k) {
-    int *d_neighbors = gpu_malloc_int(n * k);
-    float *d_distances = gpu_malloc_float(n * k);
-    float *d_data = copy_H_to_D(h_data, n * d);
-
-    int number_of_blocks = n / BLOCK_SIZE;
-    if (n % BLOCK_SIZE)number_of_blocks++;
-    KNN<<<number_of_blocks, BLOCK_SIZE>>>(d_neighbors, d_distances, d_data, n, d, k);
-
-    copy_D_to_H(h_neighbors, d_neighbors, n * k);
-    copy_D_to_H(h_distances, d_distances, n * k);
-
-    cudaFree(d_neighbors);
-    cudaFree(d_distances);
-    cudaFree(d_data);
 }

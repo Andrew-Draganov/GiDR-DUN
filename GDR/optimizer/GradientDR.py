@@ -316,7 +316,7 @@ class GradientDR(BaseEstimator):
         return self
 
     def initialize_embedding(self, X):
-        if self.random_init or self.gpu:
+        if self.random_init:
             embedding = self.random_state.multivariate_normal(
                 mean=np.zeros(self.dim),
                 cov=np.eye(self.dim),
@@ -324,6 +324,8 @@ class GradientDR(BaseEstimator):
             ).astype(np.float32)
         else:
             # We add a little noise to avoid local minima for optimization to come
+            if X.shape[0] > 100000 and self.verbose:
+                print('Doing spectral embedding on large datasets is slow. Consider random initialization.')
             initialisation = spectral.spectral_layout(
                 X,
                 self.graph,

@@ -28,6 +28,4 @@ extern "C++" void gpu_umap(
         int n_epochs,
         int negative_sample_rate
 );
-
-extern "C++" void GPU_KNN(int *h_neighbors, float *h_distances, float *h_data, int n, int d, int k);
 #endif
