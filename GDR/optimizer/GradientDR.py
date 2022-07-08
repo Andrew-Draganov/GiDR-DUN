@@ -384,6 +384,8 @@ class GradientDR(BaseEstimator):
 
 
     def _optimize_layout(self):
+        # FIXME -- head_embedding and tail_embedding are always the same since 
+        #          we don't have separate fit and transform functions
         args = {
             'optimize_method': self.optimize_method,
             'normalized': self.normalized,

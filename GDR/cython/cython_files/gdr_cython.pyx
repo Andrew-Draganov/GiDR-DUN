@@ -202,7 +202,6 @@ cdef void _gidr_dun_epoch(
     #   - making the attr_grads and rep_grads thread-local inside gather_gradients
     #     and adding them up outside the threads
 
-
     with nogil:
         Z += gather_gradients(
             attr_grads,

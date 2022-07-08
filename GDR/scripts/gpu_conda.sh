@@ -1,6 +1,11 @@
 CONDA_ENV_NAME="GDR_gpu"
 CONDA_FILE=$(which conda)
 
+if [ ! -d GiDR-DUN/objects ]; then
+    echo "Creating objects directory for .so files"
+    mkdir objects
+fi
+
 if [ ! -f "$CONDA_FILE" ]; then
     HAS_CONDA=False;
 else
@@ -20,7 +25,7 @@ if [ $HAS_CONDA = True ]; then
         conda create -n $CONDA_ENV_NAME \
             -c rapidsai \
             -c nvidia \
-            -c conda-forge cuml=22.04 python=3.8 cudatoolkit=11.5;
+            -c conda-forge cuml=22.04 python=3.8 cudatoolkit=11.5 cuda-python=11.7.0;
     fi;
 else
     echo ">>> Install conda first.";

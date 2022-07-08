@@ -1,5 +1,5 @@
 create_gpu_env:
-	GDR/scripts/rapids_conda.sh
+	GDR/scripts/gpu_conda.sh
 
 create_torch_env:
 	GDR/scripts/torch_conda.sh
