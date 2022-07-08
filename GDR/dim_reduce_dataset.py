@@ -120,7 +120,7 @@ def get_args():
     parser.add_argument(
         '--neg-sample-rate',
         type=int,
-        default=5,
+        default=1,
         help='How many negative samples to use for each positive sample. Only applies for original UMAP'
     )
     parser.add_argument(
@@ -162,5 +162,5 @@ if __name__ == '__main__':
 
     save_dir = os.path.join('outputs', 'scratch')
     os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(save_dir, 'embedding.png')
+    save_path = os.path.join(save_dir, 'embedding.pdf')
     make_plot(embedding, labels, show_plot=True, save_path=save_path)
