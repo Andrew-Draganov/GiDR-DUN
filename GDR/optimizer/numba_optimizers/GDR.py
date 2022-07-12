@@ -1,5 +1,6 @@
 import numpy as np
 import numba
+from GDR.optimizer.utils import tau_rand_int
 from tqdm.auto import tqdm
 
 from .numba_utils import (
@@ -36,6 +37,7 @@ def gather_gradients(
     dim,
     a,
     b,
+    rng_state,
     average_weight
 ):
     Z = 0
@@ -60,7 +62,7 @@ def gather_gradients(
             if sym_attraction:
                 attr_grads[k, d] += grad_d
 
-        k = np.random.randint(0, n_vertices)
+        k = tau_rand_int(rng_state) % n_vertices
         y2 = head_embedding[k]
         dist = sq_euc_dist(y1, y2, dim)
 
@@ -124,6 +126,7 @@ def gdr_numba_wrapper(
     n_vertices,
     a,
     b,
+    rng_state,
     initial_lr,
     negative_sample_rate,
     verbose=True,
@@ -180,6 +183,7 @@ def gdr_numba_wrapper(
             dim,
             a,
             b,
+            rng_state,
             average_weight
         )
         if not normalized:

@@ -1,7 +1,7 @@
 import numpy as np
 import numba
 import umap.distances as dist
-from umap.utils import tau_rand_int
+from GDR.optimizer.utils import tau_rand_int
 from tqdm.auto import tqdm
 
 from .numba_utils import (
@@ -99,11 +99,7 @@ def umap_numba_wrapper(
     gamma=1.0,
     initial_alpha=1.0,
     negative_sample_rate=5.0,
-    parallel=False,
     verbose=False,
-    densmap=False,
-    densmap_kwds=None,
-    tqdm_kwds=None,
     move_other=False,
     **kwargs
 ):
