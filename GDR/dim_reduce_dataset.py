@@ -17,7 +17,7 @@ def get_args():
     parser.add_argument(
         '--dr-algorithm',
         choices=[
-            'gidr_dun',
+            'gdr',
             'original_umap',
             'original_tsne',
             'pca',
@@ -25,7 +25,7 @@ def get_args():
             'rapids_umap',
             'rapids_tsne'
         ],
-        default='gidr_dun',
+        default='gdr',
         help='Which algorithm to use for performing dim reduction'
     )
     parser.add_argument(
@@ -72,8 +72,8 @@ def get_args():
         choices=[
             'umap',
             'tsne',
-            'gidr_dun', ],
-        default='gidr_dun',
+            'gdr', ],
+        default='gdr',
         help='Which embedding optimization algorithm to use'
     )
     parser.add_argument(

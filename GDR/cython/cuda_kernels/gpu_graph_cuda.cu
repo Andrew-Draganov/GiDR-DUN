@@ -30,8 +30,7 @@ __global__
 void kernel_rhos(float *d_rhos,
                  float *d_knn_dists,
                  int n_points,
-                 int n_neighbors,
-                 float local_connectivity) {
+                 int n_neighbors) {
 
     extern __shared__ float s[];
 
@@ -49,17 +48,8 @@ void kernel_rhos(float *d_rhos,
                 number_of_non_zeros++;
             }
         }
-        if (number_of_non_zeros >= local_connectivity) {
-            int index = local_connectivity;
-            float interpolation = local_connectivity - (float) index;
-            if (index > 0) {
-                d_rhos[i] = non_zero_dists[index - 1];
-                if (interpolation > SMOOTH_K_TOLERANCE) {
-                    d_rhos[i] += interpolation * (non_zero_dists[index] - non_zero_dists[index - 1]);
-                }
-            } else {
-                d_rhos[i] = interpolation * non_zero_dists[0];
-            }
+        if (number_of_non_zeros >= 1.0) {
+            d_rhos[i] = non_zero_dists[0];
         } else if (number_of_non_zeros > 0) {
             //rho[i] = np.max(non_zero_dists)
             d_rhos[i] = non_zero_dists[0];
@@ -191,8 +181,6 @@ void compute_neighbor_graph_cuda(
         float *knn_dists,
         int n_points,
         int n_neighbors,
-        float local_connectivity,
-        int return_dists,
         int pseudo_distance
 ) {
     float bandwidth = 1.;
@@ -219,8 +207,7 @@ void compute_neighbor_graph_cuda(
             d_rhos,
             d_knn_dists,
             n_points,
-            n_neighbors,
-            local_connectivity
+            n_neighbors
     );
 
     kernel_sigmas<<<number_of_blocks, BLOCK_SIZE>>>(

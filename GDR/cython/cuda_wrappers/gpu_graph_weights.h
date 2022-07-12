@@ -12,8 +12,6 @@ void compute_neighbor_graph(
         float *knn_dists,
         int n_points,
         int n_neighbors,
-        float local_connectivity,
-        int return_dists,
         int pseudo_distance
 );
 

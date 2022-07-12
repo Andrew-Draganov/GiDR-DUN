@@ -55,7 +55,6 @@ cdef float gather_gradients(
     int[:] head,
     int[:] tail,
     float[:, :] head_embedding,
-    float[:, :] tail_embedding,
     float[:] weights,
     int normalized,
     int angular,
@@ -90,7 +89,7 @@ cdef float gather_gradients(
             k = tail[edge]
             for d in range(dim):
                 y1[d] = head_embedding[j, d]
-                y2[d] = tail_embedding[k, d]
+                y2[d] = head_embedding[k, d]
 
             if angular:
                 dist = ang_dist(y1, y2, dim)
@@ -121,7 +120,7 @@ cdef float gather_gradients(
             for s in range(negative_sample_rate):
                 k = rand() % n_vertices
                 for d in range(dim):
-                    y2[d] = tail_embedding[k, d]
+                    y2[d] = head_embedding[k, d]
 
                 if angular:
                     dist = ang_dist(y1, y2, dim)
@@ -155,7 +154,7 @@ cdef float gather_gradients(
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
-cdef void _gidr_dun_epoch(
+cdef void _gdr_epoch(
     int normalized,
     int angular,
     int sym_attraction,
@@ -163,7 +162,6 @@ cdef void _gidr_dun_epoch(
     int num_threads,
     int amplify_grads,
     float[:, :] head_embedding,
-    float[:, :] tail_embedding,
     int[:] head,
     int[:] tail,
     float[:] weights,
@@ -209,7 +207,6 @@ cdef void _gidr_dun_epoch(
             head,
             tail,
             head_embedding,
-            tail_embedding,
             weights,
             normalized,
             angular,
@@ -249,7 +246,7 @@ cdef void _gidr_dun_epoch(
     free(rep_grads)
 
 
-cdef gidr_dun_optimize(
+cdef gdr_optimize(
     int normalized,
     int angular,
     int sym_attraction,
@@ -257,7 +254,6 @@ cdef gidr_dun_optimize(
     int num_threads,
     int amplify_grads,
     float[:, :] head_embedding,
-    float[:, :] tail_embedding,
     int[:] head,
     int[:] tail,
     float[:] weights,
@@ -285,7 +281,7 @@ cdef gidr_dun_optimize(
 
     for i_epoch in range(n_epochs):
         lr = get_lr(initial_lr, i_epoch, n_epochs, amplify_grads)
-        _gidr_dun_epoch(
+        _gdr_epoch(
             normalized,
             angular,
             sym_attraction,
@@ -293,7 +289,6 @@ cdef gidr_dun_optimize(
             num_threads,
             amplify_grads,
             head_embedding,
-            tail_embedding,
             head,
             tail,
             weights,
@@ -319,7 +314,7 @@ cdef gidr_dun_optimize(
 @cython.cdivision(True)
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def gidr_dun_opt_wrapper(
+def gdr_opt_wrapper(
     int normalized,
     int angular,
     int sym_attraction,
@@ -327,7 +322,6 @@ def gidr_dun_opt_wrapper(
     int num_threads,
     int amplify_grads,
     float[:, :] head_embedding,
-    float[:, :] tail_embedding,
     int[:] head,
     int[:] tail,
     float[:] weights,
@@ -353,7 +347,7 @@ def gidr_dun_opt_wrapper(
             weights[i] /= weight_sum
         initial_lr = n_vertices / 500
 
-    gidr_dun_optimize(
+    gdr_optimize(
         normalized,
         angular,
         sym_attraction,
@@ -361,7 +355,6 @@ def gidr_dun_opt_wrapper(
         num_threads,
         amplify_grads,
         head_embedding,
-        tail_embedding,
         head,
         tail,
         weights,

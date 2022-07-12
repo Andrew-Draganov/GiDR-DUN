@@ -22,7 +22,6 @@ def gather_gradients(
     head,
     tail,
     head_embedding,
-    tail_embedding,
     weights,
     weight_scalar,
     normalized,
@@ -44,7 +43,7 @@ def gather_gradients(
         j = head[edge]
         k = tail[edge]
         y1 = head_embedding[j]
-        y2 = tail_embedding[k]
+        y2 = head_embedding[k]
         dist = sq_euc_dist(y1, y2, dim)
 
         attr_force = attractive_force_func(
@@ -62,7 +61,7 @@ def gather_gradients(
                 attr_grads[k, d] += grad_d
 
         k = np.random.randint(0, n_vertices)
-        y2 = tail_embedding[k]
+        y2 = head_embedding[k]
         dist = sq_euc_dist(y1, y2, dim)
 
         if normalized or frob:
@@ -118,7 +117,6 @@ def gdr_numba_wrapper(
     num_threads,
     amplify_grads,
     head_embedding,
-    tail_embedding,
     head,
     tail,
     weights,
@@ -168,7 +166,6 @@ def gdr_numba_wrapper(
             head,
             tail,
             head_embedding,
-            tail_embedding,
             weights,
             weight_scalar,
             normalized,

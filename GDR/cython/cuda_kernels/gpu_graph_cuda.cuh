@@ -17,8 +17,6 @@ void compute_neighbor_graph_cuda(
         float *knn_dists,
         int n_points,
         int n_neighbors,
-        float local_connectivity,
-        int return_dists,
         int pseudo_distance
 );
 

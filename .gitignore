@@ -2,8 +2,9 @@
 images/
 outputs/
 *.zip
+GradientDR.egg-info
 GradientDimReduction.egg-info
-nndescent/nndescent.egg-info/
+GDR/nndescent/nndescent.egg-info/
 dist/
 nndescent/py_files/__pycache__/
 GDR/cython/cython_files/*.cpp

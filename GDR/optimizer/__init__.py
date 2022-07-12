@@ -1,5 +1,4 @@
 from warnings import warn, catch_warnings, simplefilter
-from . import GradientDR
 
 # Workaround: https://github.com/numba/numba/issues/3341
 import numba

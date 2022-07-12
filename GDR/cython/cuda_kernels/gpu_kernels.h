@@ -4,8 +4,6 @@
 #include "cuda.h"
 #include "cuda_runtime.h"
 
-extern "C++" void gpuf();
-
 extern "C++" void gpu_umap(
         int normalized,
         int sym_attraction,

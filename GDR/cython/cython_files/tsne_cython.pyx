@@ -59,7 +59,6 @@ cdef void collect_attr_grads(
     int[:] head,
     int[:] tail,
     float[:, :] head_embedding,
-    float[:, :] tail_embedding,
     float[:] weights,
     int normalized,
     int amplify_grads,
@@ -92,7 +91,7 @@ cdef void collect_attr_grads(
             k = tail[edge]
             for d in range(dim):
                 y1[d] = head_embedding[j, d]
-                y2[d] = tail_embedding[k, d]
+                y2[d] = head_embedding[k, d]
             dist = sq_euc_dist(y1, y2, dim)
 
             # t-SNE early exaggeration
@@ -198,7 +197,6 @@ cdef void _tsne_epoch(
     int num_threads,
     int amplify_grads,
     float[:, :] head_embedding,
-    float[:, :] tail_embedding,
     int[:] head,
     int[:] tail,
     float[:] weights,
@@ -247,7 +245,6 @@ cdef void _tsne_epoch(
             head,
             tail,
             head_embedding,
-            tail_embedding,
             weights,
             normalized,
             amplify_grads,
@@ -327,7 +324,6 @@ cdef tsne_optimize(
     int num_threads,
     int amplify_grads,
     float[:, :] head_embedding,
-    float[:, :] tail_embedding,
     int[:] head,
     int[:] tail,
     float[:] weights,
@@ -370,7 +366,6 @@ cdef tsne_optimize(
             num_threads,
             amplify_grads,
             head_embedding,
-            tail_embedding,
             head,
             tail,
             weights,
@@ -402,7 +397,6 @@ def tsne_opt_wrapper(
     int num_threads,
     int amplify_grads,
     float[:, :] head_embedding,
-    float[:, :] tail_embedding,
     int[:] head,
     int[:] tail,
     float[:] weights,
@@ -437,7 +431,6 @@ def tsne_opt_wrapper(
         num_threads,
         amplify_grads,
         head_embedding,
-        tail_embedding,
         head,
         tail,
         weights,

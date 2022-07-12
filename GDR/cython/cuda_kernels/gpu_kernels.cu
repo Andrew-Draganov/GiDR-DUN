@@ -19,18 +19,6 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort =
     }
 }
 
-__global__
-void kernel() {
-    printf("hello from the kernel!\n");
-}
-
-void gpuf() {
-    printf("hello from the gpu file!\n");
-    cudaDeviceSynchronize();
-    kernel<<<1, 1>>>();
-    cudaDeviceSynchronize();
-}
-
 
 #define BLOCK_SIZE 256//1024
 
@@ -419,7 +407,6 @@ void gpu_umap_full_N(int normalized, // unused
                      int frob,
                      int amplify_graps, // unused
                      float *h_D_embed, //head_embedding,
-                     float *h_D_embed_other, //tail_embedding,
                      int *h_N, //head,
                      int *tail, // im not using this
                      float *h_weights,//weights,
@@ -586,7 +573,6 @@ void gpu_umap(
             frob,
             amplify_graps, // unused
             head_embedding,
-            tail_embedding,
             head,
             tail,
             weights,

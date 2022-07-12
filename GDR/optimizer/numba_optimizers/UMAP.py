@@ -17,7 +17,6 @@ from .numba_utils import (
 
 def umap_single_epoch(
     head_embedding,
-    tail_embedding,
     head,
     tail,
     n_vertices,
@@ -39,7 +38,7 @@ def umap_single_epoch(
             j = head[i]
             k = tail[i]
             current = head_embedding[j]
-            other = tail_embedding[k]
+            other = head_embedding[k]
             dist_squared = sq_euc_dist(current, other, dim)
 
             if dist_squared > 0.0:
@@ -62,7 +61,7 @@ def umap_single_epoch(
 
             for p in range(n_neg_samples):
                 k = tau_rand_int(rng_state) % n_vertices
-                other = tail_embedding[k]
+                other = head_embedding[k]
                 dist_squared = sq_euc_dist(current, other, dim)
 
                 if dist_squared > 0.0:
@@ -89,7 +88,6 @@ def umap_single_epoch(
 
 def umap_numba_wrapper(
     head_embedding,
-    tail_embedding,
     head,
     tail,
     n_epochs,
@@ -121,7 +119,6 @@ def umap_numba_wrapper(
     for n in tqdm(range(n_epochs)):
         optimize_fn(
             head_embedding,
-            tail_embedding,
             head,
             tail,
             n_vertices,

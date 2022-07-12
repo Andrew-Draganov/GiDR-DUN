@@ -34,6 +34,7 @@ cdef extern from "../cuda_wrappers/gpu_dim_reduction.cpp":
         int negative_sample_rate
     )
 
+
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
 

@@ -18,8 +18,8 @@ from . import distances as dist
 from . import utils
 from . import spectral
 from .graph_weights import get_similarities, get_sigmas_and_rhos
-from nndescent.py_files.pynndescent_ import NNDescent
-import nndescent.py_files.distances as pynnd_dist
+from GDR.nndescent.py_files.pynndescent_ import NNDescent
+import GDR.nndescent.py_files.distances as pynnd_dist
 
 locale.setlocale(locale.LC_NUMERIC, "C")
 INT32_MIN = np.iinfo(np.int32).min + 1
@@ -59,7 +59,7 @@ class GradientDR(BaseEstimator):
             random_init=False,
             pseudo_distance=True,
             tsne_symmetrization=False,
-            optimize_method='umap_sampling',
+            optimize_method='gdr',
             normalized=0,
             angular=False,
             sym_attraction=True,
@@ -222,7 +222,6 @@ class GradientDR(BaseEstimator):
                 pseudo_distance=self.pseudo_distance,
             )
         else:
-            # FIXME
             from gpu_graph_build import graph_weights
             n_points = int(X.shape[0])
             # Initialize memory that will be passed to Cuda as pointers
@@ -243,8 +242,6 @@ class GradientDR(BaseEstimator):
                 self._knn_indices.astype(np.int32),
                 self._knn_dists,
                 int(self.n_neighbors),
-                0, # FIXME -- this was the return_dists variable, but it is always zero. Remove from C/Cuda files
-                1, # FIXME -- this was the local_connectivity variable, but it is always one
                 int(self.pseudo_distance)
             )
 
@@ -414,27 +411,27 @@ class GradientDR(BaseEstimator):
         }
         start = time.time()
         if self.gpu:
-            if self.optimize_method != 'gidr_dun':
-                raise ValueError('GPU optimization can only be performed in the gidr_dun setting')
+            if self.optimize_method != 'gdr':
+                raise ValueError('GPU optimization can only be performed in the gdr setting')
             from optimize_gpu import gpu_opt_wrapper as optimizer
         elif self.torch:
-            if self.optimize_method != 'gidr_dun':
-                raise ValueError('PyTorch optimization can only be performed in the gidr_dun setting')
+            if self.optimize_method != 'gdr':
+                raise ValueError('PyTorch optimization can only be performed in the gdr setting')
             from .pytorch_optimize import torch_optimize_layout as optimizer
         elif self.numba:
             if self.optimize_method == 'umap':
                 from GDR.optimizer.numba_optimizers import umap_numba_wrapper as optimizer
-            elif self.optimize_method == 'gidr_dun':
+            elif self.optimize_method == 'gdr':
                 from GDR.optimizer.numba_optimizers import gdr_numba_wrapper as optimizer
             else:
-                raise ValueError('Numba optimization only works for umap and gidr_dun')
+                raise ValueError('Numba optimization only works for umap and gdr')
         else:
             if self.optimize_method == 'umap':
                 from umap_cython import umap_opt_wrapper as optimizer
             elif self.optimize_method == 'tsne':
                 from tsne_cython import tsne_opt_wrapper as optimizer
-            elif self.optimize_method == 'gidr_dun':
-                from gdr_cython import gidr_dun_opt_wrapper as optimizer
+            elif self.optimize_method == 'gdr':
+                from gdr_cython import gdr_opt_wrapper as optimizer
             else:
                 raise ValueError("Optimization method is unsupported at the current time")
         self.embedding = optimizer(**args)

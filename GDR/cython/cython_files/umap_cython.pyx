@@ -60,7 +60,6 @@ cdef void _umap_epoch(
     int num_threads,
     int amplify_grads,
     float[:, :] head_embedding,
-    float[:, :] tail_embedding,
     int[:] head,
     int[:] tail,
     float[:] weights,
@@ -115,7 +114,7 @@ cdef void _umap_epoch(
 
                 for d2 in range(dim):
                     y1[d2] = head_embedding[j, d2]
-                    y2[d2] = tail_embedding[k, d2]
+                    y2[d2] = head_embedding[k, d2]
 
                 if angular:
                     dist = ang_dist(y1, y2, dim)
@@ -150,7 +149,7 @@ cdef void _umap_epoch(
                 for p in range(n_neg_samples):
                     k = rand() % n_vertices
                     for d4 in range(dim):
-                        y2[d4] = tail_embedding[k, d4]
+                        y2[d4] = head_embedding[k, d4]
 
                     if angular:
                         dist = ang_dist(y1, y2, dim)
@@ -206,7 +205,6 @@ cdef umap_optimize(
     int num_threads,
     int amplify_grads,
     float[:, :] head_embedding,
-    float[:, :] tail_embedding,
     int[:] head,
     int[:] tail,
     float[:] weights,
@@ -253,7 +251,6 @@ cdef umap_optimize(
             num_threads,
             amplify_grads,
             head_embedding,
-            tail_embedding,
             head,
             tail,
             weights,
@@ -287,7 +284,6 @@ def umap_opt_wrapper(
     int num_threads,
     int amplify_grads,
     float[:, :] head_embedding,
-    float[:, :] tail_embedding,
     int[:] head,
     int[:] tail,
     float[:] weights,
@@ -322,7 +318,6 @@ def umap_opt_wrapper(
         num_threads,
         amplify_grads,
         head_embedding,
-        tail_embedding,
         head,
         tail,
         weights,

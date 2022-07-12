@@ -1,11 +1,11 @@
-from GDR.optimizer.GradientDR import GradientDR
+from GDR import GradientDR
 from sklearn.manifold import TSNE
 from umap import UMAP
 from sklearn.decomposition import PCA
 from sklearn.decomposition import KernelPCA
 
 def get_algorithm(algorithm_str, params, verbose=True):
-    if 'gidr_dun' in algorithm_str:
+    if 'gdr' in algorithm_str:
         dr = GradientDR(
                 n_neighbors=params['n_neighbors'],
                 n_epochs=params['n_epochs'],

@@ -14,8 +14,6 @@ cdef extern from "../cuda_wrappers/gpu_graph_weights.cpp":
         float *knn_dists,
         int n_points,
         int n_neighbors,
-        float local_connectivity,
-        int return_dists,
         int pseudo_distance
     )
 
@@ -30,8 +28,6 @@ cdef void _graph_weights(
     float[:, :] knn_dists,
     int n_points,
     int n_neighbors,
-    int return_dists,
-    float local_connectivity,
     int pseudo_distance
 ):
     compute_neighbor_graph(
@@ -45,8 +41,6 @@ cdef void _graph_weights(
         &knn_dists[0,0],
         n_points,
         n_neighbors,
-        local_connectivity,
-        return_dists,
         pseudo_distance
     )
 
@@ -60,8 +54,6 @@ def graph_weights(
         int[:, :] knn_indices,
         float[:, :] knn_dists,
         int n_neighbors,
-        int return_dists,
-        float local_connectivity,
         int pseudo_distance
 ):
     cdef int n_points = knn_dists.shape[0]
@@ -76,7 +68,5 @@ def graph_weights(
         knn_dists,
         n_points,
         n_neighbors,
-        return_dists,
-        local_connectivity,
         pseudo_distance
     )
