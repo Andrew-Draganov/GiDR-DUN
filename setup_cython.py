@@ -18,13 +18,15 @@ import numpy
 
 # Example below
 # -------------
-os.environ['CC']='/usr/bin/gcc'
-os.environ['CFLAGS'] = '-fopenmp -O3 -march=native -ffast-math'
+os.environ['CC']='/usr/bin/clang'
+os.environ['CXX']='/usr/bin/clang++'
 
 gdr_build = Extension(
     'gdr_cython',
     ['GDR/cython/cython_files/gdr_cython.pyx'],
-    language=['c'],
+    language=['c++'],
+    extra_compile_args=['-fopenmp', '-O3', '-march=native', '-ffast-math'],
+    extra_link_args=['-fopenmp'],
     include_dirs=[numpy.get_include()],
 )
 

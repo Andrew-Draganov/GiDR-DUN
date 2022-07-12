@@ -46,6 +46,7 @@ def gather_gradients(
         k = tail[edge]
         y1 = head_embedding[j]
         y2 = head_embedding[k]
+        # FIXME -- need option for angular dist here!
         dist = sq_euc_dist(y1, y2, dim)
 
         attr_force = attractive_force_func(
