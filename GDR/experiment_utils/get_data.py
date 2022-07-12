@@ -17,6 +17,11 @@ def load_mnist():
     labels = np.array(labels)
     return points, labels
 
+def load_fake_data(dim=10, num_points=100, num_classes=10):
+    points = np.random.multivariate_normal(np.zeros([dim]), np.eye(dim), size=num_points)
+    labels = np.random.choice(10, size=num_points, replace=True)
+    return points, labels
+
 def load_google_news():
     # To run this dataset, download https://data.world/jaredfern/googlenews-reduced-200-d
     #   and place it into the directory 'data'

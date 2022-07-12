@@ -28,6 +28,7 @@ setup(
         'python-mnist',
         'numpy==1.21',
         'pandas',
+        'pytest',
         'sklearn',
         'scipy',
         'tqdm',

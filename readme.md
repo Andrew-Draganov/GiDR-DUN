@@ -9,7 +9,8 @@ This library has the following implementations of UMAP, TSNE, and GiDR\_DUN
  - Cuda \-\- GiDR\_DUN
  - Pytorch \-\- GiDR\_DUN
 
-The script defaults to running GiDR\_DUN in Cython on the MNIST dataset. We note that GiDR\_DUN can recreate both TSNE and UMAP outputs at UMAP speeds.
+The dim\_reduce\_dataset script defaults to running GiDR\_DUN with the numba backend on the MNIST dataset.
+We note that GiDR\_DUN can recreate both TSNE and UMAP outputs at UMAP speeds.
 
 ## Installation
 
