@@ -1,6 +1,5 @@
 import os
 import time
-from GDR.experiment_utils.metrics import classifier_accuracy, cluster_quality, cluster_distances
 from GDR.experiment_utils.general_utils import get_ab, make_plot
 from GDR.experiment_utils.get_data import get_dataset
 from GDR.experiment_utils.get_algorithm import get_algorithm
@@ -77,9 +76,9 @@ def get_args():
         help='Which embedding optimization algorithm to use'
     )
     parser.add_argument(
-        '--numba',
+        '--cython',
         action='store_true',
-        help="If present, run under-optimized numba versions of the algorithm. NOTE: not compatible with Barnes-hut TSNE"
+        help="If present, run cython versions of the algorithms"
     )
     parser.add_argument(
         '--normalized',

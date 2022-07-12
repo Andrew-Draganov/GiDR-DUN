@@ -64,7 +64,7 @@ class GradientDR(BaseEstimator):
             angular=False,
             sym_attraction=True,
             frob=False,
-            numba=False,
+            cython=False,
             torch=False,
             gpu=False,
             amplify_grads=False,
@@ -90,7 +90,7 @@ class GradientDR(BaseEstimator):
         self.angular = angular
         self.sym_attraction = sym_attraction
         self.frob = frob
-        self.numba = numba
+        self.cython = cython
         self.torch = torch
         self.gpu = gpu
         self.amplify_grads = amplify_grads
@@ -149,7 +149,7 @@ class GradientDR(BaseEstimator):
             raise ValueError("num_threads must be a postive integer, or -1 (for all cores)")
 
     def set_num_threads(self):
-        if self.numba:
+        if not self.cython and not self.gpu:
             self._original_n_threads = numba.get_num_threads()
             if self.num_threads > 0 and self.num_threads is not None:
                 numba.set_num_threads(self.num_threads)
@@ -157,7 +157,7 @@ class GradientDR(BaseEstimator):
                 self.num_threads = self._original_n_threads
 
     def reset_num_threads(self):
-        if self.numba:
+        if not self.cython and not self.gpu:
             numba.set_num_threads(self._original_n_threads)
 
     def get_nearest_neighbors(self, X):
@@ -418,14 +418,7 @@ class GradientDR(BaseEstimator):
             if self.optimize_method != 'gdr':
                 raise ValueError('PyTorch optimization can only be performed in the gdr setting')
             from .pytorch_optimize import torch_optimize_layout as optimizer
-        elif self.numba:
-            if self.optimize_method == 'umap':
-                from GDR.optimizer.numba_optimizers import umap_numba_wrapper as optimizer
-            elif self.optimize_method == 'gdr':
-                from GDR.optimizer.numba_optimizers import gdr_numba_wrapper as optimizer
-            else:
-                raise ValueError('Numba optimization only works for umap and gdr')
-        else:
+        elif self.cython:
             if self.optimize_method == 'umap':
                 from umap_cython import umap_opt_wrapper as optimizer
             elif self.optimize_method == 'tsne':
@@ -434,6 +427,13 @@ class GradientDR(BaseEstimator):
                 from gdr_cython import gdr_opt_wrapper as optimizer
             else:
                 raise ValueError("Optimization method is unsupported at the current time")
+        else:
+            if self.optimize_method == 'umap':
+                from GDR.optimizer.numba_optimizers import umap_numba_wrapper as optimizer
+            elif self.optimize_method == 'gdr':
+                from GDR.optimizer.numba_optimizers import gdr_numba_wrapper as optimizer
+            else:
+                raise ValueError('Numba optimization only works for umap and gdr')
         self.embedding = optimizer(**args)
         end = time.time()
         self.opt_time = end - start
