@@ -1,0 +1,12 @@
+setup.py
+nndescent.egg-info/PKG-INFO
+nndescent.egg-info/SOURCES.txt
+nndescent.egg-info/dependency_links.txt
+nndescent.egg-info/not-zip-safe
+nndescent.egg-info/requires.txt
+nndescent.egg-info/top_level.txt
+py_files/__init__.py
+py_files/distances.py
+py_files/pynndescent_.py
+py_files/rp_trees.py
+py_files/utils.py

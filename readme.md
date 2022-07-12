@@ -69,5 +69,12 @@ Some specific hyperparameter experiment examples:
    `python dim_reduce_dataset.py --optimize-method umap --tsne-symmetrization --random-init
     --tsne-scalars`
 
+You can recreate the plots from the original paper by checking out commit 7cecfc6. The plots were made using
+the `run_analysis.py` script. Plots are then made using the `experiment_utils/read_metrics.py` script.
+I will unfortunately not maintain those scripts as they are big and gross and I want to make this into a
+relatively clean library.
+
 ##
 Contact -- for questions please raise an issue or (if you want a response) email draganovandrew@cs.au.dk
+
+If you use this code, please cite our paper Gradient Dimensionality Reduction; Differences and Unification
