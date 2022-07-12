@@ -352,10 +352,7 @@ class GradientDR(BaseEstimator):
         self.graph.sum_duplicates()
         start = time.time()
 
-        if self.n_epochs > 10:
-            self.graph.data[self.graph.data < (self.graph.data.max() / float(self.n_epochs))] = 0.0
-        else:
-            self.graph.data[graph.data < (self.graph.data.max() / float(self.default_epochs))] = 0.0
+        self.graph.data[self.graph.data < (self.graph.data.max() / float(self.n_epochs))] = 0.0
         self.graph.eliminate_zeros()
 
         self.initialize_embedding(X)
