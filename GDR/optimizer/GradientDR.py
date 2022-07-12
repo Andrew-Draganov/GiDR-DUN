@@ -71,7 +71,7 @@ class GradientDR(BaseEstimator):
             min_dist=0.1,
             spread=1.0,
             num_threads=-1,
-            negative_sample_rate=5,
+            neg_sample_rate=5,
             a=None,
             b=None,
             random_state=None,
@@ -95,7 +95,7 @@ class GradientDR(BaseEstimator):
         self.gpu = gpu
         self.amplify_grads = amplify_grads
 
-        self.negative_sample_rate = negative_sample_rate
+        self.neg_sample_rate = neg_sample_rate
         self.random_state = random_state
         self.verbose = verbose
 
@@ -112,6 +112,7 @@ class GradientDR(BaseEstimator):
         if n_epochs is None:
             if normalized:
                 self.n_epochs = 500 # TSNE has weaker gradients and needs more steps to converge
+                # FIXME -- can I just set the learning rate x2 higher?...
             else:
                 self.n_epochs = 200
         else:
@@ -121,7 +122,7 @@ class GradientDR(BaseEstimator):
         """ Legacy UMAP parameter validation """
         if not isinstance(self.random_init, bool):
             raise ValueError("init must be a bool")
-        if self.negative_sample_rate < 0:
+        if self.neg_sample_rate < 0:
             raise ValueError("negative sample rate must be positive")
         if self.learning_rate < 0.0:
             raise ValueError("learning_rate must be positive")
@@ -402,7 +403,7 @@ class GradientDR(BaseEstimator):
             'a': self.a,
             'b': self.b,
             'initial_lr': self.learning_rate,
-            'negative_sample_rate': self.negative_sample_rate,
+            'negative_sample_rate': self.neg_sample_rate,
             'rng_state': self.rng_state,
             'verbose': int(self.verbose)
         }

@@ -6,6 +6,7 @@ from sklearn.decomposition import KernelPCA
 
 def get_algorithm(algorithm_str, params, verbose=True):
     if 'gdr' == algorithm_str:
+        print(params['a'])
         dr = GradientDR(
                 n_neighbors=params['n_neighbors'],
                 n_epochs=params['n_epochs'],
@@ -16,7 +17,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
                 optimize_method=params['optimize_method'],
                 cython=params['cython'],
                 torch=params['torch'],
-                negative_sample_rate=params['neg_sample_rate'],
+                neg_sample_rate=params['neg_sample_rate'],
                 normalized=int(params['normalized']),
                 sym_attraction=int(params['sym_attraction']),
                 frob=int(params['frobenius']),
@@ -51,7 +52,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
             n_neighbors=params['n_neighbors'],
             n_components=2,
             n_epochs=params['n_epochs'],
-            negative_sample_rate=params['neg_sample_rate'],
+            neg_sample_rate=params['neg_sample_rate'],
             a=params['a'],
             b=params['b'],
             random_state=98765,

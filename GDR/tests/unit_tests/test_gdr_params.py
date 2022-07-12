@@ -1,5 +1,7 @@
 import copy
+import multiprocessing
 import unittest
+import numpy as np
 from GDR.experiment_utils.get_algorithm import get_algorithm
 from GDR.experiment_utils.get_data import load_fake_data
 
@@ -24,8 +26,8 @@ class HyperParamTest(unittest.TestCase):
             'num_threads': -1,
             'angular': False,
             'amplify_grads': False,
-            'a': None,
-            'b': None,
+            'a': 1.5769434604,
+            'b': 0.8950608780,
             'verbose': True
         }
         self.points, _ = load_fake_data()
@@ -64,12 +66,33 @@ class HyperParamTest(unittest.TestCase):
             'n_epochs': [None, 10, 500],
             'n_neighbors': [2, 50],
             'neg_sample_rate': [1, 5, 30],
-            }
+        }
+        num_cores = multiprocessing.cpu_count()
+        expected_vals = {
+            'a': [1.5769434, 1],
+            'b': [0.8950608, 1],
+            'num_threads': [num_cores, 1, 2],
+            'n_epochs': [200, 10, 500],
+            'n_neighbors': [2, 50],
+            'neg_sample_rate': [1, 5, 30],
+        }
         for switch, values in switches.items():
-            for value in values:
+            for i, value in enumerate(values):
                 param_test = copy.copy(self.params)
                 param_test[switch] = value
                 model = get_algorithm('gdr', param_test)
+                if switch == 'num_threads':
+                    model.set_num_threads()
+
+                # Make sure that the model actually accepted the value correctly
+                model_vars = vars(model)
+                try:
+                    self.assertEqual(model_vars[switch], expected_vals[switch][i])
+                except AssertionError:
+                    try:
+                        np.testing.assert_allclose(model_vars[switch], expected_vals[switch][i])
+                    except AssertionError as e:
+                        raise e
                 model.fit_transform(self.points)
 
 if __name__ == '__main__':
