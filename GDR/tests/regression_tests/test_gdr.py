@@ -18,9 +18,7 @@ class GdrTest(unittest.TestCase):
 
     def test_bool_hyperparams(self):
         """
-        For each of the below hyperparameters, make sure that
-        embedding two clusters in high-dim space gives two clusters in
-        low-dim space
+        Assert that we get the expected embedding when toggling each of the below hyperparameters
         """
         switches = [
             'random_init',
@@ -45,6 +43,10 @@ class GdrTest(unittest.TestCase):
             np.testing.assert_allclose(correct_embedding, results[switch])
 
     def test_valued_hyperparams(self):
+        """
+        Assert that we get the expected embedding for each of the following non-boolean
+        hyperparameter values
+        """
         switches = {
             'a': [None, 1],
             'b': [None, 1],
