@@ -40,10 +40,32 @@ class GdrTest(unittest.TestCase):
             results[switch] = embedding
 
         bool_vals_path = os.path.join(self.values_path, 'bool_reg_values.npy')
-        # np.save(bool_vals_path, results, allow_pickle=True)
         correct_values = np.load(bool_vals_path, allow_pickle=True)[()]
         for switch, correct_embedding in correct_values.items():
             np.testing.assert_allclose(correct_embedding, results[switch])
+
+    def test_valued_hyperparams(self):
+        switches = {
+            'a': [None, 1],
+            'b': [None, 1],
+            'n_epochs': [None, 10, 500],
+            'n_neighbors': [2, 50],
+            'neg_sample_rate': [1, 5, 30],
+        }
+        results = {switch: [] for switch in switches}
+        for switch, values in switches.items():
+            for i, value in enumerate(values):
+                param_test = copy.copy(self.params)
+                param_test[switch] = value
+                model = get_algorithm('gdr', param_test)
+                embedding = model.fit_transform(self.points)
+                results[switch].append(embedding)
+
+        non_bool_vals_path = os.path.join(self.values_path, 'non_bool_reg_values.npy')
+        correct_values = np.load(non_bool_vals_path, allow_pickle=True)[()]
+        for switch, values in correct_values.items():
+            for i, value in enumerate(values):
+                np.testing.assert_allclose(value, results[switch][i])
 
 
 if __name__ == '__main__':
