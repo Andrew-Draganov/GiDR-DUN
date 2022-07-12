@@ -6,7 +6,6 @@ from sklearn.decomposition import KernelPCA
 
 def get_algorithm(algorithm_str, params, verbose=True):
     if 'gdr' == algorithm_str:
-        print(params['a'])
         dr = GradientDR(
                 n_neighbors=params['n_neighbors'],
                 n_epochs=params['n_epochs'],
