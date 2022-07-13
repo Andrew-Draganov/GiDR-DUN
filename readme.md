@@ -3,79 +3,67 @@ Written by Andrew Draganov, Jakob Rødsgaard Jørgensen and Katrine Scheel Nelle
 
 ## Overview
 
-This library has the following implementations of UMAP, TSNE, and GiDR\_DUN
- - Numba \-\- UMAP, GiDR\_DUN
- - Cython \-\- UMAP, TSNE, GiDR\_DUN
- - Cuda \-\- GiDR\_DUN
- - Pytorch \-\- GiDR\_DUN
+This library contains simplified and standalone implementations of common gradient-based dimensionality reduction algorithms.
+Furthermore, most are supported in multiple backends. We have the following implementations available:
+  - UMAP
+    - numba (same speed as Leland McInnes UMAP implementation)
+    - cython (about 5 times faster on optimization, same time for nearest neighbors)
+  - TSNE
+    - cython (about 2 times faster than standard sklearn implementation)
+  - GDR (which can recreate both TSNE and UMAP embeddings)
+    - numba
+    - cython
+    - gpu
+    - pytorch (cpu/gpu)
 
-The dim\_reduce\_dataset script defaults to running GiDR\_DUN with the numba backend on the MNIST dataset.
-We note that GiDR\_DUN can recreate both TSNE and UMAP outputs at UMAP speeds.
+We have tried to trim all of the fat possible out of these algorithms. This will hopefully make the methods easier to extend
+for future research/design. This means that some features are missing, such as UMAP's ability to call `.fit()` and then `.transform()`
+(we only support `.fit_transform()`). Additionally, we default to the NNdescent nearest neighbors algorithm in all cases.
+
+However, you have the ability to toggle all of the hyperparameters between the UMAP and TSNE algorithms.
+For example, you can run TSNE with UMAP's pseudo-distance metric and normalization.
+Or UMAP with TSNE's symmetrization and the standard Euclidean distance metric. etc. etc.
 
 ## Installation
 
-We suggest using the targets in the attached `makefile`. The steps are as follows:
- - Make sure conda is installed
- - Create the conda environment using one of the make targets. Your options are creating a python, cuda, or pytorch environment.
-     - For the regular python environment, call `make create_python_env`
-     - For the cuda environment, call `make create_rapids_env`
-     - For the torch environment, call `make create_torch_env`
- - Enter into the conda environment you made. These commands should respectively be:
-     - `conda activate GiDR_DUN`
-     - `conda activate GiDR_DUN_rapids`
-     - `conda activate GiDR_DUN_torch`
- - We now install the relevant libraries and compile the C code:
-     - `make insall_python_env` will allow you to run the numba optimizations
-     - `make insall_cython_env` will allow you to do the default cython optimizations as well as the numba ones
-     - `make insall_cuda_code` will install the cuda wrappers for the gpu implementation as well as the cython and numba ones
-         - **NOTE** we default to cuda 11.5 in the makefile. If you'd like to change this, changes must be made in the make target and the corresponding
-`setup_cython_gpu.py` script.
-     - If you'd like to run the pytorch GPU optimizer, simply enter the `GiDR_DUN_torch` conda environment and install the setup.py
- - If you have installed the cython code, you can check that everything works by calling `make run_cpu_test`
-     - Similarly for cuda code, `make run_gpu_test`
- - You can then remake the plots from the paper by `make run_analysis` and `make run_gpu_analysis`
+### Numba install
+If you'd like to simply install the numba versions of UMAP and GDR, then you are good to go with a simple
+    pip install GradientDR
 
-If you intend to only run the basic numba implementations, then it is sufficient to just pip install the setup.py file.
-This requires that you add the `--numba` flag/parameter when invoking GiDR\_DUN. Note that this does NOT implement
-the original TSNE optimization protocol, as the Barnes\_ Hut tree data structure cannot be re-made in numba.
-However, you can use GiDR\_DUN to obtain TSNE embeddings by adding the `--optimize-method tsne` flag.
+You can then use it by calling
+    from GDR import GradientDR
+    dr = GradientDR()
+    dr.fit_transform(dataset)
 
-Note that on highly distributed systems, cython does a terrible job with the parallelization. We find that numba
-is more consistent across server sizes but that cython outperforms numba on small systems.
+### Cython install
+  - Clone the repository and `cd` into it
+  - Run `make install_cython_code` from the base directory in a python>=3.8 venv or conda environment
+Cython requires OpenMP support, which does not come on macs by default. To install with Cython on a mac, you must first
+install llvm with OpenMP support.
 
-## Hyperparameter Testing
+Run the cython implementations by
+    from GDR import GradientDR
+    dr = GradientDR(cython=True)
+    dr.fit_transform(dataset)
 
-Part of the motivation for making an independent library to run TSNE and UMAP was to test all
-of the relevant hyperparameters. These can be evaluated using command-line parameters
-in `dim_reduce_dataset.py`.
+### GPU install
+  - Clone the repository and `cd` into it
+  - Run `make install_cython_code` from the base directory in a python>=3.8 venv or conda environment
+We currently have only tested for cuda version 11.5. If you wish to use a different one, you must supply the nvcc compiler path
+to `setup_cython_gpu.py` yourself.
 
-You can test each of the numba/cython/cuda/torch optimizers by running the `dim_reduce_dataset.py` script.
-Command-line params dictate which optimizer you use and what the hyperparameter values are. We list some examples
-for choosing the optimizers below:
- - To run our implementation of TSNE with Cython, call `python dim_reduce_dataset.py --optimize-method tsne --normalized`
- - To run our implementation of UMAP in cython, call `python dim_reduce_dataset.py --optimize-method umap --sym-attraction`
- - To instead run our implementation of UMAP in numba, call `python dim_reduce_dataset.py --optimize-method umap --numba --sym-attraction`
- - To run GiDR\_DUN on the GPU, call `python dim_reduce_dataset.py --gpu`
- - To run GiDR\_DUN on the GPU with pytorch, call `python dim_reduce_dataset.py --gpu --torch`
+Run the gpu implementations by
+    from GDR import GradientDR
+    dr = GradientDR(gpu=True)
+    dr.fit_transform(dataset)
 
-If you'd instead like to run the ORIGINAL umap-learn and sklearn umap and tsne, these can be chosen by the `--dr-algorithm`
-flag to `dim_reduce_dataset.py`. Note that this overrides all other optimizer flags such as `--numba`, `--gpu`, and `--torch`.
-For further clarity on how the algorithm gets loaded, refer to `experiment_utils/get_algorithm.py`.
-
-Further examples are listed in the `run_cpu_test` make target, which performs several quick experiments.
-Some specific hyperparameter experiment examples:
- - To run TSNE with the Frobenius norm and UMAP's normalization, call
-   `python dim_reduce_dataset.py --optimize-method tsne --frob`
- - To run UMAP with all of TSNE's params except the normalization, call
-   `python dim_reduce_dataset.py --optimize-method umap --tsne-symmetrization --random-init
-    --tsne-scalars`
-
-You can recreate the plots from the original paper by checking out commit 7cecfc6. The plots were made using
-the `run_analysis.py` script. Plots are then made using the `experiment_utils/read_metrics.py` script.
-I will unfortunately not maintain those scripts as they are big and gross and I want to make this into a
-relatively clean library.
+### Usage
+You can set up a model to run each algorithm by the following constructors:
+  - UMAP -- `dr = GradientDR(optimize_method='umap')`
+  - TSNE -- `dr = GradientDR(optimize_method='tsne', cython=True)`
+    - Requires `cython=True` as TSNE's Barnes-Hut trees cannot be written into numba easily
+  - GDR -- `dr = GradientDR(optimize_method='gdr')`
 
 ##
 Contact -- for questions please raise an issue or (if you want a response) email draganovandrew@cs.au.dk
-
-If you use this code, please cite our paper Gradient Dimensionality Reduction; Differences and Unification
+If you use this code, please cite our paper :)
