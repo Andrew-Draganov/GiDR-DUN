@@ -90,8 +90,6 @@ float umap_attr_scalar(float dist_squared, float a, float b) {
 __device__
 float frob_attr_force(int normalized, float p, float q) {
     if (normalized) {
-        // FIXME - is it faster to get q^2 and then use that for q^3?
-        // FIXME - took out a Z scalar from this
         return p * (q * q + 2 * pow(q, 3));
     }
     return p * q * q;
@@ -285,7 +283,7 @@ __global__
 void
 apply_grads_full(float *d_Z, float *d_D_embed, float *d_rep_grads, float *d_attr_grads, float *d_all_grads,
                  float *d_gains,
-                 int n, int dims_embed, float lr, float a, float b, float amplify_graps) {
+                 int n, int dims_embed, float lr, float a, float b, float amplify_grads) {
     for (int i = threadIdx.x + blockIdx.x * blockDim.x; i < n; i += blockDim.x * gridDim.x) {
         for (int h = 0; h < dims_embed; h++) {
             int index = i * dims_embed + h;
@@ -302,7 +300,7 @@ apply_grads_full(float *d_Z, float *d_D_embed, float *d_rep_grads, float *d_attr
             else if (grad < -4.0)
                 grad = -4.0;
 
-            d_all_grads[index] *= (float) amplify_graps * 0.9;
+            d_all_grads[index] *= (float) amplify_grads * 0.9;
             d_all_grads[index] += grad * lr;
 
             d_D_embed[index] += d_all_grads[index];
@@ -310,8 +308,8 @@ apply_grads_full(float *d_Z, float *d_D_embed, float *d_rep_grads, float *d_attr
     }
 }
 
-float get_lr(float initial_lr, int i_epoch, int n_epochs, int amplify_graps) {
-    if (amplify_graps)
+float get_lr(float initial_lr, int i_epoch, int n_epochs, int amplify_grads) {
+    if (amplify_grads)
         return initial_lr;
     return initial_lr * (1.0 - (((float) i_epoch) / ((float) n_epochs)));
 }
@@ -402,19 +400,17 @@ void pack_N(int *d_N_new, float *d_weights_new, int *d_N, float *d_weights, int 
 }
 
 
-void gpu_umap_full_N(int normalized, // unused
-                     int sym_attraction, // unused
+void gpu_umap_full_N(int normalized,
+                     int sym_attraction,
                      int frob,
-                     int amplify_graps, // unused
+                     int amplify_grads,
                      float *h_D_embed, //head_embedding,
                      int *h_N, //head,
-                     int *tail, // im not using this
                      float *h_weights,//weights,
                      long *h_neighbor_counts, //neighbor_counts,
-                     float *all_updates, // unused
-                     float *gains, // unused
-                     float a, // unused
-                     float b, // unused
+                     float *gains,
+                     float a,
+                     float b,
                      int dims_embed, //dim,
                      int n_vertices,
                      float init_lr,
@@ -475,7 +471,7 @@ void gpu_umap_full_N(int normalized, // unused
 
 
     for (int i_epoch = 0; i_epoch < n_epochs; i_epoch++) {
-        float lr = get_lr(init_lr, i_epoch, n_epochs, amplify_graps);
+        float lr = get_lr(init_lr, i_epoch, n_epochs, amplify_grads);
         cudaMemset(d_rep_grads, 0, n_vertices * dims_embed * sizeof(float));
         cudaMemset(d_attr_grads, 0, n_vertices * dims_embed * sizeof(float));
         cudaMemset(d_Z, 0, number_of_threads_in_total * sizeof(float));
@@ -515,7 +511,7 @@ void gpu_umap_full_N(int normalized, // unused
         }
 
         apply_grads_full << < number_of_blocks, BLOCK_SIZE>> >
-        (d_tmp_sum_2, d_D_embed, d_rep_grads, d_attr_grads, d_all_grads, d_gains, n_vertices, dims_embed, lr, a, b, amplify_graps);
+        (d_tmp_sum_2, d_D_embed, d_rep_grads, d_attr_grads, d_all_grads, d_gains, n_vertices, dims_embed, lr, a, b, amplify_grads);
 
 
         if ((i_epoch + 1) % 50 == 0) {
@@ -548,14 +544,11 @@ void gpu_umap(
         int normalized,
         int sym_attraction,
         int frob,
-        int amplify_graps,
+        int amplify_grads,
         float *head_embedding,
-        float *tail_embedding,
         int *head,
-        int *tail,
         float *weights,
         long *neighbor_counts,
-        float *all_updates,
         float *gains,
         float a,
         float b,
@@ -568,19 +561,17 @@ void gpu_umap(
 ) {
     int k = n_edges / n_vertices;
     gpu_umap_full_N(
-            normalized, // unused
-            sym_attraction, // unused
+            normalized,
+            sym_attraction,
             frob,
-            amplify_graps, // unused
+            amplify_grads,
             head_embedding,
             head,
-            tail,
             weights,
             neighbor_counts,
-            all_updates, // unused
-            gains, // unused
-            a, // unused
-            b, // unused
+            gains,
+            a,
+            b,
             dim,
             n_vertices,
             initial_lr,

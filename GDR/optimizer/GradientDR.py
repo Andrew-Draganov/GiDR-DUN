@@ -312,7 +312,7 @@ class GradientDR(BaseEstimator):
             print('Calculating high dim similarities took {:.3f} seconds'.format(end - start))
 
         # Move around low-dimensional points such that they match the high-dim ones
-        self._fit_embed_data(X)
+        self._embed_data(X)
 
         self.reset_num_threads()
 
@@ -347,7 +347,7 @@ class GradientDR(BaseEstimator):
         self.embedding = embedding.astype(np.float32, order="C")
 
 
-    def _fit_embed_data(self, X):
+    def _embed_data(self, X):
         """
         FIXME
         """
@@ -358,6 +358,8 @@ class GradientDR(BaseEstimator):
         self.graph.sum_duplicates()
         start = time.time()
 
+        # Creating new zeros and eliminating them means that we no longer have
+        #   the same amount of neighbors for each point in our graph
         self.graph.data[self.graph.data < (self.graph.data.max() / float(self.n_epochs))] = 0.0
         self.graph.eliminate_zeros()
 
@@ -370,6 +372,8 @@ class GradientDR(BaseEstimator):
         self.tail = self.graph.col
 
         # neighbor_counts are used to speed up GPU calculations by standardizing block sizes
+        # It also functionally serves as a replacement for the tail array in the GPU code
+        #   - basically, how many nearest neighbors does each point have in our graph
         self.neighbor_counts = np.unique(self.tail, return_counts=True)[1].astype(np.long)
 
         # ANDREW - get number of epochs that we will optimize this EDGE for
@@ -379,6 +383,7 @@ class GradientDR(BaseEstimator):
 
         if self.verbose:
             print(utils.ts() + ' Optimizing layout...')
+
         self._optimize_layout()
 
         if self.verbose:
@@ -386,8 +391,6 @@ class GradientDR(BaseEstimator):
 
 
     def _optimize_layout(self):
-        # FIXME -- head_embedding and tail_embedding are always the same since 
-        #          we don't have separate fit and transform functions
         args = {
             'optimize_method': self.optimize_method,
             'normalized': self.normalized,
@@ -397,7 +400,6 @@ class GradientDR(BaseEstimator):
             'num_threads': self.num_threads,
             'amplify_grads': int(self.amplify_grads),
             'head_embedding': self.embedding,
-            'tail_embedding': self.embedding,
             'head': self.head,
             'tail': self.tail,
             'weights': self.graph.data.astype(np.float32),
@@ -416,7 +418,6 @@ class GradientDR(BaseEstimator):
         if self.gpu:
             if self.optimize_method != 'gdr':
                 raise ValueError('GPU optimization can only be performed in the gdr setting')
-            print('must be here')
             from gpu_gdr import gpu_opt_wrapper as optimizer
         elif self.torch:
             if self.optimize_method != 'gdr':
