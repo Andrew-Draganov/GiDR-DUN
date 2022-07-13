@@ -1,6 +1,6 @@
 import numpy as np
 import numba
-import umap.distances as dist
+import GDR.optimizer.distances as dist
 from GDR.optimizer.utils import tau_rand_int
 from tqdm.auto import tqdm
 

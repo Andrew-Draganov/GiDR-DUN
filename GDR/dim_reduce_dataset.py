@@ -150,7 +150,10 @@ if __name__ == '__main__':
     start = time.time()
     dr_output = dr.fit_transform(points)
     embedding = dr_output
-    opt_time = dr.opt_time
+    try:
+        opt_time = dr.opt_time
+    except AttributeError:
+        opt_time = -1
     end = time.time()
     total_time = end - start
     print('Optimization took {:.3f} seconds'.format(opt_time))

@@ -21,6 +21,9 @@ from .graph_weights import get_similarities, get_sigmas_and_rhos
 from GDR.nndescent.py_files.pynndescent_ import NNDescent
 import GDR.nndescent.py_files.distances as pynnd_dist
 
+# FIXME
+from gdr_cython import gdr_opt_wrapper as optimizer
+
 locale.setlocale(locale.LC_NUMERIC, "C")
 INT32_MIN = np.iinfo(np.int32).min + 1
 INT32_MAX = np.iinfo(np.int32).max - 1
@@ -164,40 +167,26 @@ class GradientDR(BaseEstimator):
     def get_nearest_neighbors(self, X):
         if self.verbose:
             print(utils.ts(), "Finding Nearest Neighbors")
-        # Only run GPU nearest neighbors if the dataset is small enough
-        # It is exact, so it scales at n^2 vs. NNDescent's nlogn
-        if self.gpu and X.shape[0] < 100000 and X.shape[1] < 30000:
-            print("doing GPU KNN")
-            # FIXME -- make this a try-except. If cudf/cupy didn't install, run on cpu
-            from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
-            import cudf
-            knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
-            cu_X = cudf.DataFrame(X)
-            knn_cuml.fit(cu_X)
-            dists, inds = knn_cuml.kneighbors(X)
-            self._knn_dists = np.reshape(dists, [X.shape[0], self.n_neighbors])
-            self._knn_indices = np.reshape(inds, [X.shape[0], self.n_neighbors])
+        # Legacy values from UMAP implementation
+        n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
+        n_iters = max(5, int(round(np.log2(X.shape[0]))))
+
+        if self.angular:
+            distance_func = pynnd_dist.cosine
         else:
-            # Legacy values from UMAP implementation
-            n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
-            n_iters = max(5, int(round(np.log2(X.shape[0]))))
+            distance_func = pynnd_dist.euclidean
 
-            if self.angular:
-                distance_func = pynnd_dist.cosine
-            else:
-                distance_func = pynnd_dist.euclidean
-
-            self._knn_indices, self._knn_dists = NNDescent(
-                X,
-                n_neighbors=self.n_neighbors,
-                random_state=self.random_state,
-                n_trees=n_trees,
-                distance_func=distance_func,
-                n_iters=n_iters,
-                max_candidates=20,
-                n_jobs=self.num_threads,
-                verbose=self.verbose,
-            ).neighbor_graph
+        self._knn_indices, self._knn_dists = NNDescent(
+            X,
+            n_neighbors=self.n_neighbors,
+            random_state=self.random_state,
+            n_trees=n_trees,
+            distance_func=distance_func,
+            n_iters=n_iters,
+            max_candidates=20,
+            n_jobs=self.num_threads,
+            verbose=self.verbose,
+        ).neighbor_graph
 
         if self.verbose:
             print(utils.ts(), "Finished Nearest Neighbor Search")
@@ -442,8 +431,6 @@ class GradientDR(BaseEstimator):
         self.embedding = optimizer(**args)
         end = time.time()
         self.opt_time = end - start
-        if self.verbose:
-            print('Done with optimization')
 
     def fit_transform(self, X):
         """

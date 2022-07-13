@@ -1,5 +1,4 @@
-# cython: language_level=3
-
+# distutils: language=c++
 import numpy as py_np
 cimport numpy as np
 cimport cython
