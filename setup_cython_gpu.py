@@ -11,7 +11,7 @@ CUDA_PATH = '/usr/local/cuda-11/targets/x86_64-linux/include/'
 # If not CUDA_PATH:
 #     raise ValueError("Must supply cuda path for the cython gpu compilation")
 # FIXME -- should get path automatically
-os.environ['CXX']='/usr/bin/gcc++'
+os.environ['CXX']='/usr/bin/clang++'
 os.environ['C++FLAGS'] = '-O3 -march=native -ffast-math'
 
 gpu_opt = Extension(

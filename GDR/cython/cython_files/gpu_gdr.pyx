@@ -5,7 +5,6 @@ from libc.stdio cimport printf
 from libc.math cimport sqrt
 from libc.stdlib cimport rand
 from libc.stdlib cimport malloc, free
-from cython.parallel cimport prange, parallel
 
 from sklearn.neighbors._quad_tree cimport _QuadTree
 np.import_array()
@@ -38,6 +37,7 @@ cdef extern from "../cuda_wrappers/gpu_dim_reduction.cpp":
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
 
+# FIXME -- these can probably just be memoryslices...
 cdef uniform_umap_gpu(
     int normalized,
     int sym_attraction,
@@ -125,7 +125,6 @@ def gpu_opt_wrapper(
             weight_sum += weights[i]
         for i in range(weights.shape[0]):
             weights[i] /= weight_sum
-        initial_lr *= 200
 
     uniform_umap_gpu(
         normalized,

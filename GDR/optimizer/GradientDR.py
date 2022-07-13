@@ -416,7 +416,8 @@ class GradientDR(BaseEstimator):
         if self.gpu:
             if self.optimize_method != 'gdr':
                 raise ValueError('GPU optimization can only be performed in the gdr setting')
-            from optimize_gpu import gpu_opt_wrapper as optimizer
+            print('must be here')
+            from gpu_gdr import gpu_opt_wrapper as optimizer
         elif self.torch:
             if self.optimize_method != 'gdr':
                 raise ValueError('PyTorch optimization can only be performed in the gdr setting')
