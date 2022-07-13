@@ -28,9 +28,11 @@ Or UMAP with TSNE's symmetrization and the standard Euclidean distance metric. e
 
 ### Numba install
 If you'd like to simply install the numba versions of UMAP and GDR, then you are good to go with a simple
+
     pip install GradientDR
 
 You can then use it by calling
+
     from GDR import GradientDR
     dr = GradientDR()
     dr.fit_transform(dataset)
@@ -42,6 +44,7 @@ Cython requires OpenMP support, which does not come on macs by default. To insta
 install llvm with OpenMP support.
 
 Run the cython implementations by
+
     from GDR import GradientDR
     dr = GradientDR(cython=True)
     dr.fit_transform(dataset)
@@ -53,6 +56,7 @@ We currently have only tested for cuda version 11.5. If you wish to use a differ
 to `setup_cython_gpu.py` yourself.
 
 Run the gpu implementations by
+
     from GDR import GradientDR
     dr = GradientDR(gpu=True)
     dr.fit_transform(dataset)
