@@ -51,7 +51,7 @@ Run the cython implementations by
 
 ### GPU install
   - Clone the repository and `cd` into it
-  - Run `make install_cython_code` from the base directory in a python>=3.8 venv or conda environment
+  - Run `make install_cuda_code` from the base directory in a python>=3.8 venv or conda environment
 We currently have only tested for cuda version 11.5. If you wish to use a different one, you must supply the nvcc compiler path
 to `setup_cython_gpu.py` yourself.
 
