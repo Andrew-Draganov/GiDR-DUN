@@ -40,6 +40,7 @@ You can then use it by calling
 ### Cython install
   - Clone the repository and `cd` into it
   - Run `make install_cython_code` from the base directory in a python>=3.8 venv or conda environment
+
 Cython requires OpenMP support, which does not come on macs by default. To install with Cython on a mac, you must first
 install llvm with OpenMP support.
 
@@ -52,6 +53,7 @@ Run the cython implementations by
 ### GPU install
   - Clone the repository and `cd` into it
   - Run `make install_cuda_code` from the base directory in a python>=3.8 venv or conda environment
+
 We currently have only tested for cuda version 11.5. If you wish to use a different one, you must supply the nvcc compiler path
 to `setup_cython_gpu.py` yourself.
 
@@ -67,6 +69,7 @@ You can set up a model to run each algorithm by the following constructors:
   - TSNE -- `dr = GradientDR(optimize_method='tsne', cython=True)`
     - Requires `cython=True` as TSNE's Barnes-Hut trees cannot be written into numba easily
   - GDR -- `dr = GradientDR(optimize_method='gdr')`
+    - This is the default as it's my algorithm and I think it's nice :)
 
 ##
 Contact -- for questions please raise an issue or (if you want a response) email draganovandrew@cs.au.dk
