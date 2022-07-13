@@ -1,4 +1,3 @@
-import numpy as np
 from setuptools import setup
 from distutils.core import Extension
 
@@ -17,20 +16,18 @@ setup(
         'GDR.experiment_utils',
         'GDR.scripts'
     ],
-    package_dir={'GDR': 'GDR'},
-    extras_require={'pytorch': 'torch'},
-    include_dirs=[
-        np.get_include(),
-    ],
+    package_dir={'nndescent': 'GDR/nndescent', 'GDR': 'GDR'},
+    extras_require={'pytorch': 'torch', 'umap': 'umap-learn==0.5.3'},
     install_requires=[
-        'cython',
-        'matplotlib',
-        'python-mnist',
+        'cython==0.29.30',
+        'matplotlib==3.5.2',
+        'python-mnist==0.7',
         'numpy==1.21',
-        'pandas',
-        'sklearn',
-        'scipy',
-        'tqdm',
-        'umap-learn',
+        'numba==0.55.2',
+        'pandas==1.4.3',
+        'pytest==7.1.2',
+        'scikit-learn==1.1.1',
+        'scipy==1.8.1',
+        'tqdm==4.64.0',
     ],
 )

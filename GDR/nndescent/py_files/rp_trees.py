@@ -8,7 +8,7 @@ import numpy as np
 import numba
 import scipy.sparse
 
-from pynndescent.utils import tau_rand_int, norm
+from GDR.nndescent.py_files.utils import tau_rand_int, norm
 import joblib
 
 from collections import namedtuple

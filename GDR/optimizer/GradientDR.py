@@ -55,7 +55,7 @@ class GradientDR(BaseEstimator):
             n_neighbors=15,
             dim=2,
             n_epochs=None,
-            learning_rate=1.0,
+            learning_rate=None,
             random_init=False,
             pseudo_distance=True,
             tsne_symmetrization=False,
@@ -64,14 +64,14 @@ class GradientDR(BaseEstimator):
             angular=False,
             sym_attraction=True,
             frob=False,
-            numba=False,
+            cython=False,
             torch=False,
             gpu=False,
             amplify_grads=False,
             min_dist=0.1,
             spread=1.0,
             num_threads=-1,
-            negative_sample_rate=5,
+            neg_sample_rate=5,
             a=None,
             b=None,
             random_state=None,
@@ -90,12 +90,12 @@ class GradientDR(BaseEstimator):
         self.angular = angular
         self.sym_attraction = sym_attraction
         self.frob = frob
-        self.numba = numba
+        self.cython = cython
         self.torch = torch
         self.gpu = gpu
         self.amplify_grads = amplify_grads
 
-        self.negative_sample_rate = negative_sample_rate
+        self.neg_sample_rate = neg_sample_rate
         self.random_state = random_state
         self.verbose = verbose
 
@@ -112,6 +112,7 @@ class GradientDR(BaseEstimator):
         if n_epochs is None:
             if normalized:
                 self.n_epochs = 500 # TSNE has weaker gradients and needs more steps to converge
+                # FIXME -- can I just set the learning rate x2 higher?...
             else:
                 self.n_epochs = 200
         else:
@@ -121,7 +122,7 @@ class GradientDR(BaseEstimator):
         """ Legacy UMAP parameter validation """
         if not isinstance(self.random_init, bool):
             raise ValueError("init must be a bool")
-        if self.negative_sample_rate < 0:
+        if self.neg_sample_rate < 0:
             raise ValueError("negative sample rate must be positive")
         if self.learning_rate < 0.0:
             raise ValueError("learning_rate must be positive")
@@ -149,7 +150,7 @@ class GradientDR(BaseEstimator):
             raise ValueError("num_threads must be a postive integer, or -1 (for all cores)")
 
     def set_num_threads(self):
-        if self.numba:
+        if not self.cython and not self.gpu:
             self._original_n_threads = numba.get_num_threads()
             if self.num_threads > 0 and self.num_threads is not None:
                 numba.set_num_threads(self.num_threads)
@@ -157,46 +158,32 @@ class GradientDR(BaseEstimator):
                 self.num_threads = self._original_n_threads
 
     def reset_num_threads(self):
-        if self.numba:
+        if not self.cython and not self.gpu:
             numba.set_num_threads(self._original_n_threads)
 
     def get_nearest_neighbors(self, X):
         if self.verbose:
             print(utils.ts(), "Finding Nearest Neighbors")
-        # Only run GPU nearest neighbors if the dataset is small enough
-        # It is exact, so it scales at n^2 vs. NNDescent's nlogn
-        if self.gpu and X.shape[0] < 100000 and X.shape[1] < 30000:
-            print("doing GPU KNN")
-            # FIXME -- make this a try-except. If cudf/cupy didn't install, run on cpu
-            from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
-            import cudf
-            knn_cuml = cuNearestNeighbors(n_neighbors=self.n_neighbors)
-            cu_X = cudf.DataFrame(X)
-            knn_cuml.fit(cu_X)
-            dists, inds = knn_cuml.kneighbors(X)
-            self._knn_dists = np.reshape(dists, [X.shape[0], self.n_neighbors])
-            self._knn_indices = np.reshape(inds, [X.shape[0], self.n_neighbors])
+        # Legacy values from UMAP implementation
+        n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
+        n_iters = max(5, int(round(np.log2(X.shape[0]))))
+
+        if self.angular:
+            distance_func = pynnd_dist.cosine
         else:
-            # Legacy values from UMAP implementation
-            n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
-            n_iters = max(5, int(round(np.log2(X.shape[0]))))
+            distance_func = pynnd_dist.euclidean
 
-            if self.angular:
-                distance_func = pynnd_dist.cosine
-            else:
-                distance_func = pynnd_dist.euclidean
-
-            self._knn_indices, self._knn_dists = NNDescent(
-                X,
-                n_neighbors=self.n_neighbors,
-                random_state=self.random_state,
-                n_trees=n_trees,
-                distance_func=distance_func,
-                n_iters=n_iters,
-                max_candidates=20,
-                n_jobs=self.num_threads,
-                verbose=self.verbose,
-            ).neighbor_graph
+        self._knn_indices, self._knn_dists = NNDescent(
+            X,
+            n_neighbors=self.n_neighbors,
+            random_state=self.random_state,
+            n_trees=n_trees,
+            distance_func=distance_func,
+            n_iters=n_iters,
+            max_candidates=20,
+            n_jobs=self.num_threads,
+            verbose=self.verbose,
+        ).neighbor_graph
 
         if self.verbose:
             print(utils.ts(), "Finished Nearest Neighbor Search")
@@ -273,6 +260,11 @@ class GradientDR(BaseEstimator):
         X = check_array(X, dtype=np.float32, order="C")
 
         # Handle all the optional arguments, setting default
+        if self.learning_rate is None:
+            if self.normalized:
+                self.learning_rate = X.shape[0] / 500
+            else:
+                self.learning_rate = 1
         self._validate_parameters()
         if self.verbose:
             print(str(self))
@@ -306,7 +298,7 @@ class GradientDR(BaseEstimator):
             print('Calculating high dim similarities took {:.3f} seconds'.format(end - start))
 
         # Move around low-dimensional points such that they match the high-dim ones
-        self._fit_embed_data(X)
+        self._embed_data(X)
 
         self.reset_num_threads()
 
@@ -341,7 +333,7 @@ class GradientDR(BaseEstimator):
         self.embedding = embedding.astype(np.float32, order="C")
 
 
-    def _fit_embed_data(self, X):
+    def _embed_data(self, X):
         """
         FIXME
         """
@@ -352,10 +344,9 @@ class GradientDR(BaseEstimator):
         self.graph.sum_duplicates()
         start = time.time()
 
-        if self.n_epochs > 10:
-            self.graph.data[self.graph.data < (self.graph.data.max() / float(self.n_epochs))] = 0.0
-        else:
-            self.graph.data[graph.data < (self.graph.data.max() / float(self.default_epochs))] = 0.0
+        # Creating new zeros and eliminating them means that we no longer have
+        #   the same amount of neighbors for each point in our graph
+        self.graph.data[self.graph.data < (self.graph.data.max() / float(self.n_epochs))] = 0.0
         self.graph.eliminate_zeros()
 
         self.initialize_embedding(X)
@@ -367,6 +358,8 @@ class GradientDR(BaseEstimator):
         self.tail = self.graph.col
 
         # neighbor_counts are used to speed up GPU calculations by standardizing block sizes
+        # It also functionally serves as a replacement for the tail array in the GPU code
+        #   - basically, how many nearest neighbors does each point have in our graph
         self.neighbor_counts = np.unique(self.tail, return_counts=True)[1].astype(np.long)
 
         # ANDREW - get number of epochs that we will optimize this EDGE for
@@ -376,6 +369,7 @@ class GradientDR(BaseEstimator):
 
         if self.verbose:
             print(utils.ts() + ' Optimizing layout...')
+
         self._optimize_layout()
 
         if self.verbose:
@@ -383,8 +377,6 @@ class GradientDR(BaseEstimator):
 
 
     def _optimize_layout(self):
-        # FIXME -- head_embedding and tail_embedding are always the same since 
-        #          we don't have separate fit and transform functions
         args = {
             'optimize_method': self.optimize_method,
             'normalized': self.normalized,
@@ -394,7 +386,6 @@ class GradientDR(BaseEstimator):
             'num_threads': self.num_threads,
             'amplify_grads': int(self.amplify_grads),
             'head_embedding': self.embedding,
-            'tail_embedding': self.embedding,
             'head': self.head,
             'tail': self.tail,
             'weights': self.graph.data.astype(np.float32),
@@ -405,7 +396,7 @@ class GradientDR(BaseEstimator):
             'a': self.a,
             'b': self.b,
             'initial_lr': self.learning_rate,
-            'negative_sample_rate': self.negative_sample_rate,
+            'negative_sample_rate': self.neg_sample_rate,
             'rng_state': self.rng_state,
             'verbose': int(self.verbose)
         }
@@ -413,19 +404,12 @@ class GradientDR(BaseEstimator):
         if self.gpu:
             if self.optimize_method != 'gdr':
                 raise ValueError('GPU optimization can only be performed in the gdr setting')
-            from optimize_gpu import gpu_opt_wrapper as optimizer
+            from gpu_gdr import gpu_opt_wrapper as optimizer
         elif self.torch:
             if self.optimize_method != 'gdr':
                 raise ValueError('PyTorch optimization can only be performed in the gdr setting')
             from .pytorch_optimize import torch_optimize_layout as optimizer
-        elif self.numba:
-            if self.optimize_method == 'umap':
-                from GDR.optimizer.numba_optimizers import umap_numba_wrapper as optimizer
-            elif self.optimize_method == 'gdr':
-                from GDR.optimizer.numba_optimizers import gdr_numba_wrapper as optimizer
-            else:
-                raise ValueError('Numba optimization only works for umap and gdr')
-        else:
+        elif self.cython:
             if self.optimize_method == 'umap':
                 from umap_cython import umap_opt_wrapper as optimizer
             elif self.optimize_method == 'tsne':
@@ -434,11 +418,16 @@ class GradientDR(BaseEstimator):
                 from gdr_cython import gdr_opt_wrapper as optimizer
             else:
                 raise ValueError("Optimization method is unsupported at the current time")
+        else:
+            if self.optimize_method == 'umap':
+                from GDR.optimizer.numba_optimizers import umap_numba_wrapper as optimizer
+            elif self.optimize_method == 'gdr':
+                from GDR.optimizer.numba_optimizers import gdr_numba_wrapper as optimizer
+            else:
+                raise ValueError('Numba optimization only works for umap and gdr')
         self.embedding = optimizer(**args)
         end = time.time()
         self.opt_time = end - start
-        if self.verbose:
-            print('Optimization took {:.3f} seconds'.format(self.opt_time))
 
     def fit_transform(self, X):
         """

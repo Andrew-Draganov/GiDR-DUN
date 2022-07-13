@@ -5,7 +5,6 @@ from libc.stdio cimport printf
 from libc.math cimport sqrt
 from libc.stdlib cimport rand
 from libc.stdlib cimport malloc, free
-from cython.parallel cimport prange, parallel
 
 from sklearn.neighbors._quad_tree cimport _QuadTree
 np.import_array()
@@ -17,12 +16,9 @@ cdef extern from "../cuda_wrappers/gpu_dim_reduction.cpp":
         int frob,
         int amplify_grads,
         float* head_embedding,
-        float* tail_embedding,
         int* head,
-        int* tail,
         float* weights,
         long* neighbor_counts,
-        float* all_updates,
         float* gains,
         float a,
         float b,
@@ -38,15 +34,14 @@ cdef extern from "../cuda_wrappers/gpu_dim_reduction.cpp":
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
 
+# FIXME -- these can probably just be memoryslices...
 cdef uniform_umap_gpu(
     int normalized,
     int sym_attraction,
     int frob,
     int amplify_grads,
     np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] head_embedding,
-    np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] tail_embedding,
     np.ndarray[int, ndim=1, mode='c'] head,
-    np.ndarray[int, ndim=1, mode='c'] tail,
     np.ndarray[DTYPE_FLOAT, ndim=1, mode='c'] weights,
     np.ndarray[long, ndim=1, mode='c'] neighbor_counts,
     float a,
@@ -60,10 +55,8 @@ cdef uniform_umap_gpu(
 ):
     cdef:
         int v, d, index
-        np.ndarray[DTYPE_FLOAT, ndim=2] all_updates
         np.ndarray[DTYPE_FLOAT, ndim=2] gains
 
-    all_updates = py_np.zeros([n_vertices, dim], dtype=py_np.float32, order='c')
     gains = py_np.ones([n_vertices, dim], dtype=py_np.float32, order='c')
 
     cdef int n_edges = int(weights.shape[0])
@@ -73,12 +66,9 @@ cdef uniform_umap_gpu(
         frob,
         amplify_grads,
         &head_embedding[0, 0], # Move from numpy to c pointer arrays
-        &tail_embedding[0, 0],
         &head[0],
-        &tail[0],
         &weights[0],
         &neighbor_counts[0],
-        &all_updates[0, 0],
         &gains[0, 0],
         a,
         b,
@@ -100,9 +90,7 @@ def gpu_opt_wrapper(
     int frob,
     int amplify_grads,
     np.ndarray[DTYPE_INT, ndim=1, mode='c'] head,
-    np.ndarray[DTYPE_INT, ndim=1, mode='c'] tail,
     np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] head_embedding,
-    np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] tail_embedding,
     np.ndarray[DTYPE_FLOAT, ndim=1, mode='c'] weights,
     np.ndarray[long, ndim=1, mode='c'] neighbor_counts,
     int n_epochs,
@@ -125,7 +113,6 @@ def gpu_opt_wrapper(
             weight_sum += weights[i]
         for i in range(weights.shape[0]):
             weights[i] /= weight_sum
-        initial_lr *= 200
 
     uniform_umap_gpu(
         normalized,
@@ -133,9 +120,7 @@ def gpu_opt_wrapper(
         frob,
         amplify_grads,
         head_embedding,
-        tail_embedding,
         head,
-        tail,
         weights,
         neighbor_counts,
         a,

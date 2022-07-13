@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <thread>
+#include <random>
+#include <time.h>
+
+using namespace std;
 
 // https://martin.ankerl.com/2007/10/04/optimized-pow-approximation-for-java-and-c-c/
 static double fast_pow(double a, double b) {
@@ -18,6 +23,12 @@ static double fast_pow(double a, double b) {
 
 static float clip(float val, float lower, float upper) {
     return fmax(lower, fmin(val, upper));
+}
+
+static int random_int(const int & max) {
+    static thread_local std::mt19937 generator;
+    std::uniform_int_distribution<int> distribution(0,max);
+    return distribution(generator);
 }
 
 static float sq_euc_dist(float* x, float* y, int dim) {
@@ -60,7 +71,7 @@ static void print_status(int i_epoch, int n_epochs){
         printf("Completed %d / %d epochs\n", i_epoch, n_epochs);
 }
 
-float get_avg_weight(float* weights, int n_edges){
+static float get_avg_weight(float* weights, int n_edges){
     float average_weight = 0.0;
     for (int i=0; i < n_edges; i++)
         average_weight += weights[i];
