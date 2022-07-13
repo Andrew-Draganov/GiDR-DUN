@@ -48,9 +48,6 @@ cdef extern from "../utils/cython_utils.cpp" nogil:
             float average_weight
     )
 
-ctypedef np.float32_t DTYPE_FLOAT
-ctypedef np.int32_t DTYPE_INT
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
@@ -294,7 +291,7 @@ def umap_opt_wrapper(
     float[:] weights,
     int n_epochs,
     int n_vertices,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
+    float[:] epochs_per_sample,
     float a,
     float b,
     float initial_lr,
@@ -313,7 +310,6 @@ def umap_opt_wrapper(
             weight_sum += weights[i]
         for i in range(weights.shape[0]):
             weights[i] /= weight_sum
-        initial_lr *= 200
 
     umap_optimize(
         normalized,

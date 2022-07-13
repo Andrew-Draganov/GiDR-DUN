@@ -47,144 +47,6 @@ cdef extern from "../utils/cython_utils.cpp" nogil:
             float average_weight
     )
 
-ctypedef np.float32_t DTYPE_FLOAT
-ctypedef np.int32_t DTYPE_INT
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.cdivision(True)
-cdef void collect_attr_grads(
-    float *local_attr_grads,
-    int[:] head,
-    int[:] tail,
-    float[:, :] head_embedding,
-    float[:] weights,
-    int normalized,
-    int amplify_grads,
-    int sym_attraction,
-    int frob,
-    int num_threads,
-    int n_vertices,
-    int n_edges,
-    int i_epoch,
-    int dim,
-    float a,
-    float b,
-) nogil:
-    cdef:
-        int edge, j, k, d, v
-        float dist, weight_scalar, grad_d
-        float *y1
-        float *y2
-        float attr_force
-
-    for v in range(n_vertices):
-        for d in range(dim):
-            local_attr_grads[v * dim + d] = 0
-
-    with parallel(num_threads=num_threads):
-        y1 = <float*> malloc(sizeof(float) * dim)
-        y2 = <float*> malloc(sizeof(float) * dim)
-        for edge in prange(n_edges):
-            j = head[edge]
-            k = tail[edge]
-            for d in range(dim):
-                y1[d] = head_embedding[j, d]
-                y2[d] = head_embedding[k, d]
-            dist = sq_euc_dist(y1, y2, dim)
-
-            # t-SNE early exaggeration
-            if amplify_grads and i_epoch < 250:
-                weight_scalar = 4
-            else:
-                weight_scalar = 1
-
-            attr_force = attractive_force_func(
-                normalized,
-                frob,
-                dist,
-                a,
-                b,
-                weights[edge] * weight_scalar
-            )
-
-            for d in range(dim):
-                grad_d = attr_force * (y1[d] - y2[d])
-                local_attr_grads[j * dim + d] -= grad_d
-                if sym_attraction:
-                    local_attr_grads[k * dim + d] += grad_d
-        free(y1)
-        free(y2)
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.cdivision(True)
-cdef void collect_rep_grads(
-    float *local_Z,
-    float *local_rep_grads,
-    float[:, :] head_embedding,
-    _QuadTree qt,
-    int normalized,
-    int frob,
-    int num_threads,
-    int n_vertices,
-    int dim,
-    float a,
-    float b,
-    float average_weight
-) nogil:
-    cdef:
-        int v, i_cell, j, k, d
-        int num_cells, dim_index
-        long cell_metadata
-        float theta = 0.5
-        long offset = dim + 2
-        float dist, cell_dist, cell_size, grad_d
-        float *cell_summaries
-        float *rep_func_outputs
-        float *y1
-
-    for v in range(n_vertices):
-        for d in range(dim):
-            local_rep_grads[v * dim + d] = 0
-
-    local_Z[0] = 0
-    with parallel(num_threads=num_threads):
-        cell_summaries = <float*> malloc(sizeof(float) * n_vertices * offset)
-        rep_func_outputs = <float*> malloc(sizeof(float) * 2)
-        y1 = <float*> malloc(sizeof(float) * dim)
-        for v in prange(n_vertices):
-            # Get necessary data regarding current point and the quadtree cells
-            for d in range(dim):
-                y1[d] = head_embedding[v, d]
-            cell_metadata = qt.summarize(y1, cell_summaries, theta * theta)
-            num_cells = cell_metadata // offset
-
-            # For each quadtree cell with respect to the current point
-            for i_cell in range(num_cells):
-                cell_dist = cell_summaries[i_cell * offset + dim]
-                cell_size = cell_summaries[i_cell * offset + dim + 1]
-                repulsive_force_func(
-                    rep_func_outputs,
-                    normalized,
-                    frob,
-                    cell_dist,
-                    a,
-                    b,
-                    cell_size,
-                    average_weight,
-                )
-                local_Z[0] += rep_func_outputs[1]
-
-                for d in range(dim):
-                    dim_index = i_cell * offset + d
-                    grad_d = rep_func_outputs[0] * cell_summaries[dim_index]
-                    local_rep_grads[v * dim + d] += grad_d
-
-        free(cell_summaries)
-        free(y1)
-        free(rep_func_outputs)
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
@@ -213,101 +75,158 @@ cdef void _tsne_epoch(
         int i, j, k, l, num_cells, d, i_cell, v
         float grad_scalar, dist, grad_d, Z
         float theta = 0.5
-        long dim_index, index
-        float *all_attr_grads
-        float *all_rep_grads
-        float *local_attr_grads
-        float *local_rep_grads
-        float *local_Z
+        long index
+        float *attr_grads
+        float *rep_grads
+        int edge
+        float weight_scalar
+        float *y1
+        float *y2
+        float attr_force
+        float rep_force
+        int dim_index
+        long cell_metadata
+        long offset = dim + 2
+        float cell_dist, cell_size
+        float *cell_summaries
+        float *rep_func_outputs
 
     cdef int n_edges = int(head.shape[0])
     cdef float attr_scalar = 4 * a * b
     cdef float rep_scalar = 4 * a * b
     cdef float average_weight = get_avg_weight(&weights[0], n_edges)
 
+    Z = 0
+
     # Allocte memory for data structures
-    all_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
-    all_rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
-    local_attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
-    local_rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
-    local_Z = <float*> malloc(sizeof(float))
+    attr_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
+    rep_grads = <float*> malloc(sizeof(float) * n_vertices * dim)
     for v in range(n_vertices):
         for d in range(dim):
             index = v * dim + d
-            all_attr_grads[index] = 0
-            all_rep_grads[index] = 0
+            attr_grads[index] = 0
+            rep_grads[index] = 0
 
-    with nogil:
-        Z = 0
-        collect_attr_grads(
-            local_attr_grads,
-            head,
-            tail,
-            head_embedding,
-            weights,
-            normalized,
-            amplify_grads,
-            sym_attraction,
-            frob,
-            num_threads,
-            n_vertices,
-            n_edges,
-            i_epoch,
-            dim,
-            a,
-            b,
-        )
+    # t-SNE early exaggeration
+    if amplify_grads and i_epoch < 250:
+        weight_scalar = 4
+    else:
+        weight_scalar = 1
 
-        collect_rep_grads(
-            local_Z,
-            local_rep_grads,
-            head_embedding,
-            qt,
-            normalized,
-            frob,
-            num_threads,
-            n_vertices,
-            dim,
-            a,
-            b,
-            average_weight
-        )
-        Z += local_Z[0]
-        if not normalized:
-            Z = 1
-            # Dividing by n_vertices means we have the same one-to-one
-            #   relationship between attractive and repulsive forces
-            #   as in traditional UMAP
-            rep_scalar /= n_vertices
-        rep_scalar /= Z
+    # Do the meat of the calculations in parallel
+    with nogil, parallel(num_threads=num_threads):
+        ### Get one attractive force for each edge ###
+        # Zero out edge-wise forces
+        for v in prange(n_vertices):
+            for d in range(dim):
+                attr_grads[v * dim + d] = 0
 
-        with parallel(num_threads=num_threads):
-            for v in prange(n_vertices):
+        y1 = <float*> malloc(sizeof(float) * dim)
+        y2 = <float*> malloc(sizeof(float) * dim)
+        for edge in prange(n_edges):
+            j = head[edge]
+            k = tail[edge]
+            for d in range(dim):
+                y1[d] = head_embedding[j, d]
+                y2[d] = head_embedding[k, d]
+            dist = sq_euc_dist(y1, y2, dim)
+
+            # Calculate attractive force
+            attr_force = attractive_force_func(
+                normalized,
+                frob,
+                dist,
+                a,
+                b,
+                weights[edge] * weight_scalar
+            )
+
+            # Add this force to the set acting on this point
+            for d in range(dim):
+                grad_d = attr_force * (y1[d] - y2[d])
+                attr_grads[j * dim + d] -= grad_d
+                if sym_attraction:
+                    attr_grads[k * dim + d] += grad_d
+        free(y2)
+
+
+        # Get one repulsive force for each (edge, quadtree-cell) pair
+
+        # Zero out edge-wise forces
+        for v in prange(n_vertices):
+            for d in range(dim):
+                rep_grads[v * dim + d] = 0
+
+        cell_summaries = <float*> malloc(sizeof(float) * n_vertices * offset)
+        rep_func_outputs = <float*> malloc(sizeof(float) * 2)
+        for v in prange(n_vertices):
+            # Get necessary data regarding current point and the quadtree cells
+            for d in range(dim):
+                y1[d] = head_embedding[v, d]
+            cell_metadata = qt.summarize(y1, cell_summaries, theta * theta)
+            num_cells = cell_metadata // offset
+
+            # For each quadtree cell with respect to the current point
+            for i_cell in range(num_cells):
+                cell_dist = cell_summaries[i_cell * offset + dim]
+                cell_size = cell_summaries[i_cell * offset + dim + 1]
+                # Calculate repulsive force
+                repulsive_force_func(
+                    rep_func_outputs,
+                    normalized,
+                    frob,
+                    cell_dist,
+                    a,
+                    b,
+                    cell_size,
+                    average_weight,
+                )
+                rep_force = rep_func_outputs[0]
+                Z += rep_func_outputs[1]
+
+                # Add this force to the set acting on this point
                 for d in range(dim):
-                    index = v * dim + d
-                    all_attr_grads[index] += local_attr_grads[index] * attr_scalar
-                    all_rep_grads[index] += local_rep_grads[index] * rep_scalar
+                    dim_index = i_cell * offset + d
+                    grad_d = rep_func_outputs[0] * cell_summaries[dim_index]
+                    rep_grads[v * dim + d] += grad_d
 
-        with parallel(num_threads=num_threads):
-            for v in prange(n_vertices):
-                for d in range(dim):
-                    index = v * dim + d
-                    if (all_rep_grads[index] + all_attr_grads[index]) * all_updates[index] > 0.0:
-                        gains[index] += 0.2
-                    else:
-                        gains[index] *= 0.8
-                    gains[index] = clip(gains[index], 0.01, 1000)
-                    grad_d = (all_rep_grads[index] + all_attr_grads[index]) * gains[index]
+        free(cell_summaries)
+        free(y1)
+        free(rep_func_outputs)
 
-                    all_updates[index] = grad_d * lr + amplify_grads * 0.9 * all_updates[index]
-                    head_embedding[v, d] += clip(all_updates[index], -1, 1)
+    if not normalized:
+        Z = 1
+        # Dividing by n_vertices means we have the same one-to-one
+        #   relationship between attractive and repulsive forces
+        #   as in traditional UMAP
+        rep_scalar /= n_vertices
+    rep_scalar /= Z
 
-    free(local_Z)
-    free(local_attr_grads)
-    free(local_rep_grads)
-    free(all_attr_grads)
-    free(all_rep_grads)
+    # Clean up and rescale all forces
+    with nogil, parallel(num_threads=num_threads):
+        for v in prange(n_vertices):
+            for d in range(dim):
+                index = v * dim + d
+                attr_grads[index] *= attr_scalar
+                rep_grads[index] *= rep_scalar
 
+    # Perform gradient descent
+    with nogil, parallel(num_threads=num_threads):
+        for v in prange(n_vertices):
+            for d in range(dim):
+                index = v * dim + d
+                if (rep_grads[index] + attr_grads[index]) * all_updates[index] > 0.0:
+                    gains[index] += 0.2
+                else:
+                    gains[index] *= 0.8
+                gains[index] = clip(gains[index], 0.01, 1000)
+                grad_d = (rep_grads[index] + attr_grads[index]) * gains[index]
+
+                all_updates[index] = grad_d * lr + amplify_grads * 0.9 * all_updates[index]
+                head_embedding[v, d] += clip(all_updates[index], -1, 1)
+
+    free(attr_grads)
+    free(rep_grads)
 
 cdef tsne_optimize(
     int normalized,
@@ -320,7 +239,6 @@ cdef tsne_optimize(
     int[:] head,
     int[:] tail,
     float[:] weights,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     float a,
     float b,
     int dim,
@@ -338,8 +256,10 @@ cdef tsne_optimize(
     cdef:
         float *all_updates
         float *gains
+
     # Can only define cython quadtree in a cython function
     cdef _QuadTree qt = _QuadTree(dim, 1)
+
     all_updates = <float*> malloc(sizeof(float) * n_vertices * dim)
     gains = <float*> malloc(sizeof(float) * n_vertices * dim)
     for v in range(n_vertices):
@@ -395,7 +315,6 @@ def tsne_opt_wrapper(
     float[:] weights,
     int n_epochs,
     int n_vertices,
-    np.ndarray[DTYPE_FLOAT, ndim=1] epochs_per_sample,
     float a,
     float b,
     float initial_lr,
@@ -414,7 +333,6 @@ def tsne_opt_wrapper(
             weight_sum += weights[i]
         for i in range(weights.shape[0]):
             weights[i] /= weight_sum
-        initial_lr *= 200
 
     tsne_optimize(
         normalized,
@@ -427,7 +345,6 @@ def tsne_opt_wrapper(
         head,
         tail,
         weights,
-        epochs_per_sample,
         a,
         b,
         dim,
