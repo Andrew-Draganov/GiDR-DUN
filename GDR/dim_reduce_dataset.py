@@ -149,11 +149,8 @@ if __name__ == '__main__':
     print('fitting...')
     start = time.time()
     dr_output = dr.fit_transform(points)
-    if isinstance(dr_output, tuple):
-        embedding, opt_time = dr_output
-    else:
-        embedding = dr_output
-        opt_time = -1
+    embedding = dr_output
+    opt_time = dr.opt_time
     end = time.time()
     total_time = end - start
     print('Optimization took {:.3f} seconds'.format(opt_time))

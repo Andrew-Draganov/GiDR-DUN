@@ -3,7 +3,6 @@ cimport numpy as np
 cimport cython
 from libc.stdio cimport printf
 from libc.math cimport sqrt
-from libc.stdlib cimport rand
 from libc.stdlib cimport malloc, free
 from cython.parallel cimport prange, parallel
 from sklearn.neighbors._quad_tree cimport _QuadTree
@@ -11,23 +10,23 @@ np.import_array()
 
 INF = py_np.inf
 
-cdef extern from "../utils/cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.cpp" nogil:
     float clip(float value, float lower, float upper)
-cdef extern from "../utils/cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.cpp" nogil:
     float sq_euc_dist(float* x, float* y, int dim)
-cdef extern from "../utils/cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.cpp" nogil:
     float ang_dist(float* x, float* y, int dim)
-cdef extern from "../utils/cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.cpp" nogil:
     float get_lr(float initial_lr, int i_epoch, int n_epochs, int amplify_grads) 
-cdef extern from "../utils/cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.cpp" nogil:
     void print_status(int i_epoch, int n_epochs)
-cdef extern from "../utils/cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.cpp" nogil:
     float umap_repulsion_grad(float dist, float a, float b)
-cdef extern from "../utils/cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.cpp" nogil:
     float kernel_function(float dist, float a, float b)
-cdef extern from "../utils/cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.cpp" nogil:
     float get_avg_weight(float* weights, int n_edges)
-cdef extern from "../utils/cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.cpp" nogil:
     float attractive_force_func(
             int normalized,
             int frob,
@@ -36,7 +35,7 @@ cdef extern from "../utils/cython_utils.c" nogil:
             float b,
             float edge_weight
     )
-cdef extern from "../utils/cython_utils.c" nogil:
+cdef extern from "../utils/cython_utils.cpp" nogil:
     void repulsive_force_func(
             float* rep_func_outputs,
             int normalized,
@@ -300,18 +299,12 @@ cdef void _tsne_epoch(
                     gains[index] = clip(gains[index], 0.01, 1000)
                     grad_d = (all_rep_grads[index] + all_attr_grads[index]) * gains[index]
 
-                    if amplify_grads:
-                        all_updates[index] = grad_d * lr + 0.9 * all_updates[index]
-                    else:
-                        all_updates[index] = grad_d * lr
-
+                    all_updates[index] = grad_d * lr + amplify_grads * 0.9 * all_updates[index]
                     head_embedding[v, d] += clip(all_updates[index], -1, 1)
 
     free(local_Z)
-
     free(local_attr_grads)
     free(local_rep_grads)
-
     free(all_attr_grads)
     free(all_rep_grads)
 

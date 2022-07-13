@@ -55,7 +55,7 @@ class GradientDR(BaseEstimator):
             n_neighbors=15,
             dim=2,
             n_epochs=None,
-            learning_rate=1.0,
+            learning_rate=None,
             random_init=False,
             pseudo_distance=True,
             tsne_symmetrization=False,
@@ -274,6 +274,11 @@ class GradientDR(BaseEstimator):
         X = check_array(X, dtype=np.float32, order="C")
 
         # Handle all the optional arguments, setting default
+        if self.learning_rate is None:
+            if self.normalized:
+                self.learning_rate = X.shape[0] / 500
+            else:
+                self.learning_rate = 1
         self._validate_parameters()
         if self.verbose:
             print(str(self))
@@ -436,7 +441,7 @@ class GradientDR(BaseEstimator):
         end = time.time()
         self.opt_time = end - start
         if self.verbose:
-            print('Optimization took {:.3f} seconds'.format(self.opt_time))
+            print('Done with optimization')
 
     def fit_transform(self, X):
         """
