@@ -21,9 +21,6 @@ from .graph_weights import get_similarities, get_sigmas_and_rhos
 from GDR.nndescent.py_files.pynndescent_ import NNDescent
 import GDR.nndescent.py_files.distances as pynnd_dist
 
-# FIXME
-from gdr_cython import gdr_opt_wrapper as optimizer
-
 locale.setlocale(locale.LC_NUMERIC, "C")
 INT32_MIN = np.iinfo(np.int32).min + 1
 INT32_MAX = np.iinfo(np.int32).max - 1

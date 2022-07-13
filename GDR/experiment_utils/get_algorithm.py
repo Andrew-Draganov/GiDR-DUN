@@ -1,6 +1,5 @@
 from GDR import GradientDR
 from sklearn.manifold import TSNE
-from umap import UMAP
 from sklearn.decomposition import PCA
 from sklearn.decomposition import KernelPCA
 
@@ -9,7 +8,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
         dr = GradientDR(
                 n_neighbors=params['n_neighbors'],
                 n_epochs=params['n_epochs'],
-                random_state=98765,
+                random_state=98765, # Only matters for serial-processing numba
                 random_init=params['random_init'],
                 pseudo_distance=params['umap_metric'],
                 tsne_symmetrization=params['tsne_symmetrization'],
@@ -29,18 +28,29 @@ def get_algorithm(algorithm_str, params, verbose=True):
                 verbose=verbose
             )
     elif algorithm_str == 'original_umap':
+        try:
+            from umap import UMAP
+        except ImportError:
+            raise ImportError('You need to pip install umap-learn first :)')
         dr = UMAP(
-                n_neighbors=params['n_neighbors'],
-                n_epochs=params['n_epochs'],
-                init='random' if params['random_init'] else 'spectral',
-                negative_sample_rate=params['neg_sample_rate'],
-                a=params['a'],
-                b=params['b'],
-                verbose=verbose
-            )
+            n_neighbors=params['n_neighbors'],
+            n_epochs=params['n_epochs'],
+            init='random' if params['random_init'] else 'spectral',
+            negative_sample_rate=params['neg_sample_rate'],
+            a=params['a'],
+            b=params['b'],
+            verbose=verbose
+        )
     elif algorithm_str == 'original_tsne':
         # sklearn tsne requires at least 250 epochs
-        dr = TSNE(random_state=98765, n_iter=max(250, params['n_epochs']))
+        if params['n_epochs'] is None:
+            dr = TSNE(random_state=98765)
+        else:
+            dr = TSNE(
+                random_state=98765,
+                n_iter=max(250, params['n_epochs']),
+                verbose=1
+            )
     elif algorithm_str == 'pca':
         dr = PCA()
     elif algorithm_str == 'kernel_pca':

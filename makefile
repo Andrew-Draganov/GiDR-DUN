@@ -1,12 +1,12 @@
 install_python_env:
-	python3 setup.py install --user
+	pip install -e .
+	python3 setup.py build_ext --inplace
 
-install_cython_env: install_python_env
+install_cython_code: install_python_env
 	# https://stavshamir.github.io/python/making-your-c-library-callable-from-python-by-wrapping-it-with-cython/ 
-	GDR/scripts/check_conda_env.sh GDR
-	python3 setup_cython.py install --user
+	python3 setup_cython.py build_ext --inplace
 
-install_cuda_code:
+install_cuda_code: install_python_env
 	# FIXME -- this should run on user's preferred cuda
 	/usr/local/cuda-11.5/bin/nvcc --shared -o libgpu_dim_reduction.so \
 		GDR/cython/cuda_wrappers/gpu_dim_reduction.cpp \

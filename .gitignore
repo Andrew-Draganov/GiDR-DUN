@@ -12,6 +12,7 @@ GDR/cython/cython_files/*.c
 *.html
 *.swp
 */*.swp
+**/__init__.pyc
 **/__pycache__/
 GDR/optimizer/__pycache__/
 GDR/optimizer/numba_optimizers/__pycache__/
