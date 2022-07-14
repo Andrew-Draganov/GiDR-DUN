@@ -18,6 +18,12 @@ class GdrTest(unittest.TestCase):
         self.values_path = os.path.join('GDR', 'tests', 'utils', 'reg_test_values')
 
     def check_consistency(self, embedding):
+        """
+        Our fake dataset has two clusters in high-dimensional space
+        We expect our projection to also have two clusters in low dimensional space
+        This means that intra-class distances in the embedding should be smaller than inter-class
+            distances
+        """
         class_inds = [np.where((self.labels - c) == 0)[0] for c in np.unique(self.labels)]
         intra_class_dists, inter_class_dists = [], []
         for i in range(int(self.num_classes * self.num_points / 2)):
