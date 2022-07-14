@@ -13,12 +13,14 @@ class HyperParamTest(unittest.TestCase):
         self.points, _ = load_fake_data()
 
     def test_cpu_methods(self):
-        models = [
-            get_algorithm('gdr', self.params),
-            get_algorithm('original_umap', self.params),
-            get_algorithm('original_tsne', self.params),
-            get_algorithm('pca', self.params)
-        ]
+        models = []
+        for dr_algorithm in ['gdr', 'original_umap', 'original_tsne', 'pca']:
+            try:
+                models.append(get_algorithm(dr_algorithm, self.params))
+            except ImportError:
+                # UMAP import struggles to build bdist_wheel for nndescent
+                #   so it is not a default requirement
+                continue
         for model in models:
             model.fit_transform(self.points)
 

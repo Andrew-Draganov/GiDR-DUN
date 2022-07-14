@@ -73,4 +73,5 @@ You can set up a model to run each algorithm by the following constructors:
 
 ##
 Contact -- for questions please raise an issue or (if you want a response) email draganovandrew@cs.au.dk
+
 If you use this code, please cite our paper :)
