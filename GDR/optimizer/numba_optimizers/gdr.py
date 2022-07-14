@@ -16,36 +16,46 @@ from .numba_utils import (
     repulsive_force_func
 )
 
-@numba.njit(fastmath=True, parallel=True, boundscheck=False)
-def gather_gradients(
-    attr_grads,
-    rep_grads,
-    head,
-    tail,
-    head_embedding,
-    weights,
-    weight_scalar,
+def gdr_single_epoch(
     normalized,
     angular,
-    amplify_grads,
-    frob,
     sym_attraction,
+    frob,
     num_threads,
+    amplify_grads,
+    embedding,
+    head,
+    tail,
+    attr_grads,
+    rep_grads,
+    all_updates,
+    gains,
+    weights,
+    n_epochs,
     n_vertices,
-    n_edges,
-    i_epoch,
-    dim,
     a,
     b,
     rng_state,
-    average_weight
+    initial_lr,
+    negative_sample_rate,
+    n_edges,
+    dim,
+    i_epoch,
+    average_weight,
+    lr,
 ):
+    # t-SNE early exaggeration
+    if amplify_grads and i_epoch < 250:
+        weight_scalar = 4
+    else:
+        weight_scalar = 1
+
     Z = 0
     for edge in numba.prange(n_edges):
         j = head[edge]
         k = tail[edge]
-        y1 = head_embedding[j]
-        y2 = head_embedding[k]
+        y1 = embedding[j]
+        y2 = embedding[k]
         # FIXME -- need option for angular dist here!
         dist = sq_euc_dist(y1, y2, dim)
 
@@ -59,12 +69,13 @@ def gather_gradients(
         )
         for d in range(dim):
             grad_d = attr_force * (y1[d] - y2[d])
-            attr_grads[j, d] -= grad_d
+            attr_grads[j, d] -= grad_d * lr
             if sym_attraction:
-                attr_grads[k, d] += grad_d
+                attr_grads[k, d] += grad_d * lr
 
         k = tau_rand_int(rng_state) % n_vertices
-        y2 = head_embedding[k]
+        y2 = embedding[k]
+        # FIXME -- need option for angular dist here!
         dist = sq_euc_dist(y1, y2, dim)
 
         if normalized or frob:
@@ -77,26 +88,11 @@ def gather_gradients(
 
         for d in range(dim):
             grad_d = rep_force * (y1[d] - y2[d])
-            rep_grads[j, d] += grad_d
+            rep_grads[j, d] += grad_d * lr
 
-    return Z
+    if not normalized:
+        Z = 1
 
-
-@numba.njit(fastmath=True, parallel=True, boundscheck=False)
-def apply_forces(
-    amplify_grads,
-    head_embedding,
-    attr_grads,
-    rep_grads,
-    gains,
-    all_updates,
-    Z,
-    a,
-    b,
-    n_vertices,
-    dim,
-    lr
-):
     for v in numba.prange(n_vertices):
         for d in range(dim):
             grad_d = 4 * a * b * (attr_grads[v, d] + rep_grads[v, d] / Z)
@@ -108,9 +104,7 @@ def apply_forces(
             grad_d = clip(grad_d * gains[v, d], -1, 1)
 
             all_updates[v, d] = grad_d * lr + amplify_grads * 0.9 * all_updates[v, d]
-            head_embedding[v, d] += all_updates[v, d]
-
-
+            embedding[v, d] += all_updates[v, d]
 
 def gdr_numba_wrapper(
     normalized,
@@ -141,7 +135,6 @@ def gdr_numba_wrapper(
             weight_sum += weights[i]
         for i in range(weights.shape[0]):
             weights[i] /= weight_sum
-        initial_lr = n_vertices / 500
 
     all_updates = np.zeros([n_vertices, dim], dtype=np.float32)
     gains = np.ones([n_vertices, dim], dtype=np.float32)
@@ -151,58 +144,40 @@ def gdr_numba_wrapper(
     rep_grads = np.zeros([n_edges, dim], dtype=np.float32)
     average_weight = get_avg_weight(weights, n_edges)
 
+    optimize_fn = numba.njit(gdr_single_epoch, fastmath=True, parallel=True)
     for i_epoch in tqdm(range(n_epochs)):
-        lr = get_lr(initial_lr, i_epoch, n_epochs, amplify_grads)
         for v in range(n_vertices):
             for d in range(dim):
                 attr_grads[v, d] = 0
                 rep_grads[v, d] = 0
 
-        # t-SNE early exaggeration
-        if amplify_grads and i_epoch < 250:
-            weight_scalar = 4
-        else:
-            weight_scalar = 1
-
-        Z = gather_gradients(
-            attr_grads,
-            rep_grads,
-            head,
-            tail,
-            head_embedding,
-            weights,
-            weight_scalar,
+        lr = get_lr(initial_lr, i_epoch, n_epochs, amplify_grads)
+        optimize_fn(
             normalized,
             angular,
-            amplify_grads,
-            frob,
             sym_attraction,
+            frob,
             num_threads,
+            amplify_grads,
+            head_embedding,
+            head,
+            tail,
+            attr_grads,
+            rep_grads,
+            all_updates,
+            gains,
+            weights,
+            n_epochs,
             n_vertices,
-            n_edges,
-            i_epoch,
-            dim,
             a,
             b,
             rng_state,
-            average_weight
-        )
-        if not normalized:
-            Z = 1
-
-        apply_forces(
-            amplify_grads,
-            head_embedding,
-            attr_grads,
-            rep_grads,
-            gains,
-            all_updates,
-            Z,
-            a,
-            b,
-            n_vertices,
+            initial_lr,
+            negative_sample_rate,
+            n_edges,
             dim,
-            lr
+            i_epoch,
+            average_weight,
+            lr,
         )
-
     return head_embedding

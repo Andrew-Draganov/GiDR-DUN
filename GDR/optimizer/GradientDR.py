@@ -15,7 +15,7 @@ import scipy
 import numba
 
 from . import distances as dist
-from . import utils
+from .utils import ts
 from . import spectral
 from .graph_weights import get_similarities, get_sigmas_and_rhos
 from GDR.nndescent.py_files.pynndescent_ import NNDescent
@@ -163,7 +163,7 @@ class GradientDR(BaseEstimator):
 
     def get_nearest_neighbors(self, X):
         if self.verbose:
-            print(utils.ts(), "Finding Nearest Neighbors")
+            print(ts(), "Finding Nearest Neighbors")
         # Legacy values from UMAP implementation
         n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
         n_iters = max(5, int(round(np.log2(X.shape[0]))))
@@ -186,7 +186,7 @@ class GradientDR(BaseEstimator):
         ).neighbor_graph
 
         if self.verbose:
-            print(utils.ts(), "Finished Nearest Neighbor Search")
+            print(ts(), "Finished Nearest Neighbor Search")
 
     def compute_P_matrix(self, X):
         self._knn_dists = self._knn_dists.astype(np.float32)
@@ -338,7 +338,7 @@ class GradientDR(BaseEstimator):
         FIXME
         """
         if self.verbose:
-            print(utils.ts(), "Constructing embedding")
+            print(ts(), "Constructing embedding")
 
         self.graph = self.graph.tocoo()
         self.graph.sum_duplicates()
@@ -368,12 +368,12 @@ class GradientDR(BaseEstimator):
         self.rng_state = self.random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
 
         if self.verbose:
-            print(utils.ts() + ' Optimizing layout...')
+            print(ts() + ' Optimizing layout...')
 
         self._optimize_layout()
 
         if self.verbose:
-            print(utils.ts() + " Finished embedding")
+            print(ts() + " Finished embedding")
 
 
     def _optimize_layout(self):

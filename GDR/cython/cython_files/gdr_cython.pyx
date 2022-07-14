@@ -46,7 +46,6 @@ cdef extern from "../utils/cython_utils.cpp" nogil:
             float average_weight
     )
 
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.cdivision(True)
