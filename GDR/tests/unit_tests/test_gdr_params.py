@@ -28,6 +28,7 @@ class HyperParamTest(unittest.TestCase):
             'umap_metric',
             'tsne_symmetrization',
             'normalized',
+            'accelerated',
             'sym_attraction',
             'frobenius',
             'amplify_grads'

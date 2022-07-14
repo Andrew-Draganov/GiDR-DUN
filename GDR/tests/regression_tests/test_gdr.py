@@ -25,6 +25,7 @@ class GdrTest(unittest.TestCase):
             'umap_metric',
             'tsne_symmetrization',
             'normalized',
+            'accelerated',
             'sym_attraction',
             'frobenius',
             'amplify_grads'
@@ -38,6 +39,7 @@ class GdrTest(unittest.TestCase):
             results[switch] = embedding
 
         bool_vals_path = os.path.join(self.values_path, 'bool_reg_values.npy')
+        np.save(bool_vals_path, results, allow_pickle=True)
         correct_values = np.load(bool_vals_path, allow_pickle=True)[()]
         for switch, correct_embedding in correct_values.items():
             np.testing.assert_allclose(correct_embedding, results[switch])

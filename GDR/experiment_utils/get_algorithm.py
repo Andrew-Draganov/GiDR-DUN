@@ -17,6 +17,7 @@ def get_algorithm(algorithm_str, params, verbose=True):
                 torch=params['torch'],
                 neg_sample_rate=params['neg_sample_rate'],
                 normalized=int(params['normalized']),
+                accelerated=int(params['accelerated']),
                 sym_attraction=int(params['sym_attraction']),
                 frob=int(params['frobenius']),
                 gpu=int(params['gpu']),

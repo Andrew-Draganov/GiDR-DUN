@@ -51,6 +51,7 @@ cdef extern from "../utils/cython_utils.cpp" nogil:
 @cython.cdivision(True)
 cdef void _gdr_epoch(
     int normalized,
+    int standard_opt,
     int angular,
     int sym_attraction,
     int frob,
@@ -70,6 +71,8 @@ cdef void _gdr_epoch(
     int dim,
     int n_vertices,
     int negative_sample_rate,
+    float[:] epochs_per_sample,
+    float[:] epoch_of_next_sample,
     float lr,
     int i_epoch
 ):
@@ -102,57 +105,60 @@ cdef void _gdr_epoch(
         y2 = <float*> malloc(sizeof(float) * dim)
         rep_func_outputs = <float*> malloc(sizeof(float) * 2)
         for edge in prange(n_edges):
-            j = head[edge]
-            k = tail[edge]
-            for d in range(dim):
-                y1[d] = embedding[j, d]
-                y2[d] = embedding[k, d]
+            if epoch_of_next_sample[edge] <= i_epoch or standard_opt:
+                j = head[edge]
+                k = tail[edge]
+                for d in range(dim):
+                    y1[d] = embedding[j, d]
+                    y2[d] = embedding[k, d]
 
-            if angular:
-                dist = ang_dist(y1, y2, dim)
-            else:
-                dist = sq_euc_dist(y1, y2, dim)
+                if angular:
+                    dist = ang_dist(y1, y2, dim)
+                else:
+                    dist = sq_euc_dist(y1, y2, dim)
 
-            attr_force = attractive_force_func(
-                normalized,
-                frob,
-                dist,
-                a,
-                b,
-                weights[edge] * weight_scalar
-            )
-            for d in range(dim):
-                grad_d = attr_force * (y1[d] - y2[d])
-                attr_grads[j, d] -= grad_d
-                if sym_attraction:
-                    attr_grads[k, d] += grad_d
+                attr_force = attractive_force_func(
+                    normalized,
+                    frob,
+                    dist,
+                    a,
+                    b,
+                    weights[edge] * weight_scalar
+                )
+                for d in range(dim):
+                    grad_d = attr_force * (y1[d] - y2[d])
+                    attr_grads[j, d] -= grad_d
+                    if sym_attraction:
+                        attr_grads[k, d] += grad_d
 
-            k = random_int(n_vertices)
-            for d in range(dim):
-                y2[d] = embedding[k, d]
+                k = random_int(n_vertices)
+                for d in range(dim):
+                    y2[d] = embedding[k, d]
 
-            if angular:
-                dist = ang_dist(y1, y2, dim)
-            else:
-                dist = sq_euc_dist(y1, y2, dim)
+                if angular:
+                    dist = ang_dist(y1, y2, dim)
+                else:
+                    dist = sq_euc_dist(y1, y2, dim)
 
-            # Simplify this call like in numba optimizers
-            repulsive_force_func(
-                rep_func_outputs,
-                normalized,
-                frob,
-                dist,
-                a,
-                b,
-                1.0,
-                average_weight,
-            )
-            rep_force = rep_func_outputs[0]
-            Z += rep_func_outputs[1]
+                # Simplify this call like in numba optimizers
+                repulsive_force_func(
+                    rep_func_outputs,
+                    normalized,
+                    frob,
+                    dist,
+                    a,
+                    b,
+                    1.0,
+                    average_weight,
+                )
+                rep_force = rep_func_outputs[0]
+                Z += rep_func_outputs[1]
 
-            for d in range(dim):
-                grad_d = rep_force * (y1[d] - y2[d])
-                rep_grads[j, d] += grad_d
+                for d in range(dim):
+                    grad_d = rep_force * (y1[d] - y2[d])
+                    rep_grads[j, d] += grad_d
+
+                epoch_of_next_sample[edge] += epochs_per_sample[edge]
 
         free(rep_func_outputs)
         free(y1)
@@ -182,6 +188,7 @@ cdef void _gdr_epoch(
 @cython.boundscheck(False)
 cdef gdr_optimize(
     int normalized,
+    int standard_opt,
     int angular,
     int sym_attraction,
     int frob,
@@ -198,10 +205,17 @@ cdef gdr_optimize(
     int n_epochs,
     int n_vertices,
     int negative_sample_rate,
+    float[:] epochs_per_sample,
     int verbose
 ):
     cdef:
         int v, d, edge
+
+    cdef int n_edges = int(head.shape[0])
+    py_epoch_of_next_sample = py_np.zeros([n_edges], dtype=py_np.float32)
+    cdef float[:] epoch_of_next_sample = py_epoch_of_next_sample
+    for edge in range(n_edges):
+        epoch_of_next_sample[edge] = epochs_per_sample[edge]
 
     # Initialize arrays used for gradient descent for-loop
     py_all_updates = py_np.zeros([n_vertices, dim], dtype=py_np.float32)
@@ -210,7 +224,6 @@ cdef gdr_optimize(
     cdef float[:, :] gains = py_gains
 
     # Initialize arrays used for calculating forces acting on each point
-    cdef int n_edges = int(head.shape[0])
     py_attr_grads = py_np.zeros([n_edges, dim], dtype=py_np.float32)
     py_rep_grads = py_np.zeros([n_edges, dim], dtype=py_np.float32)
     cdef float average_weight = get_avg_weight(&weights[0], n_edges)
@@ -221,6 +234,7 @@ cdef gdr_optimize(
         lr = get_lr(initial_lr, i_epoch, n_epochs, amplify_grads)
         _gdr_epoch(
             normalized,
+            standard_opt,
             angular,
             sym_attraction,
             frob,
@@ -240,6 +254,8 @@ cdef gdr_optimize(
             dim,
             n_vertices,
             negative_sample_rate,
+            epochs_per_sample,
+            epoch_of_next_sample,
             lr,
             i_epoch
         )
@@ -254,6 +270,7 @@ cdef gdr_optimize(
 @cython.boundscheck(False)
 def gdr_opt_wrapper(
     int normalized,
+    int standard_opt,
     int angular,
     int sym_attraction,
     int frob,
@@ -265,6 +282,7 @@ def gdr_opt_wrapper(
     float[:] weights,
     int n_epochs,
     int n_vertices,
+    float[:] epochs_per_sample,
     float a,
     float b,
     float initial_lr,
@@ -286,6 +304,7 @@ def gdr_opt_wrapper(
 
     gdr_optimize(
         normalized,
+        standard_opt,
         angular,
         sym_attraction,
         frob,
@@ -302,6 +321,7 @@ def gdr_opt_wrapper(
         n_epochs,
         n_vertices,
         negative_sample_rate,
+        epochs_per_sample,
         verbose
     )
 

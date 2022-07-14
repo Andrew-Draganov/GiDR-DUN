@@ -17,11 +17,11 @@ def load_mnist():
     labels = np.array(labels)
     return points, labels
 
-def load_google_news():
+def load_google_news(num_points):
     # To run this dataset, download https://data.world/jaredfern/googlenews-reduced-200-d
     #   and place it into the directory 'data'
-    with open(os.path.join('data', 'gnews_mod.csv'), 'r', encoding="utf-8") as f:
-        reader = csv.reader(file)
+    with open(os.path.join('GDR', 'data', 'gnews_mod.csv'), 'r', encoding="utf-8") as f:
+        reader = csv.reader(f)
         if num_points < 0:
             num_points = 350000
         num_points = min(num_points, 350000)
@@ -43,7 +43,7 @@ def load_coil100_data(directory=None):
     Using it requires manually unzipping it into a directory
     """
     if directory is None:
-        directory = os.path.join('data', 'coil-100')
+        directory = os.path.join('GDR', 'data', 'coil-100')
     pickled_path = os.path.join(directory, 'pickled_coil.npy')
     if os.path.exists(pickled_path):
         dataset = np.load(pickled_path, allow_pickle=True)[()]
@@ -108,7 +108,7 @@ def load_fashion_mnist_data(directory=None):
     Using the Fashion MNIST dataset found at https://www.kaggle.com/datasets/zalando-research/fashionmnist
     """
     if directory is None:
-        directory = os.path.join('data', 'fashion_mnist')
+        directory = os.path.join('GDR', 'data', 'fashion_mnist')
 
     images_file = os.path.join(directory, 'train-images-idx3-ubyte')
     with open(images_file, 'rb') as f:
@@ -196,7 +196,7 @@ def get_dataset(data_name, num_points, normalize=True, desired_dim=-1):
         points, _ = make_swiss_roll(n_samples=num_points, noise=0.01)
         labels = np.ones(num_points)
     elif data_name == 'google_news':
-        points, labels = load_google_news()
+        points, labels = load_google_news(num_points)
     elif data_name == 'coil':
         points, labels = load_coil100_data()
     else:

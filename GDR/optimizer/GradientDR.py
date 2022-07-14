@@ -61,6 +61,7 @@ class GradientDR(BaseEstimator):
             tsne_symmetrization=False,
             optimize_method='gdr',
             normalized=0,
+            accelerated=0,
             angular=False,
             sym_attraction=True,
             frob=False,
@@ -87,6 +88,7 @@ class GradientDR(BaseEstimator):
         self.pseudo_distance = pseudo_distance
         self.optimize_method = optimize_method
         self.normalized = normalized
+        self.accelerated = accelerated
         self.angular = angular
         self.sym_attraction = sym_attraction
         self.frob = frob
@@ -380,6 +382,7 @@ class GradientDR(BaseEstimator):
         args = {
             'optimize_method': self.optimize_method,
             'normalized': self.normalized,
+            'standard_opt': 1 - int(self.accelerated),
             'angular': self.angular,
             'sym_attraction': int(self.sym_attraction),
             'frob': int(self.frob),
