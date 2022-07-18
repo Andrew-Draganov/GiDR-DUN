@@ -64,6 +64,7 @@ class GradientDR(BaseEstimator):
             accelerated=0,
             angular=False,
             sym_attraction=True,
+            nn_alg=None,
             frob=False,
             cython=False,
             torch=False,
@@ -83,7 +84,6 @@ class GradientDR(BaseEstimator):
         self.dim = dim
         self.learning_rate = learning_rate
 
-        # ANDREW - options for flipping between tSNE and UMAP
         self.tsne_symmetrization = tsne_symmetrization
         self.pseudo_distance = pseudo_distance
         self.optimize_method = optimize_method
@@ -101,6 +101,7 @@ class GradientDR(BaseEstimator):
         self.random_state = random_state
         self.verbose = verbose
 
+        self.nn_alg = nn_alg
         self.num_threads = num_threads
 
         self.min_dist = min_dist
@@ -130,6 +131,8 @@ class GradientDR(BaseEstimator):
             raise ValueError("learning_rate must be positive")
         if self.n_neighbors < 2:
             raise ValueError("n_neighbors must be greater than 1")
+        if not callable(self.nn_alg) and self.nn_alg != None:
+            raise ValueError('Provided NNDescent algorithm must be callable')
         if not isinstance(self.dim, int):
             if isinstance(self.dim, str):
                 raise ValueError("dim must be an int")
@@ -175,17 +178,26 @@ class GradientDR(BaseEstimator):
         else:
             distance_func = pynnd_dist.euclidean
 
-        self._knn_indices, self._knn_dists = NNDescent(
-            X,
-            n_neighbors=self.n_neighbors,
-            random_state=self.random_state,
-            n_trees=n_trees,
-            distance_func=distance_func,
-            n_iters=n_iters,
-            max_candidates=20,
-            n_jobs=self.num_threads,
-            verbose=self.verbose,
-        ).neighbor_graph
+        if self.nn_alg is None:
+            self._knn_indices, self._knn_dists = NNDescent(
+                X,
+                n_neighbors=self.n_neighbors,
+                random_state=self.random_state,
+                n_trees=n_trees,
+                distance_func=distance_func,
+                n_iters=n_iters,
+                max_candidates=20,
+                n_jobs=self.num_threads,
+                verbose=self.verbose,
+            ).neighbor_graph
+        else:
+            self._knn_indices, self._knn_dists = self.nn_alg(
+                X,
+                n_neighbors=self.n_neighbors,
+                random_state=self.random_state,
+                distance_func=self.distance_func,
+                verbose=self.vebose
+            )
 
         if self.verbose:
             print(ts(), "Finished Nearest Neighbor Search")
@@ -377,7 +389,6 @@ class GradientDR(BaseEstimator):
         if self.verbose:
             print(ts() + " Finished embedding")
 
-
     def _optimize_layout(self):
         args = {
             'optimize_method': self.optimize_method,
@@ -403,7 +414,6 @@ class GradientDR(BaseEstimator):
             'rng_state': self.rng_state,
             'verbose': int(self.verbose)
         }
-        start = time.time()
         if self.gpu:
             if self.optimize_method != 'gdr':
                 raise ValueError('GPU optimization can only be performed in the gdr setting')
@@ -411,7 +421,7 @@ class GradientDR(BaseEstimator):
         elif self.torch:
             if self.optimize_method != 'gdr':
                 raise ValueError('PyTorch optimization can only be performed in the gdr setting')
-            from .pytorch_optimize import torch_optimize_layout as optimizer
+            from GDR.optimizer.pytorch_optimize import torch_optimize_layout as optimizer
         elif self.cython:
             if self.optimize_method == 'umap':
                 from umap_cython import umap_opt_wrapper as optimizer
@@ -428,6 +438,7 @@ class GradientDR(BaseEstimator):
                 from GDR.optimizer.numba_optimizers import gdr_numba_wrapper as optimizer
             else:
                 raise ValueError('Numba optimization only works for umap and gdr')
+        start = time.time()
         self.embedding = optimizer(**args)
         end = time.time()
         self.opt_time = end - start
