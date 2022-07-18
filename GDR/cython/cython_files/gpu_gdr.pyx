@@ -5,7 +5,6 @@ from libc.stdio cimport printf
 from libc.math cimport sqrt
 from libc.stdlib cimport rand
 from libc.stdlib cimport malloc, free
-
 np.import_array()
 
 cdef extern from "../cuda_wrappers/gpu_dim_reduction.cpp":
