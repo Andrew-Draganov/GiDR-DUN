@@ -86,6 +86,11 @@ def get_args():
         help='If true, normalize high- and low-dimensional pairwise likelihood matrices'
     )
     parser.add_argument(
+        '--accelerated',
+        action='store_true',
+        help='If true, use sampling to approximate the high-dim likelihoods'
+    )
+    parser.add_argument(
         '--sym-attraction',
         action='store_true',
         help='Whether to attract along both ends of a nearest neighbor edge'

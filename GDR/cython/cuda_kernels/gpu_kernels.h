@@ -4,7 +4,7 @@
 #include "cuda.h"
 #include "cuda_runtime.h"
 
-extern "C++" void gpu_umap(
+extern "C++" void gpu_gdr(
         int normalized,
         int sym_attraction,
         int frob,

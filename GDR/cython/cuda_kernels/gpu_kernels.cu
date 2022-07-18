@@ -400,7 +400,7 @@ void pack_N(int *d_N_new, float *d_weights_new, int *d_N, float *d_weights, int 
 }
 
 
-void gpu_umap_full_N(int normalized,
+void gpu_gdr_full_N(int normalized,
                      int sym_attraction,
                      int frob,
                      int amplify_grads,
@@ -540,7 +540,7 @@ void gpu_umap_full_N(int normalized,
 }
 
 
-void gpu_umap(
+void gpu_gdr(
         int normalized,
         int sym_attraction,
         int frob,
@@ -560,7 +560,7 @@ void gpu_umap(
         int negative_sample_rate
 ) {
     int k = n_edges / n_vertices;
-    gpu_umap_full_N(
+    gpu_gdr_full_N(
             normalized,
             sym_attraction,
             frob,

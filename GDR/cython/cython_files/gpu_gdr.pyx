@@ -6,11 +6,10 @@ from libc.math cimport sqrt
 from libc.stdlib cimport rand
 from libc.stdlib cimport malloc, free
 
-from sklearn.neighbors._quad_tree cimport _QuadTree
 np.import_array()
 
 cdef extern from "../cuda_wrappers/gpu_dim_reduction.cpp":
-    void gpu_umap_wrap(
+    void gpu_wrapper(
         int normalized,
         int sym_attraction,
         int frob,
@@ -30,20 +29,18 @@ cdef extern from "../cuda_wrappers/gpu_dim_reduction.cpp":
         int negative_sample_rate
     )
 
-
 ctypedef np.float32_t DTYPE_FLOAT
 ctypedef np.int32_t DTYPE_INT
 
-# FIXME -- these can probably just be memoryslices...
 cdef uniform_umap_gpu(
     int normalized,
     int sym_attraction,
     int frob,
     int amplify_grads,
-    np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] head_embedding,
-    np.ndarray[int, ndim=1, mode='c'] head,
-    np.ndarray[DTYPE_FLOAT, ndim=1, mode='c'] weights,
-    np.ndarray[long, ndim=1, mode='c'] neighbor_counts,
+    float[:, :] head_embedding,
+    int[:] head,
+    float[:] weights,
+    long[:] neighbor_counts,
     float a,
     float b,
     int dim,
@@ -60,7 +57,7 @@ cdef uniform_umap_gpu(
     gains = py_np.ones([n_vertices, dim], dtype=py_np.float32, order='c')
 
     cdef int n_edges = int(weights.shape[0])
-    gpu_umap_wrap(
+    gpu_wrapper(
         normalized,
         sym_attraction,
         frob,
@@ -80,7 +77,6 @@ cdef uniform_umap_gpu(
         negative_sample_rate
     )
 
-
 @cython.cdivision(True)
 @cython.wraparound(False)
 @cython.boundscheck(False)
@@ -89,10 +85,10 @@ def gpu_opt_wrapper(
     int sym_attraction,
     int frob,
     int amplify_grads,
-    np.ndarray[DTYPE_INT, ndim=1, mode='c'] head,
-    np.ndarray[DTYPE_FLOAT, ndim=2, mode='c'] head_embedding,
-    np.ndarray[DTYPE_FLOAT, ndim=1, mode='c'] weights,
-    np.ndarray[long, ndim=1, mode='c'] neighbor_counts,
+    float[:, :] head_embedding,
+    int[:] head,
+    float[:] weights,
+    long[:] neighbor_counts,
     int n_epochs,
     int n_vertices,
     float a,

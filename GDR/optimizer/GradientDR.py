@@ -15,7 +15,7 @@ import scipy
 import numba
 
 from . import distances as dist
-from . import utils
+from .utils import ts
 from . import spectral
 from .graph_weights import get_similarities, get_sigmas_and_rhos
 from GDR.nndescent.py_files.pynndescent_ import NNDescent
@@ -61,8 +61,10 @@ class GradientDR(BaseEstimator):
             tsne_symmetrization=False,
             optimize_method='gdr',
             normalized=0,
+            accelerated=0,
             angular=False,
             sym_attraction=True,
+            nn_alg=None,
             frob=False,
             cython=False,
             torch=False,
@@ -82,11 +84,11 @@ class GradientDR(BaseEstimator):
         self.dim = dim
         self.learning_rate = learning_rate
 
-        # ANDREW - options for flipping between tSNE and UMAP
         self.tsne_symmetrization = tsne_symmetrization
         self.pseudo_distance = pseudo_distance
         self.optimize_method = optimize_method
         self.normalized = normalized
+        self.accelerated = accelerated
         self.angular = angular
         self.sym_attraction = sym_attraction
         self.frob = frob
@@ -99,6 +101,7 @@ class GradientDR(BaseEstimator):
         self.random_state = random_state
         self.verbose = verbose
 
+        self.nn_alg = nn_alg
         self.num_threads = num_threads
 
         self.min_dist = min_dist
@@ -128,6 +131,8 @@ class GradientDR(BaseEstimator):
             raise ValueError("learning_rate must be positive")
         if self.n_neighbors < 2:
             raise ValueError("n_neighbors must be greater than 1")
+        if not callable(self.nn_alg) and self.nn_alg != None:
+            raise ValueError('Provided NNDescent algorithm must be callable')
         if not isinstance(self.dim, int):
             if isinstance(self.dim, str):
                 raise ValueError("dim must be an int")
@@ -163,7 +168,7 @@ class GradientDR(BaseEstimator):
 
     def get_nearest_neighbors(self, X):
         if self.verbose:
-            print(utils.ts(), "Finding Nearest Neighbors")
+            print(ts(), "Finding Nearest Neighbors")
         # Legacy values from UMAP implementation
         n_trees = min(64, 5 + int(round((X.shape[0]) ** 0.5 / 20.0)))
         n_iters = max(5, int(round(np.log2(X.shape[0]))))
@@ -173,20 +178,29 @@ class GradientDR(BaseEstimator):
         else:
             distance_func = pynnd_dist.euclidean
 
-        self._knn_indices, self._knn_dists = NNDescent(
-            X,
-            n_neighbors=self.n_neighbors,
-            random_state=self.random_state,
-            n_trees=n_trees,
-            distance_func=distance_func,
-            n_iters=n_iters,
-            max_candidates=20,
-            n_jobs=self.num_threads,
-            verbose=self.verbose,
-        ).neighbor_graph
+        if self.nn_alg is None:
+            self._knn_indices, self._knn_dists = NNDescent(
+                X,
+                n_neighbors=self.n_neighbors,
+                random_state=self.random_state,
+                n_trees=n_trees,
+                distance_func=distance_func,
+                n_iters=n_iters,
+                max_candidates=20,
+                n_jobs=self.num_threads,
+                verbose=self.verbose,
+            ).neighbor_graph
+        else:
+            self._knn_indices, self._knn_dists = self.nn_alg(
+                X,
+                n_neighbors=self.n_neighbors,
+                random_state=self.random_state,
+                distance_func=self.distance_func,
+                verbose=self.vebose
+            )
 
         if self.verbose:
-            print(utils.ts(), "Finished Nearest Neighbor Search")
+            print(ts(), "Finished Nearest Neighbor Search")
 
     def compute_P_matrix(self, X):
         self._knn_dists = self._knn_dists.astype(np.float32)
@@ -338,7 +352,7 @@ class GradientDR(BaseEstimator):
         FIXME
         """
         if self.verbose:
-            print(utils.ts(), "Constructing embedding")
+            print(ts(), "Constructing embedding")
 
         self.graph = self.graph.tocoo()
         self.graph.sum_duplicates()
@@ -368,18 +382,18 @@ class GradientDR(BaseEstimator):
         self.rng_state = self.random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
 
         if self.verbose:
-            print(utils.ts() + ' Optimizing layout...')
+            print(ts() + ' Optimizing layout...')
 
         self._optimize_layout()
 
         if self.verbose:
-            print(utils.ts() + " Finished embedding")
-
+            print(ts() + " Finished embedding")
 
     def _optimize_layout(self):
         args = {
             'optimize_method': self.optimize_method,
             'normalized': self.normalized,
+            'standard_opt': 1 - int(self.accelerated),
             'angular': self.angular,
             'sym_attraction': int(self.sym_attraction),
             'frob': int(self.frob),
@@ -400,7 +414,6 @@ class GradientDR(BaseEstimator):
             'rng_state': self.rng_state,
             'verbose': int(self.verbose)
         }
-        start = time.time()
         if self.gpu:
             if self.optimize_method != 'gdr':
                 raise ValueError('GPU optimization can only be performed in the gdr setting')
@@ -408,7 +421,7 @@ class GradientDR(BaseEstimator):
         elif self.torch:
             if self.optimize_method != 'gdr':
                 raise ValueError('PyTorch optimization can only be performed in the gdr setting')
-            from .pytorch_optimize import torch_optimize_layout as optimizer
+            from GDR.optimizer.pytorch_optimize import torch_optimize_layout as optimizer
         elif self.cython:
             if self.optimize_method == 'umap':
                 from umap_cython import umap_opt_wrapper as optimizer
@@ -425,6 +438,7 @@ class GradientDR(BaseEstimator):
                 from GDR.optimizer.numba_optimizers import gdr_numba_wrapper as optimizer
             else:
                 raise ValueError('Numba optimization only works for umap and gdr')
+        start = time.time()
         self.embedding = optimizer(**args)
         end = time.time()
         self.opt_time = end - start

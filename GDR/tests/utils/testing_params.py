@@ -10,6 +10,7 @@ TEST_PARAMS = {
     'torch': False,
     'neg_sample_rate': 5,
     'normalized': False,
+    'accelerated': False,
     'sym_attraction': False,
     'frobenius': False,
     'gpu': False,

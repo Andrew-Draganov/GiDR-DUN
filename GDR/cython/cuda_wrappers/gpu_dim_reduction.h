@@ -1,7 +1,4 @@
-#ifndef UMAP_EXAMPLE_TEST_OBJECT_H
-#define UMAP_EXAMPLE_TEST_OBJECT_H
-
-void gpu_umap_wrap(
+void gpu_wrapper(
         int normalized,
         int sym_attraction,
         int frob,
@@ -20,5 +17,3 @@ void gpu_umap_wrap(
         int n_epochs,
         int negative_sample_rate
 );
-
-#endif //UMAP_EXAMPLE_TEST_OBJECT_H

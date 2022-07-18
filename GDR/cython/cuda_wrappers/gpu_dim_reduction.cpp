@@ -1,7 +1,7 @@
 #import "../cuda_kernels/gpu_kernels.h"
 #import "../cuda_wrappers/gpu_dim_reduction.h"
 
-void gpu_umap_wrap(
+void gpu_wrapper(
         int normalized,
         int sym_attraction,
         int frob,
@@ -20,7 +20,7 @@ void gpu_umap_wrap(
         int n_epochs,
         int negative_sample_rate
 ) {
-    gpu_umap(
+    gpu_gdr(
             normalized,
             sym_attraction,
             frob,
