@@ -63,7 +63,7 @@ def load_coil100_data(directory=None):
         image_name = os.path.split(fname)[-1]
         # This assumes that your images are named objXY__i.png
         #   where XY are the class label and i is the picture angle
-        class_label = [int(c) for c in image_name[:5] if c.isdigit()]
+        class_label = [int(c) for c in image_name[:6] if c.isdigit()]
         class_label = np.array(class_label[::-1])
         digit_powers = np.power(10, np.arange(len(class_label)))
         class_label = np.sum(class_label * digit_powers)
