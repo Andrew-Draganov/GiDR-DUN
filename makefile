@@ -24,22 +24,20 @@ install_cuda_code: install_python_env
 
 run_test: install_python_env
 	# FIXME -- make into a unit test
-	python -m GDR.dim_reduce_dataset --num-points 5000 --numba
-	python -m GDR.dim_reduce_dataset --num-points 5000 --numba --optimize-method umap
+	python -m GDR.dim_reduce_dataset --num-points 5000
+	python -m GDR.dim_reduce_dataset --num-points 5000 --optimize-method umap
 
 run_cython_test: install_cython_env
 	# FIXME -- make into a unit test
 	# Basic test to make sure that every algorithm can be run with cython
-	python -m GDR.dim_reduce_dataset --num-threads 1 --num-points 5000 --optimize-method gidr_dun
-	python -m GDR.dim_reduce_dataset --num-threads 1 --num-points 5000 --optimize-method umap
-	python -m GDR.dim_reduce_dataset --num-threads 1 --num-points 5000 --optimize-method tsne
+	python -m GDR.dim_reduce_dataset --cython --num-points 5000 --optimize-method gidr_dun
+	python -m GDR.dim_reduce_dataset --cython --num-points 5000 --optimize-method umap
+	python -m GDR.dim_reduce_dataset --cython --num-points 5000 --optimize-method tsne
 
 run_gpu_test: install_cuda_code
 	# FIXME -- make into a unit test
 	# Basic test to make sure that every algorithm can be run on GPU
 	python -m GDR.dim_reduce_dataset --gpu --num-points 60000
-	python -m GDR.dim_reduce_dataset --dr-algorithm rapids_umap --num-points 60000
-	python -m GDR.dim_reduce_dataset --dr-algorithm rapids_tsne --num-points 60000
 
 clean:
 	rm *.so *.o *.egg-info
