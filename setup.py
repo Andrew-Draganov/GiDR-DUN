@@ -3,7 +3,7 @@ from distutils.core import Extension
 
 setup(
     name='GradientDR',
-    version='0.1.2.3',
+    version='0.1.3',
     description='A package for evaluating dimensionality reduction algorithms',
     author='Andrew Draganov',
     author_email='draganovandrew@cs.au.dk',
