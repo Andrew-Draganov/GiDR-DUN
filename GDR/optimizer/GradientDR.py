@@ -195,7 +195,7 @@ class GradientDR(BaseEstimator):
                 X,
                 n_neighbors=self.n_neighbors,
                 random_state=self.random_state,
-                distance_func=self.distance_func,
+                distance_func=distance_func,
                 verbose=self.vebose
             )
 
