@@ -623,11 +623,14 @@ class NNDescent(object):
     @property
     def neighbor_graph(self):
         if self._distance_correction is not None:
-            result = (
-                self._neighbor_graph[0].copy(),
-                self._distance_correction(self._neighbor_graph[1]),
-            )
+            result = {
+                '_knn_indices': self._neighbor_graph[0].copy(),
+                '_knn_dists': self._distance_correction(self._neighbor_graph[1]),
+            }
         else:
-            result = (self._neighbor_graph[0].copy(), self._neighbor_graph[1].copy())
+            result = {
+                '_knn_indices': self._neighbor_graph[0].copy(),
+                '_knn_dists': self._neighbor_graph[1].copy()
+            }
 
         return result

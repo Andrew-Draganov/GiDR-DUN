@@ -179,7 +179,7 @@ class GradientDR(BaseEstimator):
             distance_func = pynnd_dist.euclidean
 
         if self.nn_alg is None:
-            self._knn_indices, self._knn_dists = NNDescent(
+            nn_dict = NNDescent(
                 X,
                 n_neighbors=self.n_neighbors,
                 random_state=self.random_state,
@@ -191,13 +191,23 @@ class GradientDR(BaseEstimator):
                 verbose=self.verbose,
             ).neighbor_graph
         else:
-            self._knn_indices, self._knn_dists = self.nn_alg(
+            nn_dict = self.nn_alg(
                 X,
                 n_neighbors=self.n_neighbors,
                 random_state=self.random_state,
                 distance_func=distance_func,
-                verbose=self.vebose
+                verbose=self.verbose
             )
+
+        # Make the nearest neighbor indices and dists into class variables
+        # We do it this awkward way with the dictionary so that other nearest neighbor
+        #   algorithms can return additional information that may be relevant. This
+        #   additional info will be turned into a self-variable as well.
+        assert '_knn_indices' in nn_dict and '_knn_dists' in nn_dict
+        for k, v in nn_dict.items():
+            if hasattr(self, k):
+                raise ValueError('NN Descent method tried to overwrite the existing class attribute {}'.format(k))
+            setattr(self, k, v)
 
         if self.verbose:
             print(ts(), "Finished Nearest Neighbor Search")
