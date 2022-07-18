@@ -264,7 +264,6 @@ cdef gdr_optimize(
             print_status(i_epoch, n_epochs)
 
 
-
 @cython.cdivision(True)
 @cython.wraparound(False)
 @cython.boundscheck(False)

@@ -3,7 +3,6 @@ install_python_env:
 	python3 setup.py build_ext --inplace
 
 install_cython_code: install_python_env
-	# https://stavshamir.github.io/python/making-your-c-library-callable-from-python-by-wrapping-it-with-cython/ 
 	python3 setup_cython.py build_ext --inplace
 
 install_cuda_code: install_python_env
@@ -13,6 +12,7 @@ install_cuda_code: install_python_env
 		GDR/cython/cuda_kernels/gpu_kernels.cu \
 		GDR/cython/utils/gpu_utils.cu \
 		-Xcompiler -fPIC
+	#
 	# Compile graph similarity cuda code
 	nvcc --shared -o libgpu_graph_weights.so \
 	   	GDR/cython/cuda_wrappers/gpu_graph_weights.cpp \
@@ -21,6 +21,7 @@ install_cuda_code: install_python_env
 		GDR/cython/utils/util.cpp \
 		GDR/cython/utils/mem_util.cpp \
 		-Xcompiler -fPIC
+	#
 	# Link cuda code to python through cython
 	python3 setup_cython_gpu.py build_ext --inplace
 
@@ -40,4 +41,4 @@ run_gpu_test: install_cuda_code
 	echo 'GPU code runs successfully'
 
 clean:
-	rm *.so *.o *.egg-info
+	rm -r *.so *.egg-info build/

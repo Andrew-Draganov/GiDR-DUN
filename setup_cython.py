@@ -2,9 +2,15 @@ from distutils.core import setup
 from distutils.core import Extension
 from Cython.Build import cythonize, build_ext
 import os
+import sys
 import numpy
 
-os.environ['CXX']='/usr/bin/clang++'
+try:
+    os.environ['CXX'] = os.environ['CLANG_PATH']
+    assert os.environ['CXX']
+except:
+    raise ValueError('Must provide a path to clang++ with openmp for cython to compile against\n'
+                     '\tExample: `export CLANG_PATH=clang++`')
 
 gdr_build = Extension(
     'gdr_cython',
