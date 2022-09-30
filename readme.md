@@ -1,10 +1,10 @@
-# "GiDR-DUN: Gradient Dimensionality Reduction Differences and Unification" Library
+# "Gradient Dimensionality Reduction; Differences between and Unification of TSNE and UMAP"
 Written by Andrew Draganov, Jakob Rødsgaard Jørgensen and Katrine Scheel Nellemann.
 
 ## Overview
 
-This library contains simplified and standalone implementations of common gradient-based dimensionality reduction algorithms.
-Furthermore, most are supported in multiple backends. We have the following implementations available:
+This library contains simplified and standalone implementations of TSNE and UMAP, as well as the generalalization of them.
+Furthermore, we support multiple backends. We have the following implementations available:
   - UMAP
     - numba (same speed as Leland McInnes UMAP implementation)
     - cython (about 5 times faster on optimization, same time for nearest neighbors)
@@ -20,7 +20,7 @@ We have tried to trim all of the fat possible out of these algorithms. This will
 for future research/design. This means that some features are missing, such as UMAP's ability to call `.fit()` and then `.transform()`
 (we only support `.fit_transform()`). Additionally, we default to the NNdescent nearest neighbors algorithm in all cases.
 
-However, you have the ability to toggle all of the hyperparameters between the UMAP and TSNE algorithms.
+Despite this, we added the option to toggle all of the hyperparameters between the UMAP and TSNE algorithms.
 For example, you can run TSNE with UMAP's pseudo-distance metric and normalization.
 Or UMAP with TSNE's symmetrization and the standard Euclidean distance metric. etc. etc.
 
