@@ -3,20 +3,20 @@ Written by Andrew Draganov, Jakob Rødsgaard Jørgensen and Katrine Scheel Nelle
 
 ## Overview
 
-This library contains simplified and standalone implementations of TSNE and UMAP, as well as the generalalization of them.
+This library contains simplified and standalone implementations of TSNE and UMAP. We also include our generalization of them, which can recreate either one by flipping the normalization.
 Furthermore, we support multiple backends. We have the following implementations available:
   - UMAP
-    - numba (same speed as Leland McInnes UMAP implementation)
-    - cython (about 5 times faster on optimization, same time for nearest neighbors)
+    - numba
+    - cython
   - TSNE
-    - cython (about 2 times faster than standard sklearn implementation)
+    - cython
   - GDR (which can recreate both TSNE and UMAP embeddings)
     - numba
     - cython
     - gpu
     - pytorch (cpu/gpu)
     
-On our machine, the cython implementation is about an order of magnitude faster than numpy on the gradient descent epochs. The GPU is then faster still.
+On our machine, the cython implementation performs the gradient updates almost an order of magnitude faster than the numpy one. The gpu code is simply a barebones translation of the cython code into CUDA.
 
 We have tried to trim all of the fat possible out of these algorithms. This will hopefully make the methods easier to extend
 for future research/design. This means that some features are missing, such as UMAP's ability to call `.fit()` and then `.transform()`
