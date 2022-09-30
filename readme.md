@@ -15,6 +15,8 @@ Furthermore, we support multiple backends. We have the following implementations
     - cython
     - gpu
     - pytorch (cpu/gpu)
+    
+On our machine, the cython implementation is about an order of magnitude faster than numpy on the gradient descent epochs. The GPU is then faster still.
 
 We have tried to trim all of the fat possible out of these algorithms. This will hopefully make the methods easier to extend
 for future research/design. This means that some features are missing, such as UMAP's ability to call `.fit()` and then `.transform()`
