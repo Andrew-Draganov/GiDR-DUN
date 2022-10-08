@@ -139,7 +139,7 @@ def kl_rep_force(normalized, q, avg_weight):
 )
 def frob_attr_force(normalized, p, q):
     if normalized:
-        return  p * (q * q + 2 * pow(q, 3))
+        return  max(p * (q * q - 2 * pow(q, 3)), 0)
     return p * q * q
 
 @numba.njit(
@@ -150,7 +150,7 @@ def frob_attr_force(normalized, p, q):
 )
 def frob_rep_force(normalized, q):
     if normalized:
-        return pow(q, 3) + 2 * pow(q, 4)
+        return max(pow(q, 3) - 2 * pow(q, 4), 0)
     return pow(q, 3)
 
 @numba.njit(

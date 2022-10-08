@@ -28,6 +28,9 @@ def gdr_single_epoch(
     embedding,
     head,
     tail,
+    q_ij,
+    q_ik,
+    rand_indices,
     attr_grads,
     rep_grads,
     all_updates,
@@ -48,16 +51,11 @@ def gdr_single_epoch(
     epochs_per_sample,
     epoch_of_next_sample
 ):
-    # t-SNE early exaggeration
-    if amplify_grads and i_epoch < 250:
-        weight_scalar = 4.0
-    else:
-        weight_scalar = 1.0
-
     for v in numba.prange(n_vertices):
         for d in range(dim):
             attr_grads[v, d] = 0.0
             rep_grads[v, d] = 0.0
+
     Z = 0.0
     for edge in numba.prange(n_edges):
         if epoch_of_next_sample[edge] <= i_epoch or standard_opt:
@@ -65,60 +63,53 @@ def gdr_single_epoch(
             k = tail[edge]
             y1 = embedding[j]
             y2 = embedding[k]
-            # FIXME -- need option for angular dist here!
             dist = sq_euc_dist(y1, y2, dim)
-
-            attr_force = attractive_force_func(
-                normalized,
-                frob,
-                dist,
-                a,
-                b,
-                weights[edge] * weight_scalar
-            )
-            for d in range(dim):
-                grad_d = attr_force * (y1[d] - y2[d])
-                attr_grads[j, d] -= grad_d
-                if sym_attraction:
-                    attr_grads[k, d] += grad_d
+            q_ij[edge] = kernel_function(dist, a, b)
+            # Z += q_ik[edge] # FIXME
 
             k = tau_rand_int(rng_state) % n_vertices
             y2 = embedding[k]
-            # FIXME -- need option for angular dist here!
             dist = sq_euc_dist(y1, y2, dim)
+            q_ik[edge] = kernel_function(dist, a, b)
+            rand_indices[edge] = k
+            Z += q_ik[edge]
 
-            rep_force, q = repulsive_force_func(
-                normalized,
-                frob,
-                dist,
-                a,
-                b,
-                average_weight
-            )
-            Z += q
+    sum_pq = 0.0
+    sum_qq = 0.0
+    for edge in numba.prange(n_edges):
+        if epoch_of_next_sample[edge] <= i_epoch or standard_opt:
+            q_ij[edge] /= Z
+            q_ik[edge] /= Z
+            sum_pq += weights[edge] * q_ij[edge]
+            sum_qq += q_ik[edge] * q_ik[edge]
 
-            for d in range(dim):
-                grad_d = rep_force * (y1[d] - y2[d])
-                rep_grads[j, d] += grad_d
+    for edge in numba.prange(n_edges):
+        j = head[edge]
+        k = tail[edge]
+        y1 = embedding[j]
+        y2 = embedding[k]
+        q_sq = q_ij[edge] * q_ij[edge]
+        attr_force = (weights[edge] - sum_pq) * q_sq
 
-            epoch_of_next_sample[edge] += epochs_per_sample[edge]
+        for d in range(dim):
+            grad_d = attr_force * (y1[d] - y2[d])
+            attr_grads[j, d] -= grad_d
+            if sym_attraction:
+                attr_grads[k, d] += grad_d
 
-    if not normalized:
-        Z = 1.0
+        y2 = embedding[rand_indices[edge]]
+        q_sq = q_ik[edge] * q_ik[edge]
+        rep_force = (sum_qq - q_ik[edge]) * q_sq
+
+        for d in range(dim):
+            grad_d = rep_force * (y1[d] - y2[d])
+            rep_grads[j, d] += grad_d
 
     for v in numba.prange(n_vertices):
         for d in range(dim):
-            grad_d = 4.0 * a * b * (attr_grads[v, d] + rep_grads[v, d] / Z)
-
-            if grad_d * all_updates[v, d] > 0.0:
-                gains[v, d] += 0.2
-            else:
-                gains[v, d] *= 0.8
-            gains[v, d] = clip(gains[v, d], 0.01, 1000)
-            grad_d = clip(grad_d * gains[v, d], -1.0, 1.0)
-
-            all_updates[v, d] = grad_d * lr + amplify_grads * 0.9 * all_updates[v, d]
-            embedding[v, d] += all_updates[v, d]
+            grad_d = 4.0 * a * b * (attr_grads[v, d] + rep_grads[v, d]) * Z
+            grad_d = clip(grad_d, -1.0, 1.0)
+            embedding[v, d] += grad_d * lr
 
 def gdr_numba_wrapper(
     normalized,
@@ -170,6 +161,9 @@ def gdr_numba_wrapper(
 
     for i_epoch in tqdm(range(1, n_epochs+1)):
         lr = get_lr(initial_lr, i_epoch, n_epochs, amplify_grads)
+        q_ij = np.zeros([n_edges], dtype=np.float32)
+        q_ik = np.zeros([n_edges], dtype=np.float32)
+        rand_indices = np.zeros([n_edges], dtype=np.int32)
         optimize_fn(
             normalized,
             standard_opt,
@@ -181,6 +175,9 @@ def gdr_numba_wrapper(
             head_embedding,
             head,
             tail,
+            q_ij,
+            q_ik,
+            rand_indices,
             attr_grads,
             rep_grads,
             all_updates,

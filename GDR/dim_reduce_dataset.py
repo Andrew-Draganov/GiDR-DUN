@@ -28,9 +28,10 @@ def get_args():
         help='Which algorithm to use for performing dim reduction'
     )
     parser.add_argument(
-        '--random-init',
-        action='store_true',
-        help='If true, perform random init. If false, do Lap. Eigenmaps'
+        '--init',
+        choices=['random', 'pca', 'spectral'],
+        default='spectral',
+        help='How to initialize the embedding before the gradient updates'
     )
     parser.add_argument(
         '--tsne-symmetrization',

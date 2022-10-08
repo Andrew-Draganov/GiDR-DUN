@@ -150,7 +150,6 @@ cdef void _tsne_epoch(
 
 
         # Get one repulsive force for each (edge, quadtree-cell) pair
-
         # Zero out edge-wise forces
         for v in prange(n_vertices):
             for d in range(dim):

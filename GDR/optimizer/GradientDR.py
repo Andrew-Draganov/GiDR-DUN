@@ -10,6 +10,7 @@ import time
 from scipy.optimize import curve_fit
 from sklearn.base import BaseEstimator
 from sklearn.utils import check_random_state, check_array
+from sklearn.decomposition import PCA
 import numpy as np
 import scipy
 import numba
@@ -56,7 +57,7 @@ class GradientDR(BaseEstimator):
             dim=2,
             n_epochs=None,
             learning_rate=None,
-            random_init=False,
+            init=False,
             pseudo_distance=True,
             tsne_symmetrization=False,
             optimize_method='gdr',
@@ -80,7 +81,7 @@ class GradientDR(BaseEstimator):
             verbose=False,
     ):
         self.n_neighbors = n_neighbors
-        self.random_init = random_init
+        self.init = init
         self.dim = dim
         self.learning_rate = learning_rate
 
@@ -123,8 +124,6 @@ class GradientDR(BaseEstimator):
 
     def _validate_parameters(self):
         """ Legacy UMAP parameter validation """
-        if not isinstance(self.random_init, bool):
-            raise ValueError("init must be a bool")
         if self.neg_sample_rate < 0:
             raise ValueError("negative sample rate must be positive")
         if self.learning_rate < 0.0:
@@ -286,7 +285,7 @@ class GradientDR(BaseEstimator):
         # Handle all the optional arguments, setting default
         if self.learning_rate is None:
             if self.normalized:
-                self.learning_rate = X.shape[0] / 500
+                self.learning_rate = X.shape[0] ** 2 / 20
             else:
                 self.learning_rate = 1
         self._validate_parameters()
@@ -329,13 +328,15 @@ class GradientDR(BaseEstimator):
         return self
 
     def initialize_embedding(self, X):
-        if self.random_init:
+        if self.init == 'random':
             embedding = self.random_state.multivariate_normal(
                 mean=np.zeros(self.dim),
                 cov=np.eye(self.dim),
                 size=(self.graph.shape[0])
             ).astype(np.float32)
-        else:
+        elif self.init == 'pca':
+            embedding = PCA(n_components=self.dim).fit_transform(np.copy(X))
+        elif self.init == 'spectral':
             # We add a little noise to avoid local minima for optimization to come
             if X.shape[0] > 100000 and self.verbose:
                 print('Doing spectral embedding on large datasets is slow. Consider random initialization.')
@@ -350,6 +351,8 @@ class GradientDR(BaseEstimator):
             embedding = (initialisation * expansion).astype(np.float32)
             noise_shape = [self.graph.shape[0], self.dim]
             embedding += self.random_state.normal(scale=0.0001, size=noise_shape).astype(np.float32)
+        else:
+            raise ValueError('Init variable must be in [random, pca, spectral]')
 
         # Renormalize initial embedding to be in range [0, 10]
         embedding -= np.min(embedding, 0)
