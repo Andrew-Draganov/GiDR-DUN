@@ -285,7 +285,7 @@ class GradientDR(BaseEstimator):
         # Handle all the optional arguments, setting default
         if self.learning_rate is None:
             if self.normalized:
-                self.learning_rate = X.shape[0] ** 2 / 20
+                self.learning_rate = X.shape[0] ** 3 / 3
             else:
                 self.learning_rate = 1
         self._validate_parameters()

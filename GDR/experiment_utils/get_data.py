@@ -37,6 +37,66 @@ def load_google_news(num_points):
         labels = np.ones([num_points])
     return points, labels
 
+# Relevant class dims are 4, 6, 8, 9
+def load_single_cell_data(directory=None, class_dim=4):
+    """
+    This is using the single cell dataset available at https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE115746
+    """
+    if directory is None:
+        directory = os.path.join('GDR', 'data', 'single_cell')
+    pickled_path = os.path.join(directory, 'pickled_single_cell.npy')
+    if os.path.exists(pickled_path):
+        dataset = np.load(pickled_path, allow_pickle=True)[()]
+        return dataset['points'], dataset['labels']
+    print('Could not find pickled dataset at {}. Loading from csv files and pickling...'.format(pickled_path))
+
+    labels_file = os.path.join(directory, 'GSE115746_complete_metadata_28706-cells.csv')
+    labels = []
+    with open(labels_file, 'r') as f:
+        reader = csv.reader(f)
+        for line in reader:
+            labels.append(line)
+    labels = np.array(labels)
+    label_dict = {}
+    for label in labels:
+        label_dict[label[0]] = label[class_dim]
+
+    data_file = os.path.join(directory, 'GSE115746_cells_intron_counts.csv')
+    if not os.path.exists(data_file):
+        raise ValueError('Could not find single cell data!')
+
+    data_size = 10000
+    data = np.zeros([45769, data_size])
+    class_labels = []
+    with open(data_file, 'r') as f:
+        reader = csv.reader(f)
+        for i, line in tqdm(enumerate(reader), total=45769):
+            if i == data_size:
+                break
+            if i == 0:
+                for j, data_label in enumerate(line):
+                    if j == data_size + 1:
+                        break
+                    if data_label in label_dict:
+                        class_labels.append(label_dict[data_label])
+                class_labels = np.array(class_labels)
+            else:
+                data[i] = np.array([int(l) for l in line[1:data_size+1]])
+    points = np.transpose(data)
+    unique_labels = np.unique(class_labels)
+    labels = np.zeros(len(class_labels))
+    for i in range(data_size):
+        label_index = -1
+        for j, unique_label in enumerate(unique_labels):
+            if unique_label == class_labels[i]:
+                label_index = j
+                break
+        assert label_index >= 0
+        labels[i] = label_index
+
+    # np.save(pickled_path, {'points': points, 'labels': labels})
+    return points, labels
+
 def load_coil100_data(directory=None):
     """
     This is using the coil100 dataset available on Kaggle at https://www.kaggle.com/datasets/jessicali9530/coil100
@@ -199,6 +259,8 @@ def get_dataset(data_name, num_points, normalize=True, desired_dim=-1):
         points, labels = load_google_news(num_points)
     elif data_name == 'coil':
         points, labels = load_coil100_data()
+    elif data_name == 'single_cell':
+        points, labels = load_single_cell_data()
     else:
         raise ValueError("Unsupported dataset")
 

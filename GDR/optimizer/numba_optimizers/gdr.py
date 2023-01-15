@@ -65,7 +65,7 @@ def gdr_single_epoch(
             y2 = embedding[k]
             dist = sq_euc_dist(y1, y2, dim)
             q_ij[edge] = kernel_function(dist, a, b)
-            # Z += q_ik[edge] # FIXME
+            # Z += q_ij[edge] # FIXME
 
             k = tau_rand_int(rng_state) % n_vertices
             y2 = embedding[k]
@@ -74,6 +74,7 @@ def gdr_single_epoch(
             rand_indices[edge] = k
             Z += q_ik[edge]
 
+    Z *= n_vertices
     sum_pq = 0.0
     sum_qq = 0.0
     for edge in numba.prange(n_edges):
@@ -81,15 +82,15 @@ def gdr_single_epoch(
             q_ij[edge] /= Z
             q_ik[edge] /= Z
             sum_pq += weights[edge] * q_ij[edge]
-            sum_qq += q_ik[edge] * q_ik[edge]
+            sum_qq += q_ik[edge] * q_ik[edge] * n_vertices
 
     for edge in numba.prange(n_edges):
         j = head[edge]
         k = tail[edge]
         y1 = embedding[j]
         y2 = embedding[k]
-        q_sq = q_ij[edge] * q_ij[edge]
-        attr_force = (weights[edge] - sum_pq) * q_sq
+        q_ik_sq = q_ik[edge] * q_ik[edge]
+        attr_force = weights[edge] * q_ij[edge] * q_ij[edge] - sum_pq * q_ik_sq
 
         for d in range(dim):
             grad_d = attr_force * (y1[d] - y2[d])
@@ -98,18 +99,24 @@ def gdr_single_epoch(
                 attr_grads[k, d] += grad_d
 
         y2 = embedding[rand_indices[edge]]
-        q_sq = q_ik[edge] * q_ik[edge]
-        rep_force = (sum_qq - q_ik[edge]) * q_sq
+        rep_force = (sum_qq - q_ik[edge]) * q_ik_sq
 
         for d in range(dim):
             grad_d = rep_force * (y1[d] - y2[d])
-            rep_grads[j, d] += grad_d
+            rep_grads[j, d] += grad_d * n_vertices
 
     for v in numba.prange(n_vertices):
         for d in range(dim):
             grad_d = 4.0 * a * b * (attr_grads[v, d] + rep_grads[v, d]) * Z
-            grad_d = clip(grad_d, -1.0, 1.0)
-            embedding[v, d] += grad_d * lr
+            if grad_d * all_updates[v, d] > 0.0:
+                gains[v, d] += 0.2
+            else:
+                gains[v, d] *= 0.8
+            gains[v, d] = clip(gains[v, d], 0.01, 1000)
+            grad_d = clip(grad_d * gains[v, d], -1.0, 1.0)
+
+            all_updates[v, d] = grad_d * lr + amplify_grads * 0.9 * all_updates[v, d]
+            embedding[v, d] += all_updates[v, d]
 
 def gdr_numba_wrapper(
     normalized,

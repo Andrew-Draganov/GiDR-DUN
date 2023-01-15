@@ -9,23 +9,9 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--dataset',
-        choices=['mnist', 'fashion_mnist', 'cifar', 'swiss_roll', 'coil', 'google_news', 'single_cell'],
+        choices=['mnist', 'fashion_mnist', 'cifar', 'swiss_roll', 'coil'],
         default='mnist',
         help='Which dataset to apply algorithm to'
-    )
-    parser.add_argument(
-        '--dr-algorithm',
-        choices=[
-            'gdr',
-            'original_umap',
-            'original_tsne',
-            'pca',
-            'kernel_pca',
-            'rapids_umap',
-            'rapids_tsne'
-        ],
-        default='gdr',
-        help='Which algorithm to use for performing dim reduction'
     )
     parser.add_argument(
         '--init',
@@ -33,18 +19,6 @@ def get_args():
         default='spectral',
         help='How to initialize the embedding before the gradient updates'
     )
-    parser.add_argument(
-        '--tsne-symmetrization',
-        action='store_true',
-        help='When present, symmetrize using the tSNE method'
-    )
-    parser.add_argument(
-        '--make-plots',
-        action='store_true',
-        help='When present, make plots regarding distance relationships. ' \
-             'Requires a high downsample_stride to not run out of memory'
-    )
-
     parser.add_argument(
         '--umap-metric',
         action='store_true',
@@ -56,11 +30,6 @@ def get_args():
         help='If true, runs optimization on the GPU. Requires that GPU setup has been performed.'
     )
     parser.add_argument(
-        '--torch',
-        action='store_true',
-        help='If true, run optimization in pytorch rather than cython/numba/cuda'
-    )
-    parser.add_argument(
         '--num-threads',
         type=int,
         default=-1,
@@ -69,10 +38,7 @@ def get_args():
 
     parser.add_argument(
         '--optimize-method',
-        choices=[
-            'umap',
-            'tsne',
-            'gdr', ],
+        choices=['umap', 'tsne', 'gdr'],
         default='gdr',
         help='Which embedding optimization algorithm to use'
     )
@@ -87,29 +53,9 @@ def get_args():
         help='If true, normalize high- and low-dimensional pairwise likelihood matrices'
     )
     parser.add_argument(
-        '--accelerated',
-        action='store_true',
-        help='If true, use sampling to approximate the high-dim likelihoods'
-    )
-    parser.add_argument(
-        '--sym-attraction',
-        action='store_true',
-        help='Whether to attract along both ends of a nearest neighbor edge'
-    )
-    parser.add_argument(
         '--frobenius',
         action='store_true',
         help='If true, calculate gradients with respect to frobenius norm rather than KL'
-    )
-    parser.add_argument(
-        '--angular',
-        action='store_true',
-        help='When present, use cosine similarity metric on high-dimensional points'
-    )
-    parser.add_argument(
-        '--tsne-scalars',
-        action='store_true',
-        help='true => a = b = 1; false => determine a, b'
     )
     parser.add_argument(
         '--num-points',
@@ -137,20 +83,31 @@ def get_args():
     args = parser.parse_args()
     return args
 
+def fill_in_other_params(args_dict):
+    """ The argparse arguments do not cover all the necessary components for get_algorithm """
+    args_dict['torch'] = False
+    args_dict['angular'] = False
+    args_dict['sym_attraction'] = True
+    args_dict['accelerated'] = False
+    args_dict['tsne_symmetrization'] = True
+
 if __name__ == '__main__':
     args = get_args()
 
     print('Loading %s dataset...' % args.dataset)
     points, labels = get_dataset(args.dataset, args.num_points)
-    a, b = get_ab(args.tsne_scalars)
+    a, b = get_ab(tsne_scalars=True)
     args_dict = vars(args)
     args_dict['a'] = a
     args_dict['b'] = b
     if args_dict['n_epochs'] < 0:
         args_dict['n_epochs'] = None
+
+    fill_in_other_params(args_dict)
+
     # We amplify grads in case of normalization
     args_dict['amplify_grads'] = args_dict['normalized']
-    dr = get_algorithm(args.dr_algorithm, args_dict)
+    dr = get_algorithm('gdr', args_dict)
 
     print('fitting...')
     start = time.time()
