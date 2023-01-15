@@ -6,7 +6,7 @@ def get_ab(tsne_scalars):
     return None, None
 
 def make_plot(embedding, labels, save_path=None, show_plot=False):
-    plt.scatter(embedding[:, 0], embedding[:, 1], c=labels, s=0.1, alpha=0.8)
+    plt.scatter(embedding[:, 0], embedding[:, 1], c=labels, s=0.35, alpha=0.8)
     plt.tick_params(
         axis='x',
         which='both',

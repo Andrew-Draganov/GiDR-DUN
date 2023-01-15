@@ -9,7 +9,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--dataset',
-        choices=['mnist', 'fashion_mnist', 'cifar', 'swiss_roll', 'coil', 'google_news'],
+        choices=['mnist', 'fashion_mnist', 'cifar', 'swiss_roll', 'coil', 'google_news', 'single_cell'],
         default='mnist',
         help='Which dataset to apply algorithm to'
     )
@@ -30,7 +30,7 @@ def get_args():
     parser.add_argument(
         '--random-init',
         action='store_true',
-        help='If true, perform random init. If false, do Lap. Eigenmaps'
+        help='How to initialize the embedding before the gradient updates'
     )
     parser.add_argument(
         '--tsne-symmetrization',
