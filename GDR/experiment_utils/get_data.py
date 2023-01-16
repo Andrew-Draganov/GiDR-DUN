@@ -37,18 +37,15 @@ def load_google_news(num_points):
         labels = np.ones([num_points])
     return points, labels
 
-# Relevant class dims are 4, 6, 8, 9
-def load_single_cell_data(directory=None, class_dim=4):
+# The single-cell data has many labels. Label 20 is the cell-cluster, which provides the cleanest
+#   separation in the embedding
+def load_single_cell_data(directory=None, class_dim=20):
     """
     This is using the single cell dataset available at https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE115746
     """
+    # Single cell dataset is too large to pickle
     if directory is None:
         directory = os.path.join('GDR', 'data', 'single_cell')
-    pickled_path = os.path.join(directory, 'pickled_single_cell.npy')
-    if os.path.exists(pickled_path):
-        dataset = np.load(pickled_path, allow_pickle=True)[()]
-        return dataset['points'], dataset['labels']
-    print('Could not find pickled dataset at {}. Loading from csv files and pickling...'.format(pickled_path))
 
     labels_file = os.path.join(directory, 'GSE115746_complete_metadata_28706-cells.csv')
     labels = []
@@ -92,7 +89,6 @@ def load_single_cell_data(directory=None, class_dim=4):
         assert label_index >= 0
         labels[i] = label_index
 
-    # np.save(pickled_path, {'points': points, 'labels': labels})
     return points, labels
 
 def load_coil100_data(directory=None):
