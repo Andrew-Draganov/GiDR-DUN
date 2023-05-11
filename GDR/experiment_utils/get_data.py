@@ -1,4 +1,5 @@
 import os, csv, glob
+import h5py
 import numpy as np
 import pickle
 from tqdm import tqdm
@@ -175,6 +176,17 @@ def load_fashion_mnist_data(directory=None):
 
     return points, labels
 
+def load_usps_data(directory=None):
+    """ Found at https://www.kaggle.com/datasets/bistaumanga/usps-dataset?resource=download """
+    if directory is None:
+        directory = os.path.join('GDR', 'data', 'usps')
+    path = os.path.join(directory, 'usps.h5')
+    with h5py.File(path, 'r') as hf:
+            train = hf.get('train')
+            points = train.get('data')[:]
+            labels = train.get('target')[:]
+    return points, labels
+
 def upsample_dataset(num_points, points, labels):
     # If the dataset doesn't have as many points as we want, make copies of the
     #   dataset until it does
@@ -242,6 +254,8 @@ def subsample_along_classes(points, labels, num_classes, points_per_class, class
 def get_dataset(data_name, num_points, normalize=True, desired_dim=-1):
     if data_name == 'mnist':
         points, labels = load_mnist()
+    elif data_name == 'usps':
+        points, labels = load_usps_data()
     elif data_name == 'fashion_mnist':
         points, labels = load_fashion_mnist_data()
     elif data_name == 'cifar':

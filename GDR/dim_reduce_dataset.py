@@ -9,7 +9,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--dataset',
-        choices=['mnist', 'fashion_mnist', 'cifar', 'swiss_roll', 'coil', 'google_news', 'single_cell'],
+        choices=['mnist', 'fashion_mnist', 'cifar', 'swiss_roll', 'coil', 'google_news', 'single_cell', 'usps'],
         default='mnist',
         help='Which dataset to apply algorithm to'
     )

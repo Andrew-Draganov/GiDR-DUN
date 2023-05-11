@@ -20,6 +20,7 @@ setup(
     extras_require={'pytorch': 'torch', 'umap': 'umap-learn==0.5.3'},
     install_requires=[
         'cython==0.29.30',
+        'h5py==3.8.0',
         'matplotlib==3.5.2',
         'python-mnist==0.7',
         'numpy==1.21',
