@@ -1,7 +1,5 @@
 # Gradient Dimensionality Reduction; an implementation of tSNE, UMAP, and GDR
 Corresponds to the paper "ActUp: Analyzing and Consolidating tSNE and UMAP".
-
-The name of the repository corresponds to when we wanted to use the acronym GiDR-DUN: **G**radient **D**imensionality **R**eduction; **D**ifferences between and **U**nification of tSNE and UMAP.
 Written by Andrew Draganov, Jakob Rødsgaard Jørgensen and Katrine Scheel Nellemann.
 
 ## Overview
@@ -78,7 +76,10 @@ You can set up a model to run each algorithm by the following constructors:
   - GDR -- `dr = GradientDR(optimize_method='gdr')`
     - This is the default as it can reproduce both UMAP and TSNE by toggling the `normalized` parameter
 
-##
-Contact -- for questions please raise an issue or (if you want a response) email draganovandrew@cs.au.dk
+## Repo name
+The name of the repository corresponds to when we wanted to use the acronym GiDR-DUN: <ins>G</ins>radient <ins>D</ins>imensionality <ins>R</ins>eduction; <ins>D</ins>ifferences between and <ins>UN</ins>ification of tSNE and UMAP.
+
+## Contact
+For questions, please raise an issue or email draganovandrew (at) cs.au.dk .
 
 If you use this code, please cite our paper :)
