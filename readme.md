@@ -1,4 +1,7 @@
-# "Gradient Dimensionality Reduction; Differences between and Unification of TSNE and UMAP"
+# "Gradient Dimensionality Reduction; an implementation of tSNE, UMAP, and GDR"
+Corresponds to the paper "ActUp: Analyzing and Consolidating tSNE and UMAP".
+
+The name of the repository corresponds to when we wanted to use the acronym GiDR-DUN: **G**radient **D**imensionality **R**eduction; **D**ifferences between and **U**nification of tSNE and UMAP.
 Written by Andrew Draganov, Jakob Rødsgaard Jørgensen and Katrine Scheel Nellemann.
 
 ## Overview
