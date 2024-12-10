@@ -39,10 +39,9 @@ def umap_single_epoch(
             k = tail[i]
             current = embedding[j]
             other = embedding[k]
-            # FIXME -- Need option for angular dist
             dist_squared = sq_euc_dist(current, other, dim)
 
-            # FIXME -- Replace by attr_force_func
+            # Find attractive force
             if dist_squared > 0.0:
                 grad_coeff = -2.0 * a * b * pow(dist_squared, b - 1.0)
                 grad_coeff /= a * pow(dist_squared, b) + 1.0
@@ -64,10 +63,9 @@ def umap_single_epoch(
             for p in range(n_neg_samples):
                 k = tau_rand_int(rng_state) % n_vertices
                 other = embedding[k]
-                # FIXME -- Need option for angular dist
                 dist_squared = sq_euc_dist(current, other, dim)
 
-                # FIXME -- Replace by repulsive_force_func
+                # Find repulsive force
                 if dist_squared > 0.0:
                     grad_coeff = 2.0 * gamma * b
                     grad_coeff /= (0.001 + dist_squared) * (

@@ -65,7 +65,6 @@ def gdr_single_epoch(
             k = tail[edge]
             y1 = embedding[j]
             y2 = embedding[k]
-            # FIXME -- need option for angular dist here!
             dist = sq_euc_dist(y1, y2, dim)
 
             attr_force = attractive_force_func(
@@ -84,7 +83,6 @@ def gdr_single_epoch(
 
             k = tau_rand_int(rng_state) % n_vertices
             y2 = embedding[k]
-            # FIXME -- need option for angular dist here!
             dist = sq_euc_dist(y1, y2, dim)
 
             rep_force, q = repulsive_force_func(

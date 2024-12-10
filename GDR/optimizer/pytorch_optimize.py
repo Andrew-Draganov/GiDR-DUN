@@ -241,9 +241,6 @@ def torch_optimize_layout(
         a = torch.tensor(a)
         b = torch.tensor(b)
 
-        # FIXME FIXME
-        # CURRENT ATTEMPT -- go to cuda 11.0 rather than 11.3???
-        # Just ran the install before leaving
         weights = torch.from_numpy(weights).type(torch.float).cuda()
         head = torch.from_numpy(head).type(torch.long).cuda()
         tail = torch.clone(torch.from_numpy(tail).type(torch.long)).cuda()

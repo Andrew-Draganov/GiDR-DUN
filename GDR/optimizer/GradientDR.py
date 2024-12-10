@@ -62,7 +62,7 @@ class GradientDR(BaseEstimator):
             optimize_method='gdr',
             normalized=0,
             accelerated=0,
-            angular=False,
+            angular=False, # DEPRECATED
             sym_attraction=True,
             nn_alg=None,
             frob=False,
@@ -79,6 +79,39 @@ class GradientDR(BaseEstimator):
             random_state=None,
             verbose=False,
     ):
+        """
+        This is the base class for doing gradient dimensionality reduction (GDR).
+        This class can reproduce tSNE and UMAP outputs. It also allows to run UMAP with tSNE hyperparameters/design choices (and vice versa)
+
+        Parameters:
+            n_neighbors: number of neighbors to use when building the approximate kNN graph
+            dim: dimension to embed into
+            n_epochs: number of epochs to train for. Default is 500 for tSNE and 200 for UMAP
+            learning_rate: learning rate with which to perform "grad. descent" steps. Differs between tSNE and UMAP and should be picked as a function of the
+            normalization.
+            random_init: whether to initialize randomly or from Laplacian Eigenmaps embedding
+            pseudo_distance: whether to use UMAP's rho_{i} pseudo-distance function.
+            tsne_symmetrization: If true, use tSNE's p_{ij} = (p_{j|i} + p_{i|j}) / 2 symmetrization function. Else, use UMAP's
+            optimize_method: string which states which optimization routine to use.
+            normalized: whether to normalize the P and Q similarity matrices as in tSNE
+            accelerated: if True, accelerate training by only sampling repulsions proportionately to their value
+            angular: if True, use cosine distance. DEPRECATED.
+            sym_attraction: if True, attracting y_i to y_j also attracts y_j to y_i (true in UMAP, false in tSNE)
+            nn_alg: nearest-neighbors evaluation algorithm. Defaults to nearest-neighbor descent for sufficiently large n
+            frob: if True, use frobenius norm when evaluating gradients. Else, use KL-divergence (as in tSNE and UMAP)
+            cython: if True, use cython implementation of the grad. descent steps
+            torch: if True, use torch implementation of the grad. descent steps
+            gpu: if True, use GPU implementation of the grad. descent steps
+            amplify_grads: if True, use tSNE early exaggeration and gradient amplification settings as described in ActUp paper
+            min_dist: minimum distance to allow between two points (as in UMAP implementation)
+            spread: parameter specifying a, b parameter search for UMAP parameters
+            num_threads: parallelization parameter
+            neg_sample_rate: how many negative samples to apply per each positive sample if doing UMAP gradient descent steps
+            a: override for parameter in UMAP similarity functions
+            b: override for parameter in UMAP similarity functions
+            random_state: reproducibility random state seed
+            verbose: if True, report status throughout embedding process
+        """
         self.n_neighbors = n_neighbors
         self.random_init = random_init
         self.dim = dim
@@ -115,7 +148,6 @@ class GradientDR(BaseEstimator):
         if n_epochs is None:
             if normalized:
                 self.n_epochs = 500 # TSNE has weaker gradients and needs more steps to converge
-                # FIXME -- can I just set the learning rate x2 higher?...
             else:
                 self.n_epochs = 200
         else:
@@ -279,7 +311,8 @@ class GradientDR(BaseEstimator):
 
     def fit(self, X):
         """
-        FIXME
+        Given input dataset, find nearest neighbors and compute similarity matrix.
+        Then embed the data using corresponding optimizer function.
         """
         X = check_array(X, dtype=np.float32, order="C")
 
@@ -359,7 +392,9 @@ class GradientDR(BaseEstimator):
 
     def _embed_data(self, X):
         """
-        FIXME
+        Having found the similarities in X, find the embedding which emphasizes these similarities in Y.
+
+        This is a wrapper method which either calls the numba, cython, torch or GPU implementation of embed_data
         """
         if self.verbose:
             print(ts(), "Constructing embedding")
@@ -375,8 +410,8 @@ class GradientDR(BaseEstimator):
 
         self.initialize_embedding(X)
 
-        # ANDREW - head and tail here represent the indices of nodes that have edges in high-dim
-        #        - So for each edge e_{ij} in the nearest neighbor graph,
+        #  head and tail here represent the indices of nodes that have edges in high-dim
+        #  So for each edge e_{ij} in the nearest neighbor graph,
         #          head is reference to point i and tail is reference to point j
         self.head = self.graph.row
         self.tail = self.graph.col
@@ -386,7 +421,7 @@ class GradientDR(BaseEstimator):
         #   - basically, how many nearest neighbors does each point have in our graph
         self.neighbor_counts = np.unique(self.tail, return_counts=True)[1].astype(np.long)
 
-        # ANDREW - get number of epochs that we will optimize this EDGE for
+        # Get number of epochs that we will optimize this EDGE for
         # These are only used in the UMAP algorithm
         self.epochs_per_sample = make_epochs_per_sample(self.graph.data, self.n_epochs)
         self.rng_state = self.random_state.randint(INT32_MIN, INT32_MAX, 3).astype(np.int64)
@@ -455,7 +490,7 @@ class GradientDR(BaseEstimator):
 
     def fit_transform(self, X):
         """
-        FIXME
+        Wrapper function for finding the embedding of a dataset
         """
         self.fit(X)
         return self.embedding

@@ -4,6 +4,11 @@ import matplotlib
 import matplotlib.pyplot as plt
 np.set_printoptions(threshold=np.inf)
 
+
+### Code to make the gradient heatmap plots from the ActUp paper
+
+
+
 # Low- and High-Dim distance getters
 def get_matrix_pca_dists():
     low_dim_points = np.arange(0.01, 0.5, 0.01)
@@ -19,7 +24,6 @@ def get_matrix_pca_dists():
     return low_dim_dists, high_dim_dists, len(low_dim_points)
 
 def get_pairwise_dist_matrix(points):
-    # FIXME -- just don't sqrt here and remove them from all grads calcs
     num_points = int(points.shape[0])
     dists = np.zeros([num_points, num_points])
     for i, x_i in enumerate(points):
@@ -129,7 +133,6 @@ def tsne_grads(Dx, Dy, k):
     Q = 1 / (1 + np.square(Dy))
     P, Q = np.meshgrid(P, Q)
     Z_stack = [1 / (1 + np.square(Dy)) for _ in Dy]
-    # FIXME - Is it okay to use the same distance values for both the kernels and the (y_i - y_j) scaling?
     Dy_stack = [Dy for _ in Dy]
     gradient = 4 * (P - Q) * np.stack(Z_stack, -1) * np.stack(Dy_stack, -1)
     gradient = np.flip(gradient, 0)
@@ -142,7 +145,6 @@ def frob_tsne_grads(Dx, Dy, k):
     Q = 1 / (1 + np.square(Dy))
     P, Q = np.meshgrid(P, Q)
     Z_stack = [1 / (1 + np.square(Dy)) for _ in Dy]
-    # FIXME - Is it okay to use the same distance values for both the kernels and the (y_i - y_j) scaling?
     Dy_stack = [Dy for _ in Dy]
     gradient = 4 * (P - Q) * (Q**2 + 2*Q**3) * np.stack(Z_stack, -1) * np.stack(Dy_stack, -1)
     gradient = np.flip(gradient, 0)

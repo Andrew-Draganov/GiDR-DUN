@@ -2,6 +2,8 @@ import time
 import os
 from cuml.neighbors import NearestNeighbors as cuNearestNeighbors
 
+### Code to compare our GPU implementation against the rapids one
+
 class rapids_wrapper:
     def __init__(
         self,
@@ -37,7 +39,7 @@ class rapids_wrapper:
                 verbose=verbose,
                 n_iter=n_epochs,
                 random_state=random_state,
-                method='barnes_hut' if barnes_hut else 'fft', # FIXME -- do both in experiments??
+                method='barnes_hut' if barnes_hut else 'fft',
                 learning_rate_method=None,
                 n_neighbors=n_neighbors,
                 output_type='numpy'

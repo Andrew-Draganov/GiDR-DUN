@@ -279,7 +279,6 @@ def get_dataset(data_name, num_points, normalize=True, desired_dim=-1):
         num_points = int(points.shape[0])
     points, labels = resample_points(num_points, points, labels)
 
-    # FIXME - do we need this normalization?
     if normalize:
         points = points / np.max(points).astype(np.float32)
 
